@@ -118,7 +118,7 @@ invariant now sits beside the arithmetic that depends on it.
 
 ## Item 4 — the SciPy-checkable distributions (§3 priority 4)
 
-Thirteen of the nineteen done. First batch (`df420b14`): `DistributionCauchy`, `DistributionLaplace`, `DistributionLevy`,
+**All nineteen done.** First batch (`df420b14`): `DistributionCauchy`, `DistributionLaplace`, `DistributionLevy`,
 `DistributionMaxExtreme`, `DistributionMinExtreme`, `DistributionFrechet`,
 `DistributionLogLogistic`, `DistributionReciprocal`. All eight have closed-form CDF and quantile.
 
@@ -192,12 +192,45 @@ distribution is read for.
 
 ## Remaining Risk Solver work
 
-- **§3 priority 4, rest** — six rows, all needing a special function rather than a closed form:
-  `PsiErlang` (gamma), `PsiPearson5` (inverse gamma), `PsiPearson6` (beta prime),
-  `PsiInvNormal` (inverse Gaussian — no closed-form quantile, needs a root find),
-  `PsiNegBinomial` and `PsiLogarithmic` (discrete). Plus `PsiMyerson`, `PsiMetalog`,
-  `PsiMetalogFit`, `PsiMVLogNormal`, `PsiMomentFit`, which name no SciPy analogue at all and
-  need their own treatment.
+### Third batch: the six needing a special function
+
+`DistributionErlang` (lower incomplete gamma), `DistributionPearson5` (inverse gamma — the
+**upper** incomplete gamma at the **reciprocal** argument, both easy to reverse and both checked),
+`DistributionPearson6` (beta prime), `DistributionInverseGaussian`, `DistributionNegativeBinomial`
+and `DistributionLogarithmic`. All four special functions the first three need were already in the
+package.
+
+**`PsiInvNormal` needed the conversion the work list warned about**: `scipy.stats.invgauss`'s first
+argument is the **ratio** `mu/lambda`, not `mu`. Passing `mu` straight through gives a distribution
+whose mean is `μ·λ`. The type takes Frontline's `mu` and `lambda`; the fixture does the conversion.
+
+Its quantile has **no closed form**, so it bisects its own CDF. Bisection rather than Newton because
+the CDF is strictly increasing on the support, which makes it unconditionally convergent — a
+quantile that occasionally returns a negative duration would be worse than one taking a few more
+steps. The step count comes from `bisectionStepsToFullPrecision`, derived from the type.
+
+**Two support conventions worth stating**: the negative binomial counts *failures*, so it starts at
+0, while `DistributionGeometric` in this package counts *trials* and starts at 1 — they are not the
+`s = 1` case of one another. The log-series has `k` in a denominator and starts at 1. A binding that
+assumed the wrong one would be shifted by one everywhere and every moment would still look
+plausible.
+
+**On the five `catch` blocks.** The special functions throw, and `ContinuousDistribution` declares
+`cdf`/`quantile` non-throwing, so an error has to become a value. Checked what they actually throw
+on: NaN or out-of-range `p`, and non-positive shapes — every one already excluded by the
+initialiser and the guards, so **the catch is unreachable**. There is no error to log, which is
+what the checker's suggestion assumes. Used the package's existing `// logging:` convention with a
+comment saying the branch is unreachable and why; NaN is the sentinel if the invariant is ever
+broken, because any finite substitute could be mistaken for a quantile.
+
+## Remaining Risk Solver work
+
+- **§3 priority 4, the non-SciPy rows** — `PsiMyerson`, `PsiMetalog`, `PsiMetalogFit`,
+  `PsiMVLogNormal`, `PsiMomentFit`. These name no reference implementation, so §2.1's method does
+  not apply and each needs its own. Metalog in particular is a quantile-parameterised family fitted
+  to data, closer to a fitting routine than a distribution.
+- **§3 priority 6** — the AR/GARCH family, last: `PsiAR1`, `PsiGARCH11` and their relatives.
+  Zero occurrences in the measured corpus; on the list because Frontline documents them.
 - **§3 priority 6** — the AR/GARCH family, last: `PsiAR1`, `PsiGARCH11` and their relatives.
   Zero occurrences in the measured corpus; on the list because Frontline documents them.
 

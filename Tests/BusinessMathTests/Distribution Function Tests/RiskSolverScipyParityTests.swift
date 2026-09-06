@@ -35,6 +35,7 @@ struct RiskSolverScipyParityTests {
 	private struct Case: Decodable {
 		let psi: String
 		let scipy: String
+		let discrete: Bool
 		let parameters: [String: Double]
 		let mapping: String
 		let quantiles: [QuantilePoint]
@@ -122,6 +123,36 @@ struct RiskSolverScipyParityTests {
 				return nil
 			}
 			return DistributionFatigueLife(location: loc, scale: scale, shape: shape)
+		case "PsiErlang":
+			guard let k = p["k"], let beta = p["beta"] else { return nil }
+			return DistributionErlang(stages: Int(k), scale: beta)
+		case "PsiPearson5":
+			guard let alpha = p["alpha"], let beta = p["beta"] else { return nil }
+			return DistributionPearson5(alpha: alpha, beta: beta)
+		case "PsiPearson6":
+			guard let a1 = p["alpha1"], let a2 = p["alpha2"], let beta = p["beta"] else {
+				return nil
+			}
+			return DistributionPearson6(alpha1: a1, alpha2: a2, beta: beta)
+		case "PsiInvNormal":
+			guard let mu = p["mu"], let lambda = p["lambda"] else { return nil }
+			return DistributionInverseGaussian(mu: mu, lambda: lambda)
+		default:
+			return nil
+		}
+	}
+
+	/// The discrete counterparts. Kept apart because their outcomes are integers, so the
+	/// comparison is exact rather than to a relative tolerance.
+	private static func discreteDistribution(for entry: Case) -> (any DiscreteDistribution<Double>)? {
+		let p = entry.parameters
+		switch entry.psi {
+		case "PsiNegBinomial":
+			guard let s = p["s"], let prob = p["p"] else { return nil }
+			return DistributionNegativeBinomial(successes: Int(s), p: prob)
+		case "PsiLogarithmic":
+			guard let prob = p["p"] else { return nil }
+			return DistributionLogarithmic(p: prob)
 		default:
 			return nil
 		}
@@ -132,7 +163,9 @@ struct RiskSolverScipyParityTests {
 	private static let implemented: Set<String> = [
 		"PsiCauchy", "PsiLaplace", "PsiLevy", "PsiMaxExtreme",
 		"PsiMinExtreme", "PsiFrechet", "PsiLogLogistic", "PsiReciprocal",
-		"PsiBurr12", "PsiDagum", "PsiJohnsonSB", "PsiJohnsonSU", "PsiFatigueLife"
+		"PsiBurr12", "PsiDagum", "PsiJohnsonSB", "PsiJohnsonSU", "PsiFatigueLife",
+		"PsiErlang", "PsiPearson5", "PsiPearson6", "PsiInvNormal",
+		"PsiNegBinomial", "PsiLogarithmic"
 	]
 
 	// MARK: - The fixture itself
@@ -141,8 +174,8 @@ struct RiskSolverScipyParityTests {
 	func fixtureIsWellFormed() throws {
 		let fixture = try Self.loadFixture()
 		#expect(fixture.reference.contains("scipy"), "reference was '\(fixture.reference)'")
-		#expect(fixture.cases.count >= 26,
-				"expected at least 26 parameterisations, got \(fixture.cases.count)")
+		#expect(fixture.cases.count >= 38,
+				"expected at least 38 parameterisations, got \(fixture.cases.count)")
 
 		// Every distribution the switch handles must actually appear in the fixture. An
 		// empty or truncated fixture would otherwise make every test below pass by
@@ -167,7 +200,7 @@ struct RiskSolverScipyParityTests {
 		var checked = 0
 
 		for entry in fixture.cases {
-			guard let dist = Self.distribution(for: entry) else { continue }
+			guard !entry.discrete, let dist = Self.distribution(for: entry) else { continue }
 			for point in entry.quantiles {
 				let actual = dist.quantile(point.p)
 				guard actual.isFinite, point.x.isFinite else { continue }
@@ -190,7 +223,7 @@ struct RiskSolverScipyParityTests {
 		var checked = 0
 
 		for entry in fixture.cases {
-			guard let dist = Self.distribution(for: entry) else { continue }
+			guard !entry.discrete, let dist = Self.distribution(for: entry) else { continue }
 			for probe in entry.cdfProbes {
 				let actual = dist.cdf(probe.x)
 				// The CDF lies in [0,1], so an absolute tolerance is the right one and
@@ -209,7 +242,7 @@ struct RiskSolverScipyParityTests {
 		var checked = 0
 
 		for entry in fixture.cases {
-			guard let dist = Self.distribution(for: entry) else { continue }
+			guard !entry.discrete, let dist = Self.distribution(for: entry) else { continue }
 			for point in entry.quantiles where point.x.isFinite {
 				// Round-tripping through *SciPy's* x rather than our own closes the loop
 				// the other way: our cdf is checked against a point we did not choose.
@@ -271,7 +304,7 @@ struct RiskSolverScipyParityTests {
 		var exercised = 0
 
 		for entry in fixture.cases {
-			guard let dist = Self.distribution(for: entry) else { continue }
+			guard !entry.discrete, let dist = Self.distribution(for: entry) else { continue }
 			var rng = DeterministicRNG(seed: 41_000 &+ UInt64(exercised))
 			let n = 20_000
 			var samples: [Double] = []
@@ -296,7 +329,7 @@ struct RiskSolverScipyParityTests {
 					"\(entry.psi)\(entry.parameters): KS \(worst) exceeded \(critical)")
 			exercised += 1
 		}
-		#expect(exercised >= 26, "only \(exercised) distributions sampled")
+		#expect(exercised >= 32, "only \(exercised) continuous distributions sampled")
 	}
 
 	// MARK: - Burr III versus Burr XII
@@ -341,6 +374,102 @@ struct RiskSolverScipyParityTests {
 		}
 	}
 
+	// MARK: - The discrete pair
+
+	@Test("Discrete distributions match SciPy on pmf, cdf and quantile")
+	func discreteMatchSciPy() throws {
+		let fixture = try Self.loadFixture()
+		var checked = 0
+
+		for entry in fixture.cases where entry.discrete {
+			guard let dist = Self.discreteDistribution(for: entry) else {
+				Issue.record("\(entry.psi) is marked discrete but has no binding")
+				continue
+			}
+			for probe in entry.cdfProbes {
+				// SciPy's probes are real-valued; a discrete CDF is a step function, so
+				// compare at the integer the step has reached.
+				let k = Int(probe.x.rounded(.down))
+				let actual = dist.cdf(k)
+				let expected = probe.cdf
+				// scipy evaluated its cdf at the real x, which for a step function is
+				// the value at floor(x) — the same point.
+				#expect(abs(actual - expected) < 1e-10,
+						"\(entry.psi) \(entry.parameters) cdf(\(k)): got \(actual), scipy \(expected)")
+				checked += 1
+			}
+			for point in entry.quantiles where point.x.isFinite {
+				// An integer-valued quantile: exact agreement or the binding is wrong.
+				let expected = Int(point.x.rounded())
+				let actual = dist.quantile(point.p)
+				#expect(actual == expected,
+						"\(entry.psi) \(entry.parameters) quantile(\(point.p)): got \(actual), scipy \(expected)")
+				checked += 1
+			}
+		}
+		#expect(checked > 40, "only \(checked) discrete comparisons made")
+	}
+
+	@Test("Discrete supports start where the definition says")
+	func discreteSupports() {
+		// NegBinomial counts failures, so zero is attainable. Logarithmic has k in a
+		// denominator, so it starts at one. A binding that assumed a common convention
+		// would be shifted by one everywhere, and every moment would still look
+		// plausible.
+		guard let negBinomial = DistributionNegativeBinomial(successes: 5, p: 0.4),
+			  let logarithmic = DistributionLogarithmic(p: 0.6) else {
+			Issue.record("both should be valid"); return
+		}
+		#expect(negBinomial.pmf(0) > 0, "zero failures is attainable")
+		#expect(negBinomial.pmf(-1).isEqual(to: 0.0))
+		#expect(logarithmic.pmf(0).isEqual(to: 0.0), "the log-series has no zero outcome")
+		#expect(logarithmic.pmf(1) > 0)
+
+		// Masses sum to one over the support.
+		var negativeTotal = 0.0
+		for k in 0...400 { negativeTotal += negBinomial.pmf(k) }
+		#expect(abs(negativeTotal - 1.0) < 1e-10, "negative binomial summed to \(negativeTotal)")
+
+		var logarithmicTotal = 0.0
+		for k in 1...400 { logarithmicTotal += logarithmic.pmf(k) }
+		#expect(abs(logarithmicTotal - 1.0) < 1e-10, "log-series summed to \(logarithmicTotal)")
+	}
+
+	@Test("Discrete samplers follow their law")
+	func discreteSampling() {
+		guard let negBinomial = DistributionNegativeBinomial(successes: 5, p: 0.4),
+			  let logarithmic = DistributionLogarithmic(p: 0.6) else {
+			Issue.record("both should be valid"); return
+		}
+		var rng = DeterministicRNG(seed: 43_001)
+		var negativeSamples: [Int] = []
+		for _ in 0..<20_000 { negativeSamples.append(Int(negBinomial.next(using: &rng))) }
+		#expect(negativeSamples.allSatisfy { $0 >= 0 })
+
+		var logarithmicSamples: [Int] = []
+		for _ in 0..<20_000 { logarithmicSamples.append(Int(logarithmic.next(using: &rng))) }
+		#expect(logarithmicSamples.allSatisfy { $0 >= 1 }, "log-series draws start at one")
+
+		// The discrete KS form — both step functions compared at every integer, for the
+		// reason given in RiskSolverDiscreteSamplerTests.
+		for (samples, cdf, label) in [
+			(negativeSamples, { negBinomial.cdf($0) }, "negBinomial"),
+			(logarithmicSamples, { logarithmic.cdf($0) }, "logarithmic")
+		] as [([Int], (Int) -> Double, String)] {
+			guard let low = samples.min(), let high = samples.max() else { continue }
+			var counts: [Int: Int] = [:]
+			for value in samples { counts[value, default: 0] += 1 }
+			var running = 0
+			var worst = 0.0
+			let n = Double(samples.count)
+			for value in low...high {
+				running += counts[value] ?? 0
+				worst = Swift.max(worst, abs(Double(running) / n - cdf(value)))
+			}
+			#expect(worst < 1.95 / n.squareRoot(), "\(label): KS \(worst)")
+		}
+	}
+
 	// MARK: - Invalid parameters
 
 	@Test("Invalid parameters are refused at construction")
@@ -374,6 +503,18 @@ struct RiskSolverScipyParityTests {
 		#expect(DistributionJohnsonSU(shape1: 1, shape2: 1, location: 0, scale: 0) == nil)
 		#expect(DistributionFatigueLife(location: 0, scale: 1, shape: 0) == nil)
 		#expect(DistributionFatigueLife(location: 0, scale: -1, shape: 1) == nil)
+
+		#expect(DistributionErlang(stages: 0, scale: 1) == nil, "the shape counts stages")
+		#expect(DistributionErlang(stages: 3, scale: 0) == nil)
+		#expect(DistributionPearson5(alpha: 0, beta: 1) == nil)
+		#expect(DistributionPearson6(alpha1: 1, alpha2: 0, beta: 1) == nil)
+		#expect(DistributionInverseGaussian(mu: 0, lambda: 1) == nil)
+		#expect(DistributionInverseGaussian(mu: 1, lambda: -1) == nil)
+		#expect(DistributionNegativeBinomial(successes: 0, p: 0.5) == nil)
+		#expect(DistributionNegativeBinomial(successes: 5, p: 0) == nil)
+		#expect(DistributionNegativeBinomial(successes: 5, p: 1.5) == nil)
+		#expect(DistributionLogarithmic(p: 0) == nil)
+		#expect(DistributionLogarithmic(p: 1) == nil, "the series does not converge at one")
 	}
 
 	@Test("Supports are respected")

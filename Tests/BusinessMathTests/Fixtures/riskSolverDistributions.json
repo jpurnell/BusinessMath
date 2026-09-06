@@ -31,6 +31,7 @@
           "x": 20.000000000000007
         }
       ],
+      "discrete": false,
       "mapping": "PsiCauchy(loc, lambda) -> cauchy(loc=loc, scale=lambda). Frontline's prose contradicts its signature about which argument is which; the signature wins.",
       "parameters": {
         "lambda": 3.0,
@@ -152,6 +153,7 @@
           "x": 1.5
         }
       ],
+      "discrete": false,
       "mapping": "PsiCauchy(loc, lambda) -> cauchy(loc=loc, scale=lambda). Frontline's prose contradicts its signature about which argument is which; the signature wins.",
       "parameters": {
         "lambda": 0.5,
@@ -273,6 +275,7 @@
           "x": 4.1588830833596715
         }
       ],
+      "discrete": false,
       "mapping": "PsiLaplace(loc, beta) -> laplace(loc=loc, scale=beta). Same prose/signature contradiction as PsiCauchy, in reverse.",
       "parameters": {
         "beta": 1.0,
@@ -394,6 +397,7 @@
           "x": 15.397207708399181
         }
       ],
+      "discrete": false,
       "mapping": "PsiLaplace(loc, beta) -> laplace(loc=loc, scale=beta). Same prose/signature contradiction as PsiCauchy, in reverse.",
       "parameters": {
         "beta": 2.5,
@@ -515,6 +519,7 @@
           "x": 29.478669013637937
         }
       ],
+      "discrete": false,
       "mapping": "PsiLevy(loc, scale) -> levy(loc, scale). Stable with alpha=1/2, beta=1; the mean does not exist, so no moment check is possible.",
       "parameters": {
         "loc": 0.0,
@@ -636,6 +641,7 @@
           "x": 59.957338027275874
         }
       ],
+      "discrete": false,
       "mapping": "PsiLevy(loc, scale) -> levy(loc, scale). Stable with alpha=1/2, beta=1; the mean does not exist, so no moment check is possible.",
       "parameters": {
         "loc": 1.0,
@@ -757,6 +763,7 @@
           "x": 5.084113671638222
         }
       ],
+      "discrete": false,
       "mapping": "PsiMaxExtreme(m, s) -> gumbel_r(loc=m, scale=s).",
       "parameters": {
         "m": 0.0,
@@ -878,6 +885,7 @@
           "x": 25.25234101491467
         }
       ],
+      "discrete": false,
       "mapping": "PsiMaxExtreme(m, s) -> gumbel_r(loc=m, scale=s).",
       "parameters": {
         "m": 10.0,
@@ -999,6 +1007,7 @@
           "x": 4.351087830474893
         }
       ],
+      "discrete": false,
       "mapping": "PsiMinExtreme(m, s) -> gumbel_l(loc=m, scale=s). A distinct distribution, NOT gumbel_r negated \u2014 negating would move the location too.",
       "parameters": {
         "m": 0.0,
@@ -1120,6 +1129,7 @@
           "x": 23.05326349142468
         }
       ],
+      "discrete": false,
       "mapping": "PsiMinExtreme(m, s) -> gumbel_l(loc=m, scale=s). A distinct distribution, NOT gumbel_r negated \u2014 negating would move the location too.",
       "parameters": {
         "m": 10.0,
@@ -1241,6 +1251,7 @@
           "x": 4.24641504515256
         }
       ],
+      "discrete": false,
       "mapping": "PsiFrechet(loc, scale, shape) -> invweibull(c=shape, loc=loc, scale=scale). Extreme value type II; SciPy names it invweibull, not frechet.",
       "parameters": {
         "loc": 0.0,
@@ -1363,6 +1374,7 @@
           "x": 6.320804200574324
         }
       ],
+      "discrete": false,
       "mapping": "PsiFrechet(loc, scale, shape) -> invweibull(c=shape, loc=loc, scale=scale). Extreme value type II; SciPy names it invweibull, not frechet.",
       "parameters": {
         "loc": 1.0,
@@ -1485,6 +1497,7 @@
           "x": 3.2466648878703213
         }
       ],
+      "discrete": false,
       "mapping": "PsiLogLogistic(gamma, beta, alpha) -> fisk(c=alpha, loc=gamma, scale=beta). Frontline orders the arguments location, scale, shape \u2014 SciPy does not.",
       "parameters": {
         "alpha": 3.0,
@@ -1607,6 +1620,7 @@
           "x": 25.19200759539322
         }
       ],
+      "discrete": false,
       "mapping": "PsiLogLogistic(gamma, beta, alpha) -> fisk(c=alpha, loc=gamma, scale=beta). Frontline orders the arguments location, scale, shape \u2014 SciPy does not.",
       "parameters": {
         "alpha": 1.5,
@@ -1729,6 +1743,7 @@
           "x": 95.38149682454628
         }
       ],
+      "discrete": false,
       "mapping": "PsiReciprocal(min, max) -> loguniform(min, max). SciPy renamed `reciprocal` to `loguniform`; the old name is the one Frontline uses.",
       "parameters": {
         "max": 100.0,
@@ -1850,6 +1865,7 @@
           "x": 6.026767006628277
         }
       ],
+      "discrete": false,
       "mapping": "PsiReciprocal(min, max) -> loguniform(min, max). SciPy renamed `reciprocal` to `loguniform`; the old name is the one Frontline uses.",
       "parameters": {
         "max": 4.0,
@@ -1971,6 +1987,7 @@
           "x": 1.857361670390997
         }
       ],
+      "discrete": false,
       "mapping": "PsiBurr12(loc, scale, shape1, shape2) -> burr12(c=shape1, d=shape2, loc, scale). Burr type XII: F = 1-(1+x^c)^-d, verified against scipy directly.",
       "parameters": {
         "loc": 0.0,
@@ -2094,6 +2111,7 @@
           "x": 25.664407581099855
         }
       ],
+      "discrete": false,
       "mapping": "PsiBurr12(loc, scale, shape1, shape2) -> burr12(c=shape1, d=shape2, loc, scale). Burr type XII: F = 1-(1+x^c)^-d, verified against scipy directly.",
       "parameters": {
         "loc": 2.0,
@@ -2217,6 +2235,7 @@
           "x": 7.5036676356003635
         }
       ],
+      "discrete": false,
       "mapping": "PsiDagum(loc, scale, shape1, shape2) -> burr(c=shape1, d=shape2, loc, scale). Dagum IS Burr type III, and scipy's `burr` is type III while `burr12` is type XII \u2014 the work list says to confirm which shape maps to which before binding, and it was: F = (1+x^-c)^-d. Same argument slots as burr12, different distribution.",
       "parameters": {
         "loc": 0.0,
@@ -2340,6 +2359,7 @@
           "x": 16.925363460122384
         }
       ],
+      "discrete": false,
       "mapping": "PsiDagum(loc, scale, shape1, shape2) -> burr(c=shape1, d=shape2, loc, scale). Dagum IS Burr type III, and scipy's `burr` is type III while `burr12` is type XII \u2014 the work list says to confirm which shape maps to which before binding, and it was: F = (1+x^-c)^-d. Same argument slots as burr12, different distribution.",
       "parameters": {
         "loc": 2.0,
@@ -2463,6 +2483,7 @@
           "x": 0.8493969801862711
         }
       ],
+      "discrete": false,
       "mapping": "PsiJohnsonSB(shape1, shape2, min, max) -> johnsonsb(a=shape1, b=shape2, loc=min, scale=max-min). Bounded on [min, max], so scipy's scale is the WIDTH, not the upper bound.",
       "parameters": {
         "max": 1.0,
@@ -2586,6 +2607,7 @@
           "x": 34.573827714812836
         }
       ],
+      "discrete": false,
       "mapping": "PsiJohnsonSB(shape1, shape2, min, max) -> johnsonsb(a=shape1, b=shape2, loc=min, scale=max-min). Bounded on [min, max], so scipy's scale is the WIDTH, not the upper bound.",
       "parameters": {
         "max": 30.0,
@@ -2709,6 +2731,7 @@
           "x": 1.8041192838791291
         }
       ],
+      "discrete": false,
       "mapping": "PsiJohnsonSU(shape1, shape2, loc, scale) -> johnsonsu(a=shape1, b=shape2, loc, scale). Unbounded, so loc/scale are the usual pair.",
       "parameters": {
         "loc": 0.0,
@@ -2832,6 +2855,7 @@
           "x": 11.571542035525146
         }
       ],
+      "discrete": false,
       "mapping": "PsiJohnsonSU(shape1, shape2, loc, scale) -> johnsonsu(a=shape1, b=shape2, loc, scale). Unbounded, so loc/scale are the usual pair.",
       "parameters": {
         "loc": 5.0,
@@ -2955,6 +2979,7 @@
           "x": 3.0520348021985697
         }
       ],
+      "discrete": false,
       "mapping": "PsiFatigueLife(loc, scale, shape) -> fatiguelife(c=shape, loc, scale). Birnbaum-Saunders.",
       "parameters": {
         "loc": 0.0,
@@ -3077,6 +3102,7 @@
           "x": 19.716795827321892
         }
       ],
+      "discrete": false,
       "mapping": "PsiFatigueLife(loc, scale, shape) -> fatiguelife(c=shape, loc, scale). Birnbaum-Saunders.",
       "parameters": {
         "loc": 1.0,
@@ -3167,6 +3193,1470 @@
         }
       ],
       "scipy": "fatiguelife"
+    },
+    {
+      "cdfProbes": [
+        {
+          "cdf": 0.0,
+          "x": -7.810495227145115
+        },
+        {
+          "cdf": 0.012985103411797696,
+          "x": 0.961915342583044
+        },
+        {
+          "cdf": 0.2108459082356315,
+          "x": 3.1550179850150837
+        },
+        {
+          "cdf": 0.5000000000000003,
+          "x": 5.348120627447123
+        },
+        {
+          "cdf": 0.7263235056041522,
+          "x": 7.541223269879163
+        },
+        {
+          "cdf": 0.8637047566743413,
+          "x": 9.734325912311203
+        },
+        {
+          "cdf": 0.9949169101406514,
+          "x": 18.50673648203936
+        }
+      ],
+      "discrete": false,
+      "mapping": "PsiErlang(k, beta) -> erlang(a=k, scale=beta). Gamma with an integer shape; cdf is the regularized lower incomplete gamma P(k, x/beta).",
+      "parameters": {
+        "beta": 2.0,
+        "k": 3.0
+      },
+      "psi": "PsiErlang",
+      "quantiles": [
+        {
+          "cdfAtX": 9.999999999999995e-09,
+          "p": 1e-08,
+          "x": 0.007837408893164595
+        },
+        {
+          "cdfAtX": 9.999999999999974e-07,
+          "p": 1e-06,
+          "x": 0.03650856592655858
+        },
+        {
+          "cdfAtX": 0.0001000000000000001,
+          "p": 0.0001,
+          "x": 0.1723521100352134
+        },
+        {
+          "cdfAtX": 0.001,
+          "p": 0.001,
+          "x": 0.3810667551368064
+        },
+        {
+          "cdfAtX": 0.010000000000000004,
+          "p": 0.01,
+          "x": 0.8720903301565864
+        },
+        {
+          "cdfAtX": 0.05000000000000002,
+          "p": 0.05,
+          "x": 1.6353828943279067
+        },
+        {
+          "cdfAtX": 0.10000000000000007,
+          "p": 0.1,
+          "x": 2.2041306564986427
+        },
+        {
+          "cdfAtX": 0.24999999999999997,
+          "p": 0.25,
+          "x": 3.4545988357210384
+        },
+        {
+          "cdfAtX": 0.5000000000000003,
+          "p": 0.5,
+          "x": 5.348120627447123
+        },
+        {
+          "cdfAtX": 0.7499999999999998,
+          "p": 0.75,
+          "x": 7.840804120585118
+        },
+        {
+          "cdfAtX": 0.9,
+          "p": 0.9,
+          "x": 10.644640675668422
+        },
+        {
+          "cdfAtX": 0.95,
+          "p": 0.95,
+          "x": 12.591587243743977
+        },
+        {
+          "cdfAtX": 0.99,
+          "p": 0.99,
+          "x": 16.811893829770927
+        },
+        {
+          "cdfAtX": 0.999,
+          "p": 0.999,
+          "x": 22.457744484825326
+        },
+        {
+          "cdfAtX": 0.9999,
+          "p": 0.9999,
+          "x": 27.85634123601417
+        },
+        {
+          "cdfAtX": 0.999999,
+          "p": 0.999999,
+          "x": 38.25833637714585
+        }
+      ],
+      "scipy": "erlang"
+    },
+    {
+      "cdfProbes": [
+        {
+          "cdf": 0.0,
+          "x": -1.878896305692367
+        },
+        {
+          "cdf": 0.044244874271662356,
+          "x": 1.5969135896191342
+        },
+        {
+          "cdf": 0.22790390930623203,
+          "x": 2.4658660634470095
+        },
+        {
+          "cdf": 0.49999999999999983,
+          "x": 3.334818537274885
+        },
+        {
+          "cdf": 0.7338339046504647,
+          "x": 4.20377101110276
+        },
+        {
+          "cdf": 0.8787662746586036,
+          "x": 5.072723484930636
+        },
+        {
+          "cdf": 0.9980681394880393,
+          "x": 8.548533380242137
+        }
+      ],
+      "discrete": false,
+      "mapping": "PsiErlang(k, beta) -> erlang(a=k, scale=beta). Gamma with an integer shape; cdf is the regularized lower incomplete gamma P(k, x/beta).",
+      "parameters": {
+        "beta": 0.5,
+        "k": 7.0
+      },
+      "psi": "PsiErlang",
+      "quantiles": [
+        {
+          "cdfAtX": 9.999999999999997e-09,
+          "p": 1e-08,
+          "x": 0.12549693385455338
+        },
+        {
+          "cdfAtX": 9.999999999999991e-07,
+          "p": 1e-06,
+          "x": 0.24990951711363826
+        },
+        {
+          "cdfAtX": 0.00010000000000000005,
+          "p": 0.0001,
+          "x": 0.5151994637964434
+        },
+        {
+          "cdfAtX": 0.0010000000000000002,
+          "p": 0.001,
+          "x": 0.7601681301994045
+        },
+        {
+          "cdfAtX": 0.009999999999999998,
+          "p": 0.01,
+          "x": 1.165106265664442
+        },
+        {
+          "cdfAtX": 0.05,
+          "p": 0.05,
+          "x": 1.642657845947336
+        },
+        {
+          "cdfAtX": 0.1,
+          "p": 0.1,
+          "x": 1.9473834024380927
+        },
+        {
+          "cdfAtX": 0.25000000000000006,
+          "p": 0.25,
+          "x": 2.541328451344265
+        },
+        {
+          "cdfAtX": 0.49999999999999983,
+          "p": 0.5,
+          "x": 3.334818537274885
+        },
+        {
+          "cdfAtX": 0.7499999999999998,
+          "p": 0.75,
+          "x": 4.279233399000016
+        },
+        {
+          "cdfAtX": 0.9000000000000001,
+          "p": 0.9,
+          "x": 5.266036053249264
+        },
+        {
+          "cdfAtX": 0.9500000000000001,
+          "p": 0.95,
+          "x": 5.921197826210145
+        },
+        {
+          "cdfAtX": 0.99,
+          "p": 0.99,
+          "x": 7.285309435168197
+        },
+        {
+          "cdfAtX": 0.999,
+          "p": 0.999,
+          "x": 9.030818420099534
+        },
+        {
+          "cdfAtX": 0.9999,
+          "p": 0.9999,
+          "x": 10.644822238278325
+        },
+        {
+          "cdfAtX": 0.999999,
+          "p": 0.999999,
+          "x": 13.658826382491496
+        }
+      ],
+      "scipy": "erlang"
+    },
+    {
+      "cdfProbes": [
+        {
+          "cdf": 0.0,
+          "x": -2.6344213641252496
+        },
+        {
+          "cdf": 9.401706267159813e-30,
+          "x": 0.0410912110632875
+        },
+        {
+          "cdf": 0.13306618892958522,
+          "x": 0.7099693548604219
+        },
+        {
+          "cdf": 0.5,
+          "x": 1.3788474986575563
+        },
+        {
+          "cdf": 0.7107646397248977,
+          "x": 2.0477256424546906
+        },
+        {
+          "cdf": 0.8195869874716417,
+          "x": 2.716603786251825
+        },
+        {
+          "cdf": 0.9529701998391709,
+          "x": 5.392116361440363
+        }
+      ],
+      "discrete": false,
+      "mapping": "PsiPearson5(alpha, beta) -> invgamma(a=alpha, scale=beta). cdf is the UPPER regularized incomplete gamma Q(alpha, beta/x) \u2014 note the reciprocal argument and the upper tail, both easy to get backwards.",
+      "parameters": {
+        "alpha": 2.5,
+        "beta": 3.0
+      },
+      "psi": "PsiPearson5",
+      "quantiles": [
+        {
+          "cdfAtX": 9.999999999999992e-09,
+          "p": 1e-08,
+          "x": 0.13101985140456618
+        },
+        {
+          "cdfAtX": 1.000000000000002e-06,
+          "p": 1e-06,
+          "x": 0.1671859328005899
+        },
+        {
+          "cdfAtX": 9.999999999999999e-05,
+          "p": 0.0001,
+          "x": 0.23305648331837214
+        },
+        {
+          "cdfAtX": 0.0009999999999999987,
+          "p": 0.001,
+          "x": 0.2924688445936869
+        },
+        {
+          "cdfAtX": 0.009999999999999998,
+          "p": 0.01,
+          "x": 0.397712557039811
+        },
+        {
+          "cdfAtX": 0.05,
+          "p": 0.05,
+          "x": 0.5419810532559899
+        },
+        {
+          "cdfAtX": 0.09999999999999996,
+          "p": 0.1,
+          "x": 0.6496067730061608
+        },
+        {
+          "cdfAtX": 0.2500000000000001,
+          "p": 0.25,
+          "x": 0.9055674608294615
+        },
+        {
+          "cdfAtX": 0.5,
+          "p": 0.5,
+          "x": 1.3788474986575563
+        },
+        {
+          "cdfAtX": 0.75,
+          "p": 0.75,
+          "x": 2.2433237484237303
+        },
+        {
+          "cdfAtX": 0.8999999999999999,
+          "p": 0.9,
+          "x": 3.725995305605091
+        },
+        {
+          "cdfAtX": 0.95,
+          "p": 0.95,
+          "x": 5.237996095849527
+        },
+        {
+          "cdfAtX": 0.99,
+          "p": 0.99,
+          "x": 10.824500845131492
+        },
+        {
+          "cdfAtX": 0.999,
+          "p": 0.999,
+          "x": 28.54253229804219
+        },
+        {
+          "cdfAtX": 0.9999,
+          "p": 0.9999,
+          "x": 73.01279627775097
+        },
+        {
+          "cdfAtX": 0.999999,
+          "p": 0.999999,
+          "x": 465.2547660588194
+        }
+      ],
+      "scipy": "invgamma"
+    },
+    {
+      "cdfProbes": [
+        {
+          "cdf": 0.0,
+          "x": -0.2975331936697831
+        },
+        {
+          "cdf": 0.003599398328562619,
+          "x": 0.11491336434129318
+        },
+        {
+          "cdf": 0.18422818364889032,
+          "x": 0.21802500384406223
+        },
+        {
+          "cdf": 0.5000000000000002,
+          "x": 0.3211366433468313
+        },
+        {
+          "cdf": 0.7186941574601515,
+          "x": 0.42424828284960037
+        },
+        {
+          "cdf": 0.8407030076924533,
+          "x": 0.5273599223523694
+        },
+        {
+          "cdf": 0.9765335702804335,
+          "x": 0.9398064803634456
+        }
+      ],
+      "discrete": false,
+      "mapping": "PsiPearson5(alpha, beta) -> invgamma(a=alpha, scale=beta). cdf is the UPPER regularized incomplete gamma Q(alpha, beta/x) \u2014 note the reciprocal argument and the upper tail, both easy to get backwards.",
+      "parameters": {
+        "alpha": 5.0,
+        "beta": 1.5
+      },
+      "psi": "PsiPearson5",
+      "quantiles": [
+        {
+          "cdfAtX": 9.999999999999982e-09,
+          "p": 1e-08,
+          "x": 0.05202556181358421
+        },
+        {
+          "cdfAtX": 9.999999999999949e-07,
+          "p": 1e-06,
+          "x": 0.06401632420120484
+        },
+        {
+          "cdfAtX": 0.0001000000000000003,
+          "p": 0.0001,
+          "x": 0.0843549326264641
+        },
+        {
+          "cdfAtX": 0.0010000000000000002,
+          "p": 0.001,
+          "x": 0.1013914336969726
+        },
+        {
+          "cdfAtX": 0.010000000000000009,
+          "p": 0.01,
+          "x": 0.1292588019946766
+        },
+        {
+          "cdfAtX": 0.050000000000000024,
+          "p": 0.05,
+          "x": 0.16387140242292214
+        },
+        {
+          "cdfAtX": 0.09999999999999994,
+          "p": 0.1,
+          "x": 0.187650364564279
+        },
+        {
+          "cdfAtX": 0.24999999999999994,
+          "p": 0.25,
+          "x": 0.23906551400301884
+        },
+        {
+          "cdfAtX": 0.5000000000000002,
+          "p": 0.5,
+          "x": 0.3211366433468313
+        },
+        {
+          "cdfAtX": 0.7500000000000001,
+          "p": 0.75,
+          "x": 0.44528879300855695
+        },
+        {
+          "cdfAtX": 0.9,
+          "p": 0.9,
+          "x": 0.6166264628911041
+        },
+        {
+          "cdfAtX": 0.95,
+          "p": 0.95,
+          "x": 0.7613635148916145
+        },
+        {
+          "cdfAtX": 0.99,
+          "p": 0.99,
+          "x": 1.1726939800725769
+        },
+        {
+          "cdfAtX": 0.999,
+          "p": 0.999,
+          "x": 2.028749457474115
+        },
+        {
+          "cdfAtX": 0.9999,
+          "p": 0.9999,
+          "x": 3.374880520279452
+        },
+        {
+          "cdfAtX": 0.999999,
+          "p": 0.999999,
+          "x": 8.872432085108377
+        }
+      ],
+      "scipy": "invgamma"
+    },
+    {
+      "cdfProbes": [
+        {
+          "cdf": 0.0,
+          "x": -2.97485912580055
+        },
+        {
+          "cdf": 0.0,
+          "x": -0.3636775316093682
+        },
+        {
+          "cdf": 0.1249696397729929,
+          "x": 0.2891178669384272
+        },
+        {
+          "cdf": 0.4999999999999999,
+          "x": 0.9419132654862227
+        },
+        {
+          "cdf": 0.7100943492474796,
+          "x": 1.5947086640340182
+        },
+        {
+          "cdf": 0.8204929586830173,
+          "x": 2.2475040625818137
+        },
+        {
+          "cdf": 0.9567812721750735,
+          "x": 4.8586856567729955
+        }
+      ],
+      "discrete": false,
+      "mapping": "PsiPearson6(alpha1, alpha2, beta) -> betaprime(a=alpha1, b=alpha2, scale=beta). cdf is I_{y/(1+y)}(alpha1, alpha2) with y = x/beta.",
+      "parameters": {
+        "alpha1": 2.0,
+        "alpha2": 3.0,
+        "beta": 1.5
+      },
+      "psi": "PsiPearson6",
+      "quantiles": [
+        {
+          "cdfAtX": 9.999999999999999e-09,
+          "p": 1e-08,
+          "x": 6.124141056230498e-05
+        },
+        {
+          "cdfAtX": 9.999999999999997e-07,
+          "p": 1e-06,
+          "x": 0.0006127894286666951
+        },
+        {
+          "cdfAtX": 0.0001,
+          "p": 0.0001,
+          "x": 0.006165719802858379
+        },
+        {
+          "cdfAtX": 0.0010000000000000002,
+          "p": 0.001,
+          "x": 0.019792173489934856
+        },
+        {
+          "cdfAtX": 0.01,
+          "p": 0.01,
+          "x": 0.0657597742289584
+        },
+        {
+          "cdfAtX": 0.05000000000000001,
+          "p": 0.05,
+          "x": 0.1622551576264002
+        },
+        {
+          "cdfAtX": 0.09999999999999998,
+          "p": 0.1,
+          "x": 0.24939214948905103
+        },
+        {
+          "cdfAtX": 0.24999999999999994,
+          "p": 0.25,
+          "x": 0.4815637521407554
+        },
+        {
+          "cdfAtX": 0.4999999999999999,
+          "p": 0.5,
+          "x": 0.9419132654862227
+        },
+        {
+          "cdfAtX": 0.75,
+          "p": 0.75,
+          "x": 1.7871545492363463
+        },
+        {
+          "cdfAtX": 0.9,
+          "p": 0.9,
+          "x": 3.1807628650583206
+        },
+        {
+          "cdfAtX": 0.9499999999999997,
+          "p": 0.95,
+          "x": 4.533676950275233
+        },
+        {
+          "cdfAtX": 0.99,
+          "p": 0.99,
+          "x": 9.148301030227847
+        },
+        {
+          "cdfAtX": 0.999,
+          "p": 0.999,
+          "x": 21.92354136167632
+        },
+        {
+          "cdfAtX": 0.9999,
+          "p": 0.9999,
+          "x": 49.41865818544272
+        },
+        {
+          "cdfAtX": 0.999999,
+          "p": 0.999999,
+          "x": 236.2339703763464
+        }
+      ],
+      "scipy": "betaprime"
+    },
+    {
+      "cdfProbes": [
+        {
+          "cdf": 0.0,
+          "x": -2.8627411203190958
+        },
+        {
+          "cdf": 0.0005371960995911036,
+          "x": 0.12521418188233735
+        },
+        {
+          "cdf": 0.1822475534352579,
+          "x": 0.8722030074326956
+        },
+        {
+          "cdf": 0.4999999999999999,
+          "x": 1.619191832983054
+        },
+        {
+          "cdf": 0.7182936294207527,
+          "x": 2.366180658533412
+        },
+        {
+          "cdf": 0.8412313571487164,
+          "x": 3.1131694840837705
+        },
+        {
+          "cdf": 0.9784071966952148,
+          "x": 6.101124786285204
+        }
+      ],
+      "discrete": false,
+      "mapping": "PsiPearson6(alpha1, alpha2, beta) -> betaprime(a=alpha1, b=alpha2, scale=beta). cdf is I_{y/(1+y)}(alpha1, alpha2) with y = x/beta.",
+      "parameters": {
+        "alpha1": 4.0,
+        "alpha2": 6.0,
+        "beta": 2.5
+      },
+      "psi": "PsiPearson6",
+      "quantiles": [
+        {
+          "cdfAtX": 1.0000000000000002e-08,
+          "p": 1e-08,
+          "x": 0.007506732132261763
+        },
+        {
+          "cdfAtX": 1.000000000000001e-06,
+          "p": 1e-06,
+          "x": 0.02405234396709925
+        },
+        {
+          "cdfAtX": 9.999999999999996e-05,
+          "p": 0.0001,
+          "x": 0.07942191895958436
+        },
+        {
+          "cdfAtX": 0.0009999999999999992,
+          "p": 0.001,
+          "x": 0.14888281565012185
+        },
+        {
+          "cdfAtX": 0.009999999999999995,
+          "p": 0.01,
+          "x": 0.294114917125129
+        },
+        {
+          "cdfAtX": 0.05000000000000003,
+          "p": 0.05,
+          "x": 0.5075205915092813
+        },
+        {
+          "cdfAtX": 0.10000000000000009,
+          "p": 0.1,
+          "x": 0.666144996776193
+        },
+        {
+          "cdfAtX": 0.25,
+          "p": 0.25,
+          "x": 1.0260228811965102
+        },
+        {
+          "cdfAtX": 0.4999999999999999,
+          "p": 0.5,
+          "x": 1.619191832983054
+        },
+        {
+          "cdfAtX": 0.7499999999999999,
+          "p": 0.75,
+          "x": 2.5200005322972268
+        },
+        {
+          "cdfAtX": 0.9,
+          "p": 0.9,
+          "x": 3.7409582464850217
+        },
+        {
+          "cdfAtX": 0.95,
+          "p": 0.95,
+          "x": 4.747608570112802
+        },
+        {
+          "cdfAtX": 0.99,
+          "p": 0.99,
+          "x": 7.498942134745718
+        },
+        {
+          "cdfAtX": 0.999,
+          "p": 0.999,
+          "x": 12.85058718089116
+        },
+        {
+          "cdfAtX": 0.9999,
+          "p": 0.9999,
+          "x": 20.634519699187884
+        },
+        {
+          "cdfAtX": 0.999999,
+          "p": 0.999999,
+          "x": 48.71302512591146
+        }
+      ],
+      "scipy": "betaprime"
+    },
+    {
+      "cdfProbes": [
+        {
+          "cdf": 0.0,
+          "x": -2.507777994901858
+        },
+        {
+          "cdf": 0.000243205134560939,
+          "x": 0.27948502813446785
+        },
+        {
+          "cdf": 0.1795995949806195,
+          "x": 0.9763007838935494
+        },
+        {
+          "cdf": 0.4999999999999997,
+          "x": 1.6731165396526309
+        },
+        {
+          "cdf": 0.7176051344370704,
+          "x": 2.3699322954117124
+        },
+        {
+          "cdf": 0.842414754716717,
+          "x": 3.066748051170794
+        },
+        {
+          "cdf": 0.9836271222979587,
+          "x": 5.85401107420712
+        }
+      ],
+      "discrete": false,
+      "mapping": "PsiInvNormal(mu, lambda) -> invgauss(mu/lambda, scale=lambda). **scipy's first argument is the RATIO mu/lambda, not mu.** Passing mu straight through gives a different distribution. No closed-form quantile exists; ours bisects its own cdf.",
+      "parameters": {
+        "lambda": 5.0,
+        "mu": 2.0
+      },
+      "psi": "PsiInvNormal",
+      "quantiles": [
+        {
+          "cdfAtX": 9.999999999999911e-09,
+          "p": 1e-08,
+          "x": 0.1331369237786973
+        },
+        {
+          "cdfAtX": 1.0000000000000004e-06,
+          "p": 1e-06,
+          "x": 0.17508768785356227
+        },
+        {
+          "cdfAtX": 9.999999999999991e-05,
+          "p": 0.0001,
+          "x": 0.25497936437728075
+        },
+        {
+          "cdfAtX": 0.0010000000000000002,
+          "p": 0.001,
+          "x": 0.32981144706566845
+        },
+        {
+          "cdfAtX": 0.009999999999999995,
+          "p": 0.01,
+          "x": 0.4661495617232373
+        },
+        {
+          "cdfAtX": 0.0499999999999999,
+          "p": 0.05,
+          "x": 0.6558683552426896
+        },
+        {
+          "cdfAtX": 0.09999999999999984,
+          "p": 0.1,
+          "x": 0.7967002980975015
+        },
+        {
+          "cdfAtX": 0.25000000000000006,
+          "p": 0.25,
+          "x": 1.1220046480647383
+        },
+        {
+          "cdfAtX": 0.4999999999999997,
+          "p": 0.5,
+          "x": 1.6731165396526309
+        },
+        {
+          "cdfAtX": 0.75,
+          "p": 0.75,
+          "x": 2.5156361595829013
+        },
+        {
+          "cdfAtX": 0.9,
+          "p": 0.9,
+          "x": 3.6132068410510247
+        },
+        {
+          "cdfAtX": 0.95,
+          "p": 0.95,
+          "x": 4.458124509266691
+        },
+        {
+          "cdfAtX": 0.99,
+          "p": 0.99,
+          "x": 6.483857540622932
+        },
+        {
+          "cdfAtX": 0.999,
+          "p": 0.999,
+          "x": 9.517648722425367
+        },
+        {
+          "cdfAtX": 0.9999,
+          "p": 0.9999,
+          "x": 12.670418892874542
+        },
+        {
+          "cdfAtX": 0.999999,
+          "p": 0.999999,
+          "x": 19.209920860100056
+        }
+      ],
+      "scipy": "invgauss"
+    },
+    {
+      "cdfProbes": [
+        {
+          "cdf": 0.0,
+          "x": -6.480572476643248
+        },
+        {
+          "cdf": 0.0,
+          "x": -1.1317310409633783
+        },
+        {
+          "cdf": 0.011209075651466189,
+          "x": 0.20547931795658947
+        },
+        {
+          "cdf": 0.49999999999999994,
+          "x": 1.5426896768765572
+        },
+        {
+          "cdf": 0.7021494235119446,
+          "x": 2.879900035796525
+        },
+        {
+          "cdf": 0.8013073312979839,
+          "x": 4.217110394716492
+        },
+        {
+          "cdf": 0.9390298488525504,
+          "x": 9.565951830396363
+        }
+      ],
+      "discrete": false,
+      "mapping": "PsiInvNormal(mu, lambda) -> invgauss(mu/lambda, scale=lambda). **scipy's first argument is the RATIO mu/lambda, not mu.** Passing mu straight through gives a different distribution. No closed-form quantile exists; ours bisects its own cdf.",
+      "parameters": {
+        "lambda": 1.5,
+        "mu": 3.0
+      },
+      "psi": "PsiInvNormal",
+      "quantiles": [
+        {
+          "cdfAtX": 9.999999999999982e-09,
+          "p": 1e-08,
+          "x": 0.044369784962611535
+        },
+        {
+          "cdfAtX": 9.99999999999997e-07,
+          "p": 1e-06,
+          "x": 0.06028369418578022
+        },
+        {
+          "cdfAtX": 0.00010000000000000009,
+          "p": 0.0001,
+          "x": 0.09334830135702127
+        },
+        {
+          "cdfAtX": 0.0010000000000000002,
+          "p": 0.001,
+          "x": 0.12778499721318992
+        },
+        {
+          "cdfAtX": 0.009999999999999995,
+          "p": 0.01,
+          "x": 0.19984192621695124
+        },
+        {
+          "cdfAtX": 0.04999999999999996,
+          "p": 0.05,
+          "x": 0.32221429138309254
+        },
+        {
+          "cdfAtX": 0.09999999999999994,
+          "p": 0.1,
+          "x": 0.431498809469251
+        },
+        {
+          "cdfAtX": 0.24999999999999994,
+          "p": 0.25,
+          "x": 0.7518402543450593
+        },
+        {
+          "cdfAtX": 0.49999999999999994,
+          "p": 0.5,
+          "x": 1.5426896768765572
+        },
+        {
+          "cdfAtX": 0.7500000000000001,
+          "p": 0.75,
+          "x": 3.426260972184995
+        },
+        {
+          "cdfAtX": 0.8999999999999999,
+          "p": 0.9,
+          "x": 7.074783125628363
+        },
+        {
+          "cdfAtX": 0.95,
+          "p": 0.95,
+          "x": 10.657788137510217
+        },
+        {
+          "cdfAtX": 0.99,
+          "p": 0.99,
+          "x": 21.158499733519378
+        },
+        {
+          "cdfAtX": 0.999,
+          "p": 0.999,
+          "x": 39.77315258170695
+        },
+        {
+          "cdfAtX": 0.9999,
+          "p": 0.9999,
+          "x": 60.89222124146724
+        },
+        {
+          "cdfAtX": 0.999999,
+          "p": 0.999999,
+          "x": 107.08747030724365
+        }
+      ],
+      "scipy": "invgauss"
+    },
+    {
+      "cdfProbes": [
+        {
+          "cdf": 0.0,
+          "x": -11.0
+        },
+        {
+          "cdf": 0.04096000000000001,
+          "x": 1.0
+        },
+        {
+          "cdf": 0.26656768000000003,
+          "x": 4.0
+        },
+        {
+          "cdf": 0.5618217779200001,
+          "x": 7.0
+        },
+        {
+          "cdf": 0.782722294349824,
+          "x": 10.0
+        },
+        {
+          "cdf": 0.9058313512891187,
+          "x": 13.0
+        },
+        {
+          "cdf": 0.9984899259336172,
+          "x": 25.0
+        }
+      ],
+      "discrete": true,
+      "mapping": "PsiNegBinomial(s, p) -> nbinom(n=s, p=p). Counts FAILURES before the s-th success, so the support starts at 0.",
+      "parameters": {
+        "p": 0.4,
+        "s": 5.0
+      },
+      "psi": "PsiNegBinomial",
+      "quantiles": [
+        {
+          "cdfAtX": 0.010240000000000003,
+          "p": 1e-08,
+          "x": 0.0
+        },
+        {
+          "cdfAtX": 0.010240000000000003,
+          "p": 1e-06,
+          "x": 0.0
+        },
+        {
+          "cdfAtX": 0.010240000000000003,
+          "p": 0.0001,
+          "x": 0.0
+        },
+        {
+          "cdfAtX": 0.010240000000000003,
+          "p": 0.001,
+          "x": 0.0
+        },
+        {
+          "cdfAtX": 0.010240000000000003,
+          "p": 0.01,
+          "x": 0.0
+        },
+        {
+          "cdfAtX": 0.09625600000000001,
+          "p": 0.05,
+          "x": 2.0
+        },
+        {
+          "cdfAtX": 0.17367040000000003,
+          "p": 0.1,
+          "x": 3.0
+        },
+        {
+          "cdfAtX": 0.26656768000000003,
+          "p": 0.25,
+          "x": 4.0
+        },
+        {
+          "cdfAtX": 0.5618217779200001,
+          "p": 0.5,
+          "x": 7.0
+        },
+        {
+          "cdfAtX": 0.782722294349824,
+          "p": 0.75,
+          "x": 10.0
+        },
+        {
+          "cdfAtX": 0.9058313512891187,
+          "p": 0.9,
+          "x": 13.0
+        },
+        {
+          "cdfAtX": 0.9630443629674967,
+          "p": 0.95,
+          "x": 16.0
+        },
+        {
+          "cdfAtX": 0.9905291690748099,
+          "p": 0.99,
+          "x": 20.0
+        },
+        {
+          "cdfAtX": 0.9992983948956206,
+          "p": 0.999,
+          "x": 27.0
+        },
+        {
+          "cdfAtX": 0.9999030249240918,
+          "p": 0.9999,
+          "x": 32.0
+        },
+        {
+          "cdfAtX": 0.9999990099760121,
+          "p": 0.999999,
+          "x": 43.0
+        }
+      ],
+      "scipy": "nbinom"
+    },
+    {
+      "cdfProbes": [
+        {
+          "cdf": 0.0,
+          "x": -3.0
+        },
+        {
+          "cdf": 0.0,
+          "x": -1.0
+        },
+        {
+          "cdf": 0.0,
+          "x": -0.5
+        },
+        {
+          "cdf": 0.5625,
+          "x": 0.0
+        },
+        {
+          "cdf": 0.5625,
+          "x": 0.5
+        },
+        {
+          "cdf": 0.84375,
+          "x": 1.0
+        },
+        {
+          "cdf": 0.984375,
+          "x": 3.0
+        }
+      ],
+      "discrete": true,
+      "mapping": "PsiNegBinomial(s, p) -> nbinom(n=s, p=p). Counts FAILURES before the s-th success, so the support starts at 0.",
+      "parameters": {
+        "p": 0.75,
+        "s": 2.0
+      },
+      "psi": "PsiNegBinomial",
+      "quantiles": [
+        {
+          "cdfAtX": 0.5625,
+          "p": 1e-08,
+          "x": 0.0
+        },
+        {
+          "cdfAtX": 0.5625,
+          "p": 1e-06,
+          "x": 0.0
+        },
+        {
+          "cdfAtX": 0.5625,
+          "p": 0.0001,
+          "x": 0.0
+        },
+        {
+          "cdfAtX": 0.5625,
+          "p": 0.001,
+          "x": 0.0
+        },
+        {
+          "cdfAtX": 0.5625,
+          "p": 0.01,
+          "x": 0.0
+        },
+        {
+          "cdfAtX": 0.5625,
+          "p": 0.05,
+          "x": 0.0
+        },
+        {
+          "cdfAtX": 0.5625,
+          "p": 0.1,
+          "x": 0.0
+        },
+        {
+          "cdfAtX": 0.5625,
+          "p": 0.25,
+          "x": 0.0
+        },
+        {
+          "cdfAtX": 0.5625,
+          "p": 0.5,
+          "x": 0.0
+        },
+        {
+          "cdfAtX": 0.84375,
+          "p": 0.75,
+          "x": 1.0
+        },
+        {
+          "cdfAtX": 0.94921875,
+          "p": 0.9,
+          "x": 2.0
+        },
+        {
+          "cdfAtX": 0.984375,
+          "p": 0.95,
+          "x": 3.0
+        },
+        {
+          "cdfAtX": 0.995361328125,
+          "p": 0.99,
+          "x": 4.0
+        },
+        {
+          "cdfAtX": 0.9996185302734375,
+          "p": 0.999,
+          "x": 6.0
+        },
+        {
+          "cdfAtX": 0.9999704360961914,
+          "p": 0.9999,
+          "x": 8.0
+        },
+        {
+          "cdfAtX": 0.9999994039535522,
+          "p": 0.999999,
+          "x": 11.0
+        }
+      ],
+      "scipy": "nbinom"
+    },
+    {
+      "cdfProbes": [
+        {
+          "cdf": 0.0,
+          "x": -2.0
+        },
+        {
+          "cdf": 0.0,
+          "x": 0.0
+        },
+        {
+          "cdf": 0.0,
+          "x": 0.5
+        },
+        {
+          "cdf": 0.654814000762375,
+          "x": 1.0
+        },
+        {
+          "cdf": 0.654814000762375,
+          "x": 1.5
+        },
+        {
+          "cdf": 0.8512582009910874,
+          "x": 2.0
+        },
+        {
+          "cdf": 0.9651958371237407,
+          "x": 4.0
+        }
+      ],
+      "discrete": true,
+      "mapping": "PsiLogarithmic(p) -> logser(p). Support starts at 1, not 0.",
+      "parameters": {
+        "p": 0.6
+      },
+      "psi": "PsiLogarithmic",
+      "quantiles": [
+        {
+          "cdfAtX": 0.654814000762375,
+          "p": 1e-08,
+          "x": 1.0
+        },
+        {
+          "cdfAtX": 0.654814000762375,
+          "p": 1e-06,
+          "x": 1.0
+        },
+        {
+          "cdfAtX": 0.654814000762375,
+          "p": 0.0001,
+          "x": 1.0
+        },
+        {
+          "cdfAtX": 0.654814000762375,
+          "p": 0.001,
+          "x": 1.0
+        },
+        {
+          "cdfAtX": 0.654814000762375,
+          "p": 0.01,
+          "x": 1.0
+        },
+        {
+          "cdfAtX": 0.654814000762375,
+          "p": 0.05,
+          "x": 1.0
+        },
+        {
+          "cdfAtX": 0.654814000762375,
+          "p": 0.1,
+          "x": 1.0
+        },
+        {
+          "cdfAtX": 0.654814000762375,
+          "p": 0.25,
+          "x": 1.0
+        },
+        {
+          "cdfAtX": 0.654814000762375,
+          "p": 0.5,
+          "x": 1.0
+        },
+        {
+          "cdfAtX": 0.8512582009910874,
+          "p": 0.75,
+          "x": 2.0
+        },
+        {
+          "cdfAtX": 0.9298358810825724,
+          "p": 0.9,
+          "x": 3.0
+        },
+        {
+          "cdfAtX": 0.9651958371237407,
+          "p": 0.95,
+          "x": 4.0
+        },
+        {
+          "cdfAtX": 0.9906550054733818,
+          "p": 0.99,
+          "x": 6.0
+        },
+        {
+          "cdfAtX": 0.9991927012091933,
+          "p": 0.999,
+          "x": 10.0
+        },
+        {
+          "cdfAtX": 0.999921351287385,
+          "p": 0.9999,
+          "x": 14.0
+        },
+        {
+          "cdfAtX": 0.9999991157035345,
+          "p": 0.999999,
+          "x": 22.0
+        }
+      ],
+      "scipy": "logser"
+    },
+    {
+      "cdfProbes": [
+        {
+          "cdf": 0.0,
+          "x": -15.0
+        },
+        {
+          "cdf": 0.0,
+          "x": -3.0
+        },
+        {
+          "cdf": 0.0,
+          "x": 0.0
+        },
+        {
+          "cdf": 0.5631483432480576,
+          "x": 3.0
+        },
+        {
+          "cdf": 0.7236760610783471,
+          "x": 6.0
+        },
+        {
+          "cdf": 0.8080353141411983,
+          "x": 9.0
+        },
+        {
+          "cdf": 0.9382183717950916,
+          "x": 21.0
+        }
+      ],
+      "discrete": true,
+      "mapping": "PsiLogarithmic(p) -> logser(p). Support starts at 1, not 0.",
+      "parameters": {
+        "p": 0.95
+      },
+      "psi": "PsiLogarithmic",
+      "quantiles": [
+        {
+          "cdfAtX": 0.31711779066056744,
+          "p": 1e-08,
+          "x": 1.0
+        },
+        {
+          "cdfAtX": 0.31711779066056744,
+          "p": 1e-06,
+          "x": 1.0
+        },
+        {
+          "cdfAtX": 0.31711779066056744,
+          "p": 0.0001,
+          "x": 1.0
+        },
+        {
+          "cdfAtX": 0.31711779066056744,
+          "p": 0.001,
+          "x": 1.0
+        },
+        {
+          "cdfAtX": 0.31711779066056744,
+          "p": 0.01,
+          "x": 1.0
+        },
+        {
+          "cdfAtX": 0.31711779066056744,
+          "p": 0.05,
+          "x": 1.0
+        },
+        {
+          "cdfAtX": 0.31711779066056744,
+          "p": 0.1,
+          "x": 1.0
+        },
+        {
+          "cdfAtX": 0.31711779066056744,
+          "p": 0.25,
+          "x": 1.0
+        },
+        {
+          "cdfAtX": 0.5631483432480576,
+          "p": 0.5,
+          "x": 3.0
+        },
+        {
+          "cdfAtX": 0.7569775919765613,
+          "p": 0.75,
+          "x": 7.0
+        },
+        {
+          "cdfAtX": 0.9046155664962263,
+          "p": 0.9,
+          "x": 16.0
+        },
+        {
+          "cdfAtX": 0.9516493522614448,
+          "p": 0.95,
+          "x": 24.0
+        },
+        {
+          "cdfAtX": 0.9903189016497789,
+          "p": 0.99,
+          "x": 46.0
+        },
+        {
+          "cdfAtX": 0.9990462037152792,
+          "p": 0.999,
+          "x": 82.0
+        },
+        {
+          "cdfAtX": 0.9999023026982996,
+          "p": 0.9999,
+          "x": 120.0
+        },
+        {
+          "cdfAtX": 0.999999037846226,
+          "p": 0.999999,
+          "x": 201.0
+        }
+      ],
+      "scipy": "logser"
     }
   ],
   "name": "riskSolverDistributions",
