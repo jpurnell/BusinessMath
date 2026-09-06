@@ -1,3 +1,43 @@
+# ============================================================================
+# DISABLED 2026-09-06 — moved out of .github/workflows/ so GitHub never parses
+# it. It does not run, and it cannot email. Nothing here is scheduled.
+#
+# WHY, and it is not fixable by editing this file:
+#
+#   A PUBLIC repository can only call reusable workflows from PUBLIC
+#   repositories. jpurnell/BusinessMath is public; jpurnell/quality-gate-swift
+#   is private. That is a GitHub access rule, not a permissions mistake.
+#
+# The symptom was a 0-second run with ZERO jobs, titled by file path rather
+# than by `name:`, reported as "This run likely failed because of a workflow
+# file issue". It failed on every push and on the 6am UTC schedule — ten
+# failures in the two days before it was switched off — and it had been doing
+# so since long before, on commits 2cdfc702, 9b1bcb61, 966502b6 and 2218a474.
+#
+# Ruled out, so do not re-investigate these:
+#   - Secrets exist. CORPUS_DEPLOY_KEY and SPM_PRIVATE_DEPS_TOKEN were both set
+#     on 2026-09-05, well before the runs that failed.
+#   - The `permissions: contents: read / issues: write` block below is already
+#     present. The comment beneath it diagnosing a missing permission as the
+#     cause of "workflow file issue" is WRONG for this repo — that failure mode
+#     is real, but it is not the one happening here.
+#   - `gh api repos/jpurnell/quality-gate-swift/actions/permissions/access`
+#     returns {"access_level":"user"}. That setting governs private-to-private
+#     sharing and cannot grant a public caller access to a private callee.
+#   - The callee file exists at the referenced path on `main`.
+#
+# TO RE-ENABLE, pick one and then move this file back to .github/workflows/:
+#   1. Make jpurnell/quality-gate-swift public.
+#   2. Vendor the gate's steps into this repo instead of calling it by `uses:`.
+#   3. Make BusinessMath private — see the runner-economics warning below
+#      before doing this, it is the expensive option.
+#
+# WHAT STILL ENFORCES THE GATE: the local pre-commit and pre-push hooks, which
+# run all 45 checkers and block on failure. On a solo repo those were always
+# the primary gate — the note below says as much. Nothing is unguarded; the
+# gate simply is not duplicated in CI.
+# ============================================================================
+
 # Quality Gate — daily audit + push-triggered checks
 #
 # Prerequisites:
