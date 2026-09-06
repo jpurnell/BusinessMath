@@ -201,7 +201,9 @@
 				let fph = f(x + h)
 				let fmh = f(x - h)
 				let f1 = (fph - fmh) / (T(2) * h)
-				let f2 = (fph - T(2) * fx + fmh) / (h * h)
+				let centred: T = T(2) * fx
+				let curvature: T = fph - centred + fmh
+				let f2: T = curvature / (h * h)
 				return (fx, f1, f2)
 			}
 

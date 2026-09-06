@@ -51,6 +51,8 @@ public func spearmansRho<T: Real>(_ independent: [T], vs variable: [T]) throws -
         sigmaD += ((independentRank[i] - variableRank[i]) * (independentRank[i] - variableRank[i]))
     }
     
-    let rho = (sigmaX + sigmaY - sigmaD) / (T(2) * T.sqrt((sigmaX * sigmaY)))
+    let numerator: T = sigmaX + sigmaY - sigmaD
+    let geometric: T = T.sqrt(sigmaX * sigmaY)
+    let rho: T = numerator / (T(2) * geometric)
     return rho
 }

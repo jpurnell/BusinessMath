@@ -464,7 +464,8 @@ public struct Vector3D<T: Real & BinaryFloatingPoint & Sendable & Codable>: Vect
 	
 	/// Euclidean norm: √(x² + y² + z²).
 	public var norm: T {
-		T.sqrt(x * x + y * y + z * z)
+		let squares: T = x * x + y * y
+		return T.sqrt(squares + z * z)
 	}
 	
 	/// Dot product: x₁x₂ + y₁y₂ + z₁z₂.

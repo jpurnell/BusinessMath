@@ -26,7 +26,9 @@ public func studentTPDF<T: Real>(t: T, df: Int) throws -> T {
 	let logCoeff = T.logGamma((nu + T(1)) / T(2))
 		- T.logGamma(nu / T(2))
 		- T.log(nu * T.pi) / T(2)
-	let logKernel = -((nu + T(1)) / T(2)) * T.log(T(1) + (t * t) / nu)
+	let halfDegreesPlusOne: T = (nu + T(1)) / T(2)
+	let scaledSquare: T = (t * t) / nu
+	let logKernel: T = -halfDegreesPlusOne * T.log(T(1) + scaledSquare)
 
 	return T.exp(logCoeff + logKernel)
 }

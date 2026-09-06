@@ -105,7 +105,9 @@ public func blandAltmanRepeatedMeasures<T: Real>(
 	} else {
 		// Unbalanced: k = (1/(n-1)) * (N - sum(m_i^2) / N)
 		let sumMiSquared = groupSizes.reduce(0) { $0 + $1 * $1 }
-		k = T(1) / T(n - 1) * (T(totalN) - T(sumMiSquared) / T(totalN))
+		let meanSquaredShare: T = T(sumMiSquared) / T(totalN)
+		let effective: T = T(totalN) - meanSquaredShare
+		k = effective / T(n - 1)
 	}
 
 	// Between-subject variance, truncated to 0 if negative

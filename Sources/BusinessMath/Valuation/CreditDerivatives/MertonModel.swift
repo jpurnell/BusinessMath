@@ -214,8 +214,10 @@ public struct MertonModel<T: Real & Sendable>: Sendable {
     ///
     /// - Returns: Distance to default in standard deviations
     public func distanceToDefault() -> T {
-        let numerator = T.log(assetValue / debtFaceValue) +
-                       (riskFreeRate - T(1)/T(2) * assetVolatility * assetVolatility) * maturity
+        let logLeverage: T = T.log(assetValue / debtFaceValue)
+        let halfVariance: T = assetVolatility * assetVolatility / T(2)
+        let drift: T = (riskFreeRate - halfVariance) * maturity
+        let numerator: T = logLeverage + drift
         let denominator = assetVolatility * T.sqrt(maturity)
 
         return numerator / denominator
@@ -231,8 +233,10 @@ public struct MertonModel<T: Real & Sendable>: Sendable {
 
     /// Calculate d1 parameter from Black-Scholes formula
     private func calculateD1() -> T {
-        let numerator = T.log(assetValue / debtFaceValue) +
-                       (riskFreeRate + T(1)/T(2) * assetVolatility * assetVolatility) * maturity
+        let logLeverage: T = T.log(assetValue / debtFaceValue)
+        let halfVariance: T = assetVolatility * assetVolatility / T(2)
+        let drift: T = (riskFreeRate + halfVariance) * maturity
+        let numerator: T = logLeverage + drift
         let denominator = assetVolatility * T.sqrt(maturity)
 
         return numerator / denominator

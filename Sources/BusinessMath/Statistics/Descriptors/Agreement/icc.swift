@@ -272,7 +272,10 @@ private func computeICC2<T: Real>(
 	switch agreement {
 	case .absolute:
 		// ICC(2,1) = (MSr - MSe) / (MSr + (k-1)*MSe + k*(MSc - MSe)/n)
-		let denominator = msR + (kT - T(1)) * msE + kT * (msC - msE) / nT
+		let raterSpread: T = msC - msE
+		let raterTerm: T = kT * raterSpread / nT
+		let errorTerm: T = (kT - T(1)) * msE
+		let denominator: T = msR + errorTerm + raterTerm
 		if denominator == T.zero {
 			iccValue = T(1)
 		} else {
@@ -429,10 +432,12 @@ private func computeTwoWayCI<T: Real>(
 		}
 		let b = kT * (msC - msE) / msE
 
-		let aL = kT * fL
-		let lower = (aL - T(1)) / (aL + kT - T(1) + b)
-		let aU = kT * fU
-		let upper = (aU - T(1)) / (aU + kT - T(1) + b)
+		let aL: T = kT * fL
+		let lowerDenominator: T = aL + kT - T(1) + b
+		let lower: T = (aL - T(1)) / lowerDenominator
+		let aU: T = kT * fU
+		let upperDenominator: T = aU + kT - T(1) + b
+		let upper: T = (aU - T(1)) / upperDenominator
 		return (lower, upper)
 
 	default:

@@ -24,5 +24,7 @@ import Numerics
 ///
 /// Use this function when you need to convert Fisher's z-score back to a correlation coefficient.
 public func rho<T: Real>(from fisherR: T) -> T {
-    return (T.exp(2 * fisherR) - 1) / (T.exp(2 * fisherR) + 1)
+    let doubled: T = T(2) * fisherR
+    let exponential: T = T.exp(doubled)
+    return (exponential - T(1)) / (exponential + T(1))
 }

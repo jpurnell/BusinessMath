@@ -131,10 +131,25 @@ public struct PCHIPInterpolator<T: Real & BinaryFloatingPoint & Sendable & Codab
     }
 
     private static func pchipEndpoint(h0: T, h1: T, delta0: T, delta1: T) -> T {
-        let d = ((T(2) * h0 + h1) * delta0 - h0 * delta1) / (h0 + h1)
+        // Six operators in one generic expression is past what the CI type-checker
+        // will solve in time — it compiles locally on a newer toolchain and fails on
+        // Linux with "unable to type-check this expression in reasonable time". Broken
+        // into named steps with explicit `: T`, which is also the three-operator rule
+        // in the coding guidelines.
+        //
+        // The quantity is the standard PCHIP one-sided endpoint slope:
+        //     d = ((2h₀ + h₁)·δ₀ − h₀·δ₁) / (h₀ + h₁)
+        let doubledFirst: T = T(2) * h0
+        let weightSum: T = doubledFirst + h1
+        let leadingTerm: T = weightSum * delta0
+        let trailingTerm: T = h0 * delta1
+        let spanSum: T = h0 + h1
+        let d: T = (leadingTerm - trailingTerm) / spanSum
         if d * delta0 <= T(0) { return T(0) }
-        if delta0 * delta1 <= T(0), Self.absT(d) > Self.absT(T(3) * delta0) {
-            return T(3) * delta0
+        let tripled: T = T(3) * delta0
+        let opposingSigns: Bool = delta0 * delta1 <= T(0)
+        if opposingSigns, Self.absT(d) > Self.absT(tripled) {
+            return tripled
         }
         return d
     }
