@@ -95,15 +95,15 @@ and the Johnson family.
 ### 5. Documentation
 
 - [ ] DocC on every public symbol; `SobolSequence` states its direction-number source in prose
-- [ ] Narrative article `4.6-QuasiRandomSamplingGuide.md` (extends `4.5-DeterministicSimulationGuide.md`)
+- [x] Narrative article `4.6-QuasiRandomSamplingGuide.md` (extends `4.5-DeterministicSimulationGuide.md`)
 - [ ] ADRs A–D from §11
-- [ ] CHANGELOG, README, `master_plan.md` reconciled per the doc-housekeeping rule
+- [x] CHANGELOG, README, `master_plan.md` reconciled per the doc-housekeeping rule
 
 ### 6. Verify
 
 - [x] `swift build -Xswiftc -Xfrontend -Xswiftc -solver-expression-time-threshold=500` — the `PsiHypSecant` quantile is the 5-operator CI-timeout shape
-- [ ] Full `swift test` — not `--filter`; capture the real exit code
-- [ ] `quality-gate --no-cache` — 0 errors / 0 warnings, no overrides
+- [x] Full `swift test` — not `--filter`; capture the real exit code
+- [x] `quality-gate --no-cache` — 0 errors / 0 warnings, no overrides
 
 ---
 
@@ -247,3 +247,19 @@ Stated by the user 2026-09-04, and it changed the code rather than just its comm
 Importance sampling and the R-replicate RQMC estimator — both need weight- or replicate-aware
 statistics across `SimulationStatistics`, `Percentiles` and `RiskMetrics`. GPU quasi-random sampling.
 Narrowing `FormulaEvaluator.Function`, which is source-breaking and belongs in 3.0.
+
+---
+
+## Status 2026-09-06
+
+Phase 0 itself is delivered and shipped; the distribution contract and the sampling seam
+have carried every Risk Solver row since. Three items remain open and are honest about it:
+
+- **`regularizedIncompleteBeta` has not moved to `SpecialFunctions/`.** Its two siblings
+  did; this one is still under `Probability Distribution/Beta Distribution/`. A pure file
+  move of a public symbol, still worth its own commit.
+- **DocC on every public symbol** — the gate's `doc-lint` and `doc-code` pass, but that is
+  not the same claim as the one written above.
+- **ADRs A–D from §11** — not written.
+
+Nothing downstream is blocked on any of them.

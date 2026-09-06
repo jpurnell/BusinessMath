@@ -11,52 +11,79 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [2.13.0] - 2026-09-06
 
-Risk Solver distributions, and the `irr`/`xirr` stopping rule that could not compute a
-large model.
+Risk Solver's distribution surface, the `irr`/`xirr` stopping rule that could not compute
+a large model, and six external oracles that found five defects between them.
 
 ### Fixed
+
 - **`irr` and `xirr` measured convergence on the NPV residual, in currency units.** The
-  default bound was `1e-4`, and three things followed from it.
+  default bound was `1e-4`, and three things followed.
 
   IRR is **scale-invariant** — multiplying every cash flow by a constant leaves the rate
-  unchanged, because the NPV scales with them — but an absolute bound on the NPV is not.
-  `[-1000, 300, 400, 500, 200]` returned `0.153221377126732`; the same investment stated
-  in thousands returned `0.153221378771815`.
+  unchanged — but an absolute bound on the NPV is not.
+  `[-1000, 300, 400, 500, 200]` returned `0.153221377126732`; the same investment in
+  thousands returned `0.153221378771815`.
 
-  The residual is **not the error**. What a caller wants bounded is the rate, and the
-  rate error is roughly `|NPV| / |dNPV/dr|`. On a large model with offsetting flows the
-  NPV curve is nearly flat, so a residual under `1e-4` can leave the rate wrong in a
-  digit that matters.
+  The residual is **not the error**. Rate error is roughly `|NPV| / |dNPV/dr|`, so on a
+  large model with offsetting flows and a flat NPV curve a small residual can still leave
+  the rate wrong.
 
-  Worst, **at scale it did not converge at all**. Scale those flows by `1e9` and the
-  rounding noise in the NPV sum alone exceeds `1e-4`: Newton reached machine precision
-  in a handful of steps, then sat on the exact answer for the remaining ninety-odd
-  iterations and threw `Failed to converge`. A billion-dollar model was not computable,
-  and the error's own advice — "relax the tolerance" — was the only thing that worked
-  and made the answer worse.
+  Worst, **at scale it did not converge at all**: scale those flows by `1e9` and the
+  rounding noise in the NPV sum exceeds `1e-4`, so Newton reached machine precision and
+  then threw `Failed to converge` while sitting on the exact answer. A billion-dollar
+  model was not computable, and the error's own advice — "relax the tolerance" — was the
+  only workaround and made the answer worse.
 
-  Both functions now converge on the **Newton correction to the rate**, relative to the
-  rate. That quantity is scale-invariant: the cash-flow units cancel between the NPV and
-  its derivative. Across twelve orders of magnitude the answer now moves by at most the
-  last bit of a `Double`, and the cases that threw return.
+  Both now converge on the **Newton correction to the rate**, which is scale-invariant
+  because the cash-flow units cancel between the NPV and its derivative. Across twelve
+  orders of magnitude the answer moves by at most the last bit of a `Double`. The
+  `tolerance:` parameter keeps its name and position and **changes meaning** — it now
+  bounds the correction relative to the rate. Its default is `√(ulpOfOne)`, derived from
+  the type rather than chosen.
 
-  The `tolerance:` parameter keeps its name and position and **changes meaning**: it now
-  bounds the correction relative to the rate rather than the NPV in currency. No caller
-  in this package passed it. Its default is `√(ulpOfOne)`, derived from the numeric type
-  rather than chosen — Newton roughly doubles the correct digits per step, so a
-  correction below the square root of machine epsilon means the next one would be below
-  epsilon itself.
+- **The mixed-model REML had two independent defects**, both found by putting a
+  statsmodels fixture behind estimators that had only ever been checked against
+  themselves.
 
-- **The vanishing-derivative guard was also absolute** (`1e-6`), and could not be right:
-  over 400 periods the discount factors alone drive `dNPV/dr` to about `1e-11` for
-  entirely ordinary flows, so any fixed floor either never fires or fires on healthy
-  input. Both functions now judge the **step** instead — a correction that is not finite,
-  or that would move the rate to at or below −100%, is one the method cannot take, since
-  `(1+r)^t` is not defined there for fractional `t` and a rate below −100% is not a
-  return.
+  `generalAIREMLUpdate` built the projection's correction from one group's
+  `X_i'V_i⁻¹r_i` where the formula needs the sum over all groups. Since `r` is the GLS
+  residual that sum is zero by the normal equations, so the correction should vanish;
+  subtracting a per-group term instead drove **every variance component 12–24% below**
+  statsmodels REML. `fitRandomSlope` carried the identical bug.
+
+  `fitRandomIntercept` had a different one: its Fisher scoring applied **no projection at
+  all**, so it computed **ML while its documentation said REML** — τ² low by 23%, σ² high
+  by 83% on a near-degenerate design. Fixed by delegation rather than repair: a random
+  intercept is the general model with `Z = 1`, and the 370 lines of duplicate Fisher
+  scoring are deleted rather than left unreferenced.
+
+  All three fitters now agree with each other and with statsmodels to about 1e-5.
+
+- **Holt-Winters forecast the wrong season and mis-fitted its residuals.**
+  `predictValues` indexed the seasonal array from a fixed origin, which is right only when
+  the training length is a whole number of cycles — true of the type's own documented
+  example and of every test it had. Train on 17 quarterly points instead of 16 and the
+  forecast came back rotated, silently.
+
+  Separately the residual used `(level + trend) * seasonal` in an otherwise wholly
+  additive model. The seasonals are deviations about zero, not scaling factors, so a
+  perfectly fitted series produced residuals in the hundreds — and they feed the mean
+  squared error behind every confidence interval.
+
+- **`poisson(_:µ:)` and `poissonCDF(_:µ:)` trapped the process** for any count above 20:
+  they divided by an `Int` factorial and 21! exceeds `Int64.max`. A rate of 25 arrivals is
+  ordinary. There were no Poisson tests at all. Both now evaluate
+  `exp(k·ln µ − µ − ln Γ(k+1))`, and `poissonCDF` no longer truncates its sum silently at
+  10,000 terms.
+
+- **Three cancellations in the new distributions**, each caught by the SciPy fixture on
+  its first run and each invisible to a round-trip test, because both directions cancel
+  identically: `tan` evaluated beside `π/2` in Cauchy's quantile, and `pow(x, small) − 1`
+  in Burr12's and Dagum's.
 
 ### Added
-- **Risk Solver distributions, §3 priorities 1, 3 and most of 4** — 23 in all.
+
+- **Risk Solver: 29 of 36 work-list rows.** §3 priorities 1, 3 and 4 complete —
   `DistributionPoisson`, `DistributionHyperGeometric`, `DistributionDiscrete`,
   `DistributionKumaraswamy`, `DistributionHypSecant`, `DistributionDoubleTriangular`,
   `DistributionCumul`, `DistributionGeneral`, `DistributionDiscreteUniform`, `Shuffle`,
@@ -64,19 +91,48 @@ large model.
   `DistributionMaxExtreme`, `DistributionMinExtreme`, `DistributionFrechet`,
   `DistributionLogLogistic`, `DistributionReciprocal`, `DistributionBurr12`,
   `DistributionDagum`, `DistributionJohnsonSB`, `DistributionJohnsonSU`,
-  `DistributionFatigueLife`.
+  `DistributionFatigueLife`, `DistributionErlang`, `DistributionPearson5`,
+  `DistributionPearson6`, `DistributionInverseGaussian`,
+  `DistributionNegativeBinomial`, `DistributionLogarithmic`.
 
-  Those with a SciPy analogue are checked against a committed fixture of 26
-  parameterisations and 598 values rather than against themselves, because a
-  `cdf`/`quantile` pair bound to the wrong arguments round-trips perfectly. That caught
-  three numerical defects no round-trip could: `tan` evaluated beside `π/2` in Cauchy's
-  quantile, and `pow(x, small) − 1` cancellation in Burr12's and Dagum's.
+  Those with a SciPy analogue are checked against a committed fixture of 38
+  parameterisations and 874 values, because a `cdf`/`quantile` pair bound to the wrong
+  arguments round-trips perfectly. Several needed conversions the names do not suggest:
+  `PsiFrechet` is `invweibull`, `PsiLogLogistic` is `fisk` with the arguments reordered,
+  `PsiReciprocal` is `loguniform`, `PsiInvNormal`'s first SciPy argument is the ratio
+  `mu/lambda`, `PsiHypSecant`'s scale is the standard deviation and not SciPy's scale, and
+  `PsiJohnsonSB`'s scale is a width rather than an upper bound.
 
-- **`poisson(_:µ:)` and `poissonCDF(_:µ:)` no longer trap.** They divided by an `Int`
-  factorial, and 21! exceeds `Int64.max`, so any count above 20 crashed the process — a
-  rate of 25 arrivals is ordinary. There were no Poisson tests at all. Both now evaluate
-  `exp(k·ln µ − µ − ln Γ(k+1))`, and `poissonCDF` no longer truncates its sum silently at
-  10,000 terms.
+  Two contradictions in the reference are resolved in the open rather than silently:
+  `PsiHyperGeo` is documented as counting successes "when there are exactly D failures",
+  and `PsiGeneral` never says what the density is at an unstated bound.
+
+- **External oracles for the numerical estimators**, under
+  `Scripts/reference-fixtures/`. Mixed models and G-study against statsmodels, Cholesky
+  against LAPACK, moving averages against pandas, Holt-Winters against exact recovery on
+  constructed series, Bayesian ICC against the ANOVA decomposition its posterior must
+  approach. CI never runs Python; every fixture is committed JSON.
+
+  Cholesky, G-study, moving averages and the Bayesian ICC came back clean. That is worth
+  as much as the finds: the factorisation is what the mixed models, regression and
+  optimisation all solve through.
+
+### Changed
+
+- **`.github/workflows/quality-gate.yml` is disabled.** It failed on every push and on its
+  schedule, always the same way: a zero-second run with no jobs. The cause is an access
+  rule, not a mistake in the file — **a public repository can only call reusable workflows
+  from public repositories**, and the gate repository is private. Moved out of
+  `workflows/` with the diagnosis and three ways to re-enable recorded in it. The local
+  pre-commit and pre-push hooks still run all 45 checkers.
+
+### Known issues
+
+- `regularizedIncompleteBeta` has not moved to `SpecialFunctions/` with its two siblings.
+- Standard errors from `fitGeneralLME` differ from statsmodels by 0.1–2%, more than the
+  variance components they are built from. Most likely a convention difference in how the
+  fixed-effect covariance is formed, but that is not established, and the test says so
+  rather than asserting agreement that is not there.
 
 ---
 

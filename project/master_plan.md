@@ -38,6 +38,39 @@ suite depends on it.
 
 ## Current Status
 
+**2.13.0 shipped 2026-09-06** — the Risk Solver distribution surface, an `irr`/`xirr`
+defect that made large models uncomputable, and six external oracles that found five
+defects between them.
+
+**29 of the 36 Risk Solver rows are done** (§3 priorities 1, 3 and 4). Those with a SciPy
+analogue are checked against a committed fixture of 38 parameterisations, because a
+`cdf`/`quantile` pair bound to the wrong arguments round-trips perfectly and passes every
+self-consistency test. It found three cancellations on its first run.
+
+**`irr` and `xirr` did not merely lose precision at scale — they threw.** The stopping
+rule compared the NPV residual against a fixed `1e-4` in currency units, so at a billion
+dollars the sum's own rounding noise exceeded the bound and Newton reported failure while
+sitting on the exact answer. Both now converge on the Newton correction to the rate, which
+is scale-invariant.
+
+**The oracle audit is the larger finding.** A question about cognitive-complexity notes on
+`fitGeneralLME` turned up something underneath: 116 of 153 numerical-estimator test files,
+1,359 tests, checked nothing against anything outside the package. Every one asserted
+self-consistency — symmetric matrices, residuals summing to zero, finite information
+criteria — which a systematically wrong implementation satisfies just as well.
+
+Six oracles built so far. Four found defects: the mixed models' REML projection (variance
+components 12–24% low), `fitRandomIntercept` computing ML while documented as REML, and
+two in Holt-Winters. Two came back clean — Cholesky and the G-study — and that is worth as
+much, since the factorisation is what the mixed models, regression and optimisation all
+solve through. Tier A is complete; Tier B (37 files) is next and will use verification
+rather than fixtures, because an LP optimum certifies itself.
+
+The uncomfortable detail: `estimatesRecoverTheTruth`, which compares against the
+parameters data was simulated from, passed throughout the REML defect. A 24% bias in a
+variance component sits inside the sampling noise of any one dataset. Simulation-recovery
+is not a substitute for a reference implementation.
+
 **2.12.1 shipped 2026-09-06** — a CI fix. 2.12.0 failed to compile on Linux on one
 line: `PCHIP.pchipEndpoint`'s endpoint slope, which Swift 6.2.1 could not type-check in
 time and Swift 6.4 solves instantly. Twenty-one further expressions sharing the shape were
@@ -481,7 +514,14 @@ The earlier table was about *scope*; this one is about *what is being measured*.
 
 ---
 
-**Last Updated:** 2026-09-06 — reconciled for 2.12.1: Current Status leads with the Linux
+**Last Updated:** 2026-09-06 — reconciled for 2.13.0: Current Status leads with the Risk
+Solver surface, the `irr`/`xirr` scale defect and the oracle audit. Checklists tidied —
+four completed ones archived (`ExcelFinancialTen`, `VerifyBindables`,
+`MonteCarloDeterminismAndAsync`, `quality_gate_remediation`, the last with its four stale
+open items verified closed against a 45/45 gate run), `CURRENT_RiskSolver.md` renamed and
+retitled, and `CURRENT_OracleAudit.md` added for the active programme. Phase 0's checklist
+now says plainly which three items are still open. Prior entry: 2026-09-06 — reconciled
+for 2.12.1: Current Status leads with the Linux
 type-check failure and what it taught about local verification; the `irr`/`xirr` absolute
 tolerance is recorded as a known issue in CHANGELOG rather than silently carried. Prior
 entry: 2026-09-05 — reconciled for 2.12.0: Current Status leads with the

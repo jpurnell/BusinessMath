@@ -104,3 +104,9 @@ tests happen never to use a February-end date, which is the same reason nobody n
   0.33357. `DayCountConvention.actualActual` implements ISDA, which is the bond-market
   convention worth having; the Excel binding is SwiftExcelFunctions' decision and the
   documentation says so.
+
+---
+
+## Closed 2026-09-06
+
+All ten functions plus the three day-count conventions shipped in 2.12.0. Adding the Excel workbook grid found a defect in `thirty360` that had shipped for months — the entry above records it. Archived.

@@ -1,4 +1,4 @@
-# CURRENT — Risk Solver: items 1 and 3
+# CURRENT — Risk Solver: §3 items 1, 3 and 4 complete; 4-remainder and 6 open
 
 **Started** 2026-09-06 · **Branch** `main` · **Spec** `project/plans/proposals/PROPOSAL_excel_function_coverage.md` §3 priority 1
 

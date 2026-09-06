@@ -42,3 +42,9 @@
 - [x] New ADR recorded (seedable refinement + async overloads)
 - [x] Session summary in docs/sessions/
 - [x] Commit (user pushes separately)
+
+---
+
+## Closed 2026-09-06
+
+Every item complete, none reopened. Archived.
