@@ -38,12 +38,34 @@ public func poissonCDF<T: Real>(_ x: T, µ: T) -> T {
 	// any half-integer grid passed. `Real` refines `FloatingPoint`, so `.rounded(.down)`
 	// is available for every conforming type.
 	let floored = x.rounded(.down)
-	// Convert that floor to an `Int` for the factorial. `Real` gives no numeric
-	// conversion to `Int`, so this counts *up to* the floor and stops there. The cap
-	// bounds the work; the Poisson CDF is 1 to within double precision long before it.
+	// Convert that floor to an `Int` to index the sum. `Real` gives no numeric
+	// conversion to `Int`, so this counts *up to* the floor and stops there.
+	//
+	// The old cap of 10_000 was a silent truncation: for a rate above it the sum simply
+	// stopped and returned a number smaller than the true probability, with nothing to
+	// say so. The loop now runs to the floor, and terminates on the mass instead — see
+	// below — so the bound is a property of the distribution rather than a constant.
 	var n = 0
-	while T(n) < floored && n < 10_000 {
-		n += 1
+	while T(n) < floored { n += 1 }
+
+	// Each term as exp(k·ln µ − µ − ln Γ(k+1)), for the reason given on `poisson(_:µ:)`:
+	// the previous form divided by `Int` factorial and trapped for any k above 20.
+	//
+	// A recurrence — p₀ = exp(−µ), pₖ = pₖ₋₁·µ/k — would be cheaper, but p₀ underflows
+	// to zero for µ beyond about 745, which would silently return 0 for every argument.
+	// Evaluating each term in log space costs a `logGamma` per term and cannot underflow
+	// until the term genuinely is negligible.
+	let logRate: T = T.log(µ)
+	var total: T = T(0)
+	for k in 0...n {
+		let count: T = T(k)
+		let logNumerator: T = count * logRate
+		let logTerm: T = logNumerator - µ - T.logGamma(count + T(1))
+		total += T.exp(logTerm)
+		// Past the mean the terms fall away geometrically. Once the accumulated mass is
+		// 1 to within representable precision, every remaining term is below the ulp of
+		// the total and adding them changes nothing.
+		if total >= T(1) { return T(1) }
 	}
-	return T.exp(-1 * µ) * (0...n).map({T.pow(µ, T($0)) / T($0.factorial())}).reduce(T(0), +)
+	return T.minimum(total, T(1))
 }

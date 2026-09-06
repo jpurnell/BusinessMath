@@ -20,7 +20,24 @@ import Numerics
 /// - Returns: The Poisson probability of observing exactly `x` occurrences in the interval.
 ///
 /// - Precondition: `x` must be a non-negative integer and `µ` has to be a non-negative value.
-/// - Complexity: O(n), where `n` is the value of `x`, due to the factorial operation.
+/// - Complexity: O(1). Evaluated in log space, so no factorial is formed.
+///
+/// ## Why log space
+///
+/// This was `pow(µ, x) * exp(-µ) / x.factorial()`, which **trapped the process** for any
+/// `x` above 20: `Int.factorial()` returns an `Int` and 21! exceeds `Int64.max`. A rate of
+/// 25 arrivals is ordinary, so the crash was reachable from ordinary input — and a trap is
+/// worse than a wrong number, because there is no value to inspect and nothing to catch.
+/// `pow(µ, x)` overflowed to infinity on the same inputs for its own reasons.
+///
+/// The identity used instead is
+///
+/// ```
+/// P(X = k) = exp(k·ln µ − µ − ln Γ(k+1))
+/// ```
+///
+/// which forms no large intermediate at all: every term stays within a few hundred in
+/// magnitude for any `k` and `µ` a `Double` can represent. `ln Γ(k+1)` is the log factorial.
 ///
 ///    let x = 5
 ///    let µ = 3.5
@@ -30,9 +47,16 @@ import Numerics
 /// Use this function when you need to model the number of times an event happened in a time interval.
 
 public func poisson<T: Real>(_ x: Int, µ: T) -> T {
-	if x < 0 { return T(0) } else {
-		let numerator = T.pow(µ, T(x)) * T.exp(-1 * µ)
-		let denominator = x.factorial()
-		return numerator / T(denominator)
-	}
+	// Below the support. Not an error: the mass there is zero.
+	guard x >= 0 else { return T(0) }
+	// A negative rate is not a Poisson. Say so, rather than letting `log` say it.
+	guard µ >= T(0) else { return T.nan }
+	// The degenerate case. All the mass sits at zero, and `log(0)` must not be reached.
+	guard µ > T(0) else { return x == 0 ? T(1) : T(0) }
+
+	let count: T = T(x)
+	let logRate: T = count * T.log(µ)
+	let logFactorial: T = T.logGamma(count + T(1))
+	let logProbability: T = logRate - µ - logFactorial
+	return T.exp(logProbability)
 }
