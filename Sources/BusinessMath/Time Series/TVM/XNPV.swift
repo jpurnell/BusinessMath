@@ -110,10 +110,14 @@ public func xnpv<T: Real & BinaryFloatingPoint>(
 	var xnpv = T.zero
 
 	for (date, cashFlow) in zip(dates, cashFlows) {
-		// Calculate fractional years from base date
-		let timeInterval = date.timeIntervalSince(baseDate)
-		let secondsPerYear = 365.0 * 24.0 * 60.0 * 60.0
-		let yearsDouble = timeInterval / secondsPerYear
+		// Whole calendar days over 365, which is what the spreadsheet computes — not
+		// elapsed seconds over a year's worth of them. The two differ by an hour across
+		// a daylight-saving boundary, that difference lands in an exponent, and it showed
+		// as a few parts in a hundred thousand on the discounted total, growing with the
+		// rate. ``DayCountConvention/actual365`` already counts civil days midnight to
+		// midnight, so this reuses it rather than repeating the arithmetic.
+		let yearsDouble: Double = DayCountConvention.actual365
+			.yearFraction(from: baseDate, to: date)
 
 		// Convert to T type. Exact for Double, correctly rounded for narrower scalars —
 		// crucially the fractional part of the offset survives.
@@ -292,10 +296,14 @@ private func calculateXNPVDerivative<T: Real & BinaryFloatingPoint>(
 	var derivative = T.zero
 
 	for (date, cashFlow) in zip(dates, cashFlows) {
-		// Calculate fractional years from base date
-		let timeInterval = date.timeIntervalSince(baseDate)
-		let secondsPerYear = 365.0 * 24.0 * 60.0 * 60.0
-		let yearsDouble = timeInterval / secondsPerYear
+		// Whole calendar days over 365, which is what the spreadsheet computes — not
+		// elapsed seconds over a year's worth of them. The two differ by an hour across
+		// a daylight-saving boundary, that difference lands in an exponent, and it showed
+		// as a few parts in a hundred thousand on the discounted total, growing with the
+		// rate. ``DayCountConvention/actual365`` already counts civil days midnight to
+		// midnight, so this reuses it rather than repeating the arithmetic.
+		let yearsDouble: Double = DayCountConvention.actual365
+			.yearFraction(from: baseDate, to: date)
 
 		// Convert to T type (see `xnpv` — the fractional part must survive).
 		let years = T(yearsDouble)
