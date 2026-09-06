@@ -209,4 +209,136 @@ struct ExcelBindableParityTests {
 			Self.check(actual, c["value"] ?? 0, "PERCENTILE.INC(\(c["p"] ?? 0))")
 		}
 	}
+
+	// MARK: - Prediction, ranking and confidence
+
+	@Test("TREND, GROWTH and the two fits")
+	func predictionMatchesReference() throws {
+		let (x, y) = try Self.dataset()
+
+		let trendCases = try Self.cases("TREND")
+		#expect(trendCases.count == 3, "the fixture supplied \(trendCases.count) TREND cases")
+		for c in trendCases {
+			let actual = try linearForecast(at: c["x"] ?? 0, knownX: x, knownY: y)
+			Self.check(actual, c["value"] ?? 0, "TREND(\(c["x"] ?? 0))")
+		}
+
+		let growthCases = try Self.cases("GROWTH")
+		#expect(growthCases.count == 3)
+		for c in growthCases {
+			let actual = try exponentialForecast(at: c["x"] ?? 0, knownX: x, knownY: y)
+			Self.check(actual, c["value"] ?? 0, "GROWTH(\(c["x"] ?? 0))")
+		}
+
+		// LOGEST returns the exponential fit's two coefficients, y = b·mˣ.
+		let fit = try exponentialFit(knownX: x, knownY: y)
+		Self.check(fit.base, try Self.cases("LOGEST.BASE")[0]["value"] ?? 0, "LOGEST base")
+		Self.check(fit.coefficient,
+				   try Self.cases("LOGEST.COEFFICIENT")[0]["value"] ?? 0, "LOGEST coefficient")
+
+		// LINEST's first two outputs are the slope and intercept already verified through
+		// SLOPE and INTERCEPT — checked again here because LINEST is the name a formula
+		// reaches them by, and a binding could plausibly wire it to the wrong pair.
+		Self.check(try slope(x, y),
+				   try Self.cases("LINEST.SLOPE")[0]["value"] ?? 0, "LINEST slope")
+		Self.check(try intercept(x, y),
+				   try Self.cases("LINEST.INTERCEPT")[0]["value"] ?? 0, "LINEST intercept")
+	}
+
+	@Test("CONFIDENCE.NORM")
+	func confidenceMatchesReference() throws {
+		let cases = try Self.cases("CONFIDENCE.NORM")
+		#expect(cases.count == 3)
+		for c in cases {
+			// Excel returns the half-width; this package returns the interval, so the
+			// comparison takes half its span. Same quantity, stated differently.
+			let alpha = c["alpha"] ?? 0.05
+			let interval: (low: Double, high: Double) =
+				confidence(alpha: alpha, stdev: 3.2041639575198, sampleSize: 10)
+			let halfWidth = (interval.high - interval.low) / 2
+			Self.check(halfWidth, c["value"] ?? 0, "CONFIDENCE.NORM(\(alpha))")
+		}
+	}
+
+	@Test("RANK.EQ, RANK.AVG and PERCENTRANK.INC")
+	func rankingMatchesReference() throws {
+		let (x, _) = try Self.dataset()
+
+		// Excel ranks *descending* by default: the largest value is rank 1. That is the
+		// opposite of what "rank 1" suggests to most readers, so both orders are checked.
+		let descending = try Self.cases("RANK.EQ")
+		#expect(descending.count == 5, "the fixture supplied \(descending.count) RANK.EQ cases")
+		for c in descending {
+			let actual = try rank(c["at"] ?? 0, in: x)
+			Self.check(actual, c["value"] ?? 0, "RANK.EQ(\(c["at"] ?? 0))")
+		}
+
+		for c in try Self.cases("RANK.EQ.ASC") {
+			let actual = try rank(c["at"] ?? 0, in: x, ascending: true)
+			Self.check(actual, c["value"] ?? 0, "RANK.EQ ascending(\(c["at"] ?? 0))")
+		}
+
+		// Anscombe I has no ties, so RANK.AVG must agree with RANK.EQ here. The tie
+		// behaviour that distinguishes them is exercised separately below, where a
+		// spreadsheet is not needed to know the answer.
+		for c in try Self.cases("RANK.AVG") {
+			let actual = try rank(c["at"] ?? 0, in: x, ties: .averageOfTied)
+			Self.check(actual, c["value"] ?? 0, "RANK.AVG(\(c["at"] ?? 0))")
+		}
+
+		let percentRanks = try Self.cases("PERCENTRANK.INC")
+		#expect(percentRanks.count == 5)
+		for c in percentRanks {
+			let actual = try percentRank(c["at"] ?? 0, in: x)
+			Self.check(actual, c["value"] ?? 0, "PERCENTRANK.INC(\(c["at"] ?? 0))")
+		}
+	}
+
+	@Test("Ties separate RANK.EQ from RANK.AVG")
+	func rankTiesBehaveAsExcelDocuments() throws {
+		// Three values tied at 20, in a set of five. Descending, they occupy ranks 2, 3
+		// and 4. RANK.EQ gives them all the best of those; RANK.AVG gives them the
+		// average. Derived from the definition — no spreadsheet needed, and the fixture's
+		// dataset has no ties to exercise it with.
+		let values: [Double] = [30, 20, 20, 20, 10]
+		#expect(try rank(30, in: values).isEqual(to: 1))
+		#expect(try rank(20, in: values, ties: .highestOfTied).isEqual(to: 2))
+		#expect(try rank(20, in: values, ties: .averageOfTied).isEqual(to: 3))
+		#expect(try rank(10, in: values).isEqual(to: 5))
+
+		// And a value that is not in the set is refused rather than guessed at — Excel
+		// reports #N/A.
+		#expect(throws: (any Error).self) { _ = try rank(25, in: values) }
+	}
+
+	@Test("PERCENTRANK reduces to three significant digits, as the spreadsheet does")
+	func percentRankTruncation() throws {
+		let (x, _) = try Self.dataset()
+		// 7 is third-lowest of ten, so the exact rank is 2/9 = 0.2222…, returned as
+		// 0.222. Eleven is seventh, 6/9 = 0.6666…, returned as 0.667 — rounded rather
+		// than truncated, which is measured rather than assumed: truncation would give
+		// 0.666, and the spreadsheet does not.
+		#expect(try percentRank(7, in: x).isEqual(to: 0.222))
+		#expect(try percentRank(11, in: x).isEqual(to: 0.667))
+		#expect(try percentRank(10, in: x).isEqual(to: 0.556),
+			"5/9 rounds to 0.556; truncation would give 0.555")
+		// Asking for more digits gives them, so the truncation is Excel's default rather
+		// than a limit of the calculation.
+		let exact = try percentRank(11, in: x, significantDigits: 12)
+		#expect(abs(exact - 6.0 / 9.0) < 1e-12, "got \(exact)")
+	}
+
+	@Test("STANDARDIZE")
+	func standardizeMatchesReference() throws {
+		let cases = try Self.cases("STANDARDIZE")
+		#expect(cases.count == 1)
+		let c = cases[0]
+		let actual = try standardize(c["x"] ?? 0, mean: c["mean"] ?? 0, stdDev: c["stdDev"] ?? 1)
+		Self.check(actual, c["value"] ?? 0, "STANDARDIZE")
+
+		// A zero or negative spread has no z-score to give, and returning one anyway
+		// would be an infinity flowing into whatever asked.
+		#expect(throws: (any Error).self) { _ = try standardize(11.0, mean: 10, stdDev: 0) }
+		#expect(throws: (any Error).self) { _ = try standardize(11.0, mean: 10, stdDev: -1) }
+	}
 }

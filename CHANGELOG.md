@@ -9,6 +9,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [2.12.0] - 2026-09-05
+
+The functions this package computed but no formula could reach — verified against a
+spreadsheet for the first time, and completed where they were missing.
+
+The coverage matrix marks 86 Excel functions **bindable**: BusinessMath has the
+quantity and nothing binds a name to it. That also meant none had ever been compared to
+an independent implementation, only to its own definition. Four defects were sitting in
+shipped code with green tests over them.
+
+### Fixed
+- **`interestPayment` charged a full period's interest on an annuity due's first
+  payment**, which happens at time zero, before any interest has accrued. Excel returns
+  `IPMT(1, type=1) = 0`; on a 200,000 mortgage this returned 1,250, making the first
+  year's **`CUMIPMT` 9% too high and its `CUMPRINC` 41% too low**. The annuity-due
+  correction was guarded by `period > 1`, so the one period needing it most got none.
+  Its balance recurrence also omitted the extra period of compounding a due payment
+  earns.
+- **`xnpv` and `xirr` discounted by elapsed seconds over 365 days** where a spreadsheet
+  counts whole days — the same defect fixed in 2.11.1, in a second place. `xnpv` now
+  delegates to ``DayCountConvention/actual365`` rather than repeating the arithmetic.
+  Fixing it also fixed `xirr`, whose error was inherited rather than its own.
+
+### Added
+- **Excel's bond functions**, written from Microsoft's definitions rather than adapted
+  from ``Bond``: `bondPrice`, `bondYield`, `bondDuration`, `bondModifiedDuration`, on a
+  new `CouponPeriod` exposing `COUPPCD`, `COUPNCD`, `COUPDAYBS`, `COUPDAYSNC`,
+  `COUPDAYS` and `COUPNUM`. `Bond.price(yield:)` discounts a schedule it builds itself
+  and the two differ whenever settlement falls between coupon dates; only one of them
+  answers `=PRICE(…)`.
+- `effectiveRate` and `equivalentRate` — `EFFECT` and `RRI`.
+- `standardize`, `linearForecast`, `exponentialFit`, `exponentialForecast`, `rank` and
+  `percentRank` — `STANDARDIZE`, `TREND`/`FORECAST.LINEAR`, `LOGEST`, `GROWTH`,
+  `RANK.EQ`/`RANK.AVG` and `PERCENTRANK.INC`.
+- Two parity suites and their generators: **160 cases across 43 Excel functions** from
+  LibreOffice, and the bond family against values **Excel itself cached** in real
+  workbooks.
+
+### Notes
+- The bond family matched Excel's cached values on the first run, including the one case
+  of twenty-eight that discriminates on the day count: a zero-coupon bond settling
+  mid-period across a year boundary, `PRICE(1998-01-15, 2006-08-15, 0, 0.0639, 100, 1, 1)`
+  = 58.771794240682887. The other twenty-seven settle on a coupon date, where `A = 0`
+  and `DSC/E = 1` and the basis cannot affect the answer — the test says so rather than
+  letting a green suite imply more than it checked.
+- `percentRank` reduces to three significant digits by rounding, which is measured
+  against LibreOffice rather than Excel. Microsoft's documentation does not say which way
+  a tie breaks, and the two spreadsheets have already been found to disagree on
+  `ACCRINT`. `significantDigits` lets a caller opt out of the reduction entirely.
+
 ### [2.11.1] - 2026-09-05
 
 Two defects in shipped code, both found by comparing against an independent

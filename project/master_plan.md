@@ -38,6 +38,21 @@ suite depends on it.
 
 ## Current Status
 
+**2.12.0 shipped 2026-09-05** — the bindable category, verified. 86 Excel functions were
+marked *bindable*: computed here, reachable from no formula, and therefore never compared
+to anything but their own definitions. 160 cases across 43 of them now are, and Excel's
+bond functions are written from Microsoft's definitions on a proper coupon grid.
+
+**Four defects were sitting in shipped code with green tests over them**, and the pattern
+is the point rather than any one of them: a test written from the same understanding as
+the code confirms the understanding, not the code. `logFactorial` used Stirling's leading
+terms above n = 20 and had `n!` 0.4% wrong at n = 21. `actual365`/`actual360` measured
+elapsed time rather than civil days and so depended on the machine's time zone.
+`interestPayment` charged a full period's interest on an annuity due's first payment.
+`xnpv` repeated the day-count mistake in a second place.
+
+Next: the Risk Solver surface, which Phase 0's distribution contract was built for.
+
 **2.11.0 shipped 2026-09-05** — the ten Excel financial functions and the three day-count
 conventions they needed. `SLN`, `SYD`, `DDB`, `VDB`, `RATE`, `NPER`, `PDURATION`,
 `NOMINAL`, `ACCRINT`, and `actualActual` / `isdaActualActual` / `thirty360European`.
@@ -458,7 +473,12 @@ The earlier table was about *scope*; this one is about *what is being measured*.
 
 ---
 
-**Last Updated:** 2026-09-05 — reconciled for the 2.11.0 release: Current Status leads
+**Last Updated:** 2026-09-05 — reconciled for 2.12.0: Current Status leads with the
+bindable verification and the four defects it found, and names the Risk Solver surface as
+next. `project/checklists/CURRENT_VerifyBindables.md` carries the detail. Counts refreshed
+to 6,898 tests / 611 suites.
+
+**Previously:** 2026-09-05 — reconciled for the 2.11.0 release: Current Status leads
 with the financial ten and the `thirty360` February defect, and names "computed but never
 compared" as the next category. `project/checklists/CURRENT_ExcelFinancialTen.md` carries
 the detail, including why `ACCRINT` is the one function not verified by the reference
