@@ -9,6 +9,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [2.11.1] - 2026-09-05
+
+Two defects in shipped code, both found by comparing against an independent
+implementation rather than by any test the package already had.
+
+### Fixed
+- **`actual365`, `actual360` and both actual/actual conventions depended on the machine's
+  time zone.** Two instants exactly 181 × 86,400 seconds apart — both UTC midnight —
+  counted 181 days on a machine set to UTC and **181.0417 on one set to New York**,
+  because the span crosses a spring-forward and the local wall clocks then sit an hour
+  apart. About two parts in ten thousand on every accrual, in the direction of the
+  offset, and invisible on any UTC machine or CI runner. `thirty360` never had it, since
+  it reads calendar components rather than an elapsed interval — so a suite leaning on
+  the 30/360 family stayed green throughout.
+
+  These conventions now count **whole civil days, midnight to midnight**, which is also
+  Excel's model: a date there is a serial number whose whole part is the day, and its day
+  counts work on that. Verified across fixed offsets, no-DST zones, half-hour offsets
+  (`Asia/Kolkata`), quarter-hour offsets (`Asia/Kathmandu`), a half-hour DST shift
+  (`Australia/Lord_Howe`) and a quarter-hour zone that also observes DST
+  (`Pacific/Chatham`).
+
+- **`logFactorial` used the leading terms of Stirling's approximation above n = 20**,
+  dropping the `1/(12n)` correction and everything after it. The relative error in
+  `ln(n!)` is about `1/(12n)`, which exponentiates to **n! being 0.4% wrong at n = 21**
+  and 0.17% wrong at n = 500 — and it was discontinuous, since n = 20 took an exact path
+  and n = 21 did not. It propagated into `combination`, `permutation` and
+  `hypergeometric`. Now `logGamma`, which is correctly rounded.
+
+### Added
+- `ExcelBindableParityTests` — 127 reference cases across 34 Excel functions, and the
+  generator behind them. The coverage matrix marks 86 Excel functions *bindable*:
+  computed by this package, reachable from no formula, and therefore never compared to a
+  spreadsheet. Seven of the nine groups matched on the first run; the two that did not
+  were both the factorial defect.
+
+### Notes
+- **Day counts no longer carry a sub-day remainder.** Nothing depended on it, and a day
+  count has no business expressing one. Where the API remains time-zone sensitive — two
+  instants at *different* times of day, far enough apart to straddle a date boundary — it
+  is documented on the function rather than left to be discovered: a `Date` is an instant,
+  a day count needs a civil date, and only the caller knows which zone names the dates
+  they mean.
+
 ### [2.11.0] - 2026-09-05
 
 The ten Excel financial functions the coverage work list called "small, exactly

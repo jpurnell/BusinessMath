@@ -323,13 +323,7 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 	private func countedDays(from start: Date, to end: Date) -> (days: Int, seconds: Int) {
 		switch self {
 		case .actual365, .actual360, .actualActual, .isdaActualActual:
-			let calendar = cachedCalendar
-			let wholeDays = calendar.dateComponents([.day], from: start, to: end).day ?? 0
-			guard let boundary = calendar.date(byAdding: .day, value: wholeDays, to: start) else {
-				return (wholeDays, 0)
-			}
-			let leftover = end.timeIntervalSince(boundary).rounded()
-			return (wholeDays, Int(exactly: leftover) ?? 0)
+			return (Self.civilDaysBetween(start, end), 0)
 
 		case .thirty360:
 			return (Self.thirty360Days(from: start, to: end, european: false), 0)
@@ -480,14 +474,62 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 
 	/// Actual elapsed days, carrying any sub-day remainder as a fraction.
 	private static func actualDays<T: Real>(from start: Date, to end: Date) -> T {
+		return T(civilDaysBetween(start, end))
+	}
+
+	/// Whole calendar days from `start` to `end`, counted from midnight to midnight.
+	///
+	/// **Measured between the two dates' midnights, not as elapsed time.** Those differ,
+	/// and the difference is a defect: two instants exactly 181 × 86,400 seconds apart —
+	/// both UTC midnight — used to come to 181 days on a machine set to UTC and
+	/// 181.0417 on one set to New York, because the span crosses a spring-forward and the
+	/// local wall clocks then sit an hour apart. About two parts in ten thousand on every
+	/// actual/360 and actual/365 accrual, in the direction of the offset, and invisible
+	/// on any UTC machine or CI runner. `thirty360` never had it, because it reads
+	/// calendar components rather than an interval — so a suite leaning on the 30/360
+	/// family stayed green.
+	///
+	/// Anchoring on midnight also makes the count independent of *which* calendar reads
+	/// the dates, which matters more than it sounds: a `Date` is an instant and a day
+	/// count needs a civil date, so the two only agree when the calendar that reads a
+	/// date matches the one that built it. Fixing the zone to UTC does not help — it just
+	/// moves the failure to dates built at local midnight, where UTC then sees 05:00 in
+	/// winter and 04:00 in summer and loses a day. Ignoring the time of day is what makes
+	/// both readings agree.
+	///
+	/// The consequence, stated plainly: **these conventions count whole days.** They no
+	/// longer carry a sub-day remainder, which nothing depended on and which a day count
+	/// has no business expressing.
+	///
+	/// ## What this is and is not independent of
+	///
+	/// Verified across fixed offsets, DST offsets, half-hour offsets (`Asia/Kolkata`),
+	/// quarter-hour offsets (`Asia/Kathmandu`), a **half-hour DST shift**
+	/// (`Australia/Lord_Howe`, +11:00 → +10:30) and a quarter-hour zone that also
+	/// observes DST (`Pacific/Chatham`). None of them changes the count, because
+	/// `startOfDay` discards the time of day before anything is compared: what survives
+	/// is only which civil date each instant falls on, and two instants a whole number of
+	/// days apart shift together.
+	///
+	/// It is **not** independent when the two instants sit at *different* times of day
+	/// far enough apart to straddle a date boundary. 00:00 UTC to 12:00 UTC on a later
+	/// day is 181 days read in London or Tokyo and 182 read in New York, because there
+	/// the second instant has already tipped into the next civil date. That is not
+	/// fixable behind this API: a `Date` is an instant, a day count needs a civil date,
+	/// and only the caller knows which zone names the dates they mean. Day-granular
+	/// inputs — every real accrual — are unaffected.
+	///
+	/// ## Excel
+	///
+	/// Excel has no time zones at all. A date there is a serial number, whole part the
+	/// day and fractional part the time, and its day counts work on the whole part. So
+	/// Excel's model is civil dates with the time of day discarded — which is what this
+	/// now does, and the reason the two agree.
+	private static func civilDaysBetween(_ start: Date, _ end: Date) -> Int {
 		let calendar = cachedCalendar
-		let wholeDays = calendar.dateComponents([.day], from: start, to: end).day ?? 0
-		guard let boundary = calendar.date(byAdding: .day, value: wholeDays, to: start) else {
-			return T(wholeDays)
-		}
-		let leftover = end.timeIntervalSince(boundary).rounded()
-		guard let seconds = Int(exactly: leftover), seconds != 0 else { return T(wholeDays) }
-		return T(wholeDays) + T(seconds) / T(86_400) // fp-safety:disable — seconds per day, a positive literal
+		let from = calendar.startOfDay(for: start)
+		let to = calendar.startOfDay(for: end)
+		return calendar.dateComponents([.day], from: from, to: to).day ?? 0
 	}
 
 	/// 366 in a leap year, 365 otherwise.
