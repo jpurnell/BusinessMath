@@ -195,8 +195,20 @@ public struct SimplexResult: Sendable {
 
     /// Dual variable values (shadow prices)
     ///
-    /// The dual values indicate how much the objective would improve
-    /// per unit increase in each constraint's RHS. Only available for optimal solutions.
+    /// The rate at which the optimal objective changes per unit increase in a
+    /// constraint's right-hand side — `d(objective)/d(rhs)`, one entry per
+    /// constraint in the order they were given.
+    ///
+    /// The sign is the plain derivative, not "improvement": raising a binding upper
+    /// bound in a minimisation *lowers* the objective, and that price is negative.
+    /// Reading it as improvement would make the two senses disagree and would break
+    /// the identity that makes the values checkable at all — with these prices,
+    /// `y'b` equals `c'x` exactly.
+    ///
+    /// A constraint that is not binding prices at zero, and an equality row prices
+    /// at whatever it is worth, which is generally not zero.
+    ///
+    /// Only available for optimal solutions.
     public let dualValues: [Double]?
 
     /// Reduced costs for non-basic variables
@@ -335,6 +347,11 @@ public struct SimplexSolver: Sendable {
         // Minimize c^T x = Maximize -c^T x
         let negatedObjective = objective.map { -$0 }
         var result = try solve(objective: negatedObjective, constraints: constraints, maximize: true)
+        // The prices belong to the maximisation that was actually solved, so they
+        // turn back with the objective. Relaxing a binding upper bound lowers the
+        // cost of a minimisation, and a shadow price that cannot go negative could
+        // never say so.
+        let turnedPrices = result.dualValues.map { prices in prices.map { -$0 } }
         result = SimplexResult(
             solution: result.solution,
             objectiveValue: -result.objectiveValue,  // Negate back
@@ -342,8 +359,10 @@ public struct SimplexSolver: Sendable {
             iterations: result.iterations,
             tableau: result.tableau,        // Preserve tableau for cuts
             basis: result.basis,            // Preserve basis for cuts
-            dualValues: result.dualValues,  // Preserve dual values
-            reducedCosts: result.reducedCosts  // Preserve reduced costs
+            dualValues: turnedPrices,
+            // Reduced costs are not turned: they measure how much the objective
+            // would *worsen*, and worsening means the same thing in either sense.
+            reducedCosts: result.reducedCosts
         )
         return result
     }
@@ -538,6 +557,25 @@ public struct SimplexSolver: Sendable {
         //     }
         // }
 
+        // The rows as built, kept before Phase I or Phase II can pivot or blank them.
+        let initialRows = Array(tableau[0..<numConstraints])
+
+        // The objective the tableau maximises, over the full standard-form width.
+        // `objective` arrives already in maximisation sense from both entry points;
+        // the `maximize` flag is honoured here so this stays true of any caller.
+        var internalObjective = Array(repeating: 0.0, count: totalVars)
+        for col in 0..<numVars {
+            internalObjective[col] = maximize ? objective[col] : -objective[col]
+        }
+
+        // A row the solver negated to clear a negative right-hand side prices in the
+        // opposite direction from the row the caller wrote, so the divisor carries
+        // that sign alongside the equilibration factor.
+        let dualDivisors: [Double] = constraints.enumerated().map { index, constraint in
+            let scale = rowScales[index]
+            return constraint.rhs < 0 ? -scale : scale
+        }
+
         return InternalSimplexTableau(
             table: tableau,
             basis: basis,
@@ -545,7 +583,10 @@ public struct SimplexSolver: Sendable {
             artificialVars: artificialVars,
             originalObjective: originalObjectiveRow,
             surplusVars: surplusVars,
-            rowScales: rowScales
+            rowScales: rowScales,
+            initialRows: initialRows,
+            internalObjective: internalObjective,
+            dualDivisors: dualDivisors
         )
     }
 
@@ -601,33 +642,33 @@ public struct SimplexSolver: Sendable {
         // Extract basis information
         let basis = phaseIIResult.tableau.basis
 
-        // Extract dual values (from objective row)
-        // Dual values correspond to slack variables (constraints)
-        let numConstraints = phaseIIResult.tableau.table.count - 1
+        // Shadow prices, reconstructed from the optimal basis.
+        //
+        // The obvious implementation reads them off the objective row at
+        // `numOriginalVars + i`, assuming row i's slack sits in column i of the
+        // added block. That holds only when *every* row is `≤`. Standard form
+        // groups the added columns by kind — `[variables | slacks | surpluses |
+        // artificials]` — so once the relations are mixed, row i's price is read
+        // from a column belonging to another row, or from a surplus, whose `-1`
+        // coefficient reverses its sign. An equality row has neither a slack nor a
+        // surplus, so nothing prices it and it reports zero.
+        //
+        // That failure is quiet in the worst way. All-`≤` maximisation and all-`≥`
+        // minimisation both come out right — the second only because the surplus
+        // sign and the negation inside `minimize` cancel — and those are the shapes
+        // of the textbook examples anyone reaches for. A blending model with one
+        // equality row silently lost its entire objective off `y'b = c'x`.
+        //
+        // Reading the artificial columns instead does not work: Phase II blanks
+        // them before it optimises. So the prices come from their definition,
+        // `y' = c_B' B⁻¹`, solved as `B' y = c_B` against the *initial* standard-form
+        // columns of whichever variables ended up basic. That depends on nothing but
+        // the final basis and the problem as posed.
         var dualValues: [Double] = []
-        if phaseIIResult.status == .optimal, let objectiveRow = phaseIIResult.tableau.table.last {
-            // A shadow price is the rate at which the optimum improves per unit of the
-            // constraint relaxed, so for a binding `≤` row in a maximisation it is
-            // positive: being given more of a scarce resource cannot make you worse off.
-            // The slack coefficient in the objective row already carries that sign, and
-            // this negated it — reporting Wyndor Glass's textbook (0, 1.5, 1) as
-            // (-0, -1.5, -1). Magnitudes were right, so the error survived any test that
-            // only checked how large a dual was.
-            for i in 0..<numConstraints {
-                let slackIndex = numOriginalVars + i
-                if slackIndex < objectiveRow.count - 1 {
-                    // Divided back by the row's equilibration factor. The tableau
-                    // priced a constraint the solver rescaled for its own numerical
-                    // comfort; the caller is owed the price of the constraint they
-                    // actually wrote. Skipping this would return a shadow price off
-                    // by that factor — silently wrong, and worse than a failure
-                    // because nothing about the number looks unusual.
-                    let scale = i < phaseIIResult.tableau.rowScales.count
-                        ? phaseIIResult.tableau.rowScales[i] : 1.0
-                    dualValues.append(objectiveRow[slackIndex] / scale)
-                }
-            }
+        if phaseIIResult.status == .optimal {
+            dualValues = shadowPrices(from: phaseIIResult.tableau) ?? []
         }
+
 
         // Extract reduced costs (objective row coefficients for non-basic variables)
         var reducedCosts: [Double] = []
@@ -647,6 +688,106 @@ public struct SimplexSolver: Sendable {
             dualValues: dualValues.isEmpty ? nil : dualValues,
             reducedCosts: reducedCosts.isEmpty ? nil : reducedCosts
         )
+    }
+
+    /// The shadow prices of an optimal tableau, in the units of the constraints the
+    /// caller wrote.
+    ///
+    /// At an optimum the dual vector satisfies `y' = c_B' B⁻¹`, where `B` holds the
+    /// standard-form columns of the basic variables and `c_B` their objective
+    /// coefficients. Transposing gives a square system, `B' y = c_B`, solved here by
+    /// Gaussian elimination with partial pivoting.
+    ///
+    /// The columns come from `initialRows` rather than from the working tableau,
+    /// because Phase II blanks the artificial columns and those are the only ones
+    /// standing over an equality row.
+    ///
+    /// Returns `nil` rather than a guess when the basis is degenerate to the point
+    /// of singularity. A caller can see that no price was available; a plausible
+    /// wrong number would look exactly like a right one.
+    ///
+    /// - Parameter tableau: A tableau whose Phase II finished optimal.
+    /// - Returns: One price per constraint row, or `nil` if they cannot be recovered.
+    private func shadowPrices(from tableau: InternalSimplexTableau) -> [Double]? {
+        let rowCount = tableau.initialRows.count
+        guard rowCount > 0, tableau.basis.count == rowCount,
+              tableau.dualDivisors.count == rowCount else { return nil }
+
+        // Row i of the system is column `basis[i]` of the initial matrix; the
+        // right-hand side is that variable's objective coefficient.
+        var matrix = Array(repeating: Array(repeating: 0.0, count: rowCount), count: rowCount)
+        var rhs = Array(repeating: 0.0, count: rowCount)
+        for i in 0..<rowCount {
+            let column = tableau.basis[i]
+            guard column >= 0, column < tableau.internalObjective.count else { return nil }
+            for k in 0..<rowCount {
+                guard column < tableau.initialRows[k].count else { return nil }
+                matrix[i][k] = tableau.initialRows[k][column]
+            }
+            rhs[i] = tableau.internalObjective[column]
+        }
+
+        guard var prices = solveLinearSystem(matrix: matrix, rhs: rhs) else { return nil }
+
+        // Back into the caller's units: undo the row equilibration, and the sign of
+        // any row the solver negated to clear a negative right-hand side.
+        for i in 0..<rowCount {
+            let divisor = tableau.dualDivisors[i]
+            guard divisor != 0, divisor.isFinite else { return nil }
+            prices[i] /= divisor
+            guard prices[i].isFinite else { return nil }
+        }
+        return prices
+    }
+
+    /// Solves a dense square system by Gaussian elimination with partial pivoting.
+    ///
+    /// - Parameters:
+    ///   - matrix: The coefficient matrix, `n × n`.
+    ///   - rhs: The right-hand side, length `n`.
+    /// - Returns: The solution, or `nil` if the matrix is singular to working precision.
+    private func solveLinearSystem(matrix: [[Double]], rhs: [Double]) -> [Double]? {
+        let n = rhs.count
+        guard n > 0, matrix.count == n, matrix.allSatisfy({ $0.count == n }) else { return nil }
+        var a = matrix
+        var b = rhs
+
+        for column in 0..<n {
+            var pivotRow = column
+            var largest = abs(a[column][column])
+            for row in (column + 1)..<n where abs(a[row][column]) > largest {
+                largest = abs(a[row][column])
+                pivotRow = row
+            }
+            // The basis matrix of a genuine basic solution is non-singular, so this
+            // is a guard against arithmetic breakdown rather than an expected path.
+            guard largest > 1e-12 else { return nil }
+            a.swapAt(column, pivotRow)
+            b.swapAt(column, pivotRow)
+
+            let pivot = a[column][column]
+            for row in (column + 1)..<n {
+                let factor = a[row][column] / pivot
+                guard factor != 0 else { continue }
+                for k in column..<n {
+                    a[row][k] -= factor * a[column][k]
+                }
+                b[row] -= factor * b[column]
+            }
+        }
+
+        var solution = Array(repeating: 0.0, count: n)
+        for row in stride(from: n - 1, through: 0, by: -1) {
+            var total = b[row]
+            for k in (row + 1)..<n {
+                total -= a[row][k] * solution[k]
+            }
+            let pivot = a[row][row]
+            guard pivot != 0 else { return nil }
+            solution[row] = total / pivot
+            guard solution[row].isFinite else { return nil }
+        }
+        return solution
     }
 
     /// Phase I: Find a basic feasible solution
@@ -1009,4 +1150,19 @@ private struct InternalSimplexTableau {
     /// wrote it*, so the value read off an equilibrated tableau has to be divided
     /// by the same factor to mean what the caller expects.
     let rowScales: [Double]
+    /// The constraint rows exactly as first built — equilibrated, and negated where
+    /// the caller gave a negative right-hand side — before any pivot touched them.
+    ///
+    /// Kept because the shadow prices are reconstructed from the optimal basis at
+    /// the end, and that reconstruction needs the columns of the original standard
+    /// form. The working `table` cannot supply them: Phase II zeroes the artificial
+    /// columns, which is exactly the information an equality row's price depends on.
+    let initialRows: [[Double]]
+    /// The objective in the sense the tableau is actually solving — maximisation —
+    /// laid out across the full standard-form width, zero for every added variable.
+    let internalObjective: [Double]
+    /// Converts a price on the row the solver built into a price on the row the
+    /// caller wrote: the equilibration divisor, negated where a negative right-hand
+    /// side made the solver flip the row.
+    let dualDivisors: [Double]
 }
