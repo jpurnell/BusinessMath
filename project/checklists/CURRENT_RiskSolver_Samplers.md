@@ -116,10 +116,58 @@ line after the guard that proves the divisor non-zero, and the hot paths multipl
 because the division is gone, not because it was silenced; the code is also faster and the
 invariant now sits beside the arithmetic that depends on it.
 
+## Item 4 — the SciPy-checkable distributions (§3 priority 4), first batch
+
+Eight of the nineteen done: `DistributionCauchy`, `DistributionLaplace`, `DistributionLevy`,
+`DistributionMaxExtreme`, `DistributionMinExtreme`, `DistributionFrechet`,
+`DistributionLogLogistic`, `DistributionReciprocal`. All eight have closed-form CDF and quantile.
+
+**Verified against SciPy 1.17.1, not against themselves.** `Scripts/reference-fixtures/
+generate_risk_solver.py` writes `Tests/BusinessMathTests/Fixtures/riskSolverDistributions.json`
+— 16 parameterisations, 368 values, committed; CI never runs Python. A round-trip test cannot
+catch what actually goes wrong here: a `cdf`/`quantile` pair bound to the **wrong arguments** is
+self-consistent, monotone, respects its support, and is wrong. Only a second implementation sees
+it. Each fixture entry therefore records the Frontline→SciPy argument mapping alongside the values,
+and every distribution is exercised at two parameter sets so one that is only right at the origin
+cannot pass.
+
+Quantiles are compared **relatively** (they span 1e-8 to 1e8 across the tails, so an absolute
+tolerance would be meaningless at one end) at 1e-9; CDFs absolutely at 1e-10, since they live in
+[0,1].
+
+### Names that do not match
+
+- `PsiFrechet` is `scipy.stats.invweibull`, not `frechet`.
+- `PsiLogLogistic` is `scipy.stats.fisk`, and Frontline orders the arguments location, scale,
+  shape where SciPy takes shape first.
+- `PsiReciprocal` is `scipy.stats.loguniform` — SciPy renamed `reciprocal`, and a fixture built
+  against the wrong name would silently be a different distribution.
+- `PsiCauchy` and `PsiLaplace` carry the prose/signature contradiction; resolved as location-first
+  per the standing precedent.
+
+### The trap the work list names, confirmed
+
+*"Distinct from PsiMaxExtreme; do not implement one and negate."* True, and the reason is worth
+recording: the two Gumbels are mirror images **about the origin, not about their own location**, so
+`−MaxExtreme(m, s)` is `MinExtreme(−m, s)`. Negating agrees only when `m = 0`, which is exactly the
+case a quick test would use. `minExtremeIsNotNegatedMaxExtreme` asserts the mirror holds at zero,
+that it visibly fails at location 10, and that each is skewed the way its name says.
+
+### One numerical defect found by the fixture
+
+`DistributionCauchy.quantile` first used the textbook `tan(π(u − ½))`, which put SciPy's value out
+by 1.7e-9 relative at `p = 1e-8` — the argument sits a hair from `−π/2` where `tan` is
+near-vertical, so a one-ulp error in the angle explodes. Replaced with the cotangent identity
+`tan(π(u − ½)) = −1/tan(πu)`, which is stable in both tails and reduces to a small accurate
+correction near the median. The tolerance was **not** loosened; the far tail is what a heavy-tailed
+distribution is read for.
+
 ## Remaining Risk Solver work
 
-- **§3 priority 4** — the SciPy-checkable distributions, the bulk of the list: 24 rows from
-  `PsiCauchy` and `PsiLaplace` through the Pearson, Johnson and Metalog families.
+- **§3 priority 4, rest** — eleven rows: `PsiErlang`, `PsiInvNormal`, `PsiNegBinomial`,
+  `PsiLogarithmic`, `PsiFatigueLife`, `PsiPearson5`, `PsiPearson6`, `PsiBurr12`, `PsiDagum`,
+  `PsiJohnsonSB`, `PsiJohnsonSU`. Plus `PsiMyerson`, `PsiMetalog`, `PsiMetalogFit`,
+  `PsiMVLogNormal`, `PsiMomentFit`, which name no SciPy analogue and need their own treatment.
 - **§3 priority 6** — the AR/GARCH family, last: `PsiAR1`, `PsiGARCH11` and their relatives.
   Zero occurrences in the measured corpus; on the list because Frontline documents them.
 
