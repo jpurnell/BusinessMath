@@ -402,6 +402,26 @@ the defined name `solver_adj`; `PsiOptParam` and `PsiOutput` state the same thin
 So they are read, not computed, and they belong downstream with `solver_adj`. Named here only so
 that a reader counting Psi functions is not surprised to find six missing.
 
+### 4.3 Crystal Ball's recalculation hook is not a function
+
+| Name | Calls | Sheets | What it declares |
+|---|---|---|---|
+| `CB.RECALCCOUNTERFN` | 2 | 2 | the simulation engine's recalculation counter |
+
+**Crystal Ball is Oracle's equivalent of Risk Solver** — a third simulation add-in family beyond
+Excel's own surface and Frontline's, noted in §8.5 as one of two names neither reference knew.
+Noting it there was not enough: it needs to sit here, with the Psi role declarations, on the list
+of things we deliberately do not implement.
+
+`RecalcCounterFn` reports state belonging to the *run*, not to the model — it exists so a sheet
+recalculates once per trial. It computes no mathematics and has no value outside a simulation
+engine driving it. Same reasoning as §4.2: read, not computed.
+
+The general rule, which will matter as more add-in families appear in future corpora: **a name that
+reports simulation-engine state, or declares a cell's role, is not a function this library
+implements** — regardless of which vendor's namespace it arrives in. BusinessMath computes; the
+engine and the binding layer own the rest.
+
 ## 5. Proposed shape
 
 1. **Register both spellings.** `STDEV`/`STDEV.S`, `STDEVP`/`STDEV.P`, `VAR`/`VAR.S`,
