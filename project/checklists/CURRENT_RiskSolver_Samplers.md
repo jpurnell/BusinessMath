@@ -116,9 +116,9 @@ line after the guard that proves the divisor non-zero, and the hot paths multipl
 because the division is gone, not because it was silenced; the code is also faster and the
 invariant now sits beside the arithmetic that depends on it.
 
-## Item 4 — the SciPy-checkable distributions (§3 priority 4), first batch
+## Item 4 — the SciPy-checkable distributions (§3 priority 4)
 
-Eight of the nineteen done: `DistributionCauchy`, `DistributionLaplace`, `DistributionLevy`,
+Thirteen of the nineteen done. First batch (`df420b14`): `DistributionCauchy`, `DistributionLaplace`, `DistributionLevy`,
 `DistributionMaxExtreme`, `DistributionMinExtreme`, `DistributionFrechet`,
 `DistributionLogLogistic`, `DistributionReciprocal`. All eight have closed-form CDF and quantile.
 
@@ -153,7 +153,35 @@ recording: the two Gumbels are mirror images **about the origin, not about their
 case a quick test would use. `minExtremeIsNotNegatedMaxExtreme` asserts the mirror holds at zero,
 that it visibly fails at location 10, and that each is skewed the way its name says.
 
-### One numerical defect found by the fixture
+### Second batch: Burr12, Dagum, JohnsonSB, JohnsonSU, FatigueLife
+
+The Burr mapping was **checked against SciPy directly** rather than inferred, as the work list
+asks. `scipy.stats.burr` is type III (Dagum), `scipy.stats.burr12` is type XII, and **both take
+`c` then `d` in the same slots** — so binding one to the other's formula would compile,
+round-trip, stay monotone, respect its support, and be a different distribution. Verified:
+type XII is `F = 1 − (1 + y^c)^(−d)`, type III is `F = (1 + y^(−c))^(−d)`.
+
+`PsiJohnsonSB(shape1, shape2, min, max)` states bounds; `scipy.stats.johnsonsb` takes `loc` and
+`scale` with support `[loc, loc + scale]`, so **SciPy's scale is the width**. Passing `max` where
+`scale` belongs is right only when `min` is zero. The conversion happens in the initialiser so a
+caller states bounds and cannot get it wrong, and the fixture pins a case at `[10, 30]`.
+
+### Numerical defects found by the fixture
+
+Three so far, all of the same kind — a cancellation that every round-trip test passes because both
+directions cancel identically. This is the argument for the fixture in one line.
+
+1. **Cauchy**, 1.7e-9 relative at `p = 1e-8`. `tan(π(u − ½))` evaluates `tan` beside `±π/2`, where
+   a one-ulp error in the argument explodes. Fixed with the cotangent identity
+   `tan(π(u − ½)) = −1/tan(πu)`.
+2. **Burr12**, 4.7e-9 relative at `p = 1e-8`. `(1 − p)^(−1/d) − 1` computes `1.0000000033… − 1`,
+   discarding nine digits. Fixed with `expm1(−log1p(−p)/d)`, which never forms the `1`.
+3. **Dagum**, the same shape at the other end, fixed the same way pre-emptively.
+
+The pattern to watch for in the remaining rows: `pow(x, small) − 1` where the result is near zero,
+and any `tan`/`log` evaluated beside a singularity.
+
+### The first numerical defect, in detail
 
 `DistributionCauchy.quantile` first used the textbook `tan(π(u − ½))`, which put SciPy's value out
 by 1.7e-9 relative at `p = 1e-8` — the argument sits a hair from `−π/2` where `tan` is
@@ -164,10 +192,12 @@ distribution is read for.
 
 ## Remaining Risk Solver work
 
-- **§3 priority 4, rest** — eleven rows: `PsiErlang`, `PsiInvNormal`, `PsiNegBinomial`,
-  `PsiLogarithmic`, `PsiFatigueLife`, `PsiPearson5`, `PsiPearson6`, `PsiBurr12`, `PsiDagum`,
-  `PsiJohnsonSB`, `PsiJohnsonSU`. Plus `PsiMyerson`, `PsiMetalog`, `PsiMetalogFit`,
-  `PsiMVLogNormal`, `PsiMomentFit`, which name no SciPy analogue and need their own treatment.
+- **§3 priority 4, rest** — six rows, all needing a special function rather than a closed form:
+  `PsiErlang` (gamma), `PsiPearson5` (inverse gamma), `PsiPearson6` (beta prime),
+  `PsiInvNormal` (inverse Gaussian — no closed-form quantile, needs a root find),
+  `PsiNegBinomial` and `PsiLogarithmic` (discrete). Plus `PsiMyerson`, `PsiMetalog`,
+  `PsiMetalogFit`, `PsiMVLogNormal`, `PsiMomentFit`, which name no SciPy analogue at all and
+  need their own treatment.
 - **§3 priority 6** — the AR/GARCH family, last: `PsiAR1`, `PsiGARCH11` and their relatives.
   Zero occurrences in the measured corpus; on the list because Frontline documents them.
 

@@ -101,6 +101,27 @@ struct RiskSolverScipyParityTests {
 		case "PsiReciprocal":
 			guard let lo = p["min"], let hi = p["max"] else { return nil }
 			return DistributionReciprocal(min: lo, max: hi)
+		case "PsiBurr12":
+			guard let loc = p["loc"], let scale = p["scale"],
+				  let s1 = p["shape1"], let s2 = p["shape2"] else { return nil }
+			return DistributionBurr12(location: loc, scale: scale, shape1: s1, shape2: s2)
+		case "PsiDagum":
+			guard let loc = p["loc"], let scale = p["scale"],
+				  let s1 = p["shape1"], let s2 = p["shape2"] else { return nil }
+			return DistributionDagum(location: loc, scale: scale, shape1: s1, shape2: s2)
+		case "PsiJohnsonSB":
+			guard let s1 = p["shape1"], let s2 = p["shape2"],
+				  let lo = p["min"], let hi = p["max"] else { return nil }
+			return DistributionJohnsonSB(shape1: s1, shape2: s2, min: lo, max: hi)
+		case "PsiJohnsonSU":
+			guard let s1 = p["shape1"], let s2 = p["shape2"],
+				  let loc = p["loc"], let scale = p["scale"] else { return nil }
+			return DistributionJohnsonSU(shape1: s1, shape2: s2, location: loc, scale: scale)
+		case "PsiFatigueLife":
+			guard let loc = p["loc"], let scale = p["scale"], let shape = p["shape"] else {
+				return nil
+			}
+			return DistributionFatigueLife(location: loc, scale: scale, shape: shape)
 		default:
 			return nil
 		}
@@ -110,7 +131,8 @@ struct RiskSolverScipyParityTests {
 	/// type quietly dropping out of `distribution(for:)` cannot pass as "not covered".
 	private static let implemented: Set<String> = [
 		"PsiCauchy", "PsiLaplace", "PsiLevy", "PsiMaxExtreme",
-		"PsiMinExtreme", "PsiFrechet", "PsiLogLogistic", "PsiReciprocal"
+		"PsiMinExtreme", "PsiFrechet", "PsiLogLogistic", "PsiReciprocal",
+		"PsiBurr12", "PsiDagum", "PsiJohnsonSB", "PsiJohnsonSU", "PsiFatigueLife"
 	]
 
 	// MARK: - The fixture itself
@@ -119,8 +141,8 @@ struct RiskSolverScipyParityTests {
 	func fixtureIsWellFormed() throws {
 		let fixture = try Self.loadFixture()
 		#expect(fixture.reference.contains("scipy"), "reference was '\(fixture.reference)'")
-		#expect(fixture.cases.count >= 16,
-				"expected at least 16 parameterisations, got \(fixture.cases.count)")
+		#expect(fixture.cases.count >= 26,
+				"expected at least 26 parameterisations, got \(fixture.cases.count)")
 
 		// Every distribution the switch handles must actually appear in the fixture. An
 		// empty or truncated fixture would otherwise make every test below pass by
@@ -274,7 +296,49 @@ struct RiskSolverScipyParityTests {
 					"\(entry.psi)\(entry.parameters): KS \(worst) exceeded \(critical)")
 			exercised += 1
 		}
-		#expect(exercised >= 16, "only \(exercised) distributions sampled")
+		#expect(exercised >= 26, "only \(exercised) distributions sampled")
+	}
+
+	// MARK: - Burr III versus Burr XII
+
+	@Test("Dagum is Burr III and Burr12 is Burr XII, and they are not each other")
+	func dagumIsNotBurr12() {
+		// Both take the shapes in the same slots, so binding one to the other's formula
+		// would compile, round-trip, stay monotone and respect its support. Only a
+		// direct comparison catches it. Checked against scipy: burr is type III with
+		// F = (1+y^-c)^-d, burr12 is type XII with F = 1-(1+y^c)^-d.
+		guard let twelve = DistributionBurr12(location: 0, scale: 1, shape1: 2, shape2: 3),
+			  let three = DistributionDagum(location: 0, scale: 1, shape1: 2, shape2: 3) else {
+			Issue.record("both should be valid"); return
+		}
+		// Hand-evaluated from the two formulas at y = 1:
+		//   type XII: 1 − (1 + 1)^(−3) = 1 − 1/8 = 0.875
+		//   type III: (1 + 1)^(−3)     = 1/8     = 0.125
+		#expect(abs(twelve.cdf(1.0) - 0.875) < 1e-12, "burr12 gave \(twelve.cdf(1.0))")
+		#expect(abs(three.cdf(1.0) - 0.125) < 1e-12, "dagum gave \(three.cdf(1.0))")
+		#expect(abs(twelve.cdf(1.0) - three.cdf(1.0)) > 0.5,
+				"the two must not agree — that would mean one is bound to the other")
+	}
+
+	@Test("JohnsonSB takes bounds, and converts to SciPy's width itself")
+	func johnsonSBTakesBounds() {
+		// SciPy's support is [loc, loc + scale]. Frontline states min and max. Passing
+		// `max` where `scale` belongs is right only when min is zero, so the conversion
+		// lives in the initialiser and the support is asserted away from the origin.
+		guard let bounded = DistributionJohnsonSB(shape1: -0.5, shape2: 1.5,
+												  min: 10, max: 30) else {
+			Issue.record("should be valid"); return
+		}
+		#expect(bounded.cdf(10.0).isEqual(to: 0.0), "no mass at or below min")
+		#expect(bounded.cdf(30.0).isEqual(to: 1.0), "all mass at or below max")
+		#expect(bounded.cdf(9.0).isEqual(to: 0.0))
+		#expect(bounded.cdf(31.0).isEqual(to: 1.0))
+
+		var rng = DeterministicRNG(seed: 42_100)
+		for _ in 0..<5_000 {
+			let x = bounded.next(using: &rng)
+			#expect(x >= 10 && x <= 30, "drew \(x), outside [10, 30]")
+		}
 	}
 
 	// MARK: - Invalid parameters
@@ -299,6 +363,17 @@ struct RiskSolverScipyParityTests {
 		#expect(DistributionReciprocal(min: -1, max: 10) == nil)
 		#expect(DistributionReciprocal(min: 10, max: 1) == nil, "bounds must be ordered")
 		#expect(DistributionReciprocal(min: 5, max: 5) == nil, "an empty support")
+
+		#expect(DistributionBurr12(location: 0, scale: 1, shape1: 0, shape2: 1) == nil)
+		#expect(DistributionBurr12(location: 0, scale: 0, shape1: 1, shape2: 1) == nil)
+		#expect(DistributionDagum(location: 0, scale: 1, shape1: 1, shape2: -1) == nil)
+		#expect(DistributionJohnsonSB(shape1: 1, shape2: 0, min: 0, max: 1) == nil)
+		#expect(DistributionJohnsonSB(shape1: 1, shape2: 1, min: 5, max: 5) == nil,
+				"an empty support")
+		#expect(DistributionJohnsonSU(shape1: 1, shape2: 0, location: 0, scale: 1) == nil)
+		#expect(DistributionJohnsonSU(shape1: 1, shape2: 1, location: 0, scale: 0) == nil)
+		#expect(DistributionFatigueLife(location: 0, scale: 1, shape: 0) == nil)
+		#expect(DistributionFatigueLife(location: 0, scale: -1, shape: 1) == nil)
 	}
 
 	@Test("Supports are respected")
