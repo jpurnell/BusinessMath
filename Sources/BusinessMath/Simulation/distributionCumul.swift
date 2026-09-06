@@ -71,46 +71,68 @@ public struct DistributionCumul: ContinuousDistribution, Sendable {
 	///   1 are excluded because `lower` and `upper` already carry them, and a duplicate
 	///   would create a flat at the boundary that says nothing the bounds do not.
 	public init?(lower: Double, upper: Double, values: [Double], probabilities: [Double]) {
-		guard lower.isFinite, upper.isFinite, upper > lower else { return nil }
-		guard !values.isEmpty, values.count == probabilities.count else { return nil }
-		guard values.allSatisfy({ $0.isFinite }), probabilities.allSatisfy({ $0.isFinite }) else {
+		guard Self.knotsAreWellFormed(lower: lower, upper: upper,
+									  values: values, probabilities: probabilities) else {
 			return nil
-		}
-		guard values.allSatisfy({ $0 > lower && $0 < upper }) else { return nil }
-		guard probabilities.allSatisfy({ $0 > 0 && $0 < 1 }) else { return nil }
-
-		for i in 1..<values.count {
-			guard values[i] > values[i - 1] else { return nil }
-			guard probabilities[i] >= probabilities[i - 1] else { return nil }
 		}
 
 		let knotX: [Double] = [lower] + values + [upper]
 		let knotP: [Double] = [0.0] + probabilities + [1.0]
-
-		// One reciprocal per segment, formed here. Each span is positive because the
-		// abscissae strictly increase and both bounds lie strictly outside them —
-		// checked immediately above — so the divisions cannot fail, and the use sites
-		// multiply.
-		var spanReciprocals: [Double] = []
-		var riseReciprocals: [Double] = []
-		spanReciprocals.reserveCapacity(knotX.count - 1)
-		riseReciprocals.reserveCapacity(knotX.count - 1)
-		for i in 1..<knotX.count {
-			let span: Double = knotX[i] - knotX[i - 1]
-			guard span > 0 else { return nil }
-			spanReciprocals.append(1 / span)
-			// A flat segment has no rise; `quantile` takes a separate branch for it and
-			// never reads this entry, so zero is a placeholder and not a reciprocal.
-			let rise: Double = knotP[i] - knotP[i - 1]
-			riseReciprocals.append(rise > 0 ? 1 / rise : 0)
-		}
+		guard let reciprocals = Self.segmentReciprocals(xs: knotX, ps: knotP) else { return nil }
 
 		self.lower = lower
 		self.upper = upper
 		self.xs = knotX
 		self.ps = knotP
-		self.inverseSpans = spanReciprocals
-		self.inverseRises = riseReciprocals
+		self.inverseSpans = reciprocals.spans
+		self.inverseRises = reciprocals.rises
+	}
+
+	/// Whether the supplied points describe a cumulative curve at all.
+	///
+	/// Split out of the initialiser because seven conditions in a row is the whole of
+	/// its branching, and reading them together — rather than interleaved with the
+	/// arithmetic that follows — is the point of stating them.
+	private static func knotsAreWellFormed(lower: Double, upper: Double,
+										   values: [Double],
+										   probabilities: [Double]) -> Bool {
+		guard lower.isFinite, upper.isFinite, upper > lower else { return false }
+		guard !values.isEmpty, values.count == probabilities.count else { return false }
+		guard values.allSatisfy({ $0.isFinite }) else { return false }
+		guard probabilities.allSatisfy({ $0.isFinite }) else { return false }
+		guard values.allSatisfy({ $0 > lower && $0 < upper }) else { return false }
+		guard probabilities.allSatisfy({ $0 > 0 && $0 < 1 }) else { return false }
+
+		let strictlyIncreasing = zip(values, values.dropFirst()).allSatisfy { $0 < $1 }
+		let nonDecreasing = zip(probabilities, probabilities.dropFirst()).allSatisfy { $0 <= $1 }
+		return strictlyIncreasing && nonDecreasing
+	}
+
+	/// One reciprocal per segment, formed once so ``cdf(_:)`` and ``quantile(_:)``
+	/// multiply instead of dividing.
+	///
+	/// Each span is positive because the abscissae strictly increase and both bounds lie
+	/// strictly outside them, which ``knotsAreWellFormed(lower:upper:values:probabilities:)``
+	/// has already established — the guard below restates it where the division happens.
+	///
+	/// - Returns: `nil` if any span is non-positive, which would mean the invariant is
+	///   broken rather than that the caller passed something odd.
+	private static func segmentReciprocals(xs: [Double], ps: [Double])
+		-> (spans: [Double], rises: [Double])? {
+		var spans: [Double] = []
+		var rises: [Double] = []
+		spans.reserveCapacity(xs.count - 1)
+		rises.reserveCapacity(xs.count - 1)
+		for i in 1..<xs.count {
+			let span: Double = xs[i] - xs[i - 1]
+			guard span > 0 else { return nil }
+			spans.append(1 / span)
+			// A flat segment has no rise; `quantile` takes a separate branch for it and
+			// never reads this entry, so zero is a placeholder and not a reciprocal.
+			let rise: Double = ps[i] - ps[i - 1]
+			rises.append(rise > 0 ? 1 / rise : 0)
+		}
+		return (spans, rises)
 	}
 
 	/// `1/(xs[i] − xs[i−1])` for each segment.
