@@ -89,3 +89,16 @@
 ---
 
 **Gate target**: 0 errors, 0 warnings — **ACHIEVED** ✅
+
+---
+
+## Closed 2026-09-06
+
+The four items still open above are resolved and were not ticked at the time:
+
+- **fp-safety, three unguarded divisions** (bayesianICC, CPUMatrixBackend, MultipleLinearRegression) — the gate now reports zero fp-safety findings across all 45 checkers.
+- **stochastic-determinism in Scenario.swift** — likewise zero.
+- **Documentation coverage** — `doc-lint` and `doc-code` both pass.
+- **release-tests.yml** — green as of 2026-09-06.
+
+Verified against a `quality-gate --no-cache --check all` run: 45 of 45 checkers, 0 errors, 0 warnings. Archived.

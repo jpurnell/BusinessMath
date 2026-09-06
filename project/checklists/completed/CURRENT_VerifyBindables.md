@@ -73,3 +73,9 @@ is worth saying rather than letting a green suite imply more than it checked.
 in code with passing tests, and every one was found the same way: by comparing to an
 independent implementation. A test written from the same understanding as the code
 confirms the understanding, not the code.
+
+---
+
+## Closed 2026-09-06
+
+Shipped in 2.12.0. Four defects found, all in shipped code, none caught by any test the package had at the time — the pattern that later motivated the oracle audit (`CURRENT_OracleAudit.md`). Archived.
