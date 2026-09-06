@@ -1,0 +1,5 @@
+# Pinned, not floated. The SciPy version is recorded in every generated MANIFEST.json
+# because distribution parameterisations change between releases — `reciprocal` became
+# `loguniform`, and that is exactly the change that silently invalidates a stale fixture.
+scipy==1.17.1
+numpy==2.5.2

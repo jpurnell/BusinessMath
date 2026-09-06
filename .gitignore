@@ -22,7 +22,17 @@ Playgrounds/
 development-guidelines/
 Sources/BusinessMath/zzz In Process/
 investmentOpportunity.md
-scripts/
+
+# `scripts/` was ignored here to drop a long-removed `scripts/update_readme.sh`.
+# On a case-insensitive filesystem that pattern also swallowed `Scripts/`, which
+# holds `reference-fixtures/` — the generators behind every committed oracle
+# fixture. CHANGELOG.md and project/master_plan.md both cite that directory as
+# part of the repository; it had never been in it, so no fixture could be
+# regenerated or audited from a clean clone. Ignore the noise instead of the
+# directory.
+Scripts/**/__pycache__/
+Scripts/**/*.pyc
+Scripts/**/.venv/
 
 # Temporary and backup files
 *~
