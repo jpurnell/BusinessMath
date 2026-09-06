@@ -35,6 +35,9 @@ public func identricMean<T: Real>(_ x: T, _ y: T) -> T {
 	if x == y {
 		return x
 	}
-	return T.exp((y * T.log(y) - x * T.log(x))/(y - x) - 1)
+	let weightedY: T = y * T.log(y)
+	let weightedX: T = x * T.log(x)
+	let slope: T = (weightedY - weightedX) / (y - x)
+	return T.exp(slope - T(1))
 }
 

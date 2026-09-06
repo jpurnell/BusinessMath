@@ -69,7 +69,9 @@ public func skewS<T: Real>(_ values: [T]) -> T {
     let mean = average(values)
     let s: T = stdDev(values)
     let x = values.map({T.pow((($0 - mean) / s), 3) }).reduce(0, +)
-    return (n / ((n - T(1)) * (n - T(2)))) * x
+    let denominator: T = (n - T(1)) * (n - T(2))
+    let adjustment: T = n / denominator
+    return adjustment * x
 }
 
 /// Computes the population skewness for a given set of values.

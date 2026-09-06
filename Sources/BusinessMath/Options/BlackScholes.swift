@@ -158,9 +158,11 @@ public struct BlackScholesModel<T: Real & Sendable> {
 		riskFreeRate: T,
 		volatility: T
 	) -> T {
-		return (T.log(spotPrice / strikePrice) +
-				(riskFreeRate + volatility * volatility / T(2)) * timeToExpiry) /
-			   (volatility * T.sqrt(timeToExpiry))
+		let logMoneyness: T = T.log(spotPrice / strikePrice)
+		let halfVariance: T = volatility * volatility / T(2)
+		let drift: T = (riskFreeRate + halfVariance) * timeToExpiry
+		let diffusion: T = volatility * T.sqrt(timeToExpiry)
+		return (logMoneyness + drift) / diffusion
 	}
 
 	// The cumulative normal, the normal density and an Abramowitz & Stegun `erf`

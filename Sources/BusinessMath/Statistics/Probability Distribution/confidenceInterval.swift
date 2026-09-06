@@ -32,7 +32,10 @@ import Numerics
 ///
 /// Use this function when you need to compute uncertainty of population parameter estimates.
 public func confidenceInterval<T: Real>(mean: T, stdDev: T, z: T, popSize: Int) -> (low: T, high: T) {
-    return (low: mean - (z * stdDev/T.sqrt(T(popSize))), high: mean +  (z * stdDev/T.sqrt(T(popSize))))
+    let root: T = T.sqrt(T(popSize))
+    let standardError: T = stdDev / root
+    let halfWidth: T = z * standardError
+    return (low: mean - halfWidth, high: mean + halfWidth)
 }
 
 /// Computes the confidence interval for given values and confidence level.

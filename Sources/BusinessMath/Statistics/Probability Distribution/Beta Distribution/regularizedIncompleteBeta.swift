@@ -45,7 +45,9 @@ public func regularizedIncompleteBeta<T: Real>(x: T, a: T, b: T) throws -> T {
 
 	// Compute the prefactor: x^a × (1-x)^b / B(a,b)
 	// Work in log space to avoid overflow
-	let logPrefactor = a * T.log(x) + b * T.log(T(1) - x) - logBeta(a, b)
+	let leftLog: T = a * T.log(x)
+	let rightLog: T = b * T.log(T(1) - x)
+	let logPrefactor: T = leftLog + rightLog - logBeta(a, b)
 	let prefactor = T.exp(logPrefactor)
 
 	// Evaluate continued fraction and divide by a (NR formula: bt * betacf / a)

@@ -292,7 +292,9 @@ public struct CubicSplineInterpolator<T: Real & BinaryFloatingPoint & Sendable &
         //   sup[0]  = h[1] - h[0]*(h[0]/h[1]) = (h[1]^2 - h[0]^2) / h[1]
         let h0 = h[0]
         let h1 = h[1]
-        diag[0] = (h0 + h1) * (h0 + T(2) * h1) / h1
+        let leadingSpan: T = h0 + h1
+        let leadingWeight: T = h0 + T(2) * h1
+        diag[0] = leadingSpan * leadingWeight / h1
         sup[0] = (h1 * h1 - h0 * h0) / h1
         // rhs[0] is unchanged from the standard case
 
@@ -304,7 +306,9 @@ public struct CubicSplineInterpolator<T: Real & BinaryFloatingPoint & Sendable &
         //                    = (h[n-2] + h[n-3]) * (h[n-2] + 2*h[n-3]) / h[n-3]
         let hL = h[n - 3]    // h[n-3]
         let hLast = h[n - 2] // h[n-2]
-        diag[interior - 1] = (hLast + hL) * (hLast + T(2) * hL) / hL
+        let trailingSpan: T = hLast + hL
+        let trailingWeight: T = hLast + T(2) * hL
+        diag[interior - 1] = trailingSpan * trailingWeight / hL
         sub[interior - 1] = (hL * hL - hLast * hLast) / hL
         // rhs[interior-1] unchanged
 
