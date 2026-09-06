@@ -9,6 +9,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [2.12.1] - 2026-09-06
+
+A CI fix. 2.12.0 compiled everywhere we could test locally and failed to compile on
+Linux, on one line.
+
+### Fixed
+- **`PCHIP.pchipEndpoint` could not be type-checked by Swift 6.2.1**, which is what CI
+  runs on ubuntu-24.04. The one-sided endpoint slope was a single expression —
+  `((T(2) * h0 + h1) * delta0 - h0 * delta1) / (h0 + h1)` — with six operators, an
+  untyped binding and `T(...)` literal conversions in a `<T: Real>` context. Local
+  Swift 6.4 solves it instantly; 6.2.1 gives "unable to type-check this expression in
+  reasonable time" and fails both the Linux release compile check and the Linux test
+  job. That one line was the entire failure.
+
+  Twenty-one further expressions sharing the shape were decomposed into named steps
+  with explicit `: T`, including the risk-neutral binomial node in `BinomialTree` and
+  `CallableBond` that a previous session had already flagged as the next candidates.
+  Pinning the result type is the mechanism; the shorter line is a side effect.
+
+  Two of the rewrites change floating-point association, both toward fewer roundings,
+  and neither is bit-identical to what it replaced: `blandAltmanRepeatedMeasures` now
+  divides once (`E/(n-1)`) instead of multiplying by a reciprocal, and
+  `confidenceInterval` forms the standard error before scaling it. The rest preserve
+  Swift's left-associative grouping exactly.
+
+- **Twelve distribution tests drew from the system RNG and then asserted a tolerance**,
+  which made them coin flips rather than tests. `geometricStructNext` duly failed CI on
+  macos-26 at 0.3385 against a 0.3 bound — about 3.9 standard errors, so roughly one run
+  in nine thousand. The samplers are not at fault: over 400,000 seeded draws the
+  geometric gives mean 3.9988 against a theoretical 4.0, variance 12.02 against 12.0,
+  and a PMF matching `(1-p)^(k-1)·p` at every k through 6. All twelve now draw from a
+  seeded `DeterministicRNG`, and the geometric bound is derived from the distribution's
+  own standard error (`4 × σ/√n`) rather than chosen.
+
+### Documentation
+- **`CLAUDE.md`'s pre-push check was removing safety rather than adding it.** It claimed
+  `-solver-expression-time-threshold=500` "catches the #1 recurring CI failure"; it
+  catches none of this class. Measured against the failing expression: that flag is
+  silent, `-warn-long-expression-type-checking=20` does not rank it in the twelve
+  slowest on a clean build (worst is 78ms against a 500ms limit), the deterministic
+  `-solver-scope-threshold` passes the offender and the fix alike at 200, and the local
+  Swift 6.3.3 toolchain cannot run at all because the macOS 27 SDK is 6.4-built. The
+  toolchains differ by more than fifty-fold here. Replaced with that table and the
+  honest conclusion: a green local build is not evidence, and only CI settles it.
+- **Coverage proposal §4.3** adds `CB.RECALCCOUNTERFN` (2 calls, 2 sheets) to the
+  deliberately-excluded list alongside the Psi role declarations. Crystal Ball is
+  Oracle's equivalent of Risk Solver; §8.5 already named it, but naming is not
+  excluding. States the general rule: a name reporting simulation-engine state, or
+  declaring a cell's role, is not a function this library implements, whichever
+  vendor's namespace it arrives in.
+
+### Known issues
+- **`irr` and `xirr` converge on an absolute NPV residual** (default `1e-4`, in currency
+  units) rather than on the rate they return. Rate error is roughly residual divided by
+  `|dNPV/dr|`, so the same bound means different accuracy at different model scales, and
+  is too loose on a large model with a flat NPV curve. Not fixed here; the criterion
+  should be scale-free or expressed on the rate step.
+
+---
+
 ### [2.12.0] - 2026-09-05
 
 The functions this package computed but no formula could reach — verified against a

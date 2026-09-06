@@ -357,13 +357,15 @@ struct GeometricDistributionTests {
 
 	@Test("Geometric distribution struct stores probability parameter")
 	func geometricStructParameters() {
+		// Seeded: an unseeded draw made this assertion a coin flip. See geometricStructNext.
+		var rng = DeterministicRNG(seed: 10005)
 		let p = 0.35
 		let dist = DistributionGeometric(p)
 
 		let sampleCount = 2000
 		var samples: [Double] = []
 		for _ in 0..<sampleCount {
-			samples.append(dist.next())
+			samples.append(dist.next(using: &rng))
 		}
 
 		// All values should be positive integers

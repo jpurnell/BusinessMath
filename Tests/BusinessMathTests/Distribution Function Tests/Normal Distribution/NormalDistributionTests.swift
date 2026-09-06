@@ -221,6 +221,8 @@ struct NormalDistributionTests {
 
 	@Test("Normal distribution struct next() method")
 	func normalStructNext() {
+		// Seeded: an unseeded draw made this assertion a coin flip. See geometricStructNext.
+		var rng = DeterministicRNG(seed: 10010)
 		let mean = 75.0
 		let stdDev = 20.0
 		let dist = DistributionNormal(mean, stdDev)
@@ -228,7 +230,7 @@ struct NormalDistributionTests {
 		let sampleCount = 2000
 		var samples: [Double] = []
 		for _ in 0..<sampleCount {
-			let sample = dist.next()
+			let sample = dist.next(using: &rng)
 			samples.append(sample)
 			#expect(sample.isFinite)
 		}
@@ -290,6 +292,8 @@ struct NormalDistributionTests {
 
 	@Test("Normal distribution struct stores parameters")
 	func normalStructParameters() {
+		// Seeded: an unseeded draw made this assertion a coin flip. See geometricStructNext.
+		var rng = DeterministicRNG(seed: 10011)
 		let mean = 42.0
 		let variance = 64.0  // stdDev = 8
 		let dist = DistributionNormal(mean: mean, variance: variance)
@@ -297,7 +301,7 @@ struct NormalDistributionTests {
 		let sampleCount = 2000
 		var samples: [Double] = []
 		for _ in 0..<sampleCount {
-			samples.append(dist.next())
+			samples.append(dist.next(using: &rng))
 		}
 
 		// All values should be finite

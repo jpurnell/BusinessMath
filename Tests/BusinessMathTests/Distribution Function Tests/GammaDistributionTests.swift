@@ -215,6 +215,8 @@ struct GammaDistributionTests {
 
 	@Test("Gamma distribution struct next() method")
 	func gammaStructNext() {
+		// Seeded: an unseeded draw made this assertion a coin flip. See geometricStructNext.
+		var rng = DeterministicRNG(seed: 10003)
 		let r = 5
 		let λ = 1.0
 		let dist = DistributionGamma(r: r, λ: λ)
@@ -222,7 +224,7 @@ struct GammaDistributionTests {
 		let sampleCount = 2000
 		var samples: [Double] = []
 		for _ in 0..<sampleCount {
-			let sample = dist.next()
+			let sample = dist.next(using: &rng)
 			samples.append(sample)
 			#expect(sample >= 0)
 			#expect(sample.isFinite)
@@ -363,6 +365,8 @@ struct GammaDistributionTests {
 
 	@Test("Gamma distribution struct stores parameters")
 	func gammaStructParameters() {
+		// Seeded: an unseeded draw made this assertion a coin flip. See geometricStructNext.
+		var rng = DeterministicRNG(seed: 10004)
 		let r = 4
 		let λ = 3.0
 		let dist = DistributionGamma(r: r, λ: λ)
@@ -370,7 +374,7 @@ struct GammaDistributionTests {
 		let sampleCount = 2000
 		var samples: [Double] = []
 		for _ in 0..<sampleCount {
-			samples.append(dist.next())
+			samples.append(dist.next(using: &rng))
 		}
 
 		// All values should be non-negative

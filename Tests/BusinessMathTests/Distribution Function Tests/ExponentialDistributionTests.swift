@@ -211,13 +211,15 @@ struct ExponentialDistributionTests {
 
 	@Test("Exponential distribution struct next() method")
 	func exponentialStructNext() {
+		// Seeded: an unseeded draw made this assertion a coin flip. See geometricStructNext.
+		var rng = DeterministicRNG(seed: 10001)
 		let λ = 0.5
 		let dist = DistributionExponential(λ)
 
 		let sampleCount = 2000
 		var samples: [Double] = []
 		for _ in 0..<sampleCount {
-			let sample = dist.next()
+			let sample = dist.next(using: &rng)
 			samples.append(sample)
 			#expect(sample >= 0)
 			#expect(sample.isFinite)
@@ -345,13 +347,15 @@ struct ExponentialDistributionTests {
 
 	@Test("Exponential distribution struct stores rate parameter")
 	func exponentialStructParameters() {
+		// Seeded: an unseeded draw made this assertion a coin flip. See geometricStructNext.
+		var rng = DeterministicRNG(seed: 10002)
 		let λ = 3.0
 		let dist = DistributionExponential(λ)
 
 		let sampleCount = 2000
 		var samples: [Double] = []
 		for _ in 0..<sampleCount {
-			samples.append(dist.next())
+			samples.append(dist.next(using: &rng))
 		}
 
 		// All values should be non-negative
