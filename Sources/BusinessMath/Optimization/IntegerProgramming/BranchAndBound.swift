@@ -568,15 +568,32 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                 continue
             }
 
-            // Step 4.5: Try rounding heuristic on fractional solution
-            // This can find integer solutions without branching
+            // Step 4.5: Try a rounding heuristic on the fractional solution.
+            //
+            // A rounded point is an *incumbent*, never an answer. Its value bounds the
+            // optimum from the near side, which lets later nodes be pruned sooner —
+            // that is the whole benefit, and it is real. What it cannot do is stand in
+            // for the subtree below this node.
+            //
+            // This block used to `continue` after rounding, abandoning the node
+            // unbranched, and to recompute `bestBound` from a queue that at the root
+            // is still empty. `updateBestBound` reads an empty queue as "search
+            // exhausted" and collapses the bound onto the incumbent, so the gap closed
+            // to zero and the rounded point was returned as `.optimal` after a single
+            // node. On `max 3x - 2y + 4z` over `x - y + 2z ≤ 6`, `2x + y + z ≤ 8`,
+            // `0 ≤ x,y,z ≤ 4` that returned 13 at (3, 0, 1); the optimum is 14 at
+            // (2, 0, 2). Feasible, integral, and a full unit short.
+            //
+            // Nothing in the existing suite could see it: the point satisfies every
+            // constraint, the objective matches the point, and the bound still pointed
+            // the right way — because it had been set to the answer being checked.
+            // Only enumerating the box exposed it.
             if let rounded = roundingHeuristic(
                 solution,
                 objective: shiftedObjective,
                 constraints: shiftedConstraints,
                 integerSpec: integerSpec
             ) {
-                // Rounding succeeded - update incumbent
                 let shouldUpdateFromRounding: Bool
                 if let inc = incumbent {
                     shouldUpdateFromRounding = minimize ? rounded.value < inc.value : rounded.value > inc.value
@@ -586,34 +603,9 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                 if shouldUpdateFromRounding {
                     incumbent = (solution: rounded.solution, value: rounded.value)
                 }
-                updateBestBound(&bestBound, from: queue, minimize: minimize, incumbent: incumbent)
-
-                // Check if we can terminate due to optimality gap
-                if let inc = incumbent {
-                    let gap = abs(inc.value - bestBound) / max(abs(inc.value), 1.0)
-                    if gap < relativeGapTolerance {
-                        // Unshift solution if variable shifting was applied
-                        let finalSolution: V
-                        if variableShift != nil {
-                            finalSolution = safeUnshift(inc.solution)
-                        } else {
-                            finalSolution = inc.solution
-                        }
-
-                        return IntegerOptimizationResult(
-                            solution: finalSolution,
-                            objectiveValue: inc.value,
-                            bestBound: bestBound,
-                            relativeGap: gap,
-                            nodesExplored: nodesExplored,
-                            status: .optimal,
-                            solveTime: (clock.now - startTime).inSeconds,
-                            integerSpec: integerSpec,
-                            cuttingPlaneStats: enableCuttingPlanes ? CuttingPlaneStats() : nil
-                        )
-                    }
-                }
-                continue  // Don't branch - try next node
+                // Deliberately no bound update and no termination check here: this node
+                // has not been explored, so there is nothing yet to conclude. Execution
+                // falls through to Step 5 and branches.
             }
 
             // Step 5: Branch on fractional variable
@@ -1485,9 +1477,14 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
         if let topNode = queue.peek() {
             bestBound = topNode.relaxationBound
         } else {
-            // No nodes left
-            // If we have an incumbent, the bound is the incumbent value (proven optimal)
-            // Otherwise, the problem is infeasible
+            // Nothing left to explore, so the incumbent is proven optimal and the
+            // bound meets it.
+            //
+            // This is only true when the queue is empty *because the search finished*
+            // — every node solved to integrality or pruned by bound. Call it while a
+            // node is still unexplored and it manufactures a zero gap around whatever
+            // has been found so far, which reads as proof and is not. Callers must
+            // reach this only once the current node is genuinely disposed of.
             if let inc = incumbent {
                 bestBound = inc.value
             } else {
