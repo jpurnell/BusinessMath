@@ -17,7 +17,7 @@ wrong one.
 
 ## Scorecard
 
-Six oracles built. Four found defects; two found nothing, which is worth as much, because
+Twelve oracles built. Six found defects; six found nothing, which is worth as much, because
 the things they cleared are what everything else stands on.
 
 | Target | Oracle | Result |
@@ -30,6 +30,11 @@ the things they cleared are what everything else stands on.
 | G-study (and `twoWayANOVA`) | statsmodels `anova_lm` | clean |
 | Moving averages | pandas | clean |
 | Bayesian ICC | ANOVA decomposition | clean |
+| `irr` / `xirr` | scale invariance | **threw while sitting on the exact answer** at large magnitudes |
+| Simplex duals | `d(obj)/d(rhs)`, vertex enumeration | **3 faults** — wrong column, reversed sign, equality rows unpriced |
+| Branch-and-bound | exhaustive integer enumeration | **suboptimal answer reported `.optimal`** after one node |
+| Multiple regression | statsmodels OLS | clean |
+| DEA (CCR, BCC, super-efficiency) | closed form, units invariance, pair scan | clean |
 
 ## Tier A — iterative estimators · **COMPLETE**
 
@@ -43,7 +48,7 @@ the things they cleared are what everything else stands on.
 `LMEDiagnosticsTests`, `LMEApplicationsTests` and `RandomSlopeTests` are covered
 indirectly: they exercise fitters that are now oracle-backed.
 
-## Tier B — matrix and decomposition procedures · **NEXT**
+## Tier B — matrix and decomposition procedures · **COMPLETE**
 
 37 files, 433 tests. Branch-and-bound, simplex, DEA, linear regression.
 
@@ -54,11 +59,34 @@ of that solver's tie-breaking or degeneracy conventions. Where a problem is dege
 has multiple optima, two correct solvers legitimately return different vertices with the
 same objective, so matching them would manufacture false failures.
 
-- [ ] Simplex — certificate: feasibility, duality gap, complementary slackness
-- [ ] Branch-and-bound — the above plus integrality and the bound at each node
-- [ ] DEA — efficiency scores in [0,1], frontier peers feasible, envelopment/multiplier duality
-- [ ] Linear regression — normal equations residual, and a SciPy `lstsq` cross-check where
-      the solution is unique
+- [x] **Simplex** — feasibility, zero duality gap, complementary slackness, reduced-cost
+      identity, plus exhaustive vertex enumeration and shadow prices measured by nudging
+      the right-hand side. **Found 3 faults in one place.** The extraction indexed the
+      objective row as if each row's slack sat in column `i` of the added block; standard
+      form groups the added columns by kind, so a mixed model priced one constraint
+      against another, a `≥` row's sign was reversed by its surplus column's `-1`, and an
+      equality row — having neither slack nor surplus — was priced at zero, putting the
+      whole objective outside `y'b = c'x`. All-≤ maximisation and all-≥ minimisation were
+      right, the second only by two errors cancelling, and those are the two textbook
+      shapes. Fixed by reconstructing `y' = c_B' B⁻¹` from the optimal basis.
+- [x] **Branch-and-bound** — integrality, feasibility, objective consistency, the bound
+      bracketing with a closed gap, the LP relaxation bounding the integer optimum, and
+      exhaustive enumeration of the boxed integer points. **Found a suboptimal answer
+      returned as `.optimal`.** The rounding heuristic abandoned a fractional node without
+      branching and recomputed the bound from a queue that at the root is still empty;
+      `updateBestBound` reads an empty queue as "search exhausted" and collapses the bound
+      onto the incumbent, closing the gap around the answer being checked. Returned 13
+      where the optimum is 14, after one node.
+- [x] **DEA** — clean. Closed form for one input and one output, envelopment attainability
+      from the reported reference set, peers efficient, units invariance over four scale
+      factors, `BCC ≥ CCR` with scale efficiency at most one, `Σλ = 1` under BCC,
+      super-efficiency at or above 1 exactly on the frontier, and a pair scan that cannot
+      beat the reported score.
+- [x] **Multiple regression** — clean. Every derived statistic the existing suite only
+      bounded now matches statsmodels: standard errors, t, two-tailed p, t-quantile
+      confidence intervals, F and its p-value, adjusted R², and auxiliary-regression VIF.
+      Tolerances derived per design from `cond(X'X)`. Plus residual orthogonality
+      `X'(y - Xβ) = 0`, which needs no reference at all.
 
 ## Tier C — closed-form, multi-step
 
@@ -102,12 +130,35 @@ published worked examples are the cheapest oracle.
   is full of index arithmetic and conversions inside mapped closures, which is exactly it.
 - **Do not push over an in-flight CI run.** `swift.yml` has a concurrency group; a cancelled
   Linux job is not a passing one.
+- **Verify a push by transfer, not by exit status.** `git push origin <branch>` pushes the
+  *named local branch*, not `HEAD`. Run from a different branch it reports success and moves
+  something else entirely; `git ls-remote` against the local SHA is what catches it.
+- **A certificate beats a fixture where the theory supplies one.** An LP optimum, a MIP
+  optimum and a DEA score all certify themselves, and none of the three imports another
+  solver's tie-breaking. Degenerate LPs and tied MIP optima genuinely have several right
+  answers — comparing solution *vectors* would have manufactured failures where comparing
+  *values* found real ones.
+- **An independent brute force is worth writing.** Vertex enumeration and integer-box
+  enumeration are a dozen lines each, cannot prune, and therefore cannot prune wrongly.
+  Both found what the theory-based checks alone would have missed.
+- **Look for the shape that made the passing cases pass.** All-≤ and all-≥ were the two
+  correct simplex shapes; they are also the two textbook examples. When a corpus agrees
+  everywhere, ask what it is not varying.
 
 ## Tooling
 
 `Scripts/reference-fixtures/` — `generate_risk_solver.py`, `generate_mixed_models.py`,
 `generate_linear_algebra.py`, `generate_holt_winters.py`, `generate_gstudy.py`,
-`generate_moving_average.py`, `generate_bayesian_icc.py`.
+`generate_moving_average.py`, `generate_bayesian_icc.py`, `generate_regression.py`.
+
+Until 2026-09-06 **none of these were in the repository**: `.gitignore` carried `scripts/`
+to drop a long-removed `scripts/update_readme.sh`, and on a case-insensitive filesystem that
+also matched `Scripts/`. Every fixture was unreproducible from a clean clone while CHANGELOG
+and master_plan both cited the directory as part of the package. Now tracked.
+
+Tier B needed no Python at all beyond the regression fixture — a certificate is generated by
+the theory, not by another tool, which is a large part of why it is preferable where it
+applies.
 
 statsmodels and pandas are not installed system-wide; `requirements-mixedmodels.txt` pins
 them. Build the venv **outside Dropbox** — SPM and Dropbox sync fight over `.build`.
