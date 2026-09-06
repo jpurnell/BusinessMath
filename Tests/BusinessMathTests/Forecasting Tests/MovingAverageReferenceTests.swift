@@ -134,7 +134,9 @@ struct MovingAverageReferenceTests {
 		// (w-1)/2 steps earlier. A centred window would give zero lag and would still
 		// look like a smoothed trend.
 		let slope = 5.0, intercept = 100.0
-        let values = (0..<24).map { intercept + slope * Double($0) }
+		let values: [Double] = (0..<24).map { index -> Double in
+			intercept + slope * Double(index)
+		}
 		for window in [2, 3, 4, 7, 12] {
 			let result = Self.series(values).movingAverage(window: window)
 			guard let first = result.valuesArray.first else {
@@ -142,7 +144,9 @@ struct MovingAverageReferenceTests {
 			}
 			// The first output covers indices 0..<window, whose mean is the value at
 			// (window-1)/2.
-			let expected = intercept + slope * (Double(window) - 1) / 2
+			let span: Double = Double(window) - 1
+			let lag: Double = slope * span / 2
+			let expected: Double = intercept + lag
 			#expect(abs(first - expected) < 1e-12,
 					"window \(window): first output \(first), expected \(expected)")
 		}

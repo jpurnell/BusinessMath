@@ -263,10 +263,19 @@ struct HoltWintersReferenceTests {
 		for n in [24, 48, 96, 200] {
 			var model = HoltWintersModel<Double>(alpha: 0.6, beta: 0.3, gamma: 0.4,
 												 seasonalPeriods: 4)
-			let values = (0..<n).map { base + slope * Double($0) + pattern[$0 % 4] }
+			// Explicit types throughout: see the note on `series` below about Swift
+			// 6.2.1's type-checker and inferred closure arithmetic.
+			let values: [Double] = (0..<n).map { index -> Double in
+				let drift: Double = slope * Double(index)
+				return base + drift + pattern[index % 4]
+			}
 			try model.train(values: values)
 			let forecast = model.predictValues(periods: 4)
-			let truth = (0..<4).map { base + slope * Double(n + $0) + pattern[(n + $0) % 4] }
+			let truth: [Double] = (0..<4).map { step -> Double in
+				let index: Int = n + step
+				let drift: Double = slope * Double(index)
+				return base + drift + pattern[index % 4]
+			}
 			let worst = zip(forecast, truth).map { abs($0 - $1) }.max() ?? .infinity
 
 			#expect(worst < previous,
@@ -285,8 +294,18 @@ struct HoltWintersReferenceTests {
 		// scale the residuals by ten — under the multiplicative form they would grow by
 		// a hundred.
 		let pattern = [10.0, -5.0, -10.0, 5.0]
+		// Decomposed with explicit types: the one-line form of this — six operators, a
+		// `Double(...)` conversion and an inferred closure result — is exactly the shape
+		// that Swift 6.2.1 on Linux cannot type-check in time while 6.4 solves instantly.
+		// See the note in CLAUDE.md; CI is the only thing that detects it.
 		func series(_ scale: Double) -> [Double] {
-			(0..<16).map { scale * (100.0 + pattern[$0 % 4]) + Double(($0 * 37) % 7) - 3 }
+			(0..<16).map { index -> Double in
+				let seasonal: Double = pattern[index % 4]
+				let base: Double = 100.0 + seasonal
+				let wobble: Int = (index * 37) % 7
+				let noise: Double = Double(wobble) - 3
+				return scale * base + noise
+			}
 		}
 
 		var small = HoltWintersModel<Double>(alpha: 0.5, beta: 0.1, gamma: 0.3, seasonalPeriods: 4)
