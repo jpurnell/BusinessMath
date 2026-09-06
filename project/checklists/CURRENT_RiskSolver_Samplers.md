@@ -1,4 +1,4 @@
-# CURRENT — Risk Solver, item 1: the three `maths-no-sampler` rows
+# CURRENT — Risk Solver: items 1 and 3
 
 **Started** 2026-09-06 · **Branch** `main` · **Spec** `project/plans/proposals/PROPOSAL_excel_function_coverage.md` §3 priority 1
 
@@ -62,7 +62,66 @@ stake.
 - [x] Alias path and inverse transform agree in distribution, checked per outcome at 4 SE.
 - [x] DocC on all three, stating the parameterisation and, for HyperGeo, the contradiction.
 - [x] Full suite green (6,920), `quality-gate --no-cache` 45/45 0 errors 0 warnings.
-- [ ] CI green on all four jobs.
+- [x] CI green on all four jobs (run 34034552278, commit `8982d241`).
+
+## Item 3 — the closed-form distributions (§3 priority 3)
+
+All seven done, in one batch. §2.2 governs the testing: *"the formula is the reference … no
+external tool is needed, and none should be used"*, so these assert round-trip identities,
+monotonicity, support edges, and values worked out by hand — not fixtures from another
+implementation.
+
+| Row | Type | Note |
+|---|---|---|
+| `PsiKumaraswamy` | `DistributionKumaraswamy` | Beta-shaped with closed-form CDF and quantile |
+| `PsiHypSecant` | `DistributionHypSecant` | **scale is the standard deviation**, see below |
+| `PsiDblTriang` | `DistributionDoubleTriangular` | density jumps at the mode; CDF stays continuous |
+| `PsiCumul` | `DistributionCumul` | piecewise-linear CDF through elicited points |
+| `PsiGeneral` | `DistributionGeneral` | piecewise-linear density; quadratic CDF per segment |
+| `PsiDisUniform` | `DistributionDiscreteUniform` | uniform over the *list*, duplicates kept |
+| `PsiShuffle` | `Shuffle` | without replacement — deliberately **not** a distribution |
+
+### Two reference problems, both resolved in the open
+
+**`PsiHypSecant`'s scale is not SciPy's.** The work list's quantile carries a `2/π` that
+`scipy.stats.hypsecant` does not. That factor is the whole point: the standard hyperbolic secant
+has variance `π²/4`, so dividing by `π/2` makes Frontline's argument the **standard deviation**.
+Binding it straight to SciPy's `scale` would give a distribution too wide by `π/2 ≈ 1.571`, and a
+test converting both sides the same wrong way would agree and prove nothing — the exact failure
+§2.1 describes. `hypSecantScaleIsStandardDeviation` measures the sample standard deviation against
+the argument over 200,000 draws to pin it down.
+
+**`PsiGeneral` does not say what the density is at an unstated bound.** Frontline's page defines
+the arguments and adds only that it is "similar to a `PsiCumul` … where the probabilities are
+calculated using the weights". This implementation takes the density to be **zero at any bound not
+given an explicit point**, and says so in the DocC. The reason to prefer that over constant
+extrapolation is that it is the reading a caller can override: stating a point at the bound gives
+whatever density you want there, whereas under extrapolation there would be no way to ask for zero.
+
+### Why `Shuffle` is not a distribution
+
+Successive draws are not independent and there is no fixed CDF — the law changes after every draw.
+Conforming it to `DistributionRandom` would let it be passed wherever an independent sampler is
+expected, into a Monte Carlo input or a quasi-random point set, and produce answers that look
+ordinary and are wrong. A separate type refuses that at compile time. Frontline draws the same line
+between `PsiShuffle` and `PsiResample`.
+
+### The division warnings, and how they were cleared
+
+The new types drew 14 `Floating-point division without visible zero guard` warnings. Every divisor
+was provably non-zero — each is validated in a failable initialiser — and the codebase's
+established idiom is a `// fp-safety:disable` annotation. That is a suppression, which the project
+rules forbid, so instead each type now **forms its reciprocals once in the initialiser**, on the
+line after the guard that proves the divisor non-zero, and the hot paths multiply. The warning goes
+because the division is gone, not because it was silenced; the code is also faster and the
+invariant now sits beside the arithmetic that depends on it.
+
+## Remaining Risk Solver work
+
+- **§3 priority 4** — the SciPy-checkable distributions, the bulk of the list: 24 rows from
+  `PsiCauchy` and `PsiLaplace` through the Pearson, Johnson and Metalog families.
+- **§3 priority 6** — the AR/GARCH family, last: `PsiAR1`, `PsiGARCH11` and their relatives.
+  Zero occurrences in the measured corpus; on the list because Frontline documents them.
 
 ## What the work turned up
 
