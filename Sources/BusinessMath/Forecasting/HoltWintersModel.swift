@@ -50,7 +50,22 @@ public struct HoltWintersModel<T: Real & Sendable & Codable>: Sendable {
 	private var trend: T?
 	private var seasonal: [T]?
 	private var lastPeriod: Period?
-	private var residuals: [T] = []
+	/// One-step-ahead fit errors, one per training observation.
+	///
+	/// `internal` rather than `private` so the test suite can assert on them directly.
+	/// They are not part of the public API, but they are the quantity behind
+	/// ``predictWithConfidence(periods:confidenceLevel:)``'s interval width, and they
+	/// were wrong — the fitted value multiplied by the seasonal in an additive model —
+	/// for as long as nothing could see them.
+	internal var residuals: [T] = []
+
+	/// How many observations the model was trained on.
+	///
+	/// Needed by ``predictValues(periods:)`` to know which point of the seasonal cycle
+	/// the series stopped at. Forecasting used to index the seasonal array from zero
+	/// regardless, which is right only when the training length happens to be a whole
+	/// number of cycles.
+	private var trainedCount: Int = 0
 
 	// MARK: - Initialization
 
@@ -145,8 +160,16 @@ public struct HoltWintersModel<T: Real & Sendable & Codable>: Sendable {
 			// Update seasonal
 			let newSeasonal = gamma * (value - newLevel) + (T(1) - gamma) * currentSeasonal[seasonalIndex]
 
-			// Calculate residual
-			let fitted = (currentLevel + currentTrend) * currentSeasonal[seasonalIndex]
+			// The one-step-ahead fitted value, l + b + s, which is what this model
+			// forecasts. It used to multiply by the seasonal rather than add it — the
+			// multiplicative form, in an otherwise wholly additive model. The seasonals
+			// here are deviations about zero, not scaling factors, so a level of 150 and
+			// a seasonal of −10 produced a fitted value of −1500 instead of 140. On a
+			// noiseless series the model fits exactly and the residuals still came out
+			// in the hundreds. They feed the mean squared error behind
+			// ``predictWithConfidence(periods:confidenceLevel:)``, so every interval it
+			// produced was built on them.
+			let fitted = (currentLevel + currentTrend) + currentSeasonal[seasonalIndex]
 			errors.append(value - fitted)
 
 			currentLevel = newLevel
@@ -158,6 +181,7 @@ public struct HoltWintersModel<T: Real & Sendable & Codable>: Sendable {
 		self.trend = currentTrend
 		self.seasonal = currentSeasonal
 		self.residuals = errors
+		self.trainedCount = values.count
 	}
 
 	/// Train the Holt-Winters model on a time series (convenience method).
@@ -219,8 +243,16 @@ public struct HoltWintersModel<T: Real & Sendable & Codable>: Sendable {
 		var forecastValues: [T] = []
 
 		for h in 1...periods {
-			// Calculate forecast: (level + h * trend) + seasonal component
-			let seasonalIndex = (h - 1) % seasonalPeriods
+			// Calculate forecast: (level + h * trend) + seasonal component.
+			//
+			// The phase continues from where training stopped. This used to be
+			// `(h - 1) % seasonalPeriods`, which starts every forecast at the first
+			// point of the cycle no matter where the data ended — correct only when the
+			// training length is a whole number of cycles, which is the case in this
+			// type's own example and was the case in its tests. Train on 17 monthly
+			// points instead of 24 and the forecast came back shifted by five months,
+			// with nothing to indicate it.
+			let seasonalIndex = (trainedCount + h - 1) % seasonalPeriods
 			let pointForecast = (level + T(h) * trend) + seasonal[seasonalIndex]
 			forecastValues.append(pointForecast)
 		}
