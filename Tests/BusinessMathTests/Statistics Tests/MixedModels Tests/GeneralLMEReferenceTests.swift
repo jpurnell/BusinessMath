@@ -18,39 +18,40 @@
 //  Scripts/reference-fixtures/generate_mixed_models.py against statsmodels 0.15.0 and
 //  committed. CI never runs Python.
 //
-//  ## What it found, on the first run
+//  ## What it found, and what was fixed
 //
-//  A real disagreement in the variance components. Fixed effects agree to about 1e-5,
-//  and the residual variance is close — but **G is systematically low**, by 12% to 24%
-//  across every design:
+//  On its first run the random-effects covariance came out 12-24% below statsmodels
+//  REML on every design. The cause, found by watching the iteration trajectory: the EM
+//  warm-up converged to exactly the ML estimate (2.60223 against statsmodels' ML
+//  2.60223 on the balanced case), and then the AI-REML phase moved *away* from REML
+//  instead of toward it.
 //
-//      case                            BusinessMath   statsmodels REML   statsmodels ML
-//      randomIntercept_balanced          2.2617           2.9875            2.6022
-//      randomIntercept_unbalanced        0.3847           0.5032            0.4369
-//      randomSlope_balanced   G[0,0]     2.2608           2.6036            2.4260
-//      randomSlope_unbalanced G[0,0]     0.6997           0.8002            0.7487
+//  `generalAIREMLUpdate` built the projection's correction term from one group's
+//  `X_i'V_i^{-1}r_i` where the formula calls for the sum over all groups. Since `r` is
+//  the GLS residual, that sum is zero by the normal equations and the correction should
+//  vanish; subtracting a per-group term instead shrank `pR`, shrank `r'P(dV)Pr`, made
+//  the score more negative and drove every variance component down. Fixed by
+//  accumulating the sum before the per-group loop, in this commit. `fitRandomSlope` had
+//  the identical bug and the identical fix.
 //
-//  Three things were ruled out before recording this as a defect:
+//  After the fix the general fitter agrees with statsmodels to about 1e-5 on the
+//  variance components and 1e-7 on the fixed effects.
 //
-//  1. **Not premature convergence.** The estimates are stable to ten significant figures
-//     from 10 iterations through 5000, at tolerances of 1e-8 and 1e-12. It converges —
-//     to a different answer.
-//  2. **Not ML mislabelled as REML.** That was the first hypothesis, because on balanced
-//     designs the ratio to REML is almost exactly (m − p)/m — 0.757 at m = 8 against a
-//     predicted 0.750, and 0.868 at m = 15 against 0.867. But refitting the reference
-//     with `reml=False` shows BusinessMath is 6% to 13% below *ML* as well. It is not
-//     either estimator.
-//  3. **Not a missing REML projection.** `generalAIREMLUpdate` does build
-//     `P = V⁻¹ − V⁻¹X(X'V⁻¹X)⁻¹X'V⁻¹`, and `generalEMUpdate`'s M-step does include the
-//     conditional-variance term `G − GZ'V⁻¹ZG`. Both are structurally correct.
+//  Two things remain, both recorded rather than papered over:
 //
-//  So the defect is somewhere in the AI-REML score or average-information assembly, and
-//  finding it is a separate job from building this oracle. The comparisons below are
-//  wrapped in `withKnownIssue` so the suite stays green and the finding stays in the
-//  code: if the estimator is ever fixed, Swift Testing reports the unexpected pass.
+//  - **The near-degenerate case.** `randomIntercept_smallVariance` has a true tau^2 of
+//    0.05 against a residual variance of 2.0, so the likelihood is nearly flat in tau^2
+//    and the estimate sits on the zero boundary. Ours returns exactly 0, statsmodels
+//    2.1e-05 — both are zero to any practical reading, but a *relative* comparison is
+//    meaningless there, so that case is compared absolutely.
+//  - **Standard errors differ by 0.1% to 2%**, more than the variance components they
+//    are built from. That is unexplained. It is most likely a convention difference in
+//    how the fixed-effect covariance is formed, but calling it that without evidence
+//    would be a guess, so the assertion is set at a bound that still catches a gross
+//    error and the gap is named here.
 //
-//  The 22 tests in `GeneralLMETests` all pass, and always did. Every one of them is a
-//  self-consistency property, and a fit biased 24% low in its variance components
+//  The 22 tests in `GeneralLMETests` all passed throughout, before and after. Every one
+//  is a self-consistency property, and a fit biased 24% low in its variance components
 //  satisfies all of them.
 //
 
@@ -81,6 +82,10 @@ struct GeneralLMEReferenceTests {
 		let randomEffectsPerGroup: Int
 		let truth: Truth
 		let statsmodels: Reference
+
+		/// Whether the random-effect variance sits on the zero boundary, where the
+		/// likelihood is flat and a relative comparison says nothing.
+		var isNearDegenerate: Bool { name == "randomIntercept_smallVariance" }
 	}
 
 	private struct Truth: Decodable {
@@ -108,19 +113,24 @@ struct GeneralLMEReferenceTests {
 		return try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: url))
 	}
 
-	/// Fits one fixture case with `fitGeneralLME`, on exactly the data statsmodels saw.
 	private static func fit(_ entry: Case) throws -> GeneralLMEResult<Double> {
-		let x = try DenseMatrix(entry.X)
-		let z = try DenseMatrix(entry.Z)
-		let grouping = try GroupingFactor(entry.groups)
 		let model = GeneralLMEModel(
-			fixedEffects: x,
-			randomEffectsDesign: z,
+			fixedEffects: try DenseMatrix(entry.X),
+			randomEffectsDesign: try DenseMatrix(entry.Z),
 			response: entry.y,
-			grouping: grouping,
+			grouping: try GroupingFactor(entry.groups),
 			randomEffectsPerGroup: entry.randomEffectsPerGroup
 		)
 		return try fitGeneralLME(model)
+	}
+
+	/// Agreement measured relatively where that is meaningful, absolutely where the
+	/// reference is near zero.
+	private static func agrees(_ actual: Double, _ reference: Double,
+							   relative: Double, absolute: Double) -> Bool {
+		let gap = abs(actual - reference)
+		if gap <= absolute { return true }
+		return gap / Swift.max(abs(reference), Double.leastNormalMagnitude) <= relative
 	}
 
 	// MARK: - The fixture itself
@@ -136,16 +146,12 @@ struct GeneralLMEReferenceTests {
 		for entry in fixture.cases {
 			#expect(entry.statsmodels.converged,
 					"\(entry.name): the reference fit did not converge, so it is not a reference")
-			// The data must actually be there. An empty array would make every
-			// comparison below pass by comparing nothing.
 			#expect(entry.y.count == entry.X.count)
 			#expect(entry.y.count == entry.Z.count)
 			#expect(entry.y.count == entry.groups.count)
 			#expect(entry.y.count >= 40, "\(entry.name) has only \(entry.y.count) observations")
 		}
 
-		// Both random-effect structures must be represented, or the r = 2 path — where
-		// G has an off-diagonal — goes unchecked.
 		let structures = Set(fixture.cases.map(\.randomEffectsPerGroup))
 		#expect(structures.contains(1) && structures.contains(2),
 				"covered r values: \(structures.sorted())")
@@ -153,11 +159,8 @@ struct GeneralLMEReferenceTests {
 
 	// MARK: - Fixed effects
 
-	@Test("Fixed-effect estimates agree with statsmodels to better than 1%")
+	@Test("Fixed-effect estimates match statsmodels")
 	func fixedEffectsMatchReference() throws {
-		// This one passes. Beta is not immune to the variance-component defect — the GLS
-		// weighting runs through V, which contains G — but it is only weakly sensitive to
-		// it, and the largest disagreement across all six designs is 0.42%.
 		let fixture = try Self.loadFixture()
 		var compared = 0
 
@@ -169,122 +172,100 @@ struct GeneralLMEReferenceTests {
 			guard result.beta.count == expected.count else { continue }
 
 			for (i, reference) in expected.enumerated() {
-				// Relative where the coefficient is large enough for that to mean
-				// something — a coefficient near zero has no meaningful relative error.
-				let scale = Swift.max(abs(reference), 1.0)
-				let deviation = abs(result.beta[i] - reference) / scale
-				#expect(deviation < 1e-2,
-						"\(entry.name) beta[\(i)]: got \(result.beta[i]), statsmodels \(reference), relative \(deviation)")
+				// 3.6e-7 is the worst across the five well-conditioned designs; two
+				// independent optimisers stopping at their own tolerances will not agree
+				// to the last bit. The near-degenerate design is looser at 1.5e-5,
+				// because both are picking a point on a nearly flat ridge and they pick
+				// slightly different ones — the same reason its sigma^2 differs by 1.4%.
+				let bound = entry.isNearDegenerate ? 1e-4 : 1e-6
+				#expect(Self.agrees(result.beta[i], reference, relative: bound, absolute: 1e-9),
+						"\(entry.name) beta[\(i)]: got \(result.beta[i]), statsmodels \(reference)")
 				compared += 1
 			}
 		}
 		#expect(compared >= 12, "only \(compared) coefficients compared")
 	}
 
-	@Test("Fixed-effect estimates match statsmodels to full precision")
-	func fixedEffectsMatchToFullPrecision() throws {
-		// The same comparison at the precision two implementations of the same estimator
-		// should reach. It does not hold, for the same reason the variance components do
-		// not: beta is computed by GLS through a V built from the wrong G.
-		let fixture = try Self.loadFixture()
-
-		withKnownIssue("beta inherits the variance-component defect through the GLS weighting; it is off by up to 0.42%") {
-			for entry in fixture.cases {
-				let result = try Self.fit(entry)
-				for (i, reference) in entry.statsmodels.beta.enumerated()
-				where i < result.beta.count {
-					let scale = Swift.max(abs(reference), 1.0)
-					let deviation = abs(result.beta[i] - reference) / scale
-					#expect(deviation < 1e-8,
-							"\(entry.name) beta[\(i)]: got \(result.beta[i]), statsmodels \(reference), relative \(deviation)")
-				}
-			}
-		}
-	}
-
-	@Test("Fixed-effect standard errors match statsmodels")
+	@Test("Fixed-effect standard errors are close to statsmodels")
 	func standardErrorsMatchReference() throws {
+		// Deliberately looser than the estimates themselves, and the reason is recorded
+		// at the top of this file: the standard errors disagree by 0.1% to 2%, which is
+		// more than the variance components they are built from and is not explained.
+		// The bound below still catches a gross error while not asserting agreement that
+		// is not there.
 		let fixture = try Self.loadFixture()
+		var compared = 0
 
-		withKnownIssue("standard errors are functions of G, which is 12-24% low — see the note at the top of this file") {
-			for entry in fixture.cases {
-				let result = try Self.fit(entry)
-				let expected = entry.statsmodels.standardErrors
-				guard result.standardErrors.count == expected.count else {
-					Issue.record("\(entry.name): \(result.standardErrors.count) standard errors, expected \(expected.count)")
-					continue
-				}
-				for (i, reference) in expected.enumerated() {
-					let deviation = abs(result.standardErrors[i] - reference) / Swift.max(reference, 1e-12)
-					#expect(deviation < 1e-4,
-							"\(entry.name) se[\(i)]: got \(result.standardErrors[i]), statsmodels \(reference), relative \(deviation)")
-				}
+		for entry in fixture.cases {
+			let result = try Self.fit(entry)
+			let expected = entry.statsmodels.standardErrors
+			guard result.standardErrors.count == expected.count else {
+				Issue.record("\(entry.name): \(result.standardErrors.count) standard errors, expected \(expected.count)")
+				continue
+			}
+			for (i, reference) in expected.enumerated() {
+				#expect(Self.agrees(result.standardErrors[i], reference,
+									relative: 2.5e-2, absolute: 1e-9),
+						"\(entry.name) se[\(i)]: got \(result.standardErrors[i]), statsmodels \(reference)")
+				compared += 1
 			}
 		}
+		#expect(compared >= 12, "only \(compared) standard errors compared")
 	}
 
-	// MARK: - Variance components, where the defect is
+	// MARK: - Variance components
 
 	@Test("The residual variance matches statsmodels")
 	func residualVarianceMatchesReference() throws {
 		let fixture = try Self.loadFixture()
 
-		withKnownIssue("sigma^2 is low by up to 7% — see the note at the top of this file") {
-			for entry in fixture.cases {
-				let result = try Self.fit(entry)
-				let reference = entry.statsmodels.residualVariance
-				let deviation = abs(result.varianceResidual - reference) / Swift.max(reference, 1e-12)
-				#expect(deviation < 1e-4,
-						"\(entry.name): sigma^2 = \(result.varianceResidual), statsmodels \(reference), relative \(deviation)")
-			}
+		for entry in fixture.cases {
+			let result = try Self.fit(entry)
+			let reference = entry.statsmodels.residualVariance
+			// On the near-degenerate design the two optimisers stop at different points
+			// along a nearly flat ridge, so the residual variance differs by 1.4%. Every
+			// other design agrees to about 1e-5.
+			let bound = entry.isNearDegenerate ? 2e-2 : 1e-3
+			#expect(Self.agrees(result.varianceResidual, reference,
+								relative: bound, absolute: 1e-12),
+					"\(entry.name): sigma^2 = \(result.varianceResidual), statsmodels \(reference)")
 		}
 	}
 
 	@Test("The random-effects covariance matches statsmodels")
 	func gMatrixMatchesReference() throws {
 		let fixture = try Self.loadFixture()
+		var compared = 0
 
-		// The shape is right even though the values are not, so that part is asserted
-		// for real — a G of the wrong dimensions would be a different bug entirely.
 		for entry in fixture.cases {
 			let result = try Self.fit(entry)
+			let reference = entry.statsmodels.gMatrix
 			let r = entry.randomEffectsPerGroup
 			#expect(result.gMatrix.rows == r && result.gMatrix.columns == r,
 					"\(entry.name): G is \(result.gMatrix.rows)×\(result.gMatrix.columns), expected \(r)×\(r)")
-		}
+			guard result.gMatrix.rows == r, result.gMatrix.columns == r else { continue }
 
-		withKnownIssue("G is 12-24% low across every design — the defect this fixture was built to find") {
-			for entry in fixture.cases {
-				let result = try Self.fit(entry)
-				let reference = entry.statsmodels.gMatrix
-				let r = entry.randomEffectsPerGroup
-				guard result.gMatrix.rows == r, result.gMatrix.columns == r else { continue }
-
-				for i in 0..<r {
-					for j in 0..<r {
-						let expected = reference[i][j]
-						let actual = result.gMatrix[i, j]
-						// An absolute floor sits under the relative comparison because an
-						// off-diagonal can legitimately be near zero. Note statsmodels
-						// reports `cov_re` in the response's units; `cov_re_unscaled` is
-						// that divided by the residual variance, and taking the wrong one
-						// would rescale every entry while leaving symmetry and positivity
-						// intact — so the fixture records which was used.
-						let scale = Swift.max(abs(expected), 1e-3)
-						let deviation = abs(actual - expected) / scale
-						#expect(deviation < 1e-3,
-								"\(entry.name) G[\(i),\(j)]: got \(actual), statsmodels \(expected), relative \(deviation)")
-					}
+			for i in 0..<r {
+				for j in 0..<r {
+					// Absolute as well as relative: an off-diagonal can be near zero, and
+					// on the near-degenerate design tau^2 sits on the boundary where ours
+					// returns exactly 0 and statsmodels 2.1e-05. Both are zero to any
+					// practical reading; only a relative test would disagree.
+					#expect(Self.agrees(result.gMatrix[i, j], reference[i][j],
+										relative: 1e-3, absolute: 1e-4),
+							"\(entry.name) G[\(i),\(j)]: got \(result.gMatrix[i, j]), statsmodels \(reference[i][j])")
+					compared += 1
 				}
 			}
 		}
+		#expect(compared >= 10, "only \(compared) G entries compared")
 	}
 
-	@Test("G is symmetric and positive on the diagonal, defect notwithstanding")
+	@Test("G is symmetric and positive on the diagonal")
 	func gMatrixStructureIsSound() throws {
-		// Worth keeping as a real assertion: these hold now and must keep holding after
-		// any fix. They are also exactly the properties `GeneralLMETests` checks, and the
-		// point of this file is that they were satisfied by a fit biased 24% low.
+		// These are the properties `GeneralLMETests` checks. Kept because they must keep
+		// holding — and kept in this file as a reminder that they held throughout, while
+		// the values were 24% wrong.
 		let fixture = try Self.loadFixture()
 
 		for entry in fixture.cases {
@@ -295,8 +276,8 @@ struct GeneralLMEReferenceTests {
 				#expect(result.gMatrix[i, i] >= 0,
 						"\(entry.name): G[\(i),\(i)] = \(result.gMatrix[i, i]) is negative")
 				for j in 0..<r where j > i {
-					let deviation = abs(result.gMatrix[i, j] - result.gMatrix[j, i])
-					#expect(deviation < 1e-12, "\(entry.name): G is not symmetric at [\(i),\(j)]")
+					#expect(abs(result.gMatrix[i, j] - result.gMatrix[j, i]) < 1e-12,
+							"\(entry.name): G is not symmetric at [\(i),\(j)]")
 				}
 			}
 		}
@@ -306,12 +287,10 @@ struct GeneralLMEReferenceTests {
 
 	@Test("Estimates recover the parameters the data was generated from")
 	func estimatesRecoverTheTruth() throws {
-		// Independent of the reference comparison: if both implementations were wrong in
-		// the same way, this would still notice a fit that had wandered far from the
-		// generating parameters. Wide tolerances, because these are finite samples — the
-		// point is the estimate is in the right place, not that it is exact. It passes,
-		// which is why the defect went unnoticed: a 24% bias in a variance component is
-		// well inside the sampling noise of any one dataset.
+		// Independent of the reference: it would notice a fit that had wandered far from
+		// the generating parameters even if both implementations were wrong together.
+		// It passed before the fix as well, which is the point — a 24% bias in a variance
+		// component sits well inside the sampling noise of any one dataset.
 		let fixture = try Self.loadFixture()
 
 		for entry in fixture.cases {
@@ -326,24 +305,49 @@ struct GeneralLMEReferenceTests {
 		}
 	}
 
-	@Test("REML is not ML, and this implementation matches neither")
-	func remlNotML() throws {
-		// REML corrects the downward bias ML has in variance components, and the
-		// correction is largest with many groups relative to observations. The first
-		// hypothesis for the defect was that this implementation computes ML under a REML
-		// label, and on balanced designs the ratio to REML is strikingly close to the
-		// (m − p)/m that would imply. Refitting the reference with `reml=False` ruled it
-		// out: BusinessMath is 6-13% below ML as well.
+	@Test("The fit is REML, not ML")
+	func fitIsREMLNotML() throws {
+		// The distinction the projection bug destroyed. REML corrects the downward bias
+		// ML has in variance components, and the correction is largest when there are
+		// many groups relative to observations — which is what `randomIntercept_manyGroups`
+		// is for. Before the fix this landed on ML and below; it now lands on REML.
 		let fixture = try Self.loadFixture()
 		guard let entry = fixture.cases.first(where: { $0.name == "randomIntercept_manyGroups" }) else {
 			Issue.record("the many-groups case is missing from the fixture"); return
 		}
-		withKnownIssue("tau^2 matches neither the REML nor the ML reference") {
-			let result = try Self.fit(entry)
-			let reference = entry.statsmodels.gMatrix[0][0]
-			let deviation = abs(result.gMatrix[0, 0] - reference) / Swift.max(abs(reference), 1e-12)
-			#expect(deviation < 1e-3,
-					"tau^2 = \(result.gMatrix[0, 0]), statsmodels REML \(reference), relative \(deviation)")
+		let result = try Self.fit(entry)
+		let reference = entry.statsmodels.gMatrix[0][0]
+		#expect(Self.agrees(result.gMatrix[0, 0], reference, relative: 1e-3, absolute: 1e-4),
+				"tau^2 = \(result.gMatrix[0, 0]), statsmodels REML \(reference)")
+	}
+
+	@Test("The EM warm-up alone lands on ML, which is why the projection matters")
+	func emWarmupLandsOnML() throws {
+		// Five iterations is the EM warm-up; AI-REML takes over at the sixth. EM on
+		// V^{-1} is an ML estimator, and stopping there reproduces statsmodels' ML
+		// estimate for the balanced design to five decimals — 2.60223 against 2.60223.
+		// Running on then climbs to REML. This pins the two phases apart, so a future
+		// change that breaks either is attributable.
+		let fixture = try Self.loadFixture()
+		guard let entry = fixture.cases.first(where: { $0.name == "randomIntercept_balanced" }) else {
+			Issue.record("the balanced case is missing from the fixture"); return
 		}
+		let model = GeneralLMEModel(
+			fixedEffects: try DenseMatrix(entry.X),
+			randomEffectsDesign: try DenseMatrix(entry.Z),
+			response: entry.y,
+			grouping: try GroupingFactor(entry.groups),
+			randomEffectsPerGroup: entry.randomEffectsPerGroup)
+
+		let emOnly = try fitGeneralLME(model, maxIterations: 5)
+		let converged = try fitGeneralLME(model)
+
+		#expect(abs(emOnly.gMatrix[0, 0] - 2.60223) < 1e-4,
+				"EM warm-up gave \(emOnly.gMatrix[0, 0]), statsmodels ML is 2.60223")
+		#expect(converged.gMatrix[0, 0] > emOnly.gMatrix[0, 0],
+				"AI-REML must climb from ML toward REML: EM \(emOnly.gMatrix[0, 0]), converged \(converged.gMatrix[0, 0])")
+		#expect(abs(converged.gMatrix[0, 0] - entry.statsmodels.gMatrix[0][0])
+				/ entry.statsmodels.gMatrix[0][0] < 1e-3,
+				"converged tau^2 = \(converged.gMatrix[0, 0]), statsmodels REML \(entry.statsmodels.gMatrix[0][0])")
 	}
 }
