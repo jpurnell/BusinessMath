@@ -1,0 +1,7 @@
+# Pinned for the mixed-model fixture, separate from requirements.txt because
+# statsmodels pulls pandas and a different scipy than the distribution fixtures use.
+# The versions are recorded in mixedModels.json's `reference` field too.
+statsmodels==0.15.0
+pandas==3.0.5
+scipy==1.18.1
+numpy==2.5.3
