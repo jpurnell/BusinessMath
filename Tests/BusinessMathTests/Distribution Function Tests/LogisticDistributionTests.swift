@@ -187,6 +187,8 @@ struct LogisticDistributionTests {
 
 	@Test("Logistic distribution struct next() method")
 	func logisticStructNext() {
+		// Seeded: an unseeded draw made this assertion a coin flip. See geometricStructNext.
+		var rng = DeterministicRNG(seed: 10007)
 		let mean = 75.0
 		let stdDev = 20.0
 		let dist = DistributionLogistic(mean, stdDev)
@@ -194,7 +196,7 @@ struct LogisticDistributionTests {
 		let sampleCount = 2000
 		var samples: [Double] = []
 		for _ in 0..<sampleCount {
-			let sample = dist.next()
+			let sample = dist.next(using: &rng)
 			samples.append(sample)
 			#expect(sample.isFinite)
 		}
@@ -206,6 +208,8 @@ struct LogisticDistributionTests {
 
 	@Test("Logistic distribution with variance parameter")
 	func logisticWithVariance() {
+		// Seeded: an unseeded draw made this assertion a coin flip. See geometricStructNext.
+		var rng = DeterministicRNG(seed: 10008)
 		let mean = 50.0
 		let variance = 100.0  // stdDev = 10
 		let dist = DistributionLogistic(mean: mean, variance: variance)
@@ -213,7 +217,7 @@ struct LogisticDistributionTests {
 		let sampleCount = 5000
 		var samples: [Double] = []
 		for _ in 0..<sampleCount {
-			samples.append(dist.next())
+			samples.append(dist.next(using: &rng))
 		}
 
 		let empiricalMean = samples.reduce(0, +) / Double(samples.count)
@@ -339,6 +343,8 @@ struct LogisticDistributionTests {
 
 	@Test("Logistic distribution struct stores parameters")
 	func logisticStructParameters() {
+		// Seeded: an unseeded draw made this assertion a coin flip. See geometricStructNext.
+		var rng = DeterministicRNG(seed: 10009)
 		let mean = 42.0
 		let variance = 64.0  // stdDev = 8
 		let dist = DistributionLogistic(mean: mean, variance: variance)
@@ -346,7 +352,7 @@ struct LogisticDistributionTests {
 		let sampleCount = 2000
 		var samples: [Double] = []
 		for _ in 0..<sampleCount {
-			samples.append(dist.next())
+			samples.append(dist.next(using: &rng))
 		}
 
 		// All values should be finite

@@ -38,6 +38,14 @@ suite depends on it.
 
 ## Current Status
 
+**2.12.1 shipped 2026-09-06** — a CI fix. 2.12.0 failed to compile on Linux on one
+line: `PCHIP.pchipEndpoint`'s endpoint slope, which Swift 6.2.1 could not type-check in
+time and Swift 6.4 solves instantly. Twenty-one further expressions sharing the shape were
+decomposed, and twelve distribution tests that drew unseeded — one of which duly reddened
+macOS CI — now draw from a seeded generator. The episode is recorded in `CLAUDE.md`: **no
+local check predicts this class**, and the pre-push command that claimed to catch it caught
+none of it.
+
 **2.12.0 shipped 2026-09-05** — the bindable category, verified. 86 Excel functions were
 marked *bindable*: computed here, reachable from no formula, and therefore never compared
 to anything but their own definitions. 160 cases across 43 of them now are, and Excel's
@@ -473,7 +481,10 @@ The earlier table was about *scope*; this one is about *what is being measured*.
 
 ---
 
-**Last Updated:** 2026-09-05 — reconciled for 2.12.0: Current Status leads with the
+**Last Updated:** 2026-09-06 — reconciled for 2.12.1: Current Status leads with the Linux
+type-check failure and what it taught about local verification; the `irr`/`xirr` absolute
+tolerance is recorded as a known issue in CHANGELOG rather than silently carried. Prior
+entry: 2026-09-05 — reconciled for 2.12.0: Current Status leads with the
 bindable verification and the four defects it found, and names the Risk Solver surface as
 next. `project/checklists/CURRENT_VerifyBindables.md` carries the detail. Counts refreshed
 to 6,898 tests / 611 suites.

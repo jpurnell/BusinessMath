@@ -371,6 +371,8 @@ struct LogNormalDistributionTests {
 
 	@Test("LogNormal distribution struct stores parameters")
 	func logNormalStructParameters() {
+		// Seeded: an unseeded draw made this assertion a coin flip. See geometricStructNext.
+		var rng = DeterministicRNG(seed: 10006)
 		let mean = 2.0
 		let variance = 1.0  // stdDev = 1
 		let dist = DistributionLogNormal(mean: mean, variance: variance)
@@ -378,7 +380,7 @@ struct LogNormalDistributionTests {
 		let sampleCount = 2000
 		var samples: [Double] = []
 		for _ in 0..<sampleCount {
-			samples.append(dist.next())
+			samples.append(dist.next(using: &rng))
 		}
 
 		// All values should be positive
