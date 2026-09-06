@@ -147,7 +147,14 @@ public func xnpv<T: Real & BinaryFloatingPoint>(
 ///   - dates: Array of dates for each cash flow.
 ///   - cashFlows: Array of cash flow amounts (negative for outflows, positive for inflows).
 ///   - guess: Initial guess for the rate (default: 0.1 or 10%).
-///   - tolerance: Convergence tolerance (default: 0.0001 or 0.01%).
+///   - tolerance: **Relative** convergence tolerance on the rate. The iteration stops
+///     once a Newton correction moves the rate by less than `tolerance × max(|rate|, 1)`.
+///     Defaults to `√(ulpOfOne)`, derived from the numeric type. See
+///     ``irr(cashFlows:guess:tolerance:maxIterations:)`` for why this is measured on the
+///     rate rather than on the XNPV residual — the same reasoning applies here, and the
+///     failure it fixes is the same: at a large enough cash-flow scale the old absolute
+///     bound could never be met and this function threw rather than returning the answer
+///     it had already found.
 ///   - maxIterations: Maximum number of iterations (default: 100).
 /// - Returns: The annualized internal rate of return as a decimal.
 /// - Throws: `XNPVError` if calculation fails.
@@ -231,7 +238,8 @@ public func xirr<T: Real & BinaryFloatingPoint>(
 	maxIterations: Int = 100
 ) throws -> T {
 	let actualGuess: T = guess ?? (T(1) / T(10))
-	let actualTolerance: T = tolerance ?? (T(1) / T(10000))
+	// Relative, and derived from the type — see the parameter documentation.
+	let actualTolerance: T = tolerance ?? T.sqrt(T.ulpOfOne)
 
 	// Validate input
 	guard dates.count == cashFlows.count else {
@@ -257,22 +265,33 @@ public func xirr<T: Real & BinaryFloatingPoint>(
 		// Calculate XNPV at current rate
 		let npv = try xnpv(rate: rate, dates: dates, cashFlows: cashFlows)
 
-		// Check for convergence
-		if abs(npv) < actualTolerance {
-			return rate
-		}
+		// An exact root needs no correction.
+		if npv.isZero { return rate }
 
 		// Calculate derivative of XNPV (dXNPV/dr)
 		let derivative = calculateXNPVDerivative(rate: rate, dates: dates, cashFlows: cashFlows)
 
-		// Avoid division by zero
-		let minDerivative = T(1) / T(1000000)
-		guard abs(derivative) > minDerivative else {
+		// Newton-Raphson update: rate_new = rate_old - f(rate) / f'(rate)
+		let correction: T = npv / derivative
+		let candidate: T = rate - correction
+
+		// The step, not the derivative's magnitude, is what says whether the method can
+		// proceed — see ``irr(cashFlows:guess:tolerance:maxIterations:)``. A rate at or
+		// below −100% is not a return and `(1+r)^t` is undefined there for fractional
+		// `t`, which every XNPV term has.
+		guard correction.isFinite, candidate > T(-1) else {
 			throw XNPVError.convergenceFailed
 		}
 
-		// Newton-Raphson update: rate_new = rate_old - f(rate) / f'(rate)
-		rate = rate - npv / derivative
+		rate = candidate
+
+		// Convergence on the rate. The correction is scale-invariant — the cash-flow
+		// units cancel between XNPV and its derivative — so a model in dollars and the
+		// same model in billions stop at the same place. Tested after the step, so the
+		// returned value is the corrected one.
+		let reference: T = Swift.max(abs(rate), T(1))
+		let threshold: T = actualTolerance * reference
+		if abs(correction) <= threshold { return rate }
 	}
 
 	// If we get here, didn't converge

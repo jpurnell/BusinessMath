@@ -153,53 +153,119 @@ struct TVMReferenceTests {
 		)
 	}
 
-	@Test("irr's default tolerance is absolute in currency, so precision tracks scale")
-	func irrDefaultToleranceIsAbsoluteInCurrency() throws {
-		// Not a wrong answer, but a property a caller would not guess: `irr`'s
-		// stopping rule compares |NPV| against the tolerance, and NPV is in the
-		// cash flows' own units. The default tolerance is 1e-4 — one hundredth of a
-		// cent — so the *rate* it delivers is accurate in proportion to how large
-		// the cash flows are.
+	@Test("irr is scale-invariant, as the quantity it computes is")
+	func irrIsScaleInvariant() throws {
+		// Multiplying every cash flow by a constant leaves the IRR unchanged: NPV
+		// scales with the flows, and the root of a scaled function is the root of the
+		// function. So this is a property of the mathematics, checkable without any
+		// reference value — the strongest kind of test available here.
 		//
-		// Measured on the textbook flows, error in the returned rate:
+		// It did not hold. This test previously *recorded* that it did not, under the
+		// name "irr's default tolerance is absolute in currency, so precision tracks
+		// scale", because the stopping rule compared |NPV| against a fixed 1e-4 in the
+		// cash flows' own units. Measured then:
 		//
-		//   flows × 1        2.2e-10
-		//   flows × 1000     1.1e-16
-		//   flows × 1e6      1.1e-16
+		//   flows × 1        rate error 2.2e-10
+		//   flows × 1000     rate error 1.1e-16
 		//
-		// Same problem, same true IRR, seven orders of magnitude of difference in
-		// the answer's precision. Worth knowing before quoting an IRR to six places.
-		let atUnitScale = try irr(cashFlows: Self.textbookCashFlows)
-		#expect(abs(atUnitScale - Self.textbookIRR) < 2.5e-10)
-		#expect(abs(atUnitScale - Self.textbookIRR) > 1e-12, "recorded: unit-scale IRR is only good to ~2e-10")
-
-		let scaled = try irr(cashFlows: Self.textbookCashFlows.map { $0 * 1000 })
+		// and beyond about 1e9 the bound could not be met at all — NPV's own rounding
+		// noise exceeded it — so `irr` threw `Failed to converge` while sitting on the
+		// exact answer. A billion-dollar model was not computable.
+		//
+		// Convergence is now measured on the Newton correction, which is scale-invariant
+		// because the cash-flow units cancel between NPV and its derivative.
+		let reference = try irr(cashFlows: Self.textbookCashFlows)
 		#expect(
-			abs(scaled - Self.textbookIRR) < 1e-15,
-			"at 1000× scale irr = \(scaled), reference \(Self.textbookIRR)"
+			approximatelyEqual(reference, Self.textbookIRR, tolerance: 1e-14),
+			"irr = \(reference), extended reference \(Self.textbookIRR)"
 		)
 
-		// Asking for the precision directly gets it, at unit scale, in the same
-		// iteration budget.
-		let tightened = try irr(cashFlows: Self.textbookCashFlows, tolerance: 1e-12, maxIterations: 200)
-		#expect(
-			approximatelyEqual(tightened, Self.textbookIRR, tolerance: 1e-14),
-			"irr(tolerance: 1e-12) = \(tightened), reference \(Self.textbookIRR)"
-		)
+		// Across twelve orders of magnitude the answer must not move by more than the
+		// last bit or two of a Double.
+		for factor in [1e3, 1e6, 1e9, 1e12] {
+			let scaled = try irr(cashFlows: Self.textbookCashFlows.map { $0 * factor })
+			#expect(
+				abs(scaled - reference) < 1e-14,
+				"at \(factor)× scale irr = \(scaled), at unit scale \(reference)"
+			)
+		}
+
+		// And downward, where the old absolute bound was loosest of all: at a scale of
+		// 1e-6 a residual under 1e-4 is no constraint whatever.
+		for factor in [1e-3, 1e-6] {
+			let scaled = try irr(cashFlows: Self.textbookCashFlows.map { $0 * factor })
+			#expect(
+				abs(scaled - reference) < 1e-14,
+				"at \(factor)× scale irr = \(scaled), at unit scale \(reference)"
+			)
+		}
 	}
 
-	@Test("npv at the irr is zero")
+	@Test("a large model converges rather than throwing")
+	func irrConvergesAtScale() throws {
+		// The regression this fix exists for. These flows are ordinary; only their
+		// magnitude is large, and the old stopping rule could not be satisfied at it.
+		let billions: [Double] = [-1_000_000_000, 300_000_000, 400_000_000,
+								  500_000_000, 200_000_000]
+		let atScale = try irr(cashFlows: billions)
+		let atUnit = try irr(cashFlows: [-1_000.0, 300, 400, 500, 200])
+		#expect(abs(atScale - atUnit) < 1e-14,
+				"billions gave \(atScale), the same flows in thousands gave \(atUnit)")
+
+		// A nearly flat NPV curve at scale — long-dated and barely profitable, which is
+		// where a residual bound is least informative about the rate.
+		var flat: [Double] = [-1_000_000_000_000]
+		for _ in 0..<40 { flat.append(26_000_000_000) }
+		let flatRate = try irr(cashFlows: flat)
+		let flatResidual = abs(npv(discountRate: flatRate, cashFlows: flat))
+		let flatScale = flat.reduce(0.0) { $0 + abs($1) }
+		#expect(flatResidual / flatScale < 1e-14,
+				"relative residual \(flatResidual / flatScale) at rate \(flatRate)")
+	}
+
+	@Test("the tolerance parameter is relative, and tightening it still works")
+	func irrToleranceIsRelative() throws {
+		// The parameter kept its name and its position but changed its meaning: it now
+		// bounds the Newton correction relative to the rate, not the NPV in currency.
+		// A loose value should stop early and a tight one should not, at every scale.
+		let loose = try irr(cashFlows: Self.textbookCashFlows, tolerance: 1e-4)
+		let tight = try irr(cashFlows: Self.textbookCashFlows, tolerance: 1e-14,
+							maxIterations: 200)
+		#expect(approximatelyEqual(tight, Self.textbookIRR, tolerance: 1e-14),
+				"tight = \(tight), reference \(Self.textbookIRR)")
+		// Even the loose setting is far better than the old default managed, because
+		// one Newton step past a 1e-4 correction is already near machine precision.
+		#expect(abs(loose - Self.textbookIRR) < 1e-8,
+				"loose = \(loose), reference \(Self.textbookIRR)")
+
+		// Relative means the same tolerance buys the same accuracy at any scale.
+		let scaledLoose = try irr(cashFlows: Self.textbookCashFlows.map { $0 * 1e9 },
+								  tolerance: 1e-4)
+		#expect(abs(scaledLoose - loose) < 1e-12,
+				"at 1e9× scale \(scaledLoose) versus \(loose) at unit scale")
+	}
+
+	@Test("npv at the irr is zero, relative to the size of the cash flows")
 	func npvAtIRRIsZero() throws {
-		// The defining identity, and the one test of `irr` that needs no reference
-		// at all. The residual is bounded by the stopping tolerance, so it is
-		// asserted against the tolerance actually requested rather than against a
-		// number pulled from a run.
-		for tolerance in [1e-4, 1e-8, 1e-12] {
-			let rate = try irr(cashFlows: Self.textbookCashFlows, tolerance: tolerance, maxIterations: 200)
-			let residual = abs(npv(discountRate: rate, cashFlows: Self.textbookCashFlows))
+		// The defining identity, and the one test of `irr` that needs no reference at
+		// all. Stated *relatively*, because "zero" in currency means nothing without
+		// knowing the currency amounts: a residual of one cent is exact on a
+		// billion-dollar model and hopeless on a ten-dollar one.
+		//
+		// This used to assert `residual <= tolerance`, when `tolerance` was an absolute
+		// bound on the NPV and that was the literal stopping rule. It is no longer —
+		// `tolerance` now bounds the Newton correction on the rate — and the old
+		// assertion passed here only because these flows are small. Scaled up it would
+		// have failed while the answer got better, which is the wrong way round for a
+		// test to behave.
+		for factor in [1.0, 1e6, 1e12] {
+			let flows = Self.textbookCashFlows.map { $0 * factor }
+			let rate = try irr(cashFlows: flows)
+			let residual = abs(npv(discountRate: rate, cashFlows: flows))
+			let scale = flows.reduce(0.0) { $0 + abs($1) }
 			#expect(
-				residual <= tolerance,
-				"irr(tolerance: \(tolerance)) left an NPV residual of \(residual)"
+				residual / scale < 1e-15,
+				"at \(factor)× scale the relative residual was \(residual / scale)"
 			)
 		}
 	}
@@ -220,6 +286,54 @@ struct TVMReferenceTests {
 	}
 
 	// MARK: - XNPV and XIRR
+
+	@Test("xirr is scale-invariant too, and converges at scale")
+	func xirrIsScaleInvariant() throws {
+		// `xirr` had the same absolute stopping rule as `irr` and the same two
+		// consequences: an answer whose precision depended on the size of the cash
+		// flows, and outright failure once their rounding noise exceeded the bound.
+		let calendar = Calendar(identifier: .gregorian)
+		func day(_ y: Int, _ m: Int, _ d: Int) -> Date {
+			calendar.date(from: DateComponents(year: y, month: m, day: d)) ?? Date()
+		}
+		let dates = [day(2020, 1, 1), day(2020, 6, 15), day(2021, 3, 1),
+					 day(2022, 9, 30), day(2024, 1, 15)]
+		let base: [Double] = [-10_000, 2_500, 3_000, 4_000, 3_500]
+
+		let reference = try xirr(dates: dates, cashFlows: base)
+		#expect(reference.isFinite, "xirr = \(reference)")
+
+		for factor in [1e-6, 1e3, 1e6, 1e9, 1e12] {
+			let scaled = try xirr(dates: dates, cashFlows: base.map { $0 * factor })
+			#expect(
+				abs(scaled - reference) < 1e-12,
+				"at \(factor)× scale xirr = \(scaled), at unit scale \(reference)"
+			)
+		}
+	}
+
+	@Test("xnpv at the xirr is zero, relative to the size of the cash flows")
+	func xnpvAtXIRRIsZero() throws {
+		let calendar = Calendar(identifier: .gregorian)
+		func day(_ y: Int, _ m: Int, _ d: Int) -> Date {
+			calendar.date(from: DateComponents(year: y, month: m, day: d)) ?? Date()
+		}
+		let dates = [day(2020, 1, 1), day(2020, 6, 15), day(2021, 3, 1),
+					 day(2022, 9, 30), day(2024, 1, 15)]
+		let base: [Double] = [-10_000, 2_500, 3_000, 4_000, 3_500]
+
+		for factor in [1.0, 1e9] {
+			let flows = base.map { $0 * factor }
+			let rate = try xirr(dates: dates, cashFlows: flows)
+			let residual = abs(try xnpv(rate: rate, dates: dates, cashFlows: flows))
+			let scale = flows.reduce(0.0) { $0 + abs($1) }
+			#expect(
+				residual / scale < 1e-14,
+				"at \(factor)× scale the relative residual was \(residual / scale)"
+			)
+		}
+	}
+
 
 	@Test("xnpv against Microsoft's published example")
 	func xnpvPublished() throws {

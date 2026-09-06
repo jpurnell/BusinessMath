@@ -31,10 +31,47 @@ import Numerics
 ///   - cashFlows: Array of cash flows, where negative values represent outflows (investments)
 ///     and positive values represent inflows (returns). First value is typically negative (initial investment).
 ///   - guess: Initial guess for the rate (default: 0.1 or 10%).
-///   - tolerance: Convergence tolerance (default: 0.0001 or 0.01%).
+///   - tolerance: **Relative** convergence tolerance on the rate. The iteration stops
+///     once a Newton correction moves the rate by less than
+///     `tolerance × max(|rate|, 1)`. Defaults to `√(ulpOfOne)`, derived from the
+///     numeric type rather than chosen — see the discussion below.
 ///   - maxIterations: Maximum number of iterations (default: 100).
 /// - Returns: The IRR as a decimal (e.g., 0.15 for 15%).
 /// - Throws: `BusinessMathError` if calculation fails.
+///
+/// ## Convergence is measured on the rate, not on the NPV
+///
+/// This used to stop when `|NPV| < 0.0001` — an **absolute** residual, in currency
+/// units, for a function that returns a rate. Three things were wrong with it.
+///
+/// **IRR is scale-invariant and the test was not.** Multiplying every cash flow by a
+/// constant leaves the rate unchanged, because the NPV simply scales with it. An
+/// absolute bound on the NPV therefore means something different for every model:
+/// `[-1000, 300, 400, 500, 200]` returned `0.153221377126732`, and the same investment
+/// stated in thousands returned `0.153221378771815`.
+///
+/// **The residual is not the error.** What a caller wants bounded is the rate, and
+/// `rate error ≈ |NPV| / |dNPV/dr|`. On a large model with offsetting flows the NPV
+/// curve is nearly flat, so a residual under `0.0001` can still leave the rate wrong in
+/// a digit that matters.
+///
+/// **At scale it did not converge at all.** Scale those same flows by `1e9` and the
+/// rounding noise in the NPV sum alone exceeds `0.0001`. Newton reaches machine
+/// precision after a handful of steps and then sits on the exact answer for the
+/// remaining iterations, because the bound can never be met — and the function threw
+/// `Failed to converge`. A billion-dollar model was not computable.
+///
+/// The fix is the observation that **the Newton correction is itself scale-invariant**:
+/// `NPV/(dNPV/dr)` has the cash-flow units in both numerator and denominator, so they
+/// cancel. Testing the size of that correction, relative to the rate it is correcting,
+/// is dimensionless, says something about the returned quantity, and behaves the same
+/// at every scale.
+///
+/// The default tolerance is `√(ulpOfOne)` because Newton's method roughly doubles the
+/// number of correct digits per step: once a correction is smaller than the square root
+/// of the machine epsilon, the *next* one would be below the epsilon itself, so the
+/// value already in hand is accurate to full precision. It is derived from the type,
+/// not picked.
 ///
 /// ## Examples
 ///
@@ -91,7 +128,8 @@ public func irr<T: Real>(
 	maxIterations: Int = 100
 ) throws -> T {
 	let actualGuess: T = guess ?? (T(1) / T(10))
-	let actualTolerance: T = tolerance ?? (T(1) / T(10000))
+	// Relative, and derived from the type: see the note on convergence above.
+	let actualTolerance: T = tolerance ?? T.sqrt(T.ulpOfOne)
 	// Validate input
 	guard cashFlows.count >= 2 else {
 		throw BusinessMathError.insufficientData(
@@ -125,19 +163,29 @@ public func irr<T: Real>(
 		// Note: Use internal npv() not calculateNPV() to allow negative rates during iteration
 		let npvValue = npv(discountRate: rate, cashFlows: cashFlows)
 
-		// Check for convergence
-		if abs(npvValue) < actualTolerance {
-			return rate
-		}
+		// An exact root. Taking it here avoids a needless step and the rounding that
+		// would come with it.
+		if npvValue.isZero { return rate }
 
 		// Calculate derivative of NPV (dNPV/dr)
 		let derivative = calculateNPVDerivative(discountRate: rate, cashFlows: cashFlows)
 
-		// Avoid division by zero
-		let minDerivative = T(1) / T(1000000)  // 0.000001
-		guard abs(derivative) > minDerivative else {
+		// Newton-Raphson update: rate_new = rate_old - f(rate) / f'(rate)
+		let correction: T = npvValue / derivative
+		let candidate: T = rate - correction
+
+		// Guard the *step*, not the derivative's magnitude. How small a derivative is
+		// "too small" depends on both the cash flows and the horizon — over 400 periods
+		// the discount factors alone drive dNPV/dr to ~1e-11 for entirely ordinary
+		// flows — so any fixed floor is either useless or reintroduces the
+		// scale-dependence this function was fixed to remove.
+		//
+		// The step itself says whether it is usable. A rate at or below −100% is not a
+		// return, and `(1+r)^t` is not defined there for fractional `t`, so a correction
+		// that lands the rate outside `(−1, ∞)` is a step the method cannot take.
+		guard correction.isFinite, candidate > T(-1) else {
 			throw BusinessMathError.numericalInstability(
-				message: "IRR: Derivative of NPV is too small at rate \(rate) - the Newton-Raphson step is numerically unstable",
+				message: "IRR: Derivative of NPV at rate \(rate) is too small for a usable Newton step — the correction would move the rate to \(candidate), at or below −100%",
 				suggestions: [
 					"Try a different initial guess (current: \(actualGuess))",
 					"Check if cash flows have unusual patterns that might cause instability",
@@ -146,8 +194,15 @@ public func irr<T: Real>(
 			)
 		}
 
-		// Newton-Raphson update: rate_new = rate_old - f(rate) / f'(rate)
-		rate = rate - npvValue / derivative
+		rate = candidate
+
+		// Convergence, measured on the rate. The correction is scale-invariant — the
+		// cash-flow units cancel between NPV and its derivative — so this behaves the
+		// same whether the model is in dollars or billions. Tested *after* the step, so
+		// the value returned is the corrected one.
+		let reference: T = Swift.max(abs(rate), T(1))
+		let threshold: T = actualTolerance * reference
+		if abs(correction) <= threshold { return rate }
 	}
 
 	// If we get here, didn't converge
@@ -157,8 +212,8 @@ public func irr<T: Real>(
 		suggestions: [
 			"Increase maxIterations (current: \(maxIterations))",
 			"Try a different initial guess (current: \(actualGuess))",
-			"Relax the tolerance (current: \(actualTolerance))",
-			"Verify that cash flows represent a realistic investment pattern"
+			"Verify that cash flows represent a realistic investment pattern",
+			"Check for multiple sign changes, which can give more than one IRR"
 		]
 	)
 }
