@@ -208,6 +208,16 @@ public func interestPayment<T: Real>(
 ) -> T {
 	guard period > 0 && period <= totalPeriods else { return T.zero }
 
+	// An annuity due pays at the *start* of each period, so the first payment lands at
+	// time zero, before any interest has accrued. Its interest portion is exactly zero.
+	//
+	// This used to return `presentValue × rate` — a full period's interest on the whole
+	// principal — because the annuity-due correction below was skipped for period 1. On
+	// a 200,000 mortgage that is 1,250 of interest attributed to a payment made before
+	// the loan had run for a day, and it made the first year's CUMIPMT 9% too high and
+	// its CUMPRINC 41% too low.
+	if type == .due && period == 1 { return T.zero }
+
 	// Calculate remaining balance at start of this period
 	// This is the FV of the loan at (period - 1) payments
 	let remainingBalance: T
@@ -234,7 +244,13 @@ public func interestPayment<T: Real>(
 			remainingBalance = presentValue - pmt * T(periodsPaid)
 		} else {
 			let growth = presentValue * factor
-			let paymentsValue = pmt * ((factor - T(1)) / rate)
+			// Each payment of a due annuity is made one period earlier than the
+			// corresponding ordinary one, so it compounds for one period longer. The
+			// extra `(1 + rate)` is that period, and leaving it out understated the
+			// balance and so the interest.
+			let annuityFactor: T = (factor - T(1)) / rate
+			let timing: T = type == .due ? T(1) + rate : T(1)
+			let paymentsValue = pmt * timing * annuityFactor
 			remainingBalance = growth - paymentsValue
 		}
 	}
@@ -242,8 +258,10 @@ public func interestPayment<T: Real>(
 	// Interest = remaining balance × rate
 	var interest = remainingBalance * rate
 
-	// For annuity due, adjust for payment at start of period
-	if type == .due && period > 1 {
+	// A due period's cash flows sit at its start, so the interest accrued across the
+	// period is discounted back one period to be stated there. Period 1 already returned
+	// zero above.
+	if type == .due {
 		interest = interest / (T(1) + rate)
 	}
 
