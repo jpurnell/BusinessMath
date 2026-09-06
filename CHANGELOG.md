@@ -9,6 +9,77 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [2.13.0] - 2026-09-06
+
+Risk Solver distributions, and the `irr`/`xirr` stopping rule that could not compute a
+large model.
+
+### Fixed
+- **`irr` and `xirr` measured convergence on the NPV residual, in currency units.** The
+  default bound was `1e-4`, and three things followed from it.
+
+  IRR is **scale-invariant** — multiplying every cash flow by a constant leaves the rate
+  unchanged, because the NPV scales with them — but an absolute bound on the NPV is not.
+  `[-1000, 300, 400, 500, 200]` returned `0.153221377126732`; the same investment stated
+  in thousands returned `0.153221378771815`.
+
+  The residual is **not the error**. What a caller wants bounded is the rate, and the
+  rate error is roughly `|NPV| / |dNPV/dr|`. On a large model with offsetting flows the
+  NPV curve is nearly flat, so a residual under `1e-4` can leave the rate wrong in a
+  digit that matters.
+
+  Worst, **at scale it did not converge at all**. Scale those flows by `1e9` and the
+  rounding noise in the NPV sum alone exceeds `1e-4`: Newton reached machine precision
+  in a handful of steps, then sat on the exact answer for the remaining ninety-odd
+  iterations and threw `Failed to converge`. A billion-dollar model was not computable,
+  and the error's own advice — "relax the tolerance" — was the only thing that worked
+  and made the answer worse.
+
+  Both functions now converge on the **Newton correction to the rate**, relative to the
+  rate. That quantity is scale-invariant: the cash-flow units cancel between the NPV and
+  its derivative. Across twelve orders of magnitude the answer now moves by at most the
+  last bit of a `Double`, and the cases that threw return.
+
+  The `tolerance:` parameter keeps its name and position and **changes meaning**: it now
+  bounds the correction relative to the rate rather than the NPV in currency. No caller
+  in this package passed it. Its default is `√(ulpOfOne)`, derived from the numeric type
+  rather than chosen — Newton roughly doubles the correct digits per step, so a
+  correction below the square root of machine epsilon means the next one would be below
+  epsilon itself.
+
+- **The vanishing-derivative guard was also absolute** (`1e-6`), and could not be right:
+  over 400 periods the discount factors alone drive `dNPV/dr` to about `1e-11` for
+  entirely ordinary flows, so any fixed floor either never fires or fires on healthy
+  input. Both functions now judge the **step** instead — a correction that is not finite,
+  or that would move the rate to at or below −100%, is one the method cannot take, since
+  `(1+r)^t` is not defined there for fractional `t` and a rate below −100% is not a
+  return.
+
+### Added
+- **Risk Solver distributions, §3 priorities 1, 3 and most of 4** — 23 in all.
+  `DistributionPoisson`, `DistributionHyperGeometric`, `DistributionDiscrete`,
+  `DistributionKumaraswamy`, `DistributionHypSecant`, `DistributionDoubleTriangular`,
+  `DistributionCumul`, `DistributionGeneral`, `DistributionDiscreteUniform`, `Shuffle`,
+  `DistributionCauchy`, `DistributionLaplace`, `DistributionLevy`,
+  `DistributionMaxExtreme`, `DistributionMinExtreme`, `DistributionFrechet`,
+  `DistributionLogLogistic`, `DistributionReciprocal`, `DistributionBurr12`,
+  `DistributionDagum`, `DistributionJohnsonSB`, `DistributionJohnsonSU`,
+  `DistributionFatigueLife`.
+
+  Those with a SciPy analogue are checked against a committed fixture of 26
+  parameterisations and 598 values rather than against themselves, because a
+  `cdf`/`quantile` pair bound to the wrong arguments round-trips perfectly. That caught
+  three numerical defects no round-trip could: `tan` evaluated beside `π/2` in Cauchy's
+  quantile, and `pow(x, small) − 1` cancellation in Burr12's and Dagum's.
+
+- **`poisson(_:µ:)` and `poissonCDF(_:µ:)` no longer trap.** They divided by an `Int`
+  factorial, and 21! exceeds `Int64.max`, so any count above 20 crashed the process — a
+  rate of 25 arrivals is ordinary. There were no Poisson tests at all. Both now evaluate
+  `exp(k·ln µ − µ − ln Γ(k+1))`, and `poissonCDF` no longer truncates its sum silently at
+  10,000 terms.
+
+---
+
 ### [2.12.1] - 2026-09-06
 
 A CI fix. 2.12.0 compiled everywhere we could test locally and failed to compile on
