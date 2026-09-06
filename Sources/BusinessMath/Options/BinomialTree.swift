@@ -60,14 +60,18 @@ public struct BinomialTreeModel<T: Real & Sendable> {
 		let dt = timeToExpiry / T(steps)
 		let u = T.exp(volatility * T.sqrt(dt))  // Up factor
 		let d = T(1) / u  // Down factor
-		let p = (T.exp(riskFreeRate * dt) - d) / (u - d)  // Risk-neutral probability
+		// Risk-neutral probability
+		let growth: T = T.exp(riskFreeRate * dt)
+		let p: T = (growth - d) / (u - d)
 
 		// Build price tree (only need values, not full tree structure)
 		var tree = Array(repeating: Array(repeating: T(0), count: steps + 1), count: steps + 1)
 
 		// Initialize final nodes (terminal payoffs)
 		for i in 0...steps {
-			let finalPrice = spotPrice * T.pow(u, T(steps - i)) * T.pow(d, T(i))
+			let upLegs: T = T.pow(u, T(steps - i))
+			let downLegs: T = T.pow(d, T(i))
+			let finalPrice: T = spotPrice * upLegs * downLegs
 			tree[i][steps] = intrinsicValue(
 				optionType: optionType,
 				spotPrice: finalPrice,
@@ -78,11 +82,15 @@ public struct BinomialTreeModel<T: Real & Sendable> {
 		// Backward induction
 		for j in (0..<steps).reversed() {
 			for i in 0...j {
-				let nodePrice = spotPrice * T.pow(u, T(j - i)) * T.pow(d, T(i))
+				let upLegs: T = T.pow(u, T(j - i))
+				let downLegs: T = T.pow(d, T(i))
+				let nodePrice: T = spotPrice * upLegs * downLegs
 
 				// Expected value (continuation value)
-				let expectedValue = (p * tree[i][j + 1] + (T(1) - p) * tree[i + 1][j + 1]) *
-									T.exp(-riskFreeRate * dt)
+				let upValue: T = p * tree[i][j + 1]
+				let downValue: T = (T(1) - p) * tree[i + 1][j + 1]
+				let discountFactor: T = T.exp(-riskFreeRate * dt)
+				let expectedValue: T = (upValue + downValue) * discountFactor
 
 				if americanStyle {
 					// American option: max of holding vs exercising

@@ -189,19 +189,37 @@ struct GeometricDistributionTests {
 		let p = 0.25
 		let dist = DistributionGeometric(p)
 
+		// Seeded. The unseeded `next()` drew from the system RNG, which made this a
+		// genuine coin flip: on 2026-09-06 it failed CI on macos-26 at 0.3385 against
+		// a 0.3 bound. The sampler is not at fault — measured over 400,000 seeded
+		// draws it gives mean 3.9988 (theory 4.0), variance 12.02 (theory 12.0), and
+		// a PMF matching (1-p)^(k-1)·p at every k through 6. A test that reds at
+		// random teaches nothing, so pin the stream and keep the bound meaningful.
+		var rng = DeterministicRNG(seed: 77777)
+
 		let sampleCount = 2000
 		var samples: [Double] = []
 		for _ in 0..<sampleCount {
-			let sample = dist.next()
+			let sample = dist.next(using: &rng)
 			samples.append(sample)
 			#expect(sample >= 1)
 			#expect(sample.isFinite)
 		}
 
-		// Verify mean
+		// Tolerance derived, not chosen. For the trial-count geometric,
+		//     σ = √(1−p)/p         = √0.75 / 0.25 ≈ 3.4641
+		//     SE = σ / √sampleCount ≈ 3.4641 / √2000 ≈ 0.07746
+		// Four standard errors is wide enough that the assertion is about the
+		// sampler's law rather than about one stream, and tight enough to catch a
+		// real shift in the mean.
+		let sigma = (1.0 - p).squareRoot() / p
+		let standardError = sigma / Double(sampleCount).squareRoot()
+		let tolerance = 4.0 * standardError
+
 		let empiricalMean = samples.reduce(0, +) / Double(samples.count)
 		let expectedMean = 1.0 / p  // 4.0
-		#expect(abs(empiricalMean - expectedMean) < 0.3, "Mean should be close to expected")
+		#expect(abs(empiricalMean - expectedMean) < tolerance,
+				"Mean \(empiricalMean) should be within \(tolerance) of \(expectedMean)")
 	}
 
 	@Test("Geometric distribution probability of first success on first trial")

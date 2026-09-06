@@ -249,7 +249,9 @@ public struct CallableBond<T: Real> where T: Sendable {
 
                 // Continuation value (expected value of next period, discounted)
                 let discountFactor = T.exp(-safeRate * dt)
-                let expectedValue = (p * tree[i][j + 1] + (T(1) - p) * tree[i + 1][j + 1]) * discountFactor
+                let upValue: T = p * tree[i][j + 1]
+                let downValue: T = (T(1) - p) * tree[i + 1][j + 1]
+                let expectedValue: T = (upValue + downValue) * discountFactor
 
                 // Add any cash flow at this step
                 var nodeValue = expectedValue + stepCashFlow
