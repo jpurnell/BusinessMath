@@ -761,30 +761,45 @@ private func generalAIREMLUpdate<T: Real & Sendable>(
 	var score = Array(repeating: T.zero, count: nTheta)
 	var ai = Array(repeating: Array(repeating: T.zero, count: nTheta), count: nTheta)
 
+	// X'V^{-1}r, summed over EVERY group.
+	//
+	// The projection is P = V^{-1} - V^{-1}X(X'V^{-1}X)^{-1}X'V^{-1}, so
+	//
+	//     (Pr)_i = V_i^{-1}r_i - V_i^{-1}X_i (X'V^{-1}X)^{-1} · SUM_j X_j'V_j^{-1}r_j
+	//
+	// and that sum runs over all groups. This used to use only group i's own
+	// X_i'V_i^{-1}r_i, which is a different quantity: `r` here is the GLS residual
+	// y - Xbeta, so the true sum is zero by the normal equations and the correction
+	// vanishes — while a per-group term does not. Subtracting it shrank `pR`, which
+	// shrank r'P(dV)Pr, which made the score more negative and drove every variance
+	// component down. Measured against statsmodels REML the random-effects covariance
+	// came out 12-24% low, and the AI-REML phase moved *away* from the optimum the EM
+	// warm-up had already reached.
+	var globalXtViInvR = Array(repeating: T.zero, count: p)
+	for g in 0..<m {
+		let cache = groupCaches[g]
+		for localIdx in 0..<groupIdx[g].count {
+			for j in 0..<p {
+				globalXtViInvR[j] += cache.xiRows[localIdx][j] * cache.viInvR[localIdx]
+			}
+		}
+	}
+	var globalCorrection = Array(repeating: T.zero, count: p)
+	for j in 0..<p {
+		for k in 0..<p {
+			globalCorrection[j] += xtVinvXInv[j, k] * globalXtViInvR[k]
+		}
+	}
+
 	for g in 0..<m {
 		let indices = groupIdx[g]
 		let nig = indices.count
 		let cache = groupCaches[g]
 
-		// P_i r_i = V_i^{-1} r_i - V_i^{-1} X_i (X'V^{-1}X)^{-1} X_i' V_i^{-1} r_i
-		var xiTviInvR = Array(repeating: T.zero, count: p)
-		for localIdx in 0..<nig {
-			for j in 0..<p {
-				xiTviInvR[j] += cache.xiRows[localIdx][j] * cache.viInvR[localIdx]
-			}
-		}
-
-		var correction = Array(repeating: T.zero, count: p)
-		for j in 0..<p {
-			for k in 0..<p {
-				correction[j] += xtVinvXInv[j, k] * xiTviInvR[k]
-			}
-		}
-
 		var viInvXCorr = Array(repeating: T.zero, count: nig)
 		for localIdx in 0..<nig {
 			for j in 0..<p {
-				viInvXCorr[localIdx] += cache.viInvXi[localIdx, j] * correction[j]
+				viInvXCorr[localIdx] += cache.viInvXi[localIdx, j] * globalCorrection[j]
 			}
 		}
 

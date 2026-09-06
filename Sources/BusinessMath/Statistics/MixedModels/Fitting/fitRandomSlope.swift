@@ -766,33 +766,42 @@ private func slopeAIREMLUpdate<T: Real & Sendable>(
 	var score = Array(repeating: T.zero, count: 4)
 	var ai = Array(repeating: Array(repeating: T.zero, count: 4), count: 4)
 
+	// X'V^{-1}r, summed over EVERY group — the same correction, and the same fix, as in
+	// `fitGeneralLME`. The projection is
+	//
+	//     (Pr)_i = V_i^{-1}r_i - V_i^{-1}X_i (X'V^{-1}X)^{-1} · SUM_j X_j'V_j^{-1}r_j
+	//
+	// and the sum runs over all groups. Using only group i's own term subtracts
+	// something that should not be there: `r` is the GLS residual, so the true sum is
+	// zero by the normal equations. The consequence was measurable — variance components
+	// 12-24% below statsmodels REML, with AI-REML moving away from the optimum the EM
+	// warm-up had already found.
+	var globalXtViInvR = Array(repeating: T.zero, count: p)
+	for g in 0..<m {
+		let cache = groupCaches[g]
+		for localIdx in 0..<groupIdx[g].count {
+			for j in 0..<p {
+				globalXtViInvR[j] += cache.xiRows[localIdx][j] * cache.viInvR[localIdx]
+			}
+		}
+	}
+	var globalCorrection = Array(repeating: T.zero, count: p)
+	for j in 0..<p {
+		for k in 0..<p {
+			globalCorrection[j] += xtVinvXInv[j, k] * globalXtViInvR[k]
+		}
+	}
+
 	for g in 0..<m {
 		let indices = groupIdx[g]
 		let nig = indices.count
 		let cache = groupCaches[g]
 
-		// Compute P_i r_i = V_i^{-1} r_i - V_i^{-1} X_i (X'V^{-1}X)^{-1} X_i' V_i^{-1} r_i
-		// First: X_i' V_i^{-1} r_i (p-vector)
-		var xiTviInvR = Array(repeating: T.zero, count: p)
-		for localIdx in 0..<nig {
-			for j in 0..<p {
-				xiTviInvR[j] += cache.xiRows[localIdx][j] * cache.viInvR[localIdx]
-			}
-		}
-
-		// (X'V^{-1}X)^{-1} X_i' V_i^{-1} r_i (p-vector)
-		var correction = Array(repeating: T.zero, count: p)
-		for j in 0..<p {
-			for k in 0..<p {
-				correction[j] += xtVinvXInv[j, k] * xiTviInvR[k]
-			}
-		}
-
 		// V_i^{-1} X_i * correction (nig-vector)
 		var viInvXCorr = Array(repeating: T.zero, count: nig)
 		for localIdx in 0..<nig {
 			for j in 0..<p {
-				viInvXCorr[localIdx] += cache.viInvXi[localIdx, j] * correction[j]
+				viInvXCorr[localIdx] += cache.viInvXi[localIdx, j] * globalCorrection[j]
 			}
 		}
 
