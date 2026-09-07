@@ -161,16 +161,28 @@ struct DayCountConventionAdditionsTests {
 
 	@Test("Both new conventions are Codable and round-trip through their raw values")
 	func newConventionsAreCodable() throws {
-		for convention in [DayCountConvention.isdaActualActual, .actualActual, .thirty360European] {
+		for convention in [DayCountConvention.isdaActualActual, .actualActual,
+						   .thirty360European, .siaThirty360] {
 			let raw = convention.rawValue
 			#expect(DayCountConvention(rawValue: raw) == convention,
 				"\(raw) did not round-trip")
 		}
 		// CaseIterable must see them, or anything enumerating conventions misses them.
-		#expect(DayCountConvention.allCases.count == 6)
+		//
+		// The count is pinned deliberately: it is what noticed `siaThirty360` being
+		// added, and a convention that exists but is invisible to `allCases` is one a
+		// caller enumerating the list will never offer.
+		#expect(DayCountConvention.allCases.count == 7)
 		#expect(DayCountConvention.allCases.contains(.actualActual))
 		#expect(DayCountConvention.allCases.contains(.isdaActualActual))
 		#expect(DayCountConvention.allCases.contains(.thirty360European))
+		#expect(DayCountConvention.allCases.contains(.siaThirty360))
+
+		// Raw values must be distinct, or `init(rawValue:)` silently resolves one
+		// convention to another and the round-trip above passes while meaning nothing.
+		let raws = Set(DayCountConvention.allCases.map(\.rawValue))
+		#expect(raws.count == DayCountConvention.allCases.count,
+				"two conventions share a raw value: \(DayCountConvention.allCases.map(\.rawValue))")
 	}
 
 	// MARK: - actualActual, the spreadsheet's rule

@@ -138,7 +138,7 @@ public struct CouponPeriod<T: Real & BinaryFloatingPoint>: Sendable where T: Sen
 			self.daysInPeriod = T(basis.days(from: previous, to: next))
 		case .actual365:
 			self.daysInPeriod = T(365) / T(periodsPerYear)
-		case .actual360, .thirty360, .thirty360European:
+		case .actual360, .thirty360, .siaThirty360, .thirty360European:
 			self.daysInPeriod = T(360) / T(periodsPerYear)
 		}
 	}

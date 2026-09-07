@@ -1,0 +1,58 @@
+function	group	owner	signature	note
+PsiAPARCH11	time series	BusinessMath	mean, volatility, delta, gamma, err_coef, ar_coef, val0, stdev0	same family as PsiAR1/PsiGARCH11; their own note says one implementation covers it
+PsiAR2	time series	BusinessMath	mean, volatility, coef1, coef2, val0, val1	same family as PsiAR1/PsiGARCH11; their own note says one implementation covers it
+PsiARCH1	time series	BusinessMath	mean, volatility, err_coef, val0	same family as PsiAR1/PsiGARCH11; their own note says one implementation covers it
+PsiARMA11	time series	BusinessMath	mean, volatility, ar_coef, ma_coef, val0, err0	same family as PsiAR1/PsiGARCH11; their own note says one implementation covers it
+PsiBetaGen	distribution	BusinessMath	alpha1, alpha2, a, b	no mathematics upstream at 2.14.0
+PsiBetaGenAlt	percentile parameterisation	BusinessMath	4 name/value or percentile/value pairs, chosen from: percentile1, percentile2, percentile3, percentile4, shape1, shape2, min, max	same distribution, parameterised by percentiles; needs one fitting solve, not one per row
+PsiBetaSubj	distribution	BusinessMath	a (min), c (likely), mean, b (max)	no mathematics upstream at 2.14.0
+PsiCauchyAlt	percentile parameterisation	BusinessMath	2 percentile/value pairs: percentile1, value1, percentile2, value2	same distribution, parameterised by percentiles; needs one fitting solve, not one per row
+PsiCertified	not mathematics	BusinessMathExcel / SwiftExcelFunctions	name, sipname	names a stored SIP or declares a role; resolve it, do not compute it
+PsiChiSquareAlt	percentile parameterisation	BusinessMath	1 parameter, chosen from: percentile or var	same distribution, parameterised by percentiles; needs one fitting solve, not one per row
+PsiCumulD	distribution	BusinessMath	min, max, {x1..xn}, {p1..pn}	no mathematics upstream at 2.14.0
+PsiEGARCH11	time series	BusinessMath	mean, volatility, theta, gamma, err_coef, ar_coef, val0, stdev0	same family as PsiAR1/PsiGARCH11; their own note says one implementation covers it
+PsiErf	distribution	BusinessMath	h	no mathematics upstream at 2.14.0
+PsiErfAlt	percentile parameterisation	BusinessMath	1 parameter, chosen from: percentile or var	same distribution, parameterised by percentiles; needs one fitting solve, not one per row
+PsiExponentialAlt	percentile parameterisation	BusinessMath	1 parameter, chosen from: percentile or var	same distribution, parameterised by percentiles; needs one fitting solve, not one per row
+PsiFatigueLifeAlt	percentile parameterisation	BusinessMath	3 name/value pairs, names chosen from: loc, scale, shape, or a percentile (0-1); e.g. PsiFatigueLifeAlt(5%, 1.5, 50%, 2.5, 95%, 4.5)	same distribution, parameterised by percentiles; needs one fitting solve, not one per row
+PsiFit	distribution	BusinessMath	data	no mathematics upstream at 2.14.0
+PsiFrechetAlt	percentile parameterisation	BusinessMath	3 name/value pairs, names chosen from: loc, scale, shape, or a percentile (0-1)	same distribution, parameterised by percentiles; needs one fitting solve, not one per row
+PsiGammaAlt	percentile parameterisation	BusinessMath	2 parameters, chosen from: percentile1, percentile2, mean, var, shape, scale	same distribution, parameterised by percentiles; needs one fitting solve, not one per row
+PsiHistogram	distribution	BusinessMath	a, b, {w1..wn}	no mathematics upstream at 2.14.0
+PsiHypSecantAlt	percentile parameterisation	BusinessMath	2 parameters: two different percentiles, or percentile and loc, or percentile and scale	same distribution, parameterised by percentiles; needs one fitting solve, not one per row
+PsiInvNormalAlt	percentile parameterisation	BusinessMath	2 parameters, chosen from: two different percentiles, mean, var, scale	same distribution, parameterised by percentiles; needs one fitting solve, not one per row
+PsiLaplaceAlt	percentile parameterisation	BusinessMath	2 parameters, chosen from: two different percentiles or the standard deviation	same distribution, parameterised by percentiles; needs one fitting solve, not one per row
+PsiLevyAlt	percentile parameterisation	BusinessMath	2 parameters: two different percentiles, or percentile and loc, or percentile and scale	same distribution, parameterised by percentiles; needs one fitting solve, not one per row
+PsiLogLogisticAlt	percentile parameterisation	BusinessMath	3 parameters, chosen from: 3 different percentiles, loc, scale, shape	same distribution, parameterised by percentiles; needs one fitting solve, not one per row
+PsiLogNormalAlt	percentile parameterisation	BusinessMath	2 parameters: 2 different percentiles, or percentile and mean, or percentile and stdev	same distribution, parameterised by percentiles; needs one fitting solve, not one per row
+PsiLogisticAlt	percentile parameterisation	BusinessMath	2 parameters, chosen from: 2 different percentiles, mean, var, scale	same distribution, parameterised by percentiles; needs one fitting solve, not one per row
+PsiMA1	time series	BusinessMath	mean, volatility, coef1, err0	same family as PsiAR1/PsiGARCH11; their own note says one implementation covers it
+PsiMA2	time series	BusinessMath	mean, volatility, coef1, coef2, err0, err1	same family as PsiAR1/PsiGARCH11; their own note says one implementation covers it
+PsiMVNormal	distribution	BusinessMath	mu, sigma	no mathematics upstream at 2.14.0
+PsiMVResample	distribution	BusinessMath	data	no mathematics upstream at 2.14.0
+PsiMVShuffle	distribution	BusinessMath	data	no mathematics upstream at 2.14.0
+PsiMakeInput	distribution	BusinessMath	freq, expr, deduct, limit	no mathematics upstream at 2.14.0
+PsiMaxExtremeAlt	percentile parameterisation	BusinessMath	2 parameters, chosen from: 2 different percentiles, mean, var, mode, scale	same distribution, parameterised by percentiles; needs one fitting solve, not one per row
+PsiMetalog2	distribution	BusinessMath	coefficients	no mathematics upstream at 2.14.0
+PsiMetalog2Fit	distribution	BusinessMath	num_coef, x_values, y_values	no mathematics upstream at 2.14.0
+PsiMetalogSPT	distribution	BusinessMath	min, max, quantiles, prob, prop_fcns	no mathematics upstream at 2.14.0
+PsiMinExtremeAlt	percentile parameterisation	BusinessMath	2 parameters, chosen from: 2 different percentiles, mean, var, mode, scale	same distribution, parameterised by percentiles; needs one fitting solve, not one per row
+PsiNormalAlt	percentile parameterisation	BusinessMath	2 parameters: 2 different percentiles, or percentile and mean, or percentile and stdev	same distribution, parameterised by percentiles; needs one fitting solve, not one per row
+PsiNormalSkew	distribution	BusinessMath	a (lower bound), b (upper bound), c (skew)	no mathematics upstream at 2.14.0
+PsiPareto2	distribution	BusinessMath	b, q	no mathematics upstream at 2.14.0
+PsiPareto2Alt	percentile parameterisation	BusinessMath	2 parameters, chosen from: 2 different percentiles, scale, shape	same distribution, parameterised by percentiles; needs one fitting solve, not one per row
+PsiParetoAlt	percentile parameterisation	BusinessMath	2 parameters, chosen from: 2 different percentiles, shape, scale	same distribution, parameterised by percentiles; needs one fitting solve, not one per row
+PsiPearson5Alt	percentile parameterisation	BusinessMath	2 parameters, chosen from: 2 different percentiles, shape, scale	same distribution, parameterised by percentiles; needs one fitting solve, not one per row
+PsiPearson6Alt	percentile parameterisation	BusinessMath	2 parameters, chosen from: 2 different percentiles, shape, scale	same distribution, parameterised by percentiles; needs one fitting solve, not one per row
+PsiPert	distribution	BusinessMath	a (min), c (likely), b (max)	no mathematics upstream at 2.14.0
+PsiPertAlt	percentile parameterisation	BusinessMath	3 parameters, chosen from: 3 different percentiles, mean, var, min, likely, max	same distribution, parameterised by percentiles; needs one fitting solve, not one per row
+PsiRayleighAlt	percentile parameterisation	BusinessMath	1 parameter, chosen from: percentile, var, mean	same distribution, parameterised by percentiles; needs one fitting solve, not one per row
+PsiSip	not mathematics	BusinessMathExcel / SwiftExcelFunctions	sip	names a stored SIP or declares a role; resolve it, do not compute it
+PsiSlurp	not mathematics	BusinessMathExcel / SwiftExcelFunctions	slurp, j	names a stored SIP or declares a role; resolve it, do not compute it
+PsiStudentAlt	percentile parameterisation	BusinessMath	1 percentile parameter	same distribution, parameterised by percentiles; needs one fitting solve, not one per row
+PsiTSSip	not mathematics	BusinessMathExcel / SwiftExcelFunctions	tssip	names a stored SIP or declares a role; resolve it, do not compute it
+PsiTriangGen	distribution	BusinessMath	ap, m, br, p, r	no mathematics upstream at 2.14.0
+PsiTriangularAlt	percentile parameterisation	BusinessMath	3 parameters combining native args (min, likely, max) with percentiles, e.g. (min, percentile1, percentile2) or (percentile1, likely, percentile2)	same distribution, parameterised by percentiles; needs one fitting solve, not one per row
+PsiUniformAlt	percentile parameterisation	BusinessMath	2 parameters combining native args (lower, upper) with percentiles, e.g. (lower, percentile1) or (percentile1, upper) or (percentile1, percentile2)	same distribution, parameterised by percentiles; needs one fitting solve, not one per row
+PsiVary	not mathematics	BusinessMathExcel / SwiftExcelFunctions	base, min, max, [range_type], [dist_name]	names a stored SIP or declares a role; resolve it, do not compute it
+PsiWeibullAlt	percentile parameterisation	BusinessMath	1 percentile parameter	same distribution, parameterised by percentiles; needs one fitting solve, not one per row

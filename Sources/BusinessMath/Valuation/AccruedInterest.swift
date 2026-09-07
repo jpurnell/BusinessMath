@@ -159,7 +159,7 @@ private func normalPeriodLength<T: Real & BinaryFloatingPoint>(
 		return T(basis.days(from: periodStart, to: periodEnd))
 	case .actual365:
 		return T(365) / T(periodsPerYear)
-	case .actual360, .thirty360, .thirty360European:
+	case .actual360, .thirty360, .siaThirty360, .thirty360European:
 		return T(360) / T(periodsPerYear)
 	}
 }

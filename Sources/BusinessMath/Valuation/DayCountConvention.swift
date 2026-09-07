@@ -8,11 +8,33 @@
 import Foundation
 import Numerics
 
-/// A cached calendar.
+/// A cached calendar, Gregorian and fixed to UTC.
 ///
 /// Creating `Calendar` instances is expensive and every method here does calendar
 /// arithmetic, so the instance is created once, following ``Period``'s own pattern.
-private let cachedCalendar = Calendar.current
+///
+/// **Not `Calendar.current`.** A day count is a statement about calendar dates —
+/// 29 February to 31 December is 301 days under 30/360 in every office in the world —
+/// and `Calendar.current` makes it a statement about the machine instead. It carries
+/// the host's time zone, so the same two `Date` values decompose to different
+/// day-of-month components depending on where the process runs, and 30/360's rules
+/// are written entirely in terms of day-of-month: *is the start the 31st, is it the
+/// last day of February*. Shift the day by one and the February rule stops firing.
+///
+/// That is the same root cause as the daylight-saving defect fixed at the three
+/// `actual/*` sites, where ``civilDaysBetween(_:_:)`` normalises through
+/// `startOfDay`. It reached those by making a 24-hour day 23 or 25 hours long; it
+/// reaches this one by moving the date across midnight. Fixing three of four sites
+/// left the fourth looking like a rule defect, which is what it was mistaken for.
+///
+/// A Gregorian calendar is also correct on its own terms here: 30/360 and its
+/// relatives are Gregorian conventions, and evaluating them in a non-Gregorian
+/// current locale would be wrong regardless of the zone.
+private let cachedCalendar: Calendar = {
+	var calendar = Calendar(identifier: .gregorian)
+	calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .gmt
+	return calendar
+}()
 
 /// How an interval on the calendar is converted into a fraction of a year.
 ///
@@ -88,11 +110,32 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 	/// why a hazard curve bootstrapped from CDS quotes is often integrated on it too.
 	case actual360 = "ACT/360"
 
-	/// Every month treated as 30 days, divided by 360.
+	/// Every month treated as 30 days, divided by 360 — **the spreadsheet's rule**.
 	///
 	/// The numerator ignores the calendar: `360 × Δyears + 30 × Δmonths + Δdays`,
-	/// with the US (NASD) end-of-month rule that a 31st is treated as a 30th, and a
-	/// second 31st only when the first date has already been pulled back to a 30th.
+	/// with the end-of-month rule that a 31st is treated as a 30th, and a second 31st
+	/// only when the first date was *already* the 30th or 31st — tested **before** the
+	/// February adjustment, not after.
+	///
+	/// ## This is not the SIA standard, deliberately
+	///
+	/// That ordering is the whole difference between this and ``siaThirty360``, and it
+	/// is worth being explicit about because the obvious "correction" breaks every
+	/// spreadsheet the package reads:
+	///
+	/// ```
+	/// 2020-02-29 → 2020-12-31   thirty360:     301   (what YEARFRAC basis 0 returns)
+	///                           siaThirty360:  300   (what the SIA standard defines)
+	/// ```
+	///
+	/// The plain name goes to the spreadsheet's answer for the same reason it does for
+	/// ``actualActual``: a caller coming from a workbook means the workbook's rule, and
+	/// binding basis 0 to the standard would disagree with the sheet it came from —
+	/// silently, in a function whose output prices things. The standard is available and
+	/// is explicitly named.
+	///
+	/// It was previously documented as "(US, NASD)". That label is what invites the
+	/// correction, so it is gone.
 	/// Every month is worth exactly 1/12 of a year and every year exactly 1, which is
 	/// what makes a bond schedule's coupons all equal. Standard for US corporate,
 	/// municipal and agency bonds.
@@ -101,6 +144,30 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 	/// stub that starts or ends mid-month is *not* the same as its actual length: a
 	/// 1 August to 31 December stub counts 150 days here against 152 actual.
 	case thirty360 = "30/360"
+
+	/// Every month treated as 30 days, divided by 360 — **the SIA standard's rule**.
+	///
+	/// Identical to ``thirty360`` but for when the end-of-month test is applied. The
+	/// standard pulls a 31st end date back to a 30th when the start date *is* a 30th,
+	/// including a start that became one by the February rule; the spreadsheet tests
+	/// the raw start day and so does not.
+	///
+	/// ```
+	/// 2020-02-29 → 2020-12-31   thirty360:     301
+	///                           siaThirty360:  300
+	/// 2021-02-28 → 2021-07-31   thirty360:     151
+	///                           siaThirty360:  150
+	/// ```
+	///
+	/// They agree wherever neither end sits on a February month-end, which is most of
+	/// the time — and that is what makes the disagreement dangerous rather than
+	/// obvious.
+	///
+	/// Named for the standard rather than taking the plain name, exactly as
+	/// ``isdaActualActual`` is. Use it when the counterparty's documentation says SIA
+	/// or "30/360 bond basis" and means it; use ``thirty360`` when the number has to
+	/// match a spreadsheet.
+	case siaThirty360 = "30/360 (SIA)"
 
 	/// Actual days elapsed, each calendar year divided by its own length — ISDA ACT/ACT.
 	///
@@ -163,7 +230,7 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 	///
 	/// | | End date on the 31st becomes the 30th |
 	/// |---|---|
-	/// | ``thirty360`` (US, NASD) | only when the start date was itself pulled back to a 30th |
+	/// | ``thirty360`` (spreadsheet) | only when the start date was itself pulled back to a 30th |
 	/// | ``thirty360European`` (30E/360) | always |
 	///
 	/// So they agree whenever neither end is a 31st, and whenever the start is. They part
@@ -189,7 +256,7 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 		switch self {
 		case .actual365: return 365
 		case .actual360: return 360
-		case .thirty360: return 360
+		case .thirty360, .siaThirty360: return 360
 		case .thirty360European: return 360
 		case .actualActual, .isdaActualActual: return 365
 		}
@@ -204,7 +271,7 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 	/// ``yearFraction(from:to:)``, which is correct for every case.
 	public var hasFixedYearLength: Bool {
 		switch self {
-		case .actual365, .actual360, .thirty360, .thirty360European: return true
+		case .actual365, .actual360, .thirty360, .siaThirty360, .thirty360European: return true
 		case .actualActual, .isdaActualActual: return false
 		}
 	}
@@ -326,9 +393,11 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 			return (Self.civilDaysBetween(start, end), 0)
 
 		case .thirty360:
-			return (Self.thirty360Days(from: start, to: end, european: false), 0)
+			return (Self.thirty360Days(from: start, to: end, style: .spreadsheet), 0)
+		case .siaThirty360:
+			return (Self.thirty360Days(from: start, to: end, style: .sia), 0)
 		case .thirty360European:
-			return (Self.thirty360Days(from: start, to: end, european: true), 0)
+			return (Self.thirty360Days(from: start, to: end, style: .european), 0)
 		}
 	}
 
@@ -544,7 +613,24 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 		return isLeap ? 366 : 365
 	}
 
-	private static func thirty360Days(from start: Date, to end: Date, european: Bool) -> Int {
+	/// Which 30/360 variant a count is being taken under.
+	///
+	/// The three differ only in how the end date's 31st is treated, and the difference
+	/// is one line each. Modelling it as a style rather than three near-identical
+	/// functions is deliberate: three copies of this arithmetic could disagree about a
+	/// case none of them was written for.
+	private enum ThirtyStyle {
+		/// `YEARFRAC` basis 0. The end-of-month test reads the **raw** start day.
+		case spreadsheet
+		/// The SIA standard. The test reads the start day **after** the February
+		/// adjustment, so a February month-end start pulls the end back too.
+		case sia
+		/// 30E/360. A 31st end date is pulled back unconditionally, and there is no
+		/// February rule at all.
+		case european
+	}
+
+	private static func thirty360Days(from start: Date, to end: Date, style: ThirtyStyle) -> Int {
 		let calendar = cachedCalendar
 		let from = calendar.dateComponents([.year, .month, .day], from: start)
 		let to = calendar.dateComponents([.year, .month, .day], from: end)
@@ -554,31 +640,40 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 			return 0
 		}
 
-		// The two rules share one adjustment and differ in two.
+		// All three share one adjustment: a start date on the 31st becomes the 30th.
 		//
-		// Shared: a start date on the 31st becomes the 30th.
+		// February. The two American rules treat the last day of February as a 30th,
+		// and when both ends are the last day of February they make the end a 30th
+		// too. The European rule has no February case. Omitting this was a defect: it
+		// made 28 February to 31 July count 153 days against the spreadsheet's 151,
+		// and it went unnoticed because the convention had only ever been checked
+		// against its own definition.
 		//
-		// The end date. European pulls a 31st back unconditionally. The US rule pulls it
-		// back only when the start day was *already* 30 or 31 — and "already" means
-		// before the February adjustment below, not after. That ordering is the whole
-		// difference between 151 and 150 days for 28 February to 31 July.
-		//
-		// February. The US rule treats the last day of February as a 30th, and when both
-		// ends are the last day of February it makes the end a 30th too. The European
-		// rule has no February case at all. Omitting this was a defect: it made
-		// 28 February to 31 July count 153 days against the spreadsheet's 151, and it
-		// went unnoticed because the convention had only ever been checked against its
-		// own definition.
-		let startIsFebruaryEnd = Self.isLastDayOfFebruary(start)
-		let endIsFebruaryEnd = Self.isLastDayOfFebruary(end)
+		// The end date is where all three part company. European pulls a 31st back
+		// unconditionally. The two American rules pull it back only when the start was
+		// a 30th or 31st — and they disagree about *when* to ask. The spreadsheet asks
+		// before the February adjustment; the SIA standard asks after. That single
+		// ordering is the whole difference between 151 and 150 days for 28 February to
+		// 31 July, and between 301 and 300 for 29 February to 31 December.
+		let applyFebruary = style != .european
+		let startIsFebruaryEnd = applyFebruary && Self.isLastDayOfFebruary(start)
+		let endIsFebruaryEnd = applyFebruary && Self.isLastDayOfFebruary(end)
 
 		var adjustedStartDay = startDay
 		var adjustedEndDay = endDay
 
-		if !european, startIsFebruaryEnd, endIsFebruaryEnd { adjustedEndDay = 30 }
-		if !european, startIsFebruaryEnd { adjustedStartDay = 30 }
+		if startIsFebruaryEnd, endIsFebruaryEnd { adjustedEndDay = 30 }
+		if startIsFebruaryEnd { adjustedStartDay = 30 }
 
-		let endIsPulledBack = european ? (endDay == 31) : (endDay == 31 && startDay >= 30)
+		let endIsPulledBack: Bool
+		switch style {
+		case .european:
+			endIsPulledBack = endDay == 31
+		case .spreadsheet:
+			endIsPulledBack = endDay == 31 && startDay >= 30
+		case .sia:
+			endIsPulledBack = endDay == 31 && adjustedStartDay >= 30
+		}
 		if endIsPulledBack { adjustedEndDay = 30 }
 
 		if adjustedStartDay == 31 { adjustedStartDay = 30 }
