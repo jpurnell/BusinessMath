@@ -1,0 +1,1067 @@
+{
+  "alpha": 0.05,
+  "cases": [
+    {
+      "alpha": 0.05,
+      "anova": {
+        "dfBetween": 2,
+        "dfError": 27,
+        "fPValue": 1.1318444740408255e-21,
+        "fStatistic": 467.2343112869061,
+        "mse": 2.1576000833971705
+      },
+      "balanced": true,
+      "comparisons": [
+        {
+          "bonferroni": {
+            "isSignificant": true,
+            "pValue": 1.4350185134496917e-14,
+            "rawPValue": 4.783395044832306e-15,
+            "tStatistic": -15.623409052685226
+          },
+          "groupA": 0,
+          "groupB": 1,
+          "meanDifference": -10.263046026350294,
+          "scheffe": {
+            "fStatistic": 122.04545521376332,
+            "isSignificant": true,
+            "pValue": 2.994738520182772e-14
+          },
+          "standardError": 0.6569018318435671,
+          "tukey": {
+            "isSignificant": true,
+            "pValue": 1.0325074129013956e-14,
+            "qStatistic": 22.094836972810032,
+            "statsmodelsPValue": 0.0
+          }
+        },
+        {
+          "bonferroni": {
+            "isSignificant": true,
+            "pValue": 5.246153329137639e-22,
+            "rawPValue": 1.748717776379213e-22,
+            "tStatistic": -30.56655640697928
+          },
+          "groupA": 0,
+          "groupB": 2,
+          "meanDifference": -20.07922689689441,
+          "scheffe": {
+            "fStatistic": 467.15718529052305,
+            "isSignificant": true,
+            "pValue": 1.1342987390930552e-21
+          },
+          "standardError": 0.6569018318435671,
+          "tukey": {
+            "isSignificant": true,
+            "pValue": 0.0,
+            "qStatistic": 43.227638625792316,
+            "statsmodelsPValue": 0.0
+          }
+        },
+        {
+          "bonferroni": {
+            "isSignificant": true,
+            "pValue": 4.2324912783390864e-14,
+            "rawPValue": 1.4108304261130288e-14,
+            "tStatistic": -14.943147354294057
+          },
+          "groupA": 1,
+          "groupB": 2,
+          "meanDifference": -9.81618087054412,
+          "scheffe": {
+            "fStatistic": 111.64882642607274,
+            "isSignificant": true,
+            "pValue": 8.795171772785892e-14
+          },
+          "standardError": 0.6569018318435671,
+          "tukey": {
+            "isSignificant": true,
+            "pValue": 3.808064974464287e-14,
+            "qStatistic": 21.132801652982288,
+            "statsmodelsPValue": 0.0
+          }
+        }
+      ],
+      "groupCount": 3,
+      "groups": [
+        [
+          10.09744184721588,
+          11.036327022729186,
+          9.779801198045053,
+          9.821932474353677,
+          11.00500729760049,
+          11.021147724516172,
+          10.690151346420944,
+          7.158325537841517,
+          8.860454607192679,
+          9.386849002765302
+        ],
+        [
+          21.47910794950841,
+          20.090910447193405,
+          19.212259887005068,
+          20.755189453916707,
+          20.65178896073038,
+          17.716877229452457,
+          21.0829204016267,
+          19.1505827816126,
+          20.425312637344245,
+          20.9229485737939
+        ],
+        [
+          28.083069718518296,
+          32.41261653092359,
+          27.98002709555639,
+          31.718746127292384,
+          31.284090828105427,
+          29.651188702909213,
+          32.44021553995541,
+          28.76437622248657,
+          27.271972319905345,
+          30.043403941972453
+        ]
+      ],
+      "means": [
+        9.88574380586809,
+        20.148789832218384,
+        29.964970702762503
+      ],
+      "name": "threeGroupsClearlySeparated",
+      "note": "Three balanced groups of ten with means far apart. Every method should find every pair significant, so this case pins the p-values rather than the verdicts \u2014 a wrong critical value still gets the verdicts right here.",
+      "tCriticalInStandardErrors": 2.0518305164802846,
+      "tukeyCriticalInStandardErrors": 2.4794176895533435
+    },
+    {
+      "alpha": 0.05,
+      "anova": {
+        "dfBetween": 2,
+        "dfError": 33,
+        "fPValue": 0.3040122994091094,
+        "fStatistic": 1.2347011398730432,
+        "mse": 17.314833745352733
+      },
+      "balanced": true,
+      "comparisons": [
+        {
+          "bonferroni": {
+            "isSignificant": false,
+            "pValue": 1.0,
+            "rawPValue": 0.35895125917982024,
+            "tStatistic": 0.9303401443994342
+          },
+          "groupA": 0,
+          "groupB": 1,
+          "meanDifference": 1.5804301239947591,
+          "scheffe": {
+            "fStatistic": 0.43276639214058005,
+            "isSignificant": false,
+            "pValue": 0.6523406654028306
+          },
+          "standardError": 1.6987659121331153,
+          "tukey": {
+            "isSignificant": false,
+            "pValue": 0.625278082615667,
+            "qStatistic": 1.3156996498298235,
+            "statsmodelsPValue": 0.6253
+          }
+        },
+        {
+          "bonferroni": {
+            "isSignificant": false,
+            "pValue": 0.3835275193779708,
+            "rawPValue": 0.1278425064593236,
+            "tStatistic": 1.5619390185137048
+          },
+          "groupA": 0,
+          "groupB": 2,
+          "meanDifference": 2.6533687614817367,
+          "scheffe": {
+            "fStatistic": 1.2198267487777779,
+            "isSignificant": false,
+            "pValue": 0.30825050872247156
+          },
+          "standardError": 1.6987659121331153,
+          "tukey": {
+            "isSignificant": false,
+            "pValue": 0.27611302404352034,
+            "qStatistic": 2.2089153435818023,
+            "statsmodelsPValue": 0.2761
+          }
+        },
+        {
+          "bonferroni": {
+            "isSignificant": false,
+            "pValue": 1.0,
+            "rawPValue": 0.5320001974967893,
+            "tStatistic": 0.6315988741142706
+          },
+          "groupA": 1,
+          "groupB": 2,
+          "meanDifference": 1.0729386374869776,
+          "scheffe": {
+            "fStatistic": 0.19945856889120714,
+            "isSignificant": false,
+            "pValue": 0.8201544277414954
+          },
+          "standardError": 1.6987659121331153,
+          "tukey": {
+            "isSignificant": false,
+            "pValue": 0.8038913303247286,
+            "qStatistic": 0.8932156937519786,
+            "statsmodelsPValue": 0.8039
+          }
+        }
+      ],
+      "groupCount": 3,
+      "groups": [
+        [
+          45.32202623021978,
+          49.628883885838384,
+          51.34296115867254,
+          57.60532542762504,
+          48.85530260143124,
+          50.51488644450139,
+          53.29163321461377,
+          53.96965069181214,
+          49.41821798329343,
+          54.530136580685515,
+          44.99601090062162,
+          47.37272207179709
+        ],
+        [
+          46.56097779048444,
+          48.40370410251862,
+          52.996818955560855,
+          50.09535397815301,
+          54.759484759520284,
+          43.23324107620265,
+          47.1444643556858,
+          53.74308725212093,
+          49.301943785133304,
+          48.150394796900976,
+          40.35911273254471,
+          53.13401211834923
+        ],
+        [
+          44.56265263643304,
+          52.06923671622716,
+          44.84814702785345,
+          47.2963849816996,
+          57.484513499286116,
+          44.934114313530536,
+          45.41406927476609,
+          48.91038010075433,
+          40.920171901147555,
+          49.93839680361717,
+          50.12604134646043,
+          48.50322345155568
+        ]
+      ],
+      "means": [
+        50.57064643259266,
+        48.9902163085979,
+        47.917277671110924
+      ],
+      "name": "threeGroupsNoRealDifference",
+      "note": "Three balanced groups drawn from one distribution. The verdicts agree (nothing significant) and the p-values do not, which is where the methods can be told apart.",
+      "tCriticalInStandardErrors": 2.0345152974493383,
+      "tukeyCriticalInStandardErrors": 2.45379451941083
+    },
+    {
+      "alpha": 0.05,
+      "anova": {
+        "dfBetween": 2,
+        "dfError": 24,
+        "fPValue": 0.00018137953461081266,
+        "fStatistic": 12.601724782797572,
+        "mse": 6.494209178539425
+      },
+      "balanced": true,
+      "comparisons": [
+        {
+          "bonferroni": {
+            "isSignificant": true,
+            "pValue": 0.002911877888509093,
+            "rawPValue": 0.0009706259628363643,
+            "tStatistic": -3.757298692379307
+          },
+          "groupA": 0,
+          "groupB": 1,
+          "meanDifference": -4.513699069092123,
+          "scheffe": {
+            "fStatistic": 7.058646731877622,
+            "isSignificant": true,
+            "pValue": 0.003882131401480579
+          },
+          "standardError": 1.2013149442302726,
+          "tukey": {
+            "isSignificant": true,
+            "pValue": 0.002691820676905432,
+            "qStatistic": 5.313622768649511,
+            "statsmodelsPValue": 0.0027
+          }
+        },
+        {
+          "bonferroni": {
+            "isSignificant": true,
+            "pValue": 0.0002280844990713386,
+            "rawPValue": 7.602816635711287e-05,
+            "tStatistic": -4.762157119090556
+          },
+          "groupA": 0,
+          "groupB": 2,
+          "meanDifference": -5.7208505139360675,
+          "scheffe": {
+            "fStatistic": 11.339070213452432,
+            "isSignificant": true,
+            "pValue": 0.0003413283379791079
+          },
+          "standardError": 1.2013149442302726,
+          "tukey": {
+            "isSignificant": true,
+            "pValue": 0.0002172572928901273,
+            "qStatistic": 6.7347071839694514,
+            "statsmodelsPValue": 0.0002
+          }
+        },
+        {
+          "bonferroni": {
+            "isSignificant": false,
+            "pValue": 0.9749682727166942,
+            "rawPValue": 0.32498942423889804,
+            "tStatistic": -1.0048584267112497
+          },
+          "groupA": 1,
+          "groupB": 2,
+          "meanDifference": -1.2071514448439444,
+          "scheffe": {
+            "fStatistic": 0.504870228866304,
+            "isSignificant": false,
+            "pValue": 0.6098523237257782
+          },
+          "standardError": 1.2013149442302726,
+          "tukey": {
+            "isSignificant": false,
+            "pValue": 0.580995114747914,
+            "qStatistic": 1.42108441531994,
+            "statsmodelsPValue": 0.581
+          }
+        }
+      ],
+      "groupCount": 3,
+      "groups": [
+        [
+          17.470559714654755,
+          19.692417453236896,
+          17.971803054448127,
+          18.930539712118666,
+          17.518060609928717,
+          21.67835501363322,
+          18.751455147278936,
+          22.759069224231133,
+          17.391458258138048
+        ],
+        [
+          22.0968251708551,
+          20.86592529761895,
+          24.26117450150208,
+          26.290738543033605,
+          25.191744213400565,
+          27.695559805164283,
+          24.507712471593106,
+          18.33907693077257,
+          23.5382528755573
+        ],
+        [
+          27.50715249933603,
+          26.504174143267605,
+          24.710626565690333,
+          24.90602903936185,
+          24.836682281327413,
+          19.204018134157486,
+          21.997841004658053,
+          26.05371645660621,
+          27.93113268868809
+        ]
+      ],
+      "means": [
+        19.12930202085205,
+        23.643001089944175,
+        24.85015253478812
+      ],
+      "name": "threeGroupsMarginal",
+      "note": "Separation near the decision boundary, so the three methods disagree on the verdict and not merely the number. This is the case a t-for-q substitution fails outright: Tukey's critical difference is 21% wider than a t's at this k and df.",
+      "tCriticalInStandardErrors": 2.063898561628024,
+      "tukeyCriticalInStandardErrors": 2.497287119713279
+    },
+    {
+      "alpha": 0.05,
+      "anova": {
+        "dfBetween": 2,
+        "dfError": 35,
+        "fPValue": 0.01966260477990914,
+        "fStatistic": 4.405051290059352,
+        "mse": 12.649118651407179
+      },
+      "balanced": false,
+      "comparisons": [
+        {
+          "bonferroni": {
+            "isSignificant": true,
+            "pValue": 0.01746184859389656,
+            "rawPValue": 0.00582061619796552,
+            "tStatistic": -2.937363884037134
+          },
+          "groupA": 0,
+          "groupB": 1,
+          "meanDifference": -5.223455368792266,
+          "scheffe": {
+            "fStatistic": 4.31405329362286,
+            "isSignificant": true,
+            "pValue": 0.02114849077550885
+          },
+          "standardError": 1.7782799731346566,
+          "tukey": {
+            "isSignificant": true,
+            "pValue": 0.015662725986925308,
+            "qStatistic": 4.154059842430226,
+            "statsmodelsPValue": 0.0157
+          }
+        },
+        {
+          "bonferroni": {
+            "isSignificant": false,
+            "pValue": 0.06535750194692479,
+            "rawPValue": 0.021785833982308263,
+            "tStatistic": -2.4012561755731605
+          },
+          "groupA": 0,
+          "groupB": 2,
+          "meanDifference": -3.9752521298722385,
+          "scheffe": {
+            "fStatistic": 2.883015610364121,
+            "isSignificant": false,
+            "pValue": 0.06933750386080378
+          },
+          "standardError": 1.6554885606586218,
+          "tukey": {
+            "isSignificant": false,
+            "pValue": 0.05537209824670597,
+            "qStatistic": 3.3958890502277135,
+            "statsmodelsPValue": 0.0554
+          }
+        },
+        {
+          "bonferroni": {
+            "isSignificant": false,
+            "pValue": 1.0,
+            "rawPValue": 0.34307616162191246,
+            "tStatistic": 0.9611381231246365
+          },
+          "groupA": 1,
+          "groupB": 2,
+          "meanDifference": 1.248203238920027,
+          "scheffe": {
+            "fStatistic": 0.4618932458617745,
+            "isSignificant": false,
+            "pValue": 0.6338754202003639
+          },
+          "standardError": 1.2986720731273762,
+          "tukey": {
+            "isSignificant": false,
+            "pValue": 0.6058884778321378,
+            "qStatistic": 1.3592545690366826,
+            "statsmodelsPValue": 0.6059
+          }
+        }
+      ],
+      "groupCount": 3,
+      "groups": [
+        [
+          11.806273328991514,
+          12.688844104026362,
+          16.46449477563457,
+          16.525349376294784,
+          14.102773254714906,
+          11.735033221738721
+        ],
+        [
+          21.922591791868655,
+          22.490323383893447,
+          13.362451390715975,
+          13.064522977196756,
+          21.00538896975178,
+          19.53214332905693,
+          15.300433878526405,
+          17.803319449430294,
+          19.398870424956108,
+          23.031521313993558,
+          21.112327365038105,
+          21.3031062738809
+        ],
+        [
+          19.563598296509845,
+          17.466912604234455,
+          17.052110918185257,
+          16.53039611133692,
+          19.617744965534378,
+          14.903597073938807,
+          11.591641575782187,
+          20.804026007301697,
+          19.50142661362159,
+          26.26854123506999,
+          20.291012728749635,
+          15.760787609707043,
+          14.990749456523256,
+          24.412856228428225,
+          20.226046746501265,
+          11.101662639398333,
+          14.604996481571355,
+          16.665092992024732,
+          21.265044316034057,
+          14.629358201661342
+        ]
+      ],
+      "means": [
+        13.887128010233475,
+        19.11058337902574,
+        17.862380140105714
+      ],
+      "name": "unbalancedGroups",
+      "note": "Group sizes 6, 12 and 20. Tukey becomes Tukey-Kramer here, using each pair's own harmonic term rather than a single common one; an implementation that assumes balance is wrong only off the diagonal of the size table.",
+      "tCriticalInStandardErrors": 2.0301079282503425,
+      "tukeyCriticalInStandardErrors": 2.4472755129115287
+    },
+    {
+      "alpha": 0.05,
+      "anova": {
+        "dfBetween": 4,
+        "dfError": 45,
+        "fPValue": 1.3496769502208522e-05,
+        "fStatistic": 9.368594260594021,
+        "mse": 58.48588115133511
+      },
+      "balanced": true,
+      "comparisons": [
+        {
+          "bonferroni": {
+            "isSignificant": true,
+            "pValue": 0.023900169988221812,
+            "rawPValue": 0.0023900169988221812,
+            "tStatistic": -3.2187725507377722
+          },
+          "groupA": 0,
+          "groupB": 1,
+          "meanDifference": -11.008567396509235,
+          "scheffe": {
+            "fStatistic": 2.5901241833457362,
+            "isSignificant": true,
+            "pValue": 0.049224945546324825
+          },
+          "standardError": 3.420113482074392,
+          "tukey": {
+            "isSignificant": true,
+            "pValue": 0.019243947881791734,
+            "qStatistic": 4.5520317954476,
+            "statsmodelsPValue": 0.0192
+          }
+        },
+        {
+          "bonferroni": {
+            "isSignificant": false,
+            "pValue": 1.0,
+            "rawPValue": 0.6905064183400164,
+            "tStatistic": -0.4007421085201857
+          },
+          "groupA": 0,
+          "groupB": 2,
+          "meanDifference": -1.3705834881848062,
+          "scheffe": {
+            "fStatistic": 0.040148559385301076,
+            "isSignificant": false,
+            "pValue": 0.9968226405239459
+          },
+          "standardError": 3.420113482074392,
+          "tukey": {
+            "isSignificant": false,
+            "pValue": 0.9943716187541934,
+            "qStatistic": 0.5667349248832373,
+            "statsmodelsPValue": 0.9944
+          }
+        },
+        {
+          "bonferroni": {
+            "isSignificant": true,
+            "pValue": 3.4485338446927553e-05,
+            "rawPValue": 3.4485338446927557e-06,
+            "tStatistic": -5.292931120441458
+          },
+          "groupA": 0,
+          "groupB": 3,
+          "meanDifference": -18.102425084712948,
+          "scheffe": {
+            "fStatistic": 7.003779961434417,
+            "isSignificant": true,
+            "pValue": 0.00017957897081824598
+          },
+          "standardError": 3.420113482074392,
+          "tukey": {
+            "isSignificant": true,
+            "pValue": 3.292912241537049e-05,
+            "qStatistic": 7.485334975234933,
+            "statsmodelsPValue": 0.0
+          }
+        },
+        {
+          "bonferroni": {
+            "isSignificant": false,
+            "pValue": 0.161538454775702,
+            "rawPValue": 0.0161538454775702,
+            "tStatistic": -2.499451058109856
+          },
+          "groupA": 0,
+          "groupB": 4,
+          "meanDifference": -8.548406261626624,
+          "scheffe": {
+            "fStatistic": 1.56181389797162,
+            "isSignificant": false,
+            "pValue": 0.2008605044656228
+          },
+          "standardError": 3.420113482074392,
+          "tukey": {
+            "isSignificant": false,
+            "pValue": 0.10882326909171369,
+            "qStatistic": 3.534757584866742,
+            "statsmodelsPValue": 0.1088
+          }
+        },
+        {
+          "bonferroni": {
+            "isSignificant": false,
+            "pValue": 0.07154565839335285,
+            "rawPValue": 0.007154565839335285,
+            "tStatistic": 2.818030442217587
+          },
+          "groupA": 1,
+          "groupB": 2,
+          "meanDifference": 9.63798390832443,
+          "scheffe": {
+            "fStatistic": 1.9853238933162618,
+            "isSignificant": false,
+            "pValue": 0.11294998396163773
+          },
+          "standardError": 3.420113482074392,
+          "tukey": {
+            "isSignificant": false,
+            "pValue": 0.05288481486852037,
+            "qStatistic": 3.985296870564362,
+            "statsmodelsPValue": 0.0529
+          }
+        },
+        {
+          "bonferroni": {
+            "isSignificant": false,
+            "pValue": 0.4381516556878274,
+            "rawPValue": 0.04381516556878274,
+            "tStatistic": -2.0741585697036853
+          },
+          "groupA": 1,
+          "groupB": 3,
+          "meanDifference": -7.0938576882037125,
+          "scheffe": {
+            "fStatistic": 1.0755334430688097,
+            "isSignificant": false,
+            "pValue": 0.37982879267908864
+          },
+          "standardError": 3.420113482074392,
+          "tukey": {
+            "isSignificant": false,
+            "pValue": 0.2490111726181462,
+            "qStatistic": 2.933303179787333,
+            "statsmodelsPValue": 0.249
+          }
+        },
+        {
+          "bonferroni": {
+            "isSignificant": false,
+            "pValue": 1.0,
+            "rawPValue": 0.4756620516278131,
+            "tStatistic": 0.719321492627916
+          },
+          "groupA": 1,
+          "groupB": 4,
+          "meanDifference": 2.460161134882611,
+          "scheffe": {
+            "fStatistic": 0.1293558524391133,
+            "isSignificant": false,
+            "pValue": 0.970944384950022
+          },
+          "standardError": 3.420113482074392,
+          "tukey": {
+            "isSignificant": false,
+            "pValue": 0.9509557825381693,
+            "qStatistic": 1.0172742105808572,
+            "statsmodelsPValue": 0.951
+          }
+        },
+        {
+          "bonferroni": {
+            "isSignificant": true,
+            "pValue": 0.0001316039771425619,
+            "rawPValue": 1.3160397714256191e-05,
+            "tStatistic": -4.892189011921272
+          },
+          "groupA": 2,
+          "groupB": 3,
+          "meanDifference": -16.73184159652814,
+          "scheffe": {
+            "fStatistic": 5.983378332090808,
+            "isSignificant": true,
+            "pValue": 0.000599333402077338
+          },
+          "standardError": 3.420113482074392,
+          "tukey": {
+            "isSignificant": true,
+            "pValue": 0.00012388604854307594,
+            "qStatistic": 6.918600050351695,
+            "statsmodelsPValue": 0.0001
+          }
+        },
+        {
+          "bonferroni": {
+            "isSignificant": false,
+            "pValue": 0.41485717964682506,
+            "rawPValue": 0.041485717964682506,
+            "tStatistic": -2.0987089495896707
+          },
+          "groupA": 2,
+          "groupB": 4,
+          "meanDifference": -7.177822773441818,
+          "scheffe": {
+            "fStatistic": 1.1011448137719448,
+            "isSignificant": false,
+            "pValue": 0.3677062038318509
+          },
+          "standardError": 3.420113482074392,
+          "tukey": {
+            "isSignificant": false,
+            "pValue": 0.2385031201715594,
+            "qStatistic": 2.9680226599835047,
+            "statsmodelsPValue": 0.2385
+          }
+        },
+        {
+          "bonferroni": {
+            "isSignificant": false,
+            "pValue": 0.07632414394913971,
+            "rawPValue": 0.007632414394913971,
+            "tStatistic": 2.7934800623316014
+          },
+          "groupA": 3,
+          "groupB": 4,
+          "meanDifference": 9.554018823086324,
+          "scheffe": {
+            "fStatistic": 1.9508827146610421,
+            "isSignificant": false,
+            "pValue": 0.11840379869847979
+          },
+          "standardError": 3.420113482074392,
+          "tukey": {
+            "isSignificant": false,
+            "pValue": 0.05606384765084349,
+            "qStatistic": 3.9505773903681902,
+            "statsmodelsPValue": 0.0561
+          }
+        }
+      ],
+      "groupCount": 5,
+      "groups": [
+        [
+          82.25988126654498,
+          104.81386370535465,
+          88.3681410430474,
+          97.35884735616241,
+          86.0665415285868,
+          95.69762136985312,
+          99.5733645925487,
+          85.06341022230097,
+          91.56247967377388,
+          102.36995313665369
+        ],
+        [
+          99.83093878185576,
+          109.67200060966131,
+          98.87704081425427,
+          94.62143483777103,
+          94.73079176895632,
+          108.05984461942518,
+          111.57126289954205,
+          105.34709427878536,
+          110.19037223496326,
+          110.31899701470446
+        ],
+        [
+          86.15072731596817,
+          89.69816418188329,
+          96.04426047400847,
+          98.30967388860138,
+          98.1690814820781,
+          96.07016845676938,
+          92.2216600596624,
+          97.72065839506712,
+          97.7326616586335,
+          94.72288286400305
+        ],
+        [
+          116.67079952422999,
+          109.75839744938251,
+          111.15906680479424,
+          114.03249782151023,
+          107.10400155851526,
+          123.93168749598034,
+          104.41897259686813,
+          115.67786868458263,
+          100.8056469071136,
+          110.59941589897923
+        ],
+        [
+          93.56465480047295,
+          96.58351677743313,
+          114.17679084465783,
+          97.82003003712732,
+          102.74432609046549,
+          96.3711374755515,
+          113.6642522500971,
+          122.75217015716746,
+          92.53402844140582,
+          88.4072596367142
+        ]
+      ],
+      "means": [
+        93.31341038948267,
+        104.3219777859919,
+        94.68399387766748,
+        111.41583547419562,
+        101.8618166511093
+      ],
+      "name": "fiveGroupsManyComparisons",
+      "note": "Five groups make ten comparisons, so Bonferroni multiplies by ten and the gap between the studentized range and a t is at its widest. The three methods are furthest apart here.",
+      "tCriticalInStandardErrors": 2.014103388880846,
+      "tukeyCriticalInStandardErrors": 2.841449973512565
+    },
+    {
+      "alpha": 0.05,
+      "anova": {
+        "dfBetween": 1,
+        "dfError": 28,
+        "fPValue": 3.4105549813854886e-06,
+        "fStatistic": 33.28495671782047,
+        "mse": 15.135724649173369
+      },
+      "balanced": true,
+      "comparisons": [
+        {
+          "bonferroni": {
+            "isSignificant": true,
+            "pValue": 3.4105549813854886e-06,
+            "rawPValue": 3.4105549813854886e-06,
+            "tStatistic": -5.769311632926451
+          },
+          "groupA": 0,
+          "groupB": 1,
+          "meanDifference": -8.195868388731679,
+          "scheffe": {
+            "fStatistic": 33.28495671782047,
+            "isSignificant": true,
+            "pValue": 3.4105549813854886e-06
+          },
+          "standardError": 1.4205972757575536,
+          "tukey": {
+            "isSignificant": true,
+            "pValue": 3.410554982985481e-06,
+            "qStatistic": 8.159038756841454,
+            "statsmodelsPValue": 0.0
+          }
+        }
+      ],
+      "groupCount": 2,
+      "groups": [
+        [
+          25.62628242139941,
+          35.76289524846343,
+          29.399455443783953,
+          19.412294246825038,
+          23.592054816457594,
+          31.001047937647737,
+          29.171502252173852,
+          36.88218627915934,
+          30.723586840196692,
+          28.089555802825366,
+          27.008340082768566,
+          26.24064431303944,
+          24.48277546411148,
+          28.752239642863533,
+          33.99209866497061
+        ],
+        [
+          32.29868096403414,
+          34.19534530735268,
+          36.8678162391536,
+          42.16347891170834,
+          36.706716040470575,
+          36.72344056435996,
+          39.303516328090005,
+          36.671409272570365,
+          36.76669099585998,
+          34.14857521753692,
+          42.289571356476976,
+          37.05269333054679,
+          32.64520728144336,
+          38.6500510597533,
+          36.591792418304316
+        ]
+      ],
+      "means": [
+        28.6757972971124,
+        36.87166568584408
+      ],
+      "name": "twoGroupsDegenerate",
+      "note": "Two groups: one comparison, so Bonferroni's multiplier is 1 and its adjusted p-value must equal the raw pooled t p-value exactly. Scheff\u00e9 with k-1 = 1 reduces to the same test, and F = t\u00b2. A boundary where all three should coincide.",
+      "tCriticalInStandardErrors": 2.048407141795245,
+      "tukeyCriticalInStandardErrors": 2.048407141795258
+    },
+    {
+      "alpha": 0.05,
+      "anova": {
+        "dfBetween": 2,
+        "dfError": 27,
+        "fPValue": 0.056187665788567466,
+        "fStatistic": 3.209096006552152,
+        "mse": 15.968667524596947
+      },
+      "balanced": true,
+      "comparisons": [
+        {
+          "bonferroni": {
+            "isSignificant": false,
+            "pValue": 0.12084079746603786,
+            "rawPValue": 0.04028026582201262,
+            "tStatistic": -2.154546715242027
+          },
+          "groupA": 0,
+          "groupB": 1,
+          "meanDifference": -3.8503947116616857,
+          "scheffe": {
+            "fStatistic": 2.3210357740801038,
+            "isSignificant": false,
+            "pValue": 0.11744500621660524
+          },
+          "standardError": 1.787101985035938,
+          "tukey": {
+            "isSignificant": false,
+            "pValue": 0.09772743367900372,
+            "qStatistic": 3.046989185461677,
+            "statsmodelsPValue": 0.0977
+          }
+        },
+        {
+          "bonferroni": {
+            "isSignificant": false,
+            "pValue": 1.0,
+            "rawPValue": 0.9392789301273312,
+            "tStatistic": 0.07688882712949728
+          },
+          "groupA": 0,
+          "groupB": 2,
+          "meanDifference": 0.13740817559020968,
+          "scheffe": {
+            "fStatistic": 0.0029559458686748592,
+            "isSignificant": false,
+            "pValue": 0.99704874125103
+          },
+          "standardError": 1.787101985035938,
+          "tukey": {
+            "isSignificant": false,
+            "pValue": 0.9967463450230877,
+            "qStatistic": 0.10873722212149545,
+            "statsmodelsPValue": 0.9967
+          }
+        },
+        {
+          "bonferroni": {
+            "isSignificant": false,
+            "pValue": 0.1024504746255203,
+            "rawPValue": 0.03415015820850677,
+            "tStatistic": 2.231435542371524
+          },
+          "groupA": 1,
+          "groupB": 2,
+          "meanDifference": 3.9878028872518954,
+          "scheffe": {
+            "fStatistic": 2.489652289879449,
+            "isSignificant": false,
+            "pValue": 0.10178390496486363
+          },
+          "standardError": 1.787101985035938,
+          "tukey": {
+            "isSignificant": false,
+            "pValue": 0.08384375640225206,
+            "qStatistic": 3.1557264075831726,
+            "statsmodelsPValue": 0.0838
+          }
+        }
+      ],
+      "groupCount": 3,
+      "groups": [
+        [
+          38.46551535846962,
+          40.230514774169606,
+          39.31712862425245,
+          39.69245649292796,
+          40.70660541108507,
+          40.8869092697292,
+          40.63845217527521,
+          40.2133418069816,
+          41.26773276679899,
+          38.944561873544714
+        ],
+        [
+          48.48605752194466,
+          46.53338273040416,
+          42.1312743215538,
+          39.30497613999095,
+          44.2754854222407,
+          43.81083512763851,
+          41.37966050488933,
+          41.848534281858896,
+          45.577203599177004,
+          45.51975602015335
+        ],
+        [
+          40.707566219844004,
+          46.097163102867036,
+          41.711434581200706,
+          29.47780494758006,
+          32.80541784463226,
+          43.8592682267531,
+          39.49452608545624,
+          43.820136820000776,
+          48.32278019519643,
+          32.69303877380175
+        ]
+      ],
+      "means": [
+        40.03632185532344,
+        43.88671656698513,
+        39.89891367973323
+      ],
+      "name": "unequalVariancesPooled",
+      "note": "Group variances differing by a factor of nine. All three methods pool regardless \u2014 that is their shared assumption, not a defect \u2014 so this case pins what pooling actually produces rather than letting a per-pair variance slip in unnoticed.",
+      "tCriticalInStandardErrors": 2.0518305164802846,
+      "tukeyCriticalInStandardErrors": 2.4794176895533435
+    }
+  ],
+  "name": "postHoc",
+  "note": "The three methods differ only in the reference distribution they use, and the existing suite pins none of them. Tukey's studentized range is the one with no closed form and the one a t or normal is substituted for; the designs vary k because that gap widens with the number of groups.",
+  "reference": "scipy 1.18.1 tukey_hsd / t / f / studentized_range, statsmodels 0.15.0 pairwise_tukeyhsd"
+}

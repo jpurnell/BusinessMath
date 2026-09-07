@@ -15,10 +15,10 @@ self-consistency — a matrix is symmetric, residuals sum to zero, an informatio
 is finite. All true of a correct implementation. All equally true of a systematically
 wrong one.
 
-## Scorecard
+## Scorecard — **all three tiers complete**
 
-Twelve oracles built. Six found defects; six found nothing, which is worth as much, because
-the things they cleared are what everything else stands on.
+Sixteen oracles built. Seven found defects; nine found nothing, which is worth as much,
+because the things they cleared are what everything else stands on.
 
 | Target | Oracle | Result |
 |---|---|---|
@@ -35,6 +35,10 @@ the things they cleared are what everything else stands on.
 | Branch-and-bound | exhaustive integer enumeration | **suboptimal answer reported `.optimal`** after one node |
 | Multiple regression | statsmodels OLS | clean |
 | DEA (CCR, BCC, super-efficiency) | closed form, units invariance, pair scan | clean |
+| Tukey HSD | SciPy `tukey_hsd` + statsmodels | **`df` ignored** — returned the ν=∞ studentized range, so every p-value was anti-conservative |
+| Bonferroni, Scheffé | SciPy `t` / `f` | clean |
+| Interpolators (7 schemes) | SciPy `interpolate` | clean |
+| VaR / CVaR | numpy type-7 + normal closed forms | clean; two CVaR entry points compute different things |
 
 ## Tier A — iterative estimators · **COMPLETE**
 
@@ -88,14 +92,25 @@ same objective, so matching them would manufacture false failures.
       Tolerances derived per design from `cond(X'X)`. Plus residual orthogonality
       `X'(y - Xβ) = 0`, which needs no reference at all.
 
-## Tier C — closed-form, multi-step
+## Tier C — closed-form, multi-step · **COMPLETE**
 
-20 files, 274 tests. Post-hoc ANOVA, interpolation, risk metrics. Hand-derivable, so
-published worked examples are the cheapest oracle.
-
-- [ ] Post-hoc tests (Tukey, Bonferroni, Scheffé) against published examples
-- [ ] Interpolators against analytic values at the knots and known polynomials
-- [ ] Risk metrics (VaR, CVaR) against closed forms for the normal case
+- [x] **Post-hoc tests** — Bonferroni and Scheffé clean. **Tukey carried a real defect:**
+      `studentizedRangeCDF(q:k:df:)` took `df` and never referred to it, computing
+      `k∫φ(z)[Φ(z+q)−Φ(z)]^(k−1)dz` — the studentized range at ν = ∞, where the standard
+      deviation is known rather than estimated. Too narrow a distribution, too thin a tail,
+      and every p-value too small. Two comparisons crossed α = 0.05 (0.0431 reported for
+      0.0554); at k = 2, where the studentized range *is* the t, it was wrong by 428×.
+      Anti-conservative is the one direction a family-wise correction must not fail in, and
+      the error grew with k — exactly when the correction matters most. Fixed by adding the
+      missing outer integral over the chi density.
+- [x] **Interpolators** — clean. 1,599 SciPy values across linear, cubic spline (natural,
+      not-a-knot, clamped), Akima (original and modified), PCHIP and barycentric. Plus
+      polynomial reproduction and PCHIP's monotonicity, neither of which needs a reference.
+- [x] **Risk metrics** — clean against numpy's type-7 quantile and against the normal closed
+      forms `μ + σΦ⁻¹(α)` and `μ − σφ(z)/α`, checked on a stratified sample that carries no
+      sampling noise. Recorded as a known issue: `SimulationResults.conditionalValueAtRisk`
+      and `ConditionalValueAtRisk.calculate` compute **different** estimators and agree only
+      when `n·alpha` is an integer.
 
 ## Technique that keeps working
 
@@ -149,12 +164,25 @@ published worked examples are the cheapest oracle.
 - **Look for the shape that made the passing cases pass.** All-≤ and all-≥ were the two
   correct simplex shapes; they are also the two textbook examples. When a corpus agrees
   everywhere, ask what it is not varying.
+- **An unused parameter is a defect the compiler will not report.** `studentizedRangeCDF`
+  accepted `df` and never mentioned it again; Swift does not warn on unused parameters, so
+  the gate was silent. Reading a signature against its body found in seconds what 30 tests
+  had missed for as long as they had existed.
+- **Make the corpus prove it can discriminate.** Each fixture now asserts its own
+  discriminating power — that the two Akima variants actually differ somewhere, that a
+  design exists where the studentized range and a t are far apart, that an all-positive
+  sample exists so a signed quantile can be told from a magnitude. Without that, a green
+  suite may only mean the corpus was easy.
+- **`json.dumps` writes `NaN` by default**, which Python reads back happily and every strict
+  parser rejects. Always `allow_nan=False`; the failure is then at generation, where it is
+  cheap.
 
 ## Tooling
 
 `Scripts/reference-fixtures/` — `generate_risk_solver.py`, `generate_mixed_models.py`,
 `generate_linear_algebra.py`, `generate_holt_winters.py`, `generate_gstudy.py`,
-`generate_moving_average.py`, `generate_bayesian_icc.py`, `generate_regression.py`.
+`generate_moving_average.py`, `generate_bayesian_icc.py`, `generate_regression.py`,
+`generate_posthoc.py`, `generate_interpolation.py`, `generate_risk_metrics.py`.
 
 Until 2026-09-06 **none of these were in the repository**: `.gitignore` carried `scripts/`
 to drop a long-removed `scripts/update_readme.sh`, and on a case-insensitive filesystem that
