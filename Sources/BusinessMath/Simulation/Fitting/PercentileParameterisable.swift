@@ -283,3 +283,30 @@ public extension PercentileParameterisable {
 		}
 	}
 }
+
+// MARK: - Bounded families
+
+public extension PercentileParameterisable {
+
+	/// A range that strictly contains every value the constraints mention.
+	///
+	/// Bounded families cannot use ``defaultInitialGuesses(for:)``: it treats the first
+	/// parameter as a location and the rest as scales, which for a `min`/`max` pair
+	/// produces a vector ``make(parameters:)`` rejects. With no valid starting point the
+	/// solve returns ``ParameterFitError/noSolution`` regardless of the data — a failure
+	/// that reads as "this family does not fit" when it means "this family was never
+	/// tried".
+	///
+	/// The padding is a full range width on each side rather than a fixed margin, so the
+	/// bracket scales with the data instead of assuming units.
+	///
+	/// - Parameter constraints: The constraints being fitted.
+	/// - Returns: A low and high that bracket the stated values with room to move.
+	static func bracket(of constraints: [ParameterConstraint<T>]) -> (low: T, high: T) {
+		let targets: [T] = constraints.map { Self.target(of: $0) }
+		guard let low = targets.min(), let high = targets.max() else { return (T.zero, T(1)) }
+		let width: T = high - low
+		let pad: T = width > T.zero ? width : T(1)
+		return (low - pad, high + pad)
+	}
+}

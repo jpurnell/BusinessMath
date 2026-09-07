@@ -216,6 +216,49 @@ public struct DistributionMetalog: ContinuousDistribution, Sendable {
 		}
 	}
 
+	/// Creates a metalog from a symmetric percentile triplet.
+	///
+	/// Keelin's SPT form: three points, the outer two placed symmetrically about the
+	/// median. Three points fix three terms exactly, so the resulting distribution
+	/// passes through all of them — and three terms is enough for a location, a spread
+	/// and a skew, which is what a three-point elicitation carries and no more.
+	///
+	/// Binds Risk Solver's `PsiMetalogSPT(min, max, quantiles, prob, prop_fcns)`.
+	///
+	/// ```swift
+	/// // 10th, 50th and 90th percentiles of a cost that cannot go below zero.
+	/// let cost = try DistributionMetalog(
+	///     symmetricPercentileTriplet: (low: 120, median: 200, high: 450),
+	///     at: 0.10, boundedness: .boundedBelow(lower: 0))
+	/// ```
+	///
+	/// - Parameters:
+	///   - triplet: The values at the lower percentile, the median, and the upper one.
+	///   - probability: The lower percentile, in `(0, 0.5)`. The upper is `1 − p`,
+	///     which is what makes the triplet symmetric.
+	///   - boundedness: Where the support ends. Defaults to unbounded.
+	/// - Throws: ``MetalogError``. In particular ``MetalogError/infeasible`` when the
+	///   triplet implies a quantile function that turns back — which a sufficiently
+	///   lopsided triplet does, and which is a statement about the elicitation rather
+	///   than about the arithmetic.
+	///
+	/// - Note: Frontline's signature carries a `prop_fcns` argument whose encoding its
+	///   documentation does not settle. It most plausibly selects the boundedness, so
+	///   that choice is an explicit parameter here and the decoding belongs at the
+	///   binding boundary, where the argument as written is still available.
+	public init(symmetricPercentileTriplet triplet: (low: Double, median: Double, high: Double),
+				at probability: Double,
+				boundedness: MetalogBoundedness = .unbounded) throws {
+		guard probability > 0, probability < 0.5 else {
+			throw MetalogError.invalidProbability
+		}
+		let upper: Double = 1 - probability
+		try self.init(fittingProbabilities: [probability, 0.5, upper],
+					  values: [triplet.low, triplet.median, triplet.high],
+					  terms: 3,
+					  boundedness: boundedness)
+	}
+
 	// MARK: - The distribution
 
 	/// The value below which a draw falls with probability `p`.

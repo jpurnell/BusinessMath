@@ -33,7 +33,7 @@ struct PercentileFittingTests {
 	/// Probabilities to check a recovered distribution against — the ends included,
 	/// because a fit that matches at the two stated points and diverges between them
 	/// is the failure a two-point check cannot see.
-	private static let checkPoints: [Double] = [0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]
+	static let checkPoints: [Double] = [0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]
 
 	/// Asserts that fitting `original`'s own quantiles recovers `original`.
 	///
@@ -41,7 +41,7 @@ struct PercentileFittingTests {
 	///   so a caller can insist the comparison happened: a helper that silently stopped
 	///   comparing would leave every test calling it green and empty.
 	@discardableResult
-	private static func roundTrip<D: PercentileParameterisable>(
+	static func roundTrip<D: PercentileParameterisable>(
 		_ original: D, at probabilities: [Double], tolerance: Double = 1e-6, _ label: String
 	) -> Int where D.T == Double {
 		let constraints = probabilities.map { p in
