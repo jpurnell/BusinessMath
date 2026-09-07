@@ -138,4 +138,53 @@ public protocol RelaxationSolver: Sendable {
         initialGuess: V,
         minimize: Bool
     ) throws -> RelaxationResult where V.Scalar == Double, V: Sendable
+
+    /// Solve a relaxation, abandoning the attempt once `deadline` passes.
+    ///
+    /// Branch-and-bound can only test its own time limit between nodes, and a node
+    /// is an arbitrary program over a caller-supplied objective — so without a
+    /// deadline reaching inside, the guarantee a caller gets is "the limit, plus
+    /// however long one node takes", with no bound on the second term. A
+    /// `timeLimit` of one second was measured taking 153.
+    ///
+    /// Defaulted so existing conformances need not change: a solver that cannot
+    /// honour a deadline simply ignores it and behaves as before. Implement it
+    /// wherever a solve can run long.
+    ///
+    /// - Parameters:
+    ///   - objective: Objective function f(x) to minimize or maximize.
+    ///   - constraints: Constraints g(x) ≤ 0 (linear or nonlinear).
+    ///   - initialGuess: Starting point for the continuous solver.
+    ///   - minimize: If `true`, minimize; if `false`, maximize.
+    ///   - deadline: Monotonic instant after which to return the best point
+    ///     reached, or `nil` for no limit. Monotonic rather than `Date` because a
+    ///     wall clock can be adjusted mid-solve.
+    /// - Returns: A ``RelaxationResult``; a solve cut short still reports whatever
+    ///   feasible point it holds rather than nothing.
+    /// - Throws: `OptimizationError` if the solver encounters a fatal error.
+    func solveRelaxation<V: VectorSpace>(
+        objective: @Sendable @escaping (V) -> Double,
+        constraints: [MultivariateConstraint<V>],
+        initialGuess: V,
+        minimize: Bool,
+        deadline: ContinuousClock.Instant?
+    ) throws -> RelaxationResult where V.Scalar == Double, V: Sendable
+}
+
+extension RelaxationSolver {
+    /// Ignores the deadline and solves as usual.
+    ///
+    /// Correct for any solver fast enough that a deadline never binds — the simplex
+    /// relaxation, for one — and it keeps this an additive change rather than a
+    /// breaking one.
+    public func solveRelaxation<V: VectorSpace>(
+        objective: @Sendable @escaping (V) -> Double,
+        constraints: [MultivariateConstraint<V>],
+        initialGuess: V,
+        minimize: Bool,
+        deadline: ContinuousClock.Instant?
+    ) throws -> RelaxationResult where V.Scalar == Double, V: Sendable {
+        try solveRelaxation(objective: objective, constraints: constraints,
+                            initialGuess: initialGuess, minimize: minimize)
+    }
 }

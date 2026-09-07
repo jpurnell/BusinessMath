@@ -216,8 +216,8 @@ struct RiskMetricsReferenceTests {
 		#expect(compared >= 21, "only \(compared) levels compared")
 	}
 
-	@Test("ConditionalValueAtRisk averages the worst floor(n·alpha) observations")
-	func riskModuleCVaRMatchesItsDefinition() throws {
+	@Test("ConditionalValueAtRisk uses the same threshold, not a count of observations")
+	func riskModuleCVaRMatchesTheThresholdDefinition() throws {
 		let fixture = try Self.loadFixture()
 		var compared = 0
 		// The large constructed samples are excluded: rebuilding 200,000 points for
@@ -226,15 +226,41 @@ struct RiskMetricsReferenceTests {
 			for level in entry.levels {
 				let got = ConditionalValueAtRisk.calculate(values: entry.sample,
 														   confidenceLevel: level.confidence)
-				#expect(Self.close(got, level.cvarWorstCount, 1e-9),
+				#expect(Self.close(got, level.cvarBelowThreshold, 1e-9),
 						"""
 						\(entry.name) at \(level.confidence): CVaR \(got), numpy \
-						\(level.cvarWorstCount) over the worst \(level.worstCount)
+						\(level.cvarBelowThreshold) over a tail of \(level.tailSize)
 						""")
 				compared += 1
 			}
 		}
 		#expect(compared >= 15, "only \(compared) levels compared")
+	}
+
+	@Test("The count-based tail this used to average was the wrong size")
+	func theOldCountBasedTailOverSelected() throws {
+		let fixture = try Self.loadFixture()
+		// `cvarWorstCount` records what the previous implementation returned:
+		// the mean of the worst `max(1, floor(n·alpha))` observations, with the
+		// `max` floor over-selecting on a small sample. At twenty observations and
+		// 99% it averaged the worst 5%; at ten and 95%, the worst 10% — in both
+		// cases a tail twice the size asked for.
+		//
+		// Kept as a test rather than deleted with the code, because the fix changes
+		// numbers a caller may have seen, and a claim in a CHANGELOG that nobody can
+		// re-run is not evidence.
+		var differing = 0
+		for entry in fixture.cases where entry.construction == nil {
+			for level in entry.levels {
+				let requested = Int((Double(entry.n) * (1.0 - level.confidence)).rounded(.down))
+				let actual = level.worstCount
+				if requested < 1 && actual == 1 { differing += 1 }
+				#expect(actual == Swift.max(1, requested),
+						"\(entry.name) at \(level.confidence): fixture records \(actual) observations, floor gives \(requested)")
+			}
+		}
+		#expect(differing > 0,
+				"no design in the corpus is small enough for the old floor to over-select — the regression it caused is untested")
 	}
 
 	// MARK: - Against the closed form
@@ -361,34 +387,52 @@ struct RiskMetricsReferenceTests {
 		}
 	}
 
-	@Test("The two CVaR entry points ought to agree and do not")
-	func theTwoCVaREntryPointsDisagree() throws {
+	@Test("The two CVaR entry points agree")
+	func theTwoCVaREntryPointsAgree() throws {
 		let fixture = try Self.loadFixture()
+		var compared = 0
 
-		// Both definitions are defensible expected-shortfall estimators. Offering
-		// both under one name is what is not: a caller who reaches for "CVaR at 95%"
-		// gets a different number depending on which type they happened to find, and
-		// nothing in either signature or doc comment says so.
+		// They did not, until `ConditionalValueAtRisk.calculate` was changed to take
+		// the type-7 quantile as its threshold rather than counting observations.
+		// Before that a caller reaching for "CVaR at 95%" got a different number
+		// depending on which of the two types they happened to find, and the two
+		// coincided whenever `n·alpha` was an integer — agreeing most of the time
+		// and diverging occasionally, which is the hardest version to notice.
 		//
-		// Recorded as a known issue rather than asserted away. The suite stays green,
-		// the finding stays in the code, and if the two are ever unified Swift
-		// Testing reports the unexpected pass and this marker comes out.
-		try withKnownIssue("""
-			SimulationResults.conditionalValueAtRisk averages every observation at or 			below the type-7 quantile; ConditionalValueAtRisk.calculate averages the 			worst max(1, floor(n·alpha)) observations and never forms a quantile. They 			coincide only when n·alpha is an integer and nothing sits on the threshold.
-			""") {
-			for entry in fixture.cases where entry.construction == nil {
-				let results = SimulationResults(values: entry.sample)
-				for level in entry.levels {
-					let byThreshold = results.conditionalValueAtRisk(confidenceLevel: level.confidence)
-					let byCount = ConditionalValueAtRisk.calculate(values: entry.sample,
-																   confidenceLevel: level.confidence)
-					#expect(Self.close(byThreshold, byCount, 1e-9),
-							"""
-							\(entry.name) at \(level.confidence): threshold-based \(byThreshold), \
-							count-based \(byCount)
-							""")
-				}
+		// This was a `withKnownIssue` block asserting the equality that ought to
+		// hold. When the fix landed, Swift Testing reported the unexpected pass and
+		// the marker came out; that is the whole point of recording a defect that
+		// way rather than deleting the assertion.
+		for entry in fixture.cases where entry.construction == nil {
+			let results = SimulationResults(values: entry.sample)
+			for level in entry.levels {
+				let byResults = results.conditionalValueAtRisk(confidenceLevel: level.confidence)
+				let byRiskModule = ConditionalValueAtRisk.calculate(values: entry.sample,
+																	confidenceLevel: level.confidence)
+				#expect(Self.close(byResults, byRiskModule, 1e-12),
+						"""
+						\(entry.name) at \(level.confidence): SimulationResults gives \
+						\(byResults), ConditionalValueAtRisk gives \(byRiskModule)
+						""")
+				compared += 1
 			}
+		}
+		#expect(compared >= 15, "only \(compared) pairs compared")
+	}
+
+	@Test("The convenience entry points agree with the general one")
+	func convenienceEntryPointsAgree() throws {
+		let fixture = try Self.loadFixture()
+		for entry in fixture.cases where entry.construction == nil {
+			let sample = entry.sample
+			// cvar95 and cvar99 are the two anyone actually calls, so they are worth
+			// pinning to the general form rather than trusting the delegation.
+			#expect(Self.close(ConditionalValueAtRisk.cvar95(values: sample),
+							   ConditionalValueAtRisk.calculate(values: sample, confidenceLevel: 0.95), 1e-12),
+					"\(entry.name): cvar95 disagrees with calculate(confidenceLevel: 0.95)")
+			#expect(Self.close(ConditionalValueAtRisk.cvar99(values: sample),
+							   ConditionalValueAtRisk.calculate(values: sample, confidenceLevel: 0.99), 1e-12),
+					"\(entry.name): cvar99 disagrees with calculate(confidenceLevel: 0.99)")
 		}
 	}
 

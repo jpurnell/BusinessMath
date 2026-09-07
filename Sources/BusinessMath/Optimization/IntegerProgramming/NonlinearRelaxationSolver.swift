@@ -42,10 +42,18 @@ public struct NonlinearRelaxationSolver: RelaxationSolver {
     /// - Parameters:
     ///   - maxIterations: Maximum iterations for NLP solver (default: 1000)
     ///   - tolerance: Constraint feasibility tolerance (default: 1e-6)
-    public init(maxIterations: Int = 1000, tolerance: Double = 1e-6) {
+    ///   - elapsedTime: Where the time-limit check reads the clock (default: the
+    ///     system's monotonic counter). Inject ``ManualElapsedTimeSource`` to assert
+    ///     on modelled time rather than measured time.
+    public init(maxIterations: Int = 1000, tolerance: Double = 1e-6,
+                elapsedTime: any ElapsedTimeSource = SystemElapsedTimeSource()) {
         self.maxIterations = maxIterations
         self.tolerance = tolerance
+        self.elapsedTime = elapsedTime
     }
+
+    /// Where the deadline check reads the clock. See ``ElapsedTimeSource``.
+    public let elapsedTime: any ElapsedTimeSource
 
     /// Solve the continuous relaxation of an integer programming problem using nonlinear optimization.
     ///
@@ -159,6 +167,24 @@ public struct NonlinearRelaxationSolver: RelaxationSolver {
         initialGuess: V,
         minimize: Bool
     ) throws -> RelaxationResult where V.Scalar == Double, V: Sendable {
+        try solveRelaxation(objective: objective, constraints: constraints,
+                            initialGuess: initialGuess, minimize: minimize, deadline: nil)
+    }
+
+    /// The deadline-aware solve. This is the real implementation; the version
+    /// without a deadline calls it with `nil`.
+    ///
+    /// This solver is where a deadline earns its place: it runs an augmented
+    /// Lagrangian whose cost is `maxIterations` inner steps at each of a hundred
+    /// outer ones, over an objective whose evaluation cost belongs to the caller.
+    /// Iteration counts bound the work; only a clock bounds the time.
+    public func solveRelaxation<V: VectorSpace>(
+        objective: @Sendable @escaping (V) -> Double,
+        constraints: [MultivariateConstraint<V>],
+        initialGuess: V,
+        minimize: Bool,
+        deadline: ContinuousClock.Instant?
+    ) throws -> RelaxationResult where V.Scalar == Double, V: Sendable {
 
         // Create InequalityOptimizer for continuous NLP.
         //
@@ -171,7 +197,9 @@ public struct NonlinearRelaxationSolver: RelaxationSolver {
             constraintTolerance: V.Scalar(tolerance),
             gradientTolerance: V.Scalar(tolerance),
             maxIterations: 100,  // Outer iterations
-            maxInnerIterations: maxIterations  // Inner iterations
+            maxInnerIterations: maxIterations,  // Inner iterations
+            deadline: deadline,
+            elapsedTime: elapsedTime
         )
 
         do {

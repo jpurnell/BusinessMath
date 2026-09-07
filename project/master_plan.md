@@ -38,6 +38,24 @@ suite depends on it.
 
 ## Current Status
 
+**2.14.0 shipped 2026-09-07** — the oracle audit closed across all three tiers, and the
+defects it found: Tukey ignoring its degrees of freedom, the simplex pricing only two
+constraint shapes, branch-and-bound returning suboptimal answers as `.optimal`, BFGS
+spending whole budgets on stalled searches, and a `timeLimit` that bounded nothing.
+
+**Sixteen external oracles now stand behind the numerical estimators. Seven found
+something.** The programme began from a single measurement: 116 of 153 estimator test
+files, 1,359 tests, checked nothing against anything outside the package. Every one
+asserted self-consistency — a p-value in [0, 1], a variance positive, residuals summing to
+zero. All true of a correct implementation and all equally true of a systematically wrong
+one, which is what several of them were.
+
+The through-line in the defects is that **every one returned a plausible number**: a
+feasible integer point that was not optimal, a shadow price with the right magnitude and
+the wrong sign, a p-value from a distribution of the wrong shape. Not one would have been
+caught by a bounds check, and bounds checks were most of what was there. Details and
+technique in `project/checklists/CURRENT_OracleAudit.md`.
+
 **2.13.0 shipped 2026-09-06** — the Risk Solver distribution surface, an `irr`/`xirr`
 defect that made large models uncomputable, and six external oracles that found five
 defects between them.
@@ -514,7 +532,17 @@ The earlier table was about *scope*; this one is about *what is being measured*.
 
 ---
 
-**Last Updated:** 2026-09-06 — reconciled for 2.13.0: Current Status leads with the Risk
+**Last Updated:** 2026-09-07 — reconciled for 2.14.0: Current Status leads with the closed
+oracle audit and the six defects fixed under it (Tukey's degrees of freedom, the simplex
+duals, the branch-and-bound root short-circuit, the BFGS stall, the unenforceable
+`timeLimit`, the two CVaR definitions). `CURRENT_OracleAudit.md` marks all three tiers
+complete. Two facts worth carrying forward: `quality-gate --no-cache` runs only the default
+profile and says so in one line — `doc-claims` and `doc-run` were both failing while every
+local run reported PASSED, including the runs that cleared 2.13.0 — so use `--check all`;
+and the `Scripts/reference-fixtures/` generators had never been tracked, because
+`.gitignore`'s `scripts/` matches `Scripts/` on a case-insensitive filesystem.
+
+**Previously:** 2026-09-06 — reconciled for 2.13.0: Current Status leads with the Risk
 Solver surface, the `irr`/`xirr` scale defect and the oracle audit. Checklists tidied —
 four completed ones archived (`ExcelFinancialTen`, `VerifyBindables`,
 `MonteCarloDeterminismAndAsync`, `quality_gate_remediation`, the last with its four stale

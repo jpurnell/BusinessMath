@@ -67,17 +67,31 @@ public struct ConditionalValueAtRisk {
 		guard !values.isEmpty else { return T(0) }
 
 		let sorted = values.sorted()
-		let n = sorted.count
+		let alpha: T = T(1) - confidenceLevel
 
-		// Calculate VaR index
-		let alpha = T(1) - confidenceLevel
-		let varIndex = max(0, Int(Double(n) * Double(alpha)) - 1)
+		// The threshold is the value-at-risk itself, taken from the library's single
+		// empirical quantile — type 7, the same one behind ``Percentiles`` and
+		// ``SimulationResults/valueAtRisk(confidenceLevel:)``.
+		//
+		// This used to count observations instead: `max(0, Int(n·alpha) - 1)`, then
+		// average `sorted[0...that]`. Two things were wrong with it. It formed no
+		// quantile, so this type and `SimulationResults` returned *different* numbers
+		// for the same sample and confidence — agreeing whenever `n·alpha` happened
+		// to be an integer and diverging otherwise, which is worse than disagreeing
+		// always. And the `max(0, …)` floor over-selects on a small sample: at
+		// twenty observations and 99% it averaged the worst 5%, and at ten
+		// observations and 95% the worst 10%, in both cases reporting a tail twice
+		// the size asked for.
+		let threshold: T = quantile(sorted: sorted, p: alpha)
 
-		// Average of losses beyond VaR
-		let tailLosses = sorted[0...varIndex]
-		let sumTailLosses = tailLosses.reduce(T(0), +)
+		// Everything at or below the threshold. Inclusive, because the observation
+		// sitting exactly on the value-at-risk is part of the loss being described,
+		// not the boundary of it.
+		let tail = sorted.filter { $0 <= threshold }
+		guard !tail.isEmpty else { return threshold }
 
-		return sumTailLosses / T(tailLosses.count)
+		let total = tail.reduce(T(0), +)
+		return total / T(tail.count)
 	}
 
 	/// Calculate CVaR at 95% confidence level (common standard).

@@ -105,7 +105,9 @@ public struct InequalityOptimizer<V: VectorSpace> where V.Scalar: Real {
 		maxIterations: Int = 100,
 		maxInnerIterations: Int = 1000,
 		initialPenalty: V.Scalar = V.Scalar(10),
-		penaltyIncrease: V.Scalar = V.Scalar(10)
+		penaltyIncrease: V.Scalar = V.Scalar(10),
+		deadline: ContinuousClock.Instant? = nil,
+		elapsedTime: any ElapsedTimeSource = SystemElapsedTimeSource()
 	) {
 		self.constraintTolerance = constraintTolerance
 		self.gradientTolerance = gradientTolerance
@@ -113,7 +115,16 @@ public struct InequalityOptimizer<V: VectorSpace> where V.Scalar: Real {
 		self.maxInnerIterations = maxInnerIterations
 		self.initialPenalty = initialPenalty
 		self.penaltyIncrease = penaltyIncrease
+		self.deadline = deadline
+		self.elapsedTime = elapsedTime
 	}
+
+	/// A deadline shared with the inner search, after which the best iterate so
+	/// far is returned. Monotonic, so adjusting the system clock cannot move it.
+	public let deadline: ContinuousClock.Instant?
+
+	/// Where the deadline check reads the clock, shared with the inner search.
+	public let elapsedTime: any ElapsedTimeSource
 
 	// MARK: - Public API
 
@@ -226,6 +237,11 @@ public struct InequalityOptimizer<V: VectorSpace> where V.Scalar: Real {
 		for outerIter in 0..<maxIterations {
 			outerIterations = outerIter + 1
 
+			// Out of time. The inner search checks the same deadline, so this stops
+			// the schedule from starting a subproblem it cannot finish; between them
+			// the two bound the method by wall clock as well as by iterations.
+			if let deadline, elapsedTime.now >= deadline { break }
+
 			// Immutable snapshots for the Sendable closure
 			let lambdaSnapshot = lambdaEq
 			let muSnapshot = muIneq
@@ -256,11 +272,16 @@ public struct InequalityOptimizer<V: VectorSpace> where V.Scalar: Real {
 				return value
 			}
 
+			// The deadline travels into the inner search too: the outer loop can
+			// only stop between subproblems, and one subproblem is where the time
+			// actually goes.
 			let innerOptimizer = MultivariateNewtonRaphson<V>(
 				maxIterations: maxInnerIterations,
 				tolerance: omega,
 				useLineSearch: true,
-				recordHistory: false
+				recordHistory: false,
+				deadline: deadline,
+				elapsedTime: elapsedTime
 			)
 
 			let innerResult = try innerOptimizer.minimizeBFGS(

@@ -9,6 +9,159 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [2.14.0] - 2026-09-07
+
+The oracle audit closed across all three tiers, and the defects it found. Sixteen external
+oracles now stand behind the numerical estimators; seven found something.
+
+### Fixed
+
+- **Tukey HSD ignored its degrees of freedom.** `studentizedRangeCDF(q:k:df:)` accepted
+  `df` and never referred to it, computing `k∫φ(z)[Φ(z+q)−Φ(z)]^(k−1)dz` — the studentized
+  range at ν = ∞, where the standard deviation is *known* rather than estimated. The real
+  distribution divides that range by an independent `√(χ²_ν/ν)`, so its CDF carries an outer
+  integral over the chi density.
+
+  Without it the distribution is too narrow, its tails too thin, and every p-value too
+  small. Against `scipy.stats.tukey_hsd`, with statsmodels agreeing with SciPy exactly:
+
+  | design | reported | correct |
+  |---|---|---|
+  | 3 groups, df 24, marginal | 0.00050 | 0.00269 |
+  | unbalanced 6/12/20 | **0.0431** | **0.0554** |
+  | 5 groups, df 45 | **0.0388** | **0.0529** |
+  | 2 groups, df 28 | 7.96e-9 | 3.41e-6 |
+
+  Two of those cross α = 0.05 — pairs declared significant that are not. Anti-conservative
+  is the one direction a family-wise correction must not fail in, and the error grew with
+  the number of groups, which is when the correction matters most. At k = 2 the studentized
+  range *is* the t distribution, so Tukey must equal Bonferroni; it was out by 428×.
+  Bonferroni and Scheffé were correct throughout, which is why nothing looked wrong.
+
+- **The simplex reported shadow prices for only two constraint shapes.** The dual extraction
+  read the objective row at `numOriginalVars + i`, assuming each row's slack sits in column
+  `i` of the added block. Standard form groups the added columns by kind, so a mixed model
+  priced one constraint against another, a `≥` row's sign was reversed by its surplus
+  column's `−1`, and an equality row — having neither slack nor surplus — was priced at
+  zero, putting the whole objective outside `y'b = c'x`.
+
+  All-`≤` maximisation and all-`≥` minimisation were right, the second only because two
+  errors cancelled — and those are the two textbook shapes. Prices are now reconstructed
+  from the optimal basis as `y' = c_B' B⁻¹`. `minimize` turns them with the objective;
+  reduced costs deliberately do not turn, because "worsen" means the same thing either way.
+
+- **Branch-and-bound returned suboptimal answers as `.optimal`.** The rounding heuristic
+  abandoned a fractional node without branching and recomputed the bound from a queue that
+  at the root is still empty; `updateBestBound` reads an empty queue as "search exhausted"
+  and collapses the bound onto the incumbent, closing the gap around the answer being
+  checked. On a 3-variable model it returned 13 after one node where the optimum is 14. The
+  heuristic now supplies an incumbent and the search continues.
+
+- **BFGS ran its whole iteration budget on searches that had stopped moving.**
+  `minimizeBFGS` exited only on `gradNorm < tolerance`. When the line search can no longer
+  find a descent step — a kinked objective, an ill-conditioned augmented Lagrangian, a
+  finite-difference gradient whose noise floor sits above the tolerance — the step collapses
+  to zero, `sTy` falls below the curvature threshold so the inverse Hessian is not updated,
+  and the next iteration recomputes an identical direction. A fixed point, ended only by the
+  iteration count.
+
+  On the MINLP portfolio model one branch-and-bound node spent 78 of the solve's 78 seconds
+  that way, and the time scaled linearly with the inner budget while the answer stayed
+  byte-identical. That node now takes 3.3 seconds, and the model that previously never
+  finished proves optimality in 101 nodes — reaching a better objective, −101 against −100.
+
+- **`timeLimit` was checked only between nodes, so it bounded nothing.** A node is an
+  arbitrary program over a caller-supplied objective; a one-second limit was measured taking
+  153 seconds. `RelaxationSolver` gains a deadline-aware `solveRelaxation` overload — added
+  with a default implementation, so existing conformances are unaffected — and
+  `BranchAndBoundSolver` passes its own deadline through to `InequalityOptimizer` and the
+  inner BFGS. The same measurement now returns in 1.01 seconds. The deadline is a
+  `ContinuousClock.Instant` rather than a `Date`, matching the rest of the package: a wall
+  clock can be adjusted mid-solve.
+
+  `BranchAndBoundSolver`, `NonlinearRelaxationSolver`, `InequalityOptimizer` and
+  `MultivariateNewtonRaphson` now read the clock through ``ElapsedTimeSource`` instead of
+  constructing a `ContinuousClock` directly, which is what the package already does in
+  `ModelProfiler` and `ModelDebugger`. Injecting ``ManualElapsedTimeSource`` lets the time
+  limit be tested by advancing a counter — the deadline test states "one second is one
+  hundred evaluations at ten milliseconds each" and asserts it exactly, rather than
+  measuring the machine. A wall-clock assertion in a test is a claim about the scheduler:
+  a sleep sets a floor on elapsed time and no ceiling.
+
+- **A documentation example claimed a branching-strategy comparison it could not produce.**
+  `5.8b` reported 243, 127 and 41 nodes for most-fractional, pseudo-cost and strong
+  branching on a knapsack. The LP relaxation of a knapsack puts at most one variable at a
+  fractional value, so there is only ever one variable to branch on and every rule picks
+  it — all three explore an identical tree, as they now do and as the page now says. The
+  example is also smaller, so it runs quickly enough to be executed as documentation, and
+  the time limits in the integer-programming articles were raised so that enforcing them
+  cannot make a printed node count depend on how loaded the machine is.
+
+- **Two CVaR entry points computed different things.**
+  `ConditionalValueAtRisk.calculate` averaged the worst `max(1, ⌊n·α⌋)` observations and
+  never formed a quantile, while `SimulationResults.conditionalValueAtRisk` averaged
+  everything at or below the type-7 quantile. They coincided whenever `n·α` was an integer
+  and diverged otherwise — agreeing most of the time, which is the hardest version to
+  notice. The `max(…, 1)` floor also over-selected on small samples: at ten observations and
+  95% it averaged the worst 10%, a tail twice the size asked for.
+
+  `ConditionalValueAtRisk.calculate` now uses the type-7 threshold, so both agree. **This
+  changes numbers previously returned by a public API.** The old values were wrong at small
+  `n` and inconsistent with the rest of the library, so this is a correction rather than a
+  redefinition, but callers holding stored results should expect them to move.
+
+- **The fixture generators were never in the repository.** `.gitignore` carried `scripts/`
+  to drop a long-removed `scripts/update_readme.sh`; on a case-insensitive filesystem that
+  also matched `Scripts/`. Every committed reference fixture was unreproducible from a clean
+  clone while CHANGELOG and master_plan both cited the directory as part of the package.
+
+### Added
+
+- **`LinearProgrammingCertificateTests`** — an LP optimum certifies itself, so this checks
+  feasibility, a zero duality gap, complementary slackness and the reduced-cost identity,
+  plus two things owing nothing to duality: exhaustive vertex enumeration by an
+  independently written Gaussian solver, and shadow prices measured by nudging the
+  right-hand side. Twelve problems covering every relation in both senses, negative
+  right-hand sides, wide coefficient spreads, degeneracy and multiple optima.
+
+- **`IntegerProgrammingCertificateTests`** — every problem boxed and its integer points
+  enumerated, which is a complete independent MIP solver that cannot prune and therefore
+  cannot prune wrongly. Alongside it: integrality, feasibility, the bound bracketing with a
+  closed gap, and the LP relaxation bounding the integer optimum.
+
+- **`DEACertificateTests`** — the closed form for one input and one output, envelopment
+  attainability from the reported reference set, peers efficient, units invariance over four
+  scale factors, `BCC ≥ CCR`, `Σλ = 1`, super-efficiency at or above 1 exactly on the
+  frontier, and a pair scan that cannot beat the reported score.
+
+- **`RegressionReferenceTests`** — every derived statistic the existing suite only bounded,
+  against statsmodels: standard errors, t, two-tailed p, t-quantile confidence intervals, F
+  and its p-value, adjusted R², auxiliary-regression VIF. Tolerances derived per design from
+  `cond(X'X)`. Plus residual orthogonality, which needs no reference.
+
+- **`PostHocReferenceTests`**, **`InterpolationReferenceTests`**,
+  **`RiskMetricsReferenceTests`** — SciPy and numpy oracles for the post-hoc tests, seven
+  interpolation schemes (1,599 values, both cubic-spline boundary conditions and both Akima
+  variants) and the risk measures, the last also against the normal closed forms on a
+  stratified sample carrying no sampling noise.
+
+- **`OptimizerStallTests`** and **`TimeLimitEnforcementTests`** for the two optimizer fixes.
+
+### Changed
+
+- Every reference fixture now asserts its own **discriminating power** before asserting any
+  value — that the two Akima variants differ somewhere, that a design exists where the
+  studentized range and a t are far apart, that an all-positive sample exists so a signed
+  quantile can be told from a magnitude. A green suite that only means the corpus was easy
+  is the failure this audit set out to fix.
+
+- `5.8-IntegerProgramming.md` split into four articles. At 4,165 lines and 86 fences it was
+  2.6× the next largest and could not be executed inside the documentation checkers'
+  budget — `doc-claims` could not measure it at all and `doc-run` killed it. Its MINLP
+  example, which did not converge and whose documented output came from the
+  branch-and-bound root short-circuit, is now a two-asset model that proves optimality in
+  0.03 seconds.
+
 ### [2.13.0] - 2026-09-06
 
 Risk Solver's distribution surface, the `irr`/`xirr` stopping rule that could not compute

@@ -55,6 +55,28 @@ public struct MultivariateNewtonRaphson<V: VectorSpace> where V.Scalar: Real {
 	/// Whether to record optimization history
 	public let recordHistory: Bool
 
+	/// A deadline, after which the search returns its best point.
+	///
+	/// An iteration count bounds work, not time, and the two are only related if
+	/// you know what an objective evaluation costs — which a library cannot. A
+	/// caller who needs to stay responsive sets this; everyone else leaves it nil
+	/// and nothing changes.
+	///
+	/// Monotonic rather than `Date`, for the same reason the rest of the package
+	/// measures elapsed time that way: a wall clock can be adjusted mid-solve, and
+	/// a deadline that moves is worse than none.
+	public let deadline: ContinuousClock.Instant?
+
+	/// Where the deadline check reads the clock.
+	///
+	/// Injected rather than constructed, so a test can state "after this much
+	/// modelled work the deadline has passed" and assert it exactly. Asserting on
+	/// measured wall-clock time instead would be asserting about the scheduler:
+	/// a sleep sets a floor on elapsed time and no ceiling, which is how this
+	/// package came to have a "fast" operation outlast a "slow" one. See
+	/// ``ElapsedTimeSource``.
+	public let elapsedTime: any ElapsedTimeSource
+
 	/// Creates a multivariate Newton-Raphson optimizer with specified configuration.
 	///
 	/// - Parameters:
@@ -65,16 +87,26 @@ public struct MultivariateNewtonRaphson<V: VectorSpace> where V.Scalar: Real {
 	///     for Newton-Raphson to ensure convergence from poor initial guesses.
 	///   - recordHistory: Whether to record full optimization trajectory (default: false). Useful for
 	///     analysis but increases memory usage.
+	///   - deadline: Monotonic instant after which the search returns its best point,
+	///     or `nil` for no time limit (default: `nil`). An iteration count bounds work
+	///     rather than time; only a clock bounds time.
+	///   - elapsedTime: Where the deadline check reads the clock (default: the system's
+	///     monotonic counter). Inject ``ManualElapsedTimeSource`` to test a deadline
+	///     without asserting on wall-clock time.
 	public init(
 		maxIterations: Int = 100,
 		tolerance: V.Scalar? = nil,
 		useLineSearch: Bool = true,
-		recordHistory: Bool = false
+		recordHistory: Bool = false,
+		deadline: ContinuousClock.Instant? = nil,
+		elapsedTime: any ElapsedTimeSource = SystemElapsedTimeSource()
 	) {
 		self.maxIterations = maxIterations
 		self.tolerance = tolerance ?? (V.Scalar(1) / V.Scalar(1_000_000))
 		self.useLineSearch = useLineSearch
 		self.recordHistory = recordHistory
+		self.deadline = deadline
+		self.elapsedTime = elapsedTime
 	}
 
 	// MARK: - Full Newton-Raphson with Hessian
@@ -200,6 +232,24 @@ public struct MultivariateNewtonRaphson<V: VectorSpace> where V.Scalar: Real {
 		for iteration in 0..<maxIterations {
 			let gradNorm = grad.norm
 
+			// Out of time: hand back the best point reached, flagged as unconverged.
+			//
+			// Checked here rather than only at the end because the caller's budget is
+			// wall clock and this loop's budget is iterations, and nothing relates
+			// them: one evaluation of an expensive objective can outlast the whole
+			// allowance. A branch-and-bound `timeLimit` of one second was measured
+			// taking 153 seconds for want of this.
+			if let deadline, elapsedTime.now >= deadline {
+				return MultivariateOptimizationResult(
+					solution: x,
+					value: function(x),
+					iterations: iteration,
+					converged: false,
+					gradientNorm: gradNorm,
+					history: history
+				)
+			}
+
 			// Check for convergence
 			guard gradNorm.isFinite else {
 				throw OptimizationError.nonFiniteValue(message: "Gradient norm is not finite")
@@ -245,6 +295,43 @@ public struct MultivariateNewtonRaphson<V: VectorSpace> where V.Scalar: Real {
 			// Update position
 			let xNew = x + alpha * direction
 			let gradNew = try gradient(xNew)
+
+			// Stop when the iterate stops moving.
+			//
+			// The only other exit from this loop is `gradNorm < tolerance`, and a
+			// search can stall well above it: a kinked objective, an ill-conditioned
+			// augmented Lagrangian, or a finite-difference gradient whose noise floor
+			// sits above the tolerance all leave the line search unable to find a
+			// descent step. When that happens `alpha` collapses toward zero, so the
+			// point does not move, `s` and `y` are both about zero, `sTy` falls under
+			// the curvature threshold below and the inverse Hessian is left alone.
+			//
+			// State unchanged, algorithm deterministic: the next iteration computes
+			// the same direction and runs the same line search. It is a fixed point,
+			// and without this check the only thing that ends it is the iteration
+			// count. On the MINLP portfolio model one branch-and-bound node spent 78
+			// seconds that way, returning an answer identical to the one it had after
+			// 50 iterations.
+			//
+			// Scaled by the size of the point so the test means the same thing for
+			// coordinates near 1e-6 and near 1e6.
+			let stepArray = (xNew - x).toArray()
+			let stepNorm: V.Scalar = stepArray.reduce(V.Scalar.zero) { $0 + $1 * $1 }.squareRoot()
+			let pointScale: V.Scalar = Swift.max(V.Scalar(1), x.norm)
+			let stallThreshold: V.Scalar = V.Scalar.ulpOfOne * pointScale
+			if stepNorm <= stallThreshold {
+				// Reported as not converged, because it is not: the gradient test
+				// never passed. The point is still the best one reached, which is
+				// what makes stopping here safe rather than merely cheap.
+				return MultivariateOptimizationResult(
+					solution: xNew,
+					value: function(xNew),
+					iterations: iteration,
+					converged: false,
+					gradientNorm: gradNew.norm,
+					history: history
+				)
+			}
 
 			// BFGS update of inverse Hessian approximation
 			// s_k = x_{k+1} - x_k

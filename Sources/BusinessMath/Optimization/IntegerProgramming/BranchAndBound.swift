@@ -170,6 +170,12 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
     /// Defaults to SimplexRelaxationSolver for fast linear relaxations.
     public let relaxationSolver: any RelaxationSolver
 
+    /// Where the time-limit check reads the clock, shared with the relaxation solver.
+    ///
+    /// Defaults to the system's monotonic counter. Inject ``ManualElapsedTimeSource``
+    /// to assert on modelled time rather than measured time — see ``ElapsedTimeSource``.
+    public let elapsedTime: any ElapsedTimeSource
+
     /// Creates a branch-and-bound solver with comprehensive configuration options.
     ///
     /// - Parameters:
@@ -201,6 +207,9 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
     ///   - cutScalingNorm: Norm used for cut normalization (default: `.euclidean`)
     ///   - enableWarmStart: Reuse simplex basis when re-solving with cuts (default: true)
     ///   - relaxationSolver: Custom relaxation solver, or `nil` for default `SimplexRelaxationSolver`
+    ///   - elapsedTime: Where the time-limit check reads the clock (default: the
+    ///     system's monotonic counter). Inject ``ManualElapsedTimeSource`` to assert
+    ///     on modelled time rather than measured time.
     public init(
         maxNodes: Int = 10_000,
         timeLimit: Double = 300.0,
@@ -229,7 +238,8 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
         maxCutPoolSize: Int = 1000,
         cutScalingNorm: VectorNorm = .euclidean,
         enableWarmStart: Bool = true,
-        relaxationSolver: (any RelaxationSolver)? = nil
+        relaxationSolver: (any RelaxationSolver)? = nil,
+        elapsedTime: any ElapsedTimeSource = SystemElapsedTimeSource()
     ) {
         // Validate tolerance hierarchy
         // Mathematical requirement: lpTolerance ≤ integralityTolerance ≤ cutTolerance
@@ -283,6 +293,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
 
         // Default to SimplexRelaxationSolver for backward compatibility
         self.relaxationSolver = relaxationSolver ?? SimplexRelaxationSolver(lpTolerance: lpTolerance)
+        self.elapsedTime = elapsedTime
     }
 
     /// Solve mixed-integer program
@@ -376,8 +387,20 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
 
         // Monotonic: every use below is an elapsed interval or a time-limit check, and a
         // wall clock can be adjusted mid-solve. See ``Duration/inSeconds``.
-        let clock = ContinuousClock()
+        //
+        // Read through ``ElapsedTimeSource`` rather than from a `ContinuousClock`
+        // constructed here, so the time limit can be tested by advancing a counter
+        // instead of by measuring the machine. A wall-clock assertion in a test is a
+        // claim about the scheduler: a sleep sets a floor on elapsed time and no
+        // ceiling, which is how this package once had a "fast" operation outlast a
+        // "slow" one.
+        let clock = elapsedTime
         let startTime = clock.now
+        // The same limit the node loop tests, expressed as an instant so it can be
+        // handed to the relaxation solver. Checking `timeLimit` only between nodes
+        // bounds nothing: a node is an arbitrary program over the caller's
+        // objective, and a one-second limit was measured taking 153 seconds.
+        let deadline: ContinuousClock.Instant? = timeLimit > 0 ? startTime + .seconds(timeLimit) : nil
         var queue = NodeQueue<V>(strategy: nodeSelection, minimize: minimize)
         var incumbent: (solution: V, value: Double)? = nil
         var bestBound = minimize ? -Double.infinity : Double.infinity
@@ -407,7 +430,8 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
             minimize: minimize,
             integerSpec: integerSpec,
             depth: 0,
-            cutStats: enableCuttingPlanes ? cutStats : nil
+            cutStats: enableCuttingPlanes ? cutStats : nil,
+            deadline: deadline
         )
 
         // Record root LP bound for cutting plane statistics
@@ -631,7 +655,8 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                     constraints: shiftedConstraints,
                     integerSpec: integerSpec,
                     minimize: minimize,
-                    cutStats: enableCuttingPlanes ? cutStats : nil
+                    cutStats: enableCuttingPlanes ? cutStats : nil,
+                    deadline: deadline
                 )
 
                 // Track pseudo-costs if enabled
@@ -818,7 +843,8 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
         depth: Int,
         parent: UUID? = nil,
         branchedVariable: Int? = nil,
-        cutStats: CutStatisticsTracker? = nil
+        cutStats: CutStatisticsTracker? = nil,
+        deadline: ContinuousClock.Instant? = nil
     ) throws -> BranchNode<V> {
 
         // Get dimension from initial guess
@@ -843,7 +869,8 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                 objective: objective,
                 constraints: allConstraints,
                 initialGuess: initialGuess,
-                minimize: minimize
+                minimize: minimize,
+                deadline: deadline
             )
 
             // Check status
@@ -1206,7 +1233,8 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                             objective: objective,
                             constraints: currentConstraints,
                             initialGuess: nextInitialGuess,
-                            minimize: minimize
+                            minimize: minimize,
+                            deadline: deadline
                         )
 
                         guard resolvedResult.status == .optimal,
@@ -1332,7 +1360,8 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
         constraints: [MultivariateConstraint<V>],
         integerSpec: IntegerProgramSpecification,
         minimize: Bool,
-        cutStats: CutStatisticsTracker?
+        cutStats: CutStatisticsTracker?,
+        deadline: ContinuousClock.Instant?
     ) throws -> (BranchNode<V>, BranchNode<V>) {
 
         let value = solution.toArray()[variable]
@@ -1361,7 +1390,8 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
             depth: parent.depth + 1,
             parent: parent.id,
             branchedVariable: variable,
-            cutStats: enableCuttingPlanes ? cutStats : nil  // Generate cuts at all nodes
+            cutStats: enableCuttingPlanes ? cutStats : nil,  // Generate cuts at all nodes
+            deadline: deadline
         )
 
         // Right branch: x_i ≥ ceil
@@ -1381,7 +1411,8 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
             depth: parent.depth + 1,
             parent: parent.id,
             branchedVariable: variable,
-            cutStats: enableCuttingPlanes ? cutStats : nil  // Generate cuts at all nodes
+            cutStats: enableCuttingPlanes ? cutStats : nil,  // Generate cuts at all nodes
+            deadline: deadline
         )
 
         return (leftNode, rightNode)
