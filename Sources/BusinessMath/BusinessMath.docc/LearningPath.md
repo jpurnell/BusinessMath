@@ -137,6 +137,8 @@ We offer four specialized learning tracks based on common roles. Choose the trac
 
 ### Phase 3: Advanced Optimization (6-8 hours)
 12. <doc:5.8-IntegerProgramming>
+    (continues in <doc:5.8b-IntegerProgrammingInPractice>,
+    <doc:5.8c-IntegerProgrammingDiagnostics> and <doc:5.8d-LinearFunctionAPI>)
 13. <doc:5.9-AdaptiveSelection>
 14. <doc:5.10-ParallelOptimization>
 15. <doc:5.11-PerformanceBenchmarking>

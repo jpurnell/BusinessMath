@@ -32,6 +32,9 @@ This part takes you from simple goal-seeking (find the growth rate that achieves
 - <doc:5.6-ConstrainedOptimization>
 - <doc:5.7-BusinessOptimization>
 - <doc:5.8-IntegerProgramming>
+- <doc:5.8b-IntegerProgrammingInPractice>
+- <doc:5.8c-IntegerProgrammingDiagnostics>
+- <doc:5.8d-LinearFunctionAPI>
 - <doc:5.9-AdaptiveSelection>
 - <doc:5.10-ParallelOptimization>
 - <doc:5.11-PerformanceBenchmarking>

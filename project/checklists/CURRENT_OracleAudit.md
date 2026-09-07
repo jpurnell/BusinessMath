@@ -130,6 +130,11 @@ published worked examples are the cheapest oracle.
   is full of index arithmetic and conversions inside mapped closures, which is exactly it.
 - **Do not push over an in-flight CI run.** `swift.yml` has a concurrency group; a cancelled
   Linux job is not a passing one.
+- **`quality-gate --no-cache` is not the whole gate.** It runs the *default profile* and says
+  so quietly: "40 of 45 checkers · 5 not selected". `doc-claims` and `doc-run` are among the
+  five, and both were failing while every local run reported PASSED — including the runs that
+  cleared v2.13.0 for tagging. Use **`--check all`**, and `--continue-on-failure` so one early
+  failure does not hide the rest behind "15 NOT REACHED".
 - **Verify a push by transfer, not by exit status.** `git push origin <branch>` pushes the
   *named local branch*, not `HEAD`. Run from a different branch it reports success and moves
   something else entirely; `git ls-remote` against the local SHA is what catches it.
