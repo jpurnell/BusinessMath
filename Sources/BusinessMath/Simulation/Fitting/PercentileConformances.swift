@@ -883,3 +883,72 @@ extension DistributionInverseGaussian: PercentileParameterisable {
 		return cubed / lambda
 	}
 }
+
+// MARK: - PsiTriangGen
+
+public extension DistributionTriangular {
+
+	/// A triangular distribution stated by two percentiles and its mode, rather than
+	/// by its bounds.
+	///
+	/// Binds Risk Solver's `PsiTriangGen(ap, m, br, p, r)`.
+	///
+	/// ```swift
+	/// let t = try DistributionTriangular.generalised(
+	///     lowerPercentile: (p: 0.1, value: 12),
+	///     mode: 20,
+	///     upperPercentile: (p: 0.9, value: 35))
+	/// ```
+	///
+	/// ## Why this is worth a named entry point
+	///
+	/// The bounds of a triangular are the two numbers an expert is least able to give
+	/// and most likely to be wrong about: they are the absolute worst and best cases,
+	/// which by definition have never been observed. A tenth and a ninetieth
+	/// percentile are quantities someone can actually judge, and the mode is the one
+	/// they will volunteer unprompted. This solves for the bounds those imply instead
+	/// of asking for them.
+	///
+	/// The solve is the ordinary ``PercentileParameterisable`` one — two quantile
+	/// constraints and a fixed `likely` — so it inherits that machinery rather than
+	/// deriving a special-case formula. Two equations, two unknowns, and the third
+	/// parameter pinned.
+	///
+	/// - Parameters:
+	///   - lowerPercentile: A probability and the value at it. The probability must be
+	///     strictly inside `(0, 1)`.
+	///   - mode: The most likely value, which must lie between the two stated values.
+	///   - upperPercentile: A second probability and value, at a higher probability
+	///     than the first.
+	/// - Returns: The triangular meeting all three conditions.
+	/// - Throws: ``ParameterFitError/invalidConstraint(_:)`` if the three statements
+	///   cannot describe a triangular, or ``ParameterFitError/noSolution`` if no
+	///   bounds produce them — which happens for percentiles too far apart to be
+	///   reached by a distribution with that mode.
+	static func generalised(lowerPercentile: (p: Double, value: Double),
+							mode: Double,
+							upperPercentile: (p: Double, value: Double)) throws -> DistributionTriangular {
+		guard lowerPercentile.p > 0, lowerPercentile.p < 1,
+			  upperPercentile.p > 0, upperPercentile.p < 1 else {
+			throw ParameterFitError.invalidConstraint("percentiles must lie strictly inside (0, 1)")
+		}
+		guard lowerPercentile.p < upperPercentile.p else {
+			throw ParameterFitError.invalidConstraint("the lower percentile must come first")
+		}
+		guard lowerPercentile.value < upperPercentile.value else {
+			throw ParameterFitError.invalidConstraint("the stated values must increase with p")
+		}
+		// The mode has to be inside the stated range. Outside it the two percentiles
+		// would both fall on one side of the peak, and a triangular's bounds are then
+		// unidentifiable rather than merely hard to find — every wide enough pair of
+		// bounds fits equally well.
+		guard mode >= lowerPercentile.value, mode <= upperPercentile.value else {
+			throw ParameterFitError.invalidConstraint("the mode must lie between the two stated values")
+		}
+		return try DistributionTriangular.fitting([
+			.quantile(p: lowerPercentile.p, value: lowerPercentile.value),
+			.quantile(p: upperPercentile.p, value: upperPercentile.value),
+			.parameter(name: "likely", value: mode)
+		])
+	}
+}

@@ -196,6 +196,60 @@ struct PercentileFittingCoverageTests {
 		#expect(fitted == 2, "only \(fitted) of 2 generalised beta fits round-tripped")
 	}
 
+	// MARK: - PsiTriangGen
+
+	@Test("A generalised triangular hits the two percentiles and the mode it was given")
+	func generalisedTriangular() throws {
+		var built = 0
+		let cases: [(low: (p: Double, value: Double), mode: Double, high: (p: Double, value: Double))] = [
+			((0.1, 12), 20, (0.9, 35)),
+			((0.05, 0), 1, (0.95, 4)),
+			((0.25, -5), 0, (0.75, 8)),
+		]
+		for row in cases {
+			let t = try DistributionTriangular.generalised(lowerPercentile: row.low,
+														   mode: row.mode,
+														   upperPercentile: row.high)
+			let atLow: Double = t.quantile(row.low.p)
+			let atHigh: Double = t.quantile(row.high.p)
+			let lowScale: Double = Swift.max(1, Swift.abs(row.low.value))
+			let highScale: Double = Swift.max(1, Swift.abs(row.high.value))
+			#expect(Swift.abs(atLow - row.low.value) < lowScale * 1e-8,
+					"Q(\(row.low.p)) came back \(atLow), asked for \(row.low.value)")
+			#expect(Swift.abs(atHigh - row.high.value) < highScale * 1e-8,
+					"Q(\(row.high.p)) came back \(atHigh), asked for \(row.high.value)")
+			// The mode was pinned, not fitted, so it must come back exactly.
+			#expect(Swift.abs(t.base - row.mode) < 1e-9, "the mode moved to \(t.base)")
+			#expect(t.low < row.low.value, "the lower bound \(t.low) is not below the data")
+			#expect(t.high > row.high.value, "the upper bound \(t.high) is not above the data")
+			built += 1
+		}
+		#expect(built == cases.count, "only \(built) of \(cases.count) were built")
+	}
+
+	@Test("A generalised triangular refuses statements that cannot describe one")
+	func generalisedTriangularRefuses() {
+		// A mode outside the stated range does not make the solve hard, it makes the
+		// bounds unidentifiable: both percentiles fall on one side of the peak and
+		// every sufficiently wide pair of bounds fits as well as any other.
+		#expect(throws: ParameterFitError.self) {
+			_ = try DistributionTriangular.generalised(lowerPercentile: (0.1, 12), mode: 50,
+													   upperPercentile: (0.9, 35))
+		}
+		#expect(throws: ParameterFitError.self) {
+			_ = try DistributionTriangular.generalised(lowerPercentile: (0.9, 12), mode: 20,
+													   upperPercentile: (0.1, 35))
+		}
+		#expect(throws: ParameterFitError.self) {
+			_ = try DistributionTriangular.generalised(lowerPercentile: (0.0, 12), mode: 20,
+													   upperPercentile: (0.9, 35))
+		}
+		#expect(throws: ParameterFitError.self) {
+			_ = try DistributionTriangular.generalised(lowerPercentile: (0.1, 40), mode: 20,
+													   upperPercentile: (0.9, 35))
+		}
+	}
+
 	// MARK: - What the constraint vocabulary reaches
 
 	@Test("A stated mean is honoured where the family has one in closed form")
