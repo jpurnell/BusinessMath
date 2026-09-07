@@ -1,0 +1,450 @@
+{
+  "cases": [
+    {
+      "levels": [
+        {
+          "confidence": 0.9,
+          "cvarBelowThreshold": -36.75,
+          "cvarWorstCount": -42.0,
+          "tailSize": 2,
+          "valueAtRisk": -28.35,
+          "worstCount": 1
+        },
+        {
+          "confidence": 0.95,
+          "cvarBelowThreshold": -42.0,
+          "cvarWorstCount": -42.0,
+          "tailSize": 1,
+          "valueAtRisk": -32.02499999999999,
+          "worstCount": 1
+        },
+        {
+          "confidence": 0.99,
+          "cvarBelowThreshold": -42.0,
+          "cvarWorstCount": -42.0,
+          "tailSize": 1,
+          "valueAtRisk": -40.004999999999995,
+          "worstCount": 1
+        }
+      ],
+      "n": 20,
+      "name": "twentySignedReturns",
+      "note": "Twenty signed returns. At 95% the type-7 quantile falls between the first and second order statistics, so the interpolation convention is load-bearing; at 99% it is below the first, where the estimators clamp.",
+      "values": [
+        -42.0,
+        -31.5,
+        -28.0,
+        -19.0,
+        -12.5,
+        -8.0,
+        -5.5,
+        -2.0,
+        0.5,
+        3.0,
+        6.5,
+        9.0,
+        12.0,
+        15.5,
+        18.0,
+        22.5,
+        27.0,
+        33.0,
+        41.0,
+        55.0
+      ]
+    },
+    {
+      "levels": [
+        {
+          "confidence": 0.9,
+          "cvarBelowThreshold": -120.0,
+          "cvarWorstCount": -120.0,
+          "tailSize": 1,
+          "valueAtRisk": -91.2,
+          "worstCount": 1
+        },
+        {
+          "confidence": 0.95,
+          "cvarBelowThreshold": -120.0,
+          "cvarWorstCount": -120.0,
+          "tailSize": 1,
+          "valueAtRisk": -105.6,
+          "worstCount": 1
+        },
+        {
+          "confidence": 0.99,
+          "cvarBelowThreshold": -120.0,
+          "cvarWorstCount": -120.0,
+          "tailSize": 1,
+          "valueAtRisk": -117.12,
+          "worstCount": 1
+        }
+      ],
+      "n": 10,
+      "name": "allLosses",
+      "note": "Every observation negative. A sign error is invisible here, which is why it sits beside the mixed cases rather than alone.",
+      "values": [
+        -5.0,
+        -12.0,
+        -18.0,
+        -23.0,
+        -31.0,
+        -44.0,
+        -52.0,
+        -67.0,
+        -88.0,
+        -120.0
+      ]
+    },
+    {
+      "levels": [
+        {
+          "confidence": 0.9,
+          "cvarBelowThreshold": 5.0,
+          "cvarWorstCount": 5.0,
+          "tailSize": 1,
+          "valueAtRisk": 11.299999999999999,
+          "worstCount": 1
+        },
+        {
+          "confidence": 0.95,
+          "cvarBelowThreshold": 5.0,
+          "cvarWorstCount": 5.0,
+          "tailSize": 1,
+          "valueAtRisk": 8.150000000000002,
+          "worstCount": 1
+        },
+        {
+          "confidence": 0.99,
+          "cvarBelowThreshold": 5.0,
+          "cvarWorstCount": 5.0,
+          "tailSize": 1,
+          "valueAtRisk": 5.630000000000001,
+          "worstCount": 1
+        }
+      ],
+      "n": 10,
+      "name": "allGains",
+      "note": "Every observation positive. VaR is still the low quantile and is therefore positive \u2014 an implementation returning a magnitude cannot distinguish this case from the last.",
+      "values": [
+        5.0,
+        12.0,
+        18.0,
+        23.0,
+        31.0,
+        44.0,
+        52.0,
+        67.0,
+        88.0,
+        120.0
+      ]
+    },
+    {
+      "levels": [
+        {
+          "confidence": 0.9,
+          "cvarBelowThreshold": 7.5,
+          "cvarWorstCount": 7.5,
+          "tailSize": 25,
+          "valueAtRisk": 7.5,
+          "worstCount": 2
+        },
+        {
+          "confidence": 0.95,
+          "cvarBelowThreshold": 7.5,
+          "cvarWorstCount": 7.5,
+          "tailSize": 25,
+          "valueAtRisk": 7.5,
+          "worstCount": 1
+        },
+        {
+          "confidence": 0.99,
+          "cvarBelowThreshold": 7.5,
+          "cvarWorstCount": 7.5,
+          "tailSize": 25,
+          "valueAtRisk": 7.5,
+          "worstCount": 1
+        }
+      ],
+      "n": 25,
+      "name": "constantSeries",
+      "note": "No dispersion at all. VaR and both CVaRs must equal the constant, and nothing may divide by a zero spread.",
+      "values": [
+        7.5,
+        7.5,
+        7.5,
+        7.5,
+        7.5,
+        7.5,
+        7.5,
+        7.5,
+        7.5,
+        7.5,
+        7.5,
+        7.5,
+        7.5,
+        7.5,
+        7.5,
+        7.5,
+        7.5,
+        7.5,
+        7.5,
+        7.5,
+        7.5,
+        7.5,
+        7.5,
+        7.5,
+        7.5
+      ]
+    },
+    {
+      "levels": [
+        {
+          "confidence": 0.9,
+          "cvarBelowThreshold": -110.6875,
+          "cvarWorstCount": -121.18055555555556,
+          "tailSize": 10,
+          "valueAtRisk": -15.6875,
+          "worstCount": 9
+        },
+        {
+          "confidence": 0.95,
+          "cvarBelowThreshold": -203.875,
+          "cvarWorstCount": -203.875,
+          "tailSize": 5,
+          "valueAtRisk": -18.781249999999996,
+          "worstCount": 5
+        },
+        {
+          "confidence": 0.99,
+          "cvarBelowThreshold": -500.0,
+          "cvarWorstCount": -500.0,
+          "tailSize": 1,
+          "valueAtRisk": -301.99999999999983,
+          "worstCount": 1
+        }
+      ],
+      "n": 100,
+      "name": "heavyLeftTail",
+      "note": "A few very large losses among ordinary returns. This is where the two CVaR definitions diverge most, because whether one extra observation falls inside the tail moves the mean a long way.",
+      "values": [
+        -500.0,
+        -300.0,
+        -180.0,
+        -20.0,
+        -19.375,
+        -18.75,
+        -18.125,
+        -17.5,
+        -16.875,
+        -16.25,
+        -15.625,
+        -15.0,
+        -14.375,
+        -13.75,
+        -13.125,
+        -12.5,
+        -11.875,
+        -11.25,
+        -10.625,
+        -10.0,
+        -9.375,
+        -8.75,
+        -8.125,
+        -7.5,
+        -6.875,
+        -6.25,
+        -5.625,
+        -5.0,
+        -4.375,
+        -3.75,
+        -3.125,
+        -2.5,
+        -1.875,
+        -1.25,
+        -0.625,
+        0.0,
+        0.625,
+        1.25,
+        1.875,
+        2.5,
+        3.125,
+        3.75,
+        4.375,
+        5.0,
+        5.625,
+        6.25,
+        6.875,
+        7.5,
+        8.125,
+        8.75,
+        9.375,
+        10.0,
+        10.625,
+        11.25,
+        11.875,
+        12.5,
+        13.125,
+        13.75,
+        14.375,
+        15.0,
+        15.625,
+        16.25,
+        16.875,
+        17.5,
+        18.125,
+        18.75,
+        19.375,
+        20.0,
+        20.625,
+        21.25,
+        21.875,
+        22.5,
+        23.125,
+        23.75,
+        24.375,
+        25.0,
+        25.625,
+        26.25,
+        26.875,
+        27.5,
+        28.125,
+        28.75,
+        29.375,
+        30.0,
+        30.625,
+        31.25,
+        31.875,
+        32.5,
+        33.125,
+        33.75,
+        34.375,
+        35.0,
+        35.625,
+        36.25,
+        36.875,
+        37.5,
+        38.125,
+        38.75,
+        39.375,
+        40.0
+      ]
+    },
+    {
+      "analytic": [
+        {
+          "conditionalValueAtRisk": -0.2709966638649738,
+          "confidence": 0.9,
+          "valueAtRisk": -0.1763103131089201
+        },
+        {
+          "conditionalValueAtRisk": -0.3325425615014855,
+          "confidence": 0.95,
+          "valueAtRisk": -0.2489707253902944
+        },
+        {
+          "conditionalValueAtRisk": -0.45304284406916123,
+          "confidence": 0.99,
+          "valueAtRisk": -0.38526957480816815
+        }
+      ],
+      "construction": {
+        "count": 200000,
+        "kind": "stratifiedNormal",
+        "mean": 0.08,
+        "standardDeviation": 0.2
+      },
+      "levels": [
+        {
+          "confidence": 0.9,
+          "cvarBelowThreshold": -0.2709959780524536,
+          "cvarWorstCount": -0.2710007124299669,
+          "tailSize": 20000,
+          "valueAtRisk": -0.17630803391098315,
+          "worstCount": 19999
+        },
+        {
+          "confidence": 0.95,
+          "cvarBelowThreshold": -0.33254118989310316,
+          "cvarWorstCount": -0.33254118989310316,
+          "tailSize": 10000,
+          "valueAtRisk": -0.24896636230076638,
+          "worstCount": 10000
+        },
+        {
+          "confidence": 0.99,
+          "cvarBelowThreshold": -0.45303598660692745,
+          "cvarWorstCount": -0.45303598660692745,
+          "tailSize": 2000,
+          "valueAtRisk": -0.3852511918410032,
+          "worstCount": 2000
+        }
+      ],
+      "n": 200000,
+      "name": "stratifiedNormalLarge",
+      "note": "The normal inverse CDF on an even grid of 200,000 probabilities: the empirical distribution of a normal with no sampling noise. Its VaR and CVaR must reproduce the closed forms, which is the check that catches an estimator centred on the wrong place rather than merely inconsistent."
+    },
+    {
+      "analytic": [
+        {
+          "conditionalValueAtRisk": -0.6342441617637041,
+          "confidence": 0.9,
+          "valueAtRisk": -0.46854304794061014
+        },
+        {
+          "conditionalValueAtRisk": -0.7419494826275995,
+          "confidence": 0.95,
+          "valueAtRisk": -0.5956987694330151
+        },
+        {
+          "conditionalValueAtRisk": -0.9528249771210319,
+          "confidence": 0.99,
+          "valueAtRisk": -0.8342217559142943
+        }
+      ],
+      "construction": {
+        "count": 200000,
+        "kind": "stratifiedNormal",
+        "mean": -0.02,
+        "standardDeviation": 0.35
+      },
+      "levels": [
+        {
+          "confidence": 0.9,
+          "cvarBelowThreshold": -0.6342429615917938,
+          "cvarWorstCount": -0.634251246752442,
+          "tailSize": 20000,
+          "valueAtRisk": -0.4685390593442205,
+          "worstCount": 19999
+        },
+        {
+          "confidence": 0.95,
+          "cvarBelowThreshold": -0.7419470823129306,
+          "cvarWorstCount": -0.7419470823129306,
+          "tailSize": 10000,
+          "valueAtRisk": -0.5956911340263411,
+          "worstCount": 10000
+        },
+        {
+          "confidence": 0.99,
+          "cvarBelowThreshold": -0.9528129765621229,
+          "cvarWorstCount": -0.9528129765621229,
+          "tailSize": 2000,
+          "valueAtRisk": -0.8341895857217556,
+          "worstCount": 2000
+        }
+      ],
+      "n": 200000,
+      "name": "stratifiedNormalNegativeDrift",
+      "note": "The same construction with a negative mean and a wider spread, so the closed form is checked at more than one location and scale."
+    }
+  ],
+  "levels": [
+    0.9,
+    0.95,
+    0.99
+  ],
+  "name": "riskMetrics",
+  "note": "VaR is the signed low quantile, not a magnitude. Two CVaR definitions are recorded because BusinessMath exposes two entry points that compute different things: one averages below the type-7 quantile, the other averages the worst floor(n\u00b7alpha) observations.",
+  "reference": "numpy 2.5.3 percentile(method='linear'), scipy 1.18.1 norm"
+}
