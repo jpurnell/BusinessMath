@@ -23,7 +23,7 @@ import Numerics
 ///
 /// // Calculate VaR at 95% confidence level
 /// let var95 = ValueAtRisk.calculate(returns: timeSeries, confidenceLevel: 0.95)
-/// print("VaR₉₅: \(var95)") // e.g., -0.03 (3% loss)
+/// print("VaR₉₅: \(var95)") // the 5% quantile of the return series
 ///
 /// // Calculate VaR at 99% confidence level
 /// let var99 = ValueAtRisk.calculate(returns: timeSeries, confidenceLevel: 0.99)
@@ -34,7 +34,10 @@ import Numerics
 ///
 /// - **Negative values** indicate potential losses
 /// - **VaR₉₅ = -3%**: In the worst 5% of outcomes, losses exceed 3%
-/// - **VaR₉₉ = -5%**: In the worst 1% of outcomes, losses exceed 5%
+/// - **VaR₉₉ = -5%** would mean: in the worst 1% of outcomes, losses exceed 5%.
+///   The number is the 1% quantile of the sample, interpolated between order
+///   statistics, so it moves with the confidence level and is not restricted to
+///   values that were actually observed.
 /// - Higher confidence levels (99% vs 95%) produce more extreme VaR estimates
 ///
 /// ## Limitations
@@ -69,13 +72,20 @@ public struct ValueAtRisk {
 		guard !values.isEmpty else { return T(0) }
 
 		let sorted = values.sorted()
-		let n = sorted.count
+		let alpha: T = T(1) - confidenceLevel
 
-		// Calculate percentile index (lower tail)
-		let alpha = T(1) - confidenceLevel
-		let index = max(0, Int(Double(n) * Double(alpha)) - 1)
-
-		return sorted[index]
+		// The library's single empirical quantile — type 7, linear interpolation
+		// between order statistics, the same one behind ``Percentiles`` and
+		// ``SimulationResults/valueAtRisk(confidenceLevel:)``.
+		//
+		// This used to index instead: `sorted[max(0, Int(n·alpha) - 1)]`. Two
+		// consequences. It never interpolated, so the answer could only ever be an
+		// observed value and moved in steps as `n` grew. Worse, the `max(0, …)` floor
+		// swallowed the confidence level entirely whenever `n·alpha < 2` — on six
+		// observations it returned the *minimum* at 90%, 95% and 99% alike, so the
+		// argument a caller passed had no effect on the number they got back. A value
+		// at risk that does not move with confidence is not a value at risk.
+		return quantile(sorted: sorted, p: alpha)
 	}
 
 	/// Calculate VaR at 95% confidence level (common standard).

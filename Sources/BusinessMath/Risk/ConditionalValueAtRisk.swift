@@ -21,12 +21,13 @@ import Numerics
 ///
 /// // Calculate CVaR at 95% confidence level
 /// let cvar95 = ConditionalValueAtRisk.calculate(values: returns, confidenceLevel: 0.95)
-/// print("CVaR₉₅: \(cvar95)") // e.g., -0.06 (average loss in worst 5%)
+/// print("CVaR₉₅: \(cvar95)") // -0.1 — the mean of the tail at or below VaR₉₅
 /// ```
 ///
 /// ## Interpretation
 ///
-/// - **CVaR₉₅ = -6%**: In the worst 5% of outcomes, average loss is 6%
+/// - **CVaR₉₅ = -10%** on the sample above: eight observations put the 5% quantile
+///   at -8.25%, and only the -10% observation lies at or below it
 /// - **CVaR is always more extreme than VaR** (CVaR₉₅ <= VaR₉₅ for losses)
 /// - CVaR captures tail risk that VaR misses
 ///
@@ -34,8 +35,8 @@ import Numerics
 ///
 /// ```swift
 /// let returns = [0.10, 0.05, -0.15, -0.10, 0.20, 0.05]
-/// let var95 = ValueAtRisk.var95(values: returns)    // -5%
-/// let cvar95 = ConditionalValueAtRisk.cvar95(values: returns)  // -7%
+/// let var95 = ValueAtRisk.var95(values: returns)               // -0.1375
+/// let cvar95 = ConditionalValueAtRisk.cvar95(values: returns)  // -0.15
 ///
 /// // CVaR tells you: "When losses exceed 5% threshold (VaR),
 /// //                  they average 7% (CVaR)"

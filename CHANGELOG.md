@@ -97,6 +97,23 @@ oracles now stand behind the numerical estimators; seven found something.
   the time limits in the integer-programming articles were raised so that enforcing them
   cannot make a printed node count depend on how loaded the machine is.
 
+- **Risk doc comments quoted numbers the code does not produce.** `ConditionalValueAtRisk`
+  showed `-0.06` for a sample that returns `-0.1`, and `-5%`/`-7%` for one that returns
+  `-0.1375`/`-0.15`. `TailRisk`'s example reads like output but is an illustration of a
+  ratio, and now says so. Checking these is what surfaced the `ValueAtRisk` defect above.
+
+- **`ValueAtRisk.calculate` ignored its confidence level on small samples.** It indexed
+  the sorted array at `max(0, Int(n·alpha) - 1)`, and that floor collapses to `sorted[0]`
+  whenever `n·alpha < 2`. On six observations it returned the sample **minimum** at 90%,
+  95% and 99% alike — the argument the caller passed made no difference to the number they
+  got back. It also never interpolated, so the answer could only ever be a value that had
+  actually been observed, and it disagreed with
+  `SimulationResults.valueAtRisk(confidenceLevel:)` on the same data.
+
+  Now the type-7 quantile, like everything else in the package. `TailRisk` is built on
+  `ValueAtRisk` and `ConditionalValueAtRisk`, so it is corrected by the same change. A value
+  at risk that does not move with confidence is not a value at risk.
+
 - **Two CVaR entry points computed different things.**
   `ConditionalValueAtRisk.calculate` averaged the worst `max(1, ⌊n·α⌋)` observations and
   never formed a quantile, while `SimulationResults.conditionalValueAtRisk` averaged

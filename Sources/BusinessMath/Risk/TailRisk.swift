@@ -33,6 +33,8 @@ import Numerics
 /// ## Example: Tail Severity
 ///
 /// ```swift
+/// // Illustrative values, not the output of a call: given a VaR and a CVaR,
+/// // the tail risk ratio is their quotient.
 /// let var95 = -0.05    // VaR threshold, -5%
 /// let cvar95 = -0.075  // Average loss beyond VaR, -7.5%
 /// let tailRisk = cvar95 / var95   // 1.5

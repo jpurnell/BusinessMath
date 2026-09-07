@@ -263,6 +263,63 @@ struct RiskMetricsReferenceTests {
 				"no design in the corpus is small enough for the old floor to over-select — the regression it caused is untested")
 	}
 
+	@Test("ValueAtRisk agrees with SimulationResults and with numpy")
+	func valueAtRiskModuleMatchesTheQuantile() throws {
+		let fixture = try Self.loadFixture()
+		var compared = 0
+		for entry in fixture.cases where entry.construction == nil {
+			let results = SimulationResults(values: entry.sample)
+			for level in entry.levels {
+				let byModule = ValueAtRisk.calculate(values: entry.sample,
+													 confidenceLevel: level.confidence)
+				#expect(Self.close(byModule, level.valueAtRisk, 1e-9),
+						"\(entry.name) at \(level.confidence): ValueAtRisk \(byModule), numpy \(level.valueAtRisk)")
+				// Two public entry points for the same statistic must not disagree,
+				// which they did: `ValueAtRisk` indexed the sorted array while
+				// `SimulationResults` took the type-7 quantile.
+				#expect(Self.close(byModule, results.valueAtRisk(confidenceLevel: level.confidence), 1e-12),
+						"\(entry.name) at \(level.confidence): the two VaR entry points disagree")
+				compared += 1
+			}
+		}
+		#expect(compared >= 15, "only \(compared) levels compared")
+	}
+
+	@Test("Value at risk actually depends on the confidence level")
+	func valueAtRiskRespondsToConfidence() throws {
+		// The defect this guards against did not produce a wrong number so much as
+		// an inert one. `sorted[max(0, Int(n·alpha) - 1)]` collapses to `sorted[0]`
+		// whenever `n·alpha < 2`, so on six observations it returned the sample
+		// minimum at 90%, 95% and 99% alike — the argument the caller passed had no
+		// effect on the answer. Every value was individually plausible.
+		let sample: [Double] = [0.10, 0.05, -0.15, -0.10, 0.20, 0.05]
+		let ninety = ValueAtRisk.calculate(values: sample, confidenceLevel: 0.90)
+		let ninetyFive = ValueAtRisk.calculate(values: sample, confidenceLevel: 0.95)
+		let ninetyNine = ValueAtRisk.calculate(values: sample, confidenceLevel: 0.99)
+
+		#expect(ninetyFive < ninety, "95% VaR \(ninetyFive) is not below 90% VaR \(ninety)")
+		#expect(ninetyNine < ninetyFive, "99% VaR \(ninetyNine) is not below 95% VaR \(ninetyFive)")
+
+		// And it interpolates rather than only ever returning an observation, which
+		// is the other half of what indexing cost.
+		#expect(!sample.contains { abs($0 - ninetyFive) < 1e-12 },
+				"95% VaR \(ninetyFive) is an observed value — the quantile is not interpolating")
+	}
+
+	@Test("The convenience VaR entry points agree with the general one")
+	func valueAtRiskConvenienceAgrees() throws {
+		let fixture = try Self.loadFixture()
+		for entry in fixture.cases where entry.construction == nil {
+			let sample = entry.sample
+			#expect(Self.close(ValueAtRisk.var95(values: sample),
+							   ValueAtRisk.calculate(values: sample, confidenceLevel: 0.95), 1e-12),
+					"\(entry.name): var95 disagrees with calculate(confidenceLevel: 0.95)")
+			#expect(Self.close(ValueAtRisk.var99(values: sample),
+							   ValueAtRisk.calculate(values: sample, confidenceLevel: 0.99), 1e-12),
+					"\(entry.name): var99 disagrees with calculate(confidenceLevel: 0.99)")
+		}
+	}
+
 	// MARK: - Against the closed form
 
 	@Test("A noiseless normal sample reproduces the closed forms")
