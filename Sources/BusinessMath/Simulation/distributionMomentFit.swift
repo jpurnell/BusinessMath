@@ -45,7 +45,9 @@ public enum MomentFitError: Error, Sendable, Equatable {
 /// A distribution fitted to a mean, standard deviation, skewness and kurtosis.
 ///
 /// Someone with four summary statistics and no sample can still simulate, and this is
-/// how. It binds Risk Solver's `PsiMomentFit`.
+/// how.
+///
+/// Binds Risk Solver's `PsiMomentFit(mean, stdev, skew, kurt)`.
 ///
 /// ```swift
 /// // Right-skewed with fat tails — a loss distribution.
@@ -299,7 +301,15 @@ public struct DistributionMomentFit: ContinuousDistribution, Sendable {
 	/// Closed form where one exists, quadrature only for the bounded member — whose
 	/// transform is confined to (0, 1), so the integrand is a bounded function times a
 	/// normal density and Simpson converges quickly and safely.
-	static func standardisedMoments(family: JohnsonFamily, gamma: Double, delta: Double)
+	/// - Parameters:
+	///   - family: Which member of the system.
+	///   - gamma: The location shape parameter.
+	///   - delta: The scale shape parameter.
+	///   - quadratureSteps: Simpson intervals for the bounded member, which has no
+	///     closed form. A parameter rather than a literal so the resolution is
+	///     stateable, and so its guard is a real runtime check.
+	static func standardisedMoments(family: JohnsonFamily, gamma: Double, delta: Double,
+									quadratureSteps: Int = 4_000)
 	-> (mean: Double, variance: Double, skewness: Double, kurtosis: Double) {
 		var raw = [Double](repeating: 0, count: 5)
 		raw[0] = 1
@@ -344,21 +354,23 @@ public struct DistributionMomentFit: ContinuousDistribution, Sendable {
 			// dominated by the density — no cancellation, no growth.
 			let lower: Double = -12
 			let upper: Double = 12
-			let steps = 4_000
-			// Literal bounds and a literal step count, so both divisors are non-zero
-			// by construction; bound once so that is visible at the point of use.
+			// Simpson needs an even number of intervals and at least two of them.
+			guard quadratureSteps >= 2, quadratureSteps % 2 == 0 else { return (0, 0, 0, 3) }
+			let steps = quadratureSteps
 			let width: Double = upper - lower
+			// `quadratureSteps` is a parameter, so this is a real runtime check and
+			// not one the optimiser can fold away.
 			let stepCount: Double = Double(steps)
 			guard stepCount > 0 else { return (0, 0, 0, 3) }
 			let h: Double = width / stepCount
-			let normaliser: Double = (2 * Double.pi).squareRoot()
-			guard normaliser > 0 else { return (0, 0, 0, 3) }
-			let inverseNormaliser: Double = 1 / normaliser
 			var sums = [Double](repeating: 0, count: 5)
 			for step in 0...steps {
 				let z: Double = lower + Double(step) * h
-				let halfSquare: Double = -z * z / 2
-				let density: Double = Foundation.exp(halfSquare) * inverseNormaliser
+				// The package's own standard normal density. Hand-rolling
+				// `exp(-z²/2)/√(2π)` here duplicated a function that already exists
+				// and is already tested, and put a division by a constant in a hot
+				// loop for no reason.
+				let density: Double = normalPDF(x: z, mean: 0, stdDev: 1)
 				let weight: Double
 				if step == 0 || step == steps { weight = 1 }
 				else if step % 2 == 1 { weight = 4 }

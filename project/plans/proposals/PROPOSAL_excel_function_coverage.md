@@ -554,10 +554,40 @@ this table is trustworthy where §3 was not — see §8.4.
 
 ### 8.2 Excel — 519 functions
 
+**Recounted 2026-09-07.** `implemented` re-verified against `FormulaEvaluator.Function`
+in both directions: 21 cases in the enum, 21 rows in the matrix, nothing in one and not
+the other. The registry has not moved.
+
+**Eight of the nine `new` rows were wrong.** `new` claims *verified absent by a
+tree-wide search*, and eight of them are present under a name the search did not think
+to try:
+
+| Excel | BusinessMath |
+|---|---|
+| `ACCRINT` | `accruedInterest` |
+| `DDB` | `decliningBalanceDepreciation` (its `factor` defaults to 2) |
+| `NOMINAL` | `nominalRate` |
+| `NPER` | `numberOfPeriods` |
+| `PDURATION` | `periodsToGrow` |
+| `RATE` | `periodicRate` |
+| `SYD` | `sumOfYearsDigitsDepreciation` |
+| `VDB` | `variableDecliningBalanceDepreciation` |
+
+§6 records the substring join falsely matching `NOMINAL` to `minimize` and leaking
+`RATE` and `NPER` from prose, and says the correction *"moved `RATE` and `NPER` onto the
+work list, where they belong."* It did not: it replaced a false positive with a false
+negative, and marked seven more the same way. Both implementations existed the whole
+time. **A classifier that has just been caught over-claiming will over-correct, and the
+second error is harder to see because a wrong `new` looks like honest work remaining.**
+
+`DB` stays `new`, and is the one that survives audit: Excel's `DB` computes its own
+rate from cost, salvage and life rounded to three decimals and takes a `month`
+argument. `decliningBalanceDepreciation` is `DDB`'s formula, not that one.
+
 | Marking | Count | Notes |
 |---|---|---|
-| `implemented` | **21** | the entire current registry |
-| `bindable` | **86** | 51 statistical, 12 financial, 11 math, 10 compatibility, 2 datetime |
+| `implemented` | **21** | the entire current registry, re-verified |
+| `bindable` | **95** | +9: the eight above, plus `NORM.S.DIST` |
 | `new` | **9** | `RATE`, `NPER`, `PDURATION`, `NOMINAL`, `ACCRINT`, and the depreciation family `DB`, `DDB`, `SYD`, `VDB` |
 | `not ours` | 78 | lookup, logical, information |
 | `out of scope` | 72 | text, database, cube, web |
@@ -576,11 +606,23 @@ Twelve financial functions are bindable: `XNPV`, `XIRR`, `MIRR`, `CUMIPMT`, `CUM
 
 ### 8.3 Risk Solver — 295 functions
 
-| Marking | Count |
-|---|---|
-| `bindable` | **50** — 34 distributions, 14 statistics, 2 other |
-| `not ours` | 13 — the annotations of §4.2 |
-| `unreviewed` | 232 |
+**Recounted 2026-09-07**, after the coverage work completed at 36 of 36 rows.
+
+| Marking | Count | Change |
+|---|---|---|
+| `bindable` | **86** | +36 |
+| `not ours` | 13 — the annotations of §4.2 | — |
+| `unreviewed` | 196 | −36 |
+
+The 36 promotions are not a reclassification. Each rests on a `Binds Risk Solver's
+`PsiX(...)`` annotation written into the type's doc comment as the implementation
+landed, which is the strongest evidence class §8.1 defines and is not a join of any
+kind.
+
+Three of those annotations were phrased differently from the rest — *"It binds Risk
+Solver's …"*, *"and binds …"*, *"it is what Risk Solver's … binds to"* — and so were
+invisible to a scan for the canonical form. Normalised, because an annotation that a
+tool cannot find does not do the job the convention exists for.
 
 34 of Frontline's distributions already have a sampler. The corpus's most-used ones —
 `PsiTriangular`, `PsiUniform`, `PsiNormal`, `PsiLogNormal` — are all bindable, as are `PsiMean`

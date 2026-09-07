@@ -30,7 +30,9 @@ public enum MVLogNormalError: Error, Sendable, Equatable {
 /// independent of each other. Sampling them as correlated normals gives negative
 /// values; sampling them as independent lognormals loses the dependence that usually
 /// drives the tail of a portfolio. This does both — normals with the requested
-/// correlation, exponentiated — and binds Risk Solver's `PsiMVLogNormal`.
+/// correlation, exponentiated.
+///
+/// Binds Risk Solver's `PsiMVLogNormal(mean, stddev, correlationMatrix)`.
 ///
 /// ```swift
 /// // Two correlated cost drivers, each lognormal, correlated 0.6 in the logs.

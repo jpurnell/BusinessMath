@@ -303,7 +303,16 @@ public struct DistributionMetalog: ContinuousDistribution, Sendable {
 	/// Sampled on a grid that is dense near the ends, where a metalog turns back if it
 	/// is going to: the basis functions carry `ln(y/(1−y))`, which is where all the
 	/// curvature lives.
-	static func isFeasible(coefficients: [Double], boundedness: MetalogBoundedness) -> Bool {
+	/// - Parameters:
+	///   - coefficients: The fitted coefficients.
+	///   - boundedness: Ignored — every boundedness transform is strictly increasing,
+	///     so monotonicity of the unbounded quantile settles it for all of them.
+	///   - gridSteps: How finely to sample the interval. A parameter rather than a
+	///     literal so the resolution is stateable, and so the guard below is a real
+	///     runtime check rather than one the optimiser folds away.
+	static func isFeasible(coefficients: [Double],
+						   boundedness: MetalogBoundedness,
+						   gridSteps: Int = 1_000) -> Bool {
 		// The boundedness transforms are all strictly increasing, so they preserve
 		// monotonicity exactly: checking the unbounded quantile settles it for every
 		// variant, and the argument is here rather than a parameter this ignores.
@@ -313,15 +322,19 @@ public struct DistributionMetalog: ContinuousDistribution, Sendable {
 		// the part that matters: the basis carries `ln(y/(1−y))`, so all the curvature
 		// lives within a whisker of 0 and 1, and a uniform grid alone would miss a
 		// quantile that turns back only in the last 1e-4 of the interval.
-		var probabilities: [Double] = []
-		probabilities.reserveCapacity(1_100)
-		let steps = 1_000
-		// Bound and guarded rather than divided by inline, so the invariant that makes
-		// the division safe sits next to it instead of in the literal above.
-		let stepCount: Double = Double(steps)
+		// A grid too coarse to resolve anything cannot establish feasibility, and
+		// saying so is better than sampling three points and returning true.
+		guard gridSteps > 1 else { return false }
+		// `gridSteps` is a parameter, so this guard is a real runtime check rather
+		// than one the optimiser folds away — which is what made the previous version
+		// of it dead code.
+		let stepCount: Double = Double(gridSteps)
 		guard stepCount > 0 else { return false }
 		let stride: Double = 1 / stepCount
-		for step in 1..<steps {
+
+		var probabilities: [Double] = []
+		probabilities.reserveCapacity(gridSteps + 16)
+		for step in 1..<gridSteps {
 			probabilities.append(Double(step) * stride)
 		}
 		let refinements: [Double] = [1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9]

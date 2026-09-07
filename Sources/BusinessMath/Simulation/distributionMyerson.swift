@@ -11,8 +11,9 @@ import Numerics
 /// Someone who knows a business well can rarely name a distribution, but can usually
 /// name three numbers — a low case, a most-likely case and a high case — and say how
 /// confident they are in the outer two. The Myerson distribution is the standard way
-/// to turn that into something you can sample, and it is what Risk Solver's
-/// `PsiMyerson(low, mode, high, probability)` binds to.
+/// to turn that into something you can sample.
+///
+/// Binds Risk Solver's `PsiMyerson(low, mode, high, probability)`.
 ///
 /// ```swift
 /// // A revenue forecast: 5th percentile 80, median 100, 95th percentile 150.
