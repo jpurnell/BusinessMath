@@ -1,4 +1,4 @@
-# CURRENT — Risk Solver: §3 items 1, 3 and 4 complete; 4-remainder and 6 open
+# DONE — Risk Solver: all 36 rows covered
 
 **Started** 2026-09-06 · **Branch** `main` · **Spec** `project/plans/proposals/PROPOSAL_excel_function_coverage.md` §3 priority 1
 
@@ -190,49 +190,45 @@ near-vertical, so a one-ulp error in the angle explodes. Replaced with the cotan
 correction near the median. The tolerance was **not** loosened; the far tail is what a heavy-tailed
 distribution is read for.
 
-## Remaining Risk Solver work
+## Remaining Risk Solver work — **none. 36 of 36.**
 
-### Third batch: the six needing a special function
+The last seven landed 2026-09-07. The checklist had recorded them as blocked on
+method: "these name no reference implementation, so §2.1's method does not apply and
+each needs its own." That framing turned out to be wrong. After the Tier B oracle
+work it is clear each row **supplies its own oracle**, the same way an LP optimum
+does — the absence of a SciPy counterpart was never the obstacle.
 
-`DistributionErlang` (lower incomplete gamma), `DistributionPearson5` (inverse gamma — the
-**upper** incomplete gamma at the **reciprocal** argument, both easy to reverse and both checked),
-`DistributionPearson6` (beta prime), `DistributionInverseGaussian`, `DistributionNegativeBinomial`
-and `DistributionLogarithmic`. All four special functions the first three need were already in the
-package.
+- [x] **`PsiMyerson`** — `DistributionMyerson`. A three-point elicitation as a shifted
+      lognormal, constructed so the low, mode and high come back *exactly*. That
+      exactness is the oracle. The symmetric case is the `0/0` limit of the general
+      form and is a normal; implemented as the limit, checked against the package's
+      normal, with a separate test that the branch switch is continuous.
+- [x] **`PsiMVLogNormal`** — `DistributionMVLogNormal`. Correlated normals,
+      exponentiated. Every moment is closed-form, so a 400,000-draw sample is checked
+      against the formulas — and `impliedValueCorrelation` reports the attenuation,
+      because correlation in the logs is not correlation in the values and anyone
+      reading one off historical values gets less than they intended.
+- [x] **`PsiMetalog`, `PsiMetalogFit`** — `DistributionMetalog`. Least squares over a
+      fixed basis, through the package's own Cholesky. With one term per point the fit
+      is exactly determined and passes through **every** point: the sharpest oracle in
+      this whole programme. Feasibility is separate and not free — a linear
+      combination of the basis is a distribution only if it increases, and least
+      squares does not enforce that.
+- [x] **`PsiMomentFit`** — `DistributionMomentFit`. The Johnson system, whose four
+      parameters correspond one-to-one with the first four moments, so the fit
+      *reproduces* them. Chosen over a Cornish–Fisher expansion — simpler and far more
+      common — precisely because Cornish–Fisher matches the moments only
+      asymptotically, and a routine named for moments it does not match is the
+      plausible-but-wrong answer this package refuses.
+- [x] **`PsiAR1`** — `AutoregressiveOne`, on `StochasticProcess`. Implemented as the
+      exact Ornstein–Uhlenbeck discretisation, so a fractional `dt` composes; at
+      `dt = 1` it reduces to `c + φX + σZ`, which is asserted rather than assumed.
+- [x] **`PsiGARCH11`** — `GarchOneOne`, with a two-component `GarchState`. GARCH is
+      discrete-time with no structure-preserving continuous limit, so `dt` advances one
+      period and the doc says so instead of scaling something with no scaling law.
 
-**`PsiInvNormal` needed the conversion the work list warned about**: `scipy.stats.invgauss`'s first
-argument is the **ratio** `mu/lambda`, not `mu`. Passing `mu` straight through gives a distribution
-whose mean is `μ·λ`. The type takes Frontline's `mu` and `lambda`; the fixture does the conversion.
-
-Its quantile has **no closed form**, so it bisects its own CDF. Bisection rather than Newton because
-the CDF is strictly increasing on the support, which makes it unconditionally convergent — a
-quantile that occasionally returns a negative duration would be worse than one taking a few more
-steps. The step count comes from `bisectionStepsToFullPrecision`, derived from the type.
-
-**Two support conventions worth stating**: the negative binomial counts *failures*, so it starts at
-0, while `DistributionGeometric` in this package counts *trials* and starts at 1 — they are not the
-`s = 1` case of one another. The log-series has `k` in a denominator and starts at 1. A binding that
-assumed the wrong one would be shifted by one everywhere and every moment would still look
-plausible.
-
-**On the five `catch` blocks.** The special functions throw, and `ContinuousDistribution` declares
-`cdf`/`quantile` non-throwing, so an error has to become a value. Checked what they actually throw
-on: NaN or out-of-range `p`, and non-positive shapes — every one already excluded by the
-initialiser and the guards, so **the catch is unreachable**. There is no error to log, which is
-what the checker's suggestion assumes. Used the package's existing `// logging:` convention with a
-comment saying the branch is unreachable and why; NaN is the sentinel if the invariant is ever
-broken, because any finite substitute could be mistaken for a quantile.
-
-## Remaining Risk Solver work
-
-- **§3 priority 4, the non-SciPy rows** — `PsiMyerson`, `PsiMetalog`, `PsiMetalogFit`,
-  `PsiMVLogNormal`, `PsiMomentFit`. These name no reference implementation, so §2.1's method does
-  not apply and each needs its own. Metalog in particular is a quantile-parameterised family fitted
-  to data, closer to a fitting routine than a distribution.
-- **§3 priority 6** — the AR/GARCH family, last: `PsiAR1`, `PsiGARCH11` and their relatives.
-  Zero occurrences in the measured corpus; on the list because Frontline documents them.
-- **§3 priority 6** — the AR/GARCH family, last: `PsiAR1`, `PsiGARCH11` and their relatives.
-  Zero occurrences in the measured corpus; on the list because Frontline documents them.
+The §1.2 note — "`DistributionRandom` is the wrong protocol" for the process family —
+was right, and `StochasticProcess` already existed. No new protocol was needed.
 
 ## What the work turned up
 
