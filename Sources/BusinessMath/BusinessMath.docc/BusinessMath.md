@@ -154,6 +154,9 @@ This documentation is organized like a book with five main parts:
 ### Advanced Optimization Techniques
 
 - <doc:5.8-IntegerProgramming>
+- <doc:5.8b-IntegerProgrammingInPractice>
+- <doc:5.8c-IntegerProgrammingDiagnostics>
+- <doc:5.8d-LinearFunctionAPI>
 - <doc:5.9-AdaptiveSelection>
 - <doc:5.10-ParallelOptimization>
 - <doc:5.11-PerformanceBenchmarking>
