@@ -198,8 +198,9 @@ struct AutoregressiveAndGarchTests {
 		#expect(abs(variance - process.stationaryVariance) / process.stationaryVariance < 0.15,
 				"variance \(variance), unconditional \(process.stationaryVariance)")
 		// Conditionally mean-zero at every step, so the path mean is zero.
-		#expect(abs(mean) < 5 * variance.squareRoot() / Double(returns.count).squareRoot() + 1e-9,
-				"path mean \(mean) is not zero")
+		let standardError: Double = variance.squareRoot() / Double(returns.count).squareRoot()
+		let meanBound: Double = 5 * standardError + 1e-9
+		#expect(abs(mean) < meanBound, "path mean \(mean) is not zero")
 	}
 
 	@Test("Returns are uncorrelated but their squares are not")

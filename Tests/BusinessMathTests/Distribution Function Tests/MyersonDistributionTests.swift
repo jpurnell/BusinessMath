@@ -59,8 +59,12 @@ struct MyersonDistributionTests {
 					"\(entry.name): the mode is not the median — quantile(0.5) = \(distribution.quantile(0.5))")
 
 			let highScale = Swift.max(1.0, abs(entry.high))
-			#expect(abs(distribution.quantile(1 - tail) - entry.high) < 1e-9 * highScale,
-					"\(entry.name): quantile(\(1 - tail)) = \(distribution.quantile(1 - tail)), elicited high \(entry.high)")
+			let upperPoint: Double = 1 - tail
+			let atUpper = distribution.quantile(upperPoint)
+			let upperGap: Double = abs(atUpper - entry.high)
+			let upperBound: Double = 1e-9 * highScale
+			#expect(upperGap < upperBound,
+					"\(entry.name): quantile(\(upperPoint)) = \(atUpper), elicited high \(entry.high)")
 		}
 	}
 

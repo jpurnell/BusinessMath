@@ -218,17 +218,33 @@ struct MomentFitTests {
 			fourth /= Double(count)
 			let sigma: Double = second.squareRoot()
 
-			#expect(abs(sampleMean - target.mean) < 0.02 * Swift.max(1.0, abs(target.mean)) + 0.05 * target.standardDeviation,
+			// Bound out of the expectations. `#expect` wraps its condition in a macro
+			// expansion, and Swift 6.2.1 cannot type-check a compound arithmetic
+			// expression inside one — this is the shape that broke Linux CI.
+			let meanAllowance: Double = 0.02 * Swift.max(1.0, abs(target.mean))
+			let spreadAllowance: Double = 0.05 * target.standardDeviation
+			let meanBound: Double = meanAllowance + spreadAllowance
+			let meanGap: Double = abs(sampleMean - target.mean)
+			#expect(meanGap < meanBound,
 					"\(target.name): sample mean \(sampleMean), asked for \(target.mean)")
-			#expect(abs(sigma - target.standardDeviation) < 0.05 * target.standardDeviation,
+
+			let sigmaGap: Double = abs(sigma - target.standardDeviation)
+			#expect(sigmaGap < spreadAllowance,
 					"\(target.name): sample sd \(sigma), asked for \(target.standardDeviation)")
 			// Sampling error on a third and fourth moment is large — roughly √(6/n)
 			// and √(24/n) for a normal and worse for heavy tails — so these bounds are
 			// what 400,000 draws can actually support, not what would look impressive.
-			#expect(abs(third / (second * sigma) - target.skewness) < 0.08,
-					"\(target.name): sample skewness \(third / (second * sigma)), asked for \(target.skewness)")
-			#expect(abs(fourth / (second * second) - target.kurtosis) < 0.5,
-					"\(target.name): sample kurtosis \(fourth / (second * second)), asked for \(target.kurtosis)")
+			let cubedSigma: Double = second * sigma
+			let sampleSkewness: Double = third / cubedSigma
+			let skewGap: Double = abs(sampleSkewness - target.skewness)
+			#expect(skewGap < 0.08,
+					"\(target.name): sample skewness \(sampleSkewness), asked for \(target.skewness)")
+
+			let squaredVariance: Double = second * second
+			let sampleKurtosis: Double = fourth / squaredVariance
+			let kurtosisGap: Double = abs(sampleKurtosis - target.kurtosis)
+			#expect(kurtosisGap < 0.5,
+					"\(target.name): sample kurtosis \(sampleKurtosis), asked for \(target.kurtosis)")
 		}
 	}
 

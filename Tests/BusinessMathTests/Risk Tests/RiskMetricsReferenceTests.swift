@@ -506,9 +506,15 @@ struct RiskMetricsReferenceTests {
 				let byThreshold = results.conditionalValueAtRisk(confidenceLevel: level.confidence)
 				let byCount = ConditionalValueAtRisk.calculate(values: entry.sample,
 															   confidenceLevel: level.confidence)
-				#expect(byThreshold >= lowest - 1e-9 && byThreshold <= highest + 1e-9,
+				// Bounds bound out of the expectation: a compound comparison inside an
+				// `#expect` macro expansion is the shape Swift 6.2.1 cannot type-check.
+				let floorBound: Double = lowest - 1e-9
+				let ceilingBound: Double = highest + 1e-9
+				let thresholdInside: Bool = byThreshold >= floorBound && byThreshold <= ceilingBound
+				#expect(thresholdInside,
 						"\(entry.name) at \(level.confidence): threshold CVaR \(byThreshold) outside [\(lowest), \(highest)]")
-				#expect(byCount >= lowest - 1e-9 && byCount <= highest + 1e-9,
+				let countInside: Bool = byCount >= floorBound && byCount <= ceilingBound
+				#expect(countInside,
 						"\(entry.name) at \(level.confidence): count CVaR \(byCount) outside [\(lowest), \(highest)]")
 				// And each must be at least as bad as the worst single observation
 				// is good — a mean of the left tail cannot exceed the median.
