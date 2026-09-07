@@ -353,7 +353,7 @@ public struct DistributionMetalog: ContinuousDistribution, Sendable {
 	///   - gridSteps: How finely to sample the interval. A parameter rather than a
 	///     literal so the resolution is stateable, and so the guard below is a real
 	///     runtime check rather than one the optimiser folds away.
-	static func isFeasible(coefficients: [Double],
+	public static func isFeasible(coefficients: [Double],
 						   boundedness: MetalogBoundedness,
 						   gridSteps: Int = 1_000) -> Bool {
 		// The boundedness transforms are all strictly increasing, so they preserve
