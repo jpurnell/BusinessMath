@@ -134,6 +134,37 @@ oracles now stand behind the numerical estimators; seven found something.
 
 ### Added
 
+- **Risk Solver coverage is complete: 36 of 36 rows.** The last seven had been recorded as
+  blocked on method, because none names a reference implementation to check against. That
+  was the wrong diagnosis — each supplies its own oracle, the same way an LP optimum does.
+
+  - **`DistributionMyerson`** (`PsiMyerson`) — a three-point elicitation as a shifted
+    lognormal, constructed so the low, mode and high come back exactly. A symmetric
+    elicitation makes the general form 0/0 and its limit is a normal, implemented as that
+    limit and checked against the package's own normal.
+  - **`DistributionMVLogNormal`** (`PsiMVLogNormal`) — correlated normals, exponentiated.
+    Every moment closed-form, including the cross-covariances, and checked against a
+    400,000-draw sample. `impliedValueCorrelation(_:_:)` reports the attenuation, because
+    correlation in the logs is not correlation in the values.
+  - **`DistributionMetalog`** (`PsiMetalog`, `PsiMetalogFit`) — least squares over a fixed
+    basis, through the package's own Cholesky. With one term per point the fit passes
+    through **every** point. Feasibility is checked separately and on a grid refined at
+    both ends, because the basis carries `ln(p/(1−p))` and that is where a quantile turns
+    back. Keelin's bounded and semi-bounded transforms included.
+  - **`DistributionMomentFit`** (`PsiMomentFit`) — the Johnson system, whose four
+    parameters correspond one-to-one with the first four moments, so a fit *reproduces*
+    them. Chosen over a Cornish–Fisher expansion for exactly that reason: Cornish–Fisher
+    matches the moments only asymptotically. Requests below `β₂ = β₁ + 1` are refused —
+    that inequality is a theorem — which also catches excess kurtosis passed by mistake.
+  - **`AutoregressiveOne`** (`PsiAR1`) — on `StochasticProcess`, as the exact
+    Ornstein–Uhlenbeck discretisation, so a fractional `dt` composes and `dt = 1` reduces
+    to `c + φX + σZ`.
+  - **`GarchOneOne`** (`PsiGARCH11`) — with a two-component state, because the variance
+    carries the memory. Tested on both halves of what GARCH claims: returns uncorrelated
+    at every lag, squared returns clustered and decaying.
+
+  `CorrelatedNormals` gains a `Sendable` conformance it always qualified for.
+
 - **`LinearProgrammingCertificateTests`** — an LP optimum certifies itself, so this checks
   feasibility, a zero duality gap, complementary slackness and the reduced-cost identity,
   plus two things owing nothing to duality: exhaustive vertex enumeration by an

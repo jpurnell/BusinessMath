@@ -98,6 +98,14 @@ public struct DistributionMyerson: ContinuousDistribution, Sendable {
 	/// The standard deviation of the normal branch, `(high − low)/(2z)`.
 	private let symmetricScale: Double
 
+	/// `1/z`, `1/symmetricScale` and `1/upperArm`, formed once in the initialiser
+	/// where the guards proving each divisor non-zero sit on the adjacent lines. The
+	/// hot paths then multiply, keeping each division beside the invariant that makes
+	/// it safe instead of leaving a bare divide far from its proof.
+	private let inverseZ: Double
+	private let inverseSymmetricScale: Double
+	private let inverseUpperArm: Double
+
 	/// Creates a Myerson distribution from a three-point elicitation.
 	///
 	/// - Parameters:
@@ -146,7 +154,14 @@ public struct DistributionMyerson: ContinuousDistribution, Sendable {
 		self.isSymmetric = symmetric
 
 		let span: Double = high - low
-		self.symmetricScale = span / (2 * zValue)
+		let twiceZ: Double = 2 * zValue
+		guard twiceZ > 0 else { return nil }
+		let scale: Double = span / twiceZ
+		guard scale > 0 else { return nil }
+		self.symmetricScale = scale
+		self.inverseZ = 1 / zValue
+		self.inverseSymmetricScale = 1 / scale
+		self.inverseUpperArm = 1 / upper
 
 		if symmetric {
 			self.inverseAsymmetryLessOne = 0
@@ -173,7 +188,7 @@ public struct DistributionMyerson: ContinuousDistribution, Sendable {
 		if isSymmetric {
 			return mode + symmetricScale * standard
 		}
-		let exponent: Double = standard / z
+		let exponent: Double = standard * inverseZ
 		let powered: Double = Foundation.pow(asymmetry, exponent)
 		let shifted: Double = powered - 1
 		return mode + upperArm * shifted * inverseAsymmetryLessOne
@@ -189,13 +204,13 @@ public struct DistributionMyerson: ContinuousDistribution, Sendable {
 
 		if isSymmetric {
 			let deviation: Double = x - mode
-			let standardised: Double = deviation / symmetricScale
+			let standardised: Double = deviation * inverseSymmetricScale
 			return normalCDF(x: standardised, mean: 0, stdDev: 1)
 		}
 
 		// Invert the quantile: b^(Φ⁻¹(p)/z) = 1 + (x − mode)(b − 1)/(high − mode).
 		let deviation: Double = x - mode
-		let scaled: Double = deviation / upperArm
+		let scaled: Double = deviation * inverseUpperArm
 		let inner: Double = 1 + scaled * (asymmetry - 1)
 
 		// Off the bounded end of the support. The bound is where `inner` reaches zero,

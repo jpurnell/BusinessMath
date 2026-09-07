@@ -18,13 +18,16 @@ import Numerics
 ///
 /// ```swift
 /// // A spread reverting to 120bp, with a half-life of about three periods.
-/// let spread = AutoregressiveOne(name: "Spread", persistence: 0.8,
-///                                longRunMean: 0.012, shockVolatility: 0.002)
-/// var generator = DeterministicRNG(seed: 7)
-/// var level = spread.longRunMean
-/// for _ in 0..<12 {
-///     let shock = Double.normalDraw(using: &generator)
-///     level = spread.step(from: level, dt: 1, normalDraws: shock)
+/// if let spread = AutoregressiveOne(name: "Spread", persistence: 0.8,
+///                                   longRunMean: 0.012, shockVolatility: 0.002) {
+///     let shocks = DistributionNormal(0, 1)
+///     var generator = DeterministicRNG(seed: 7)
+///     var level = spread.longRunMean
+///     for _ in 0..<12 {
+///         level = spread.step(from: level, dt: 1,
+///                             normalDraws: shocks.next(using: &generator))
+///     }
+///     print(spread.halfLife)   // 3.106...
 /// }
 /// ```
 ///
@@ -152,7 +155,12 @@ public struct AutoregressiveOne: StochasticProcess, Sendable {
 	/// persistence accumulates shocks rather than dissipating them.
 	public var stationaryVariance: Double {
 		let squared: Double = persistence * persistence
-		return shockVolatility * shockVolatility / (1 - squared)
+		// `|φ| < 1` is an initialiser invariant, so `1 − φ²` is strictly positive —
+		// restated here because the guard proving it is a hundred lines away, and a
+		// reader of this line alone cannot see it.
+		let remaining: Double = 1 - squared
+		guard remaining > 0 else { return .infinity }
+		return shockVolatility * shockVolatility / remaining
 	}
 
 	/// The standard deviation of the stationary distribution.
@@ -177,8 +185,12 @@ public struct AutoregressiveOne: StochasticProcess, Sendable {
 		let magnitude: Double = abs(persistence)
 		guard magnitude > 0 else { return 0 }
 		let logMagnitude: Double = Foundation.log(magnitude)
-		guard logMagnitude < 0 else { return .infinity }
-		return Foundation.log(0.5) / logMagnitude
+		// The decay rate, positive exactly when |φ| < 1 — which is both the condition
+		// for a half-life to exist and the guard on the divisor below.
+		let decayRate: Double = -logMagnitude
+		guard decayRate > 0 else { return .infinity }
+		let halved: Double = -Foundation.log(0.5)
+		return halved / decayRate
 	}
 
 	/// `E[X(t)]` given a starting level, `μ + (x₀ − μ)φ^t`.

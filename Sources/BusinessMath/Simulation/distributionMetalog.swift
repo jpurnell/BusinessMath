@@ -316,8 +316,13 @@ public struct DistributionMetalog: ContinuousDistribution, Sendable {
 		var probabilities: [Double] = []
 		probabilities.reserveCapacity(1_100)
 		let steps = 1_000
+		// Bound and guarded rather than divided by inline, so the invariant that makes
+		// the division safe sits next to it instead of in the literal above.
+		let stepCount: Double = Double(steps)
+		guard stepCount > 0 else { return false }
+		let stride: Double = 1 / stepCount
 		for step in 1..<steps {
-			probabilities.append(Double(step) / Double(steps))
+			probabilities.append(Double(step) * stride)
 		}
 		let refinements: [Double] = [1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
 		for epsilon in refinements {

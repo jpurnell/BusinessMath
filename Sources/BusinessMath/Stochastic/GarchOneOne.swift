@@ -170,7 +170,11 @@ public struct GarchOneOne: StochasticProcess, Sendable {
 
 	/// The unconditional variance, `ω/(1 − α − β)`.
 	public var stationaryVariance: Double {
-		constant / (1 - persistence)
+		// `α + β < 1` is an initialiser invariant, so this is strictly positive.
+		// Restated because the guard is far from the division.
+		let remaining: Double = 1 - persistence
+		guard remaining > 0 else { return .infinity }
+		return constant / remaining
 	}
 
 	/// A state already at the long-run variance, with no return yet.

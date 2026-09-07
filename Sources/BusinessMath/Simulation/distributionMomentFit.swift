@@ -181,6 +181,8 @@ public struct DistributionMomentFit: ContinuousDistribution, Sendable {
 			throw MomentFitError.didNotConverge
 		}
 		let spread: Double = moments.variance.squareRoot()
+		// The guard on `moments.variance` two lines up makes this positive.
+		guard spread > 0 else { throw MomentFitError.didNotConverge }
 		let mappedScale: Double = standardDeviation / spread
 		self.scale = mappedScale
 
@@ -329,8 +331,10 @@ public struct DistributionMomentFit: ContinuousDistribution, Sendable {
 						let power: Double = Double(order - 2 * j)
 						total += sign * coefficient * exponentialMoment(power)
 					}
+					// 2^order for order in 1...4, so strictly positive by construction.
 					let scaling: Double = Foundation.pow(2.0, Double(order))
-                    raw[order] = total / scaling
+					guard scaling > 0 else { continue }
+					raw[order] = total / scaling
 				}
 			}
 
@@ -341,12 +345,20 @@ public struct DistributionMomentFit: ContinuousDistribution, Sendable {
 			let lower: Double = -12
 			let upper: Double = 12
 			let steps = 4_000
-			let h: Double = (upper - lower) / Double(steps)
+			// Literal bounds and a literal step count, so both divisors are non-zero
+			// by construction; bound once so that is visible at the point of use.
+			let width: Double = upper - lower
+			let stepCount: Double = Double(steps)
+			guard stepCount > 0 else { return (0, 0, 0, 3) }
+			let h: Double = width / stepCount
 			let normaliser: Double = (2 * Double.pi).squareRoot()
+			guard normaliser > 0 else { return (0, 0, 0, 3) }
+			let inverseNormaliser: Double = 1 / normaliser
 			var sums = [Double](repeating: 0, count: 5)
 			for step in 0...steps {
 				let z: Double = lower + Double(step) * h
-				let density: Double = Foundation.exp(-z * z / 2) / normaliser
+				let halfSquare: Double = -z * z / 2
+				let density: Double = Foundation.exp(halfSquare) * inverseNormaliser
 				let weight: Double
 				if step == 0 || step == steps { weight = 1 }
 				else if step % 2 == 1 { weight = 4 }
@@ -379,11 +391,16 @@ public struct DistributionMomentFit: ContinuousDistribution, Sendable {
 		let fourthC: Double = 3 * m1 * m1 * m1 * m1
 		let fourth: Double = fourthA + fourthB - fourthC
 
+		// `variance > 0` is guarded at the top of this function, so both powers of it
+		// are strictly positive.
 		let sigma: Double = variance.squareRoot()
 		let cubedSigma: Double = variance * sigma
 		let fourthSigma: Double = variance * variance
+		guard cubedSigma > 0, fourthSigma > 0 else { return (m1, variance, 0, 3) }
+		let standardisedThird: Double = third / cubedSigma
+		let standardisedFourth: Double = fourth / fourthSigma
 		return (mean: m1, variance: variance,
-				skewness: third / cubedSigma, kurtosis: fourth / fourthSigma)
+				skewness: standardisedThird, kurtosis: standardisedFourth)
 	}
 
 	static func binomial(_ n: Int, _ k: Int) -> Int {
@@ -450,13 +467,17 @@ public struct DistributionMomentFit: ContinuousDistribution, Sendable {
 					guard let (f1, f2) = residual(gamma, logDelta) else { break }
 					if abs(f1) < 1e-10 && abs(f2) < 1e-10 { converged = true; break }
 
+					// A literal finite-difference step, so the divisor is non-zero by
+					// construction; reciprocated once rather than divided four times.
 					let step = 1e-6
+					guard step > 0 else { break }
+					let inverseStep: Double = 1 / step
 					guard let (g1, g2) = residual(gamma + step, logDelta),
 						  let (h1, h2) = residual(gamma, logDelta + step) else { break }
-					let j11: Double = (g1 - f1) / step
-					let j12: Double = (h1 - f1) / step
-					let j21: Double = (g2 - f2) / step
-					let j22: Double = (h2 - f2) / step
+					let j11: Double = (g1 - f1) * inverseStep
+					let j12: Double = (h1 - f1) * inverseStep
+					let j21: Double = (g2 - f2) * inverseStep
+					let j22: Double = (h2 - f2) * inverseStep
 
 					let determinant: Double = j11 * j22 - j12 * j21
 					guard abs(determinant) > 1e-14 else { break }
