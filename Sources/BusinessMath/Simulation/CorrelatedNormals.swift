@@ -74,7 +74,10 @@ public enum CorrelatedNormalsError: Error {
 /// - Monte Carlo simulation: Multi-variable uncertainty with dependencies
 /// - Portfolio optimization: Asset correlation modeling
 /// - Scenario analysis: Correlated business variables
-public struct CorrelatedNormals {
+// Every stored property is an immutable array of `Double`, so this is a value type
+// with no shared mutable state. The conformance was simply never declared, which kept
+// it out of any `Sendable` context — `DistributionMVLogNormal` needs it in one.
+public struct CorrelatedNormals: Sendable {
 	/// The mean values for each variable
 	let means: [Double]
 
