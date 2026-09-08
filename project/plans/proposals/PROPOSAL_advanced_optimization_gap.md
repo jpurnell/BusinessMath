@@ -42,7 +42,7 @@ housekeeping?" — not "is it here now."
 | Roadmap phase | Files in `Sources/` | Commits ever, all branches | Verdict |
 |---|---:|---:|---|
 | 1 — SQP | 0 | **0** | genuinely absent |
-| 2 — Interior Point | 0 | **0** | genuinely absent |
+| 2 — Interior Point | 0 | **6** — see §2.2 | absent now, but **removed on purpose**, not never-written |
 | 3 — MINLP | 4 | — | **substantially present** — §3.1 |
 | 4 — Convexity Detection | 0 (5 incidental "convexity" hits: 2 bond convexity, 3 passing comments in `DEASolver`, `CuttingPlaneMaster`, `SimplexSolver`) | 0 | genuinely absent |
 | 5 — ADMM | 0 | **0** | genuinely absent |
@@ -51,9 +51,44 @@ housekeeping?" — not "is it here now."
 | 8 — Deterministic Global | 0 | **0** | genuinely absent |
 | 9 — Dynamic Programming | 0 | **0** | genuinely absent |
 
-Zero commits across every branch, including the three active worktrees, for SQP, InteriorPoint,
-ADMM, GRG, NetworkFlow, Hungarian, Bellman and McCormick. **This is not a filing problem.** The
-code was never written.
+Zero commits across every branch for SQP, ADMM, GRG, NetworkFlow, Hungarian, Bellman and
+McCormick. **For those seven this is not a filing problem** — the code was never written.
+
+Interior Point is the exception, and §2.2 corrects it.
+
+### 2.2 Correction — Interior Point was written, and deliberately removed
+
+Added 2026-09-08, on an independent re-check of this section.
+
+The original audit searched for the identifier `InteriorPoint` and found nothing. That was the
+wrong search: the method is not usually named after itself in code, it is named after its
+mechanism. Searching for the mechanism finds it —
+
+```bash
+git log --all --oneline -S"logBarrier" -- Sources/     # 6 commits
+```
+
+`InequalityOptimizer` carried a full log-barrier interior-point method:
+
+```
+L(x,λ,μ,ρ) = f(x) + Σλᵢhᵢ(x) + (μ/2)Σhᵢ(x)² − ρΣlog(−gⱼ(x))
+```
+
+with `initialBarrier`, `barrierEpsilon` and `optimizeWithPenaltyBarrier`. It was removed on
+**2025-12-12** by `14d75899`, whose subject states the reason: *"remove Barrier Method in favor
+of Quadratic Penalty for Interior Optima."*
+
+**The verdict in the table is unchanged — Interior Point is absent today.** What changes is what
+Phase 2 *is*. It is not greenfield work; it is reversing a considered decision made ten months
+ago by someone who had the barrier method working and preferred the quadratic penalty. Anyone
+picking up Phase 2 should read `14d75899` first and be able to say what they would do
+differently, or they will rediscover whatever drove the removal.
+
+The lesson generalises to the rest of this audit, and is the same one §3.1 records about MINLP:
+**searching for an algorithm's name finds only the implementations that were named after it.**
+The seven remaining absences were re-checked by mechanism as well as by name — QP subproblems,
+central path and barrier parameters, reduced gradients, min-cost flow and assignment, proximal
+and Douglas–Rachford splitting, Hessian definiteness tests — and all seven stayed at zero.
 
 The roadmap's own "Current Capabilities" list — gradient descent, Newton-Raphson, L-BFGS,
 augmented Lagrangian, Simplex, branch-and-bound, the heuristics, multi-start — is accurate, and
