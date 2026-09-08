@@ -203,19 +203,49 @@ struct NormalSkewTests {
 		#expect(checked == cases.count, "only \(checked) of \(cases.count) rows were checked")
 	}
 
-	@Test("The mapping is what distinguishes it from a per-sigma alternative")
-	func mappingIsDistinguishableFromPerSigma() throws {
-		// If the skew shifted the median by c standard deviations rather than by c
-		// half-ranges, PsiNormalSkew(0, 60, 0.5) would have its median at 35 rather
-		// than 45. This records the discriminating case so that if a reference value
-		// ever arrives, the check is one line and the consequence is one function.
-		let median = try #require(DistributionMyerson.normalSkewMedian(lowerBound: 0,
-																	   upperBound: 60, skew: 0.5))
-		let sigma: Double = 10
-		let perSigmaAlternative: Double = 30 + 0.5 * sigma
-		#expect(Swift.abs(median - 45) < 1e-12, "the half-range map gives \(median)")
-		#expect(Swift.abs(median - perSigmaAlternative) > 9,
-				"the two readings are meant to be far apart, not \(median) versus \(perSigmaAlternative)")
+	@Test("The mapping matches what Risk Solver actually produces")
+	func mappingMatchesRiskSolver() throws {
+		// `PsiNormalSkew(0, 60, 0.5)` sampled in Excel 2010 with Risk Solver, about two
+		// hundred draws: mean ≈ 43.5, median ≈ 45, standard deviation ≈ 9. The
+		// per-sigma reading this was weighed against would have given 34.45, 35 and
+		// 9.91 — so the measurement separates them by nine units against a sampling
+		// error near one, and it is the median map that survives.
+		//
+		// The mean is the part that proves the most. It lands *below* the median, which
+		// is the left skew Frontline's prose claims, and its value depends on the
+		// Myerson asymmetry, the tail at z = 3 and the coverage all being right at
+		// once. Mean, median and spread agreeing together pin the whole distribution
+		// here, not one parameter of it.
+		let d = try #require(DistributionMyerson.normalSkew(lowerBound: 0,
+															upperBound: 60, skew: 0.5))
+		let median: Double = d.quantile(0.5)
+		#expect(Swift.abs(median - 45) < 1e-7, "median is \(median), measured ≈ 45")
+
+		let mean: Double = Self.meanByQuantile(d)
+		#expect(Swift.abs(mean - 43.4396) < 0.001, "mean is \(mean), measured ≈ 43.5")
+		#expect(mean < median, "the mean must sit below the median for a left skew")
+
+		let deviation: Double = Self.standardDeviationByQuantile(d)
+		#expect(Swift.abs(deviation - 9.1147) < 0.002, "σ is \(deviation), measured ≈ 9")
+
+		// The reading that was ruled out, kept so the separation stays visible.
+		let perSigmaMedian: Double = 30 + 0.5 * 10
+		#expect(Swift.abs(median - perSigmaMedian) > 9,
+				"the two readings should be far apart, not \(median) versus \(perSigmaMedian)")
+	}
+
+	@Test("The symmetric case has a standard deviation of exactly a sixth of the range")
+	func symmetricSpreadIsMeasurable() throws {
+		// The control that pins what the bounds mean, independently of the skew
+		// question: at c = 0 this is Normal((a+b)/2, (b−a)/6), so σ is exactly 10 for
+		// bounds of 0 and 60. Worth a separate test because it is the one number a
+		// reference can check without running a skewed case at all.
+		let d = try #require(DistributionMyerson.normalSkew(lowerBound: 0,
+															upperBound: 60, skew: 0))
+		let deviation: Double = Self.standardDeviationByQuantile(d)
+		#expect(Swift.abs(deviation - 10) < 1e-3, "σ is \(deviation), not 10")
+		let mean: Double = Self.meanByQuantile(d)
+		#expect(Swift.abs(mean - 30) < 1e-6, "the symmetric mean is \(mean), not 30")
 	}
 
 	@Test("The mapping refuses what the factory refuses")
@@ -247,6 +277,30 @@ struct NormalSkewTests {
 	///
 	/// `E[X] = ∫₀¹ Q(u) du`. Integrating in `u` keeps the range finite whatever the
 	/// tails do, which matters here because the support is unbounded on both sides.
+	/// The standard deviation, by integrating the quantile over the unit interval.
+	///
+	/// - Parameter d: The distribution to measure.
+	/// - Returns: `√(∫₀¹ Q(u)² du − (∫₀¹ Q(u) du)²)`.
+	private static func standardDeviationByQuantile(_ d: DistributionMyerson) -> Double {
+		let steps = 20_000
+		let h: Double = 1 / Double(steps)
+		var total: Double = 0
+		var totalSquares: Double = 0
+		for index in 0..<steps {
+			let half: Double = h / 2
+			let offset: Double = Double(index) * h
+			let u: Double = offset + half
+			let value: Double = d.quantile(u)
+			total += value
+			totalSquares += value * value
+		}
+		let mean: Double = total * h
+		let secondMoment: Double = totalSquares * h
+		let variance: Double = secondMoment - mean * mean
+		guard variance > 0 else { return 0 }
+		return variance.squareRoot()
+	}
+
 	private static func meanByQuantile(_ d: DistributionMyerson) -> Double {
 		let steps = 20_000
 		let h: Double = 1 / Double(steps)

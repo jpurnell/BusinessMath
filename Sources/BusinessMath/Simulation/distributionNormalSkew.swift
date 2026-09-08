@@ -49,18 +49,11 @@ public extension DistributionMyerson {
 	/// CDF are ``DistributionMyerson``'s, and a second type carrying the same
 	/// arithmetic would only be somewhere for the two to drift apart.
 	///
-	/// ## The one thing the documentation does not state
+	/// ## The step the documentation leaves out, since measured
 	///
-	/// It gives no formula relating `c` to the shape. What it does say is that `c` lies
-	/// strictly inside `(-1, 1)`, that zero is symmetric, that a positive `c` skews
-	/// left, and — the most informative of the four — that the distribution reduces to
-	/// the symmetric case "when the skew argument is equidistant from the upper and
-	/// lower bounds". That sentence is loose, since a number in `(-1, 1)` is not
-	/// literally equidistant from anything, but it describes the skew argument as
-	/// *positioning something between the bounds*, which is the shape of the answer.
-	///
-	/// See ``normalSkewMedian(lowerBound:upperBound:skew:)``, which is where that
-	/// reading lives and the only place it would need changing.
+	/// Frontline's page gives no formula relating `c` to the shape. That gap was closed
+	/// by measurement rather than argument — see
+	/// ``normalSkewMedian(lowerBound:upperBound:skew:)``, which carries the numbers.
 	///
 	/// - Parameters:
 	///   - lowerBound: `a`, the −3σ point. Must be strictly below `upperBound`.
@@ -84,31 +77,43 @@ public extension DistributionMyerson {
 	/// median = (a + b)/2 + c · (b − a)/2
 	/// ```
 	///
-	/// ## This is the one inferred step, isolated on purpose
+	/// ## Measured against Risk Solver, not inferred
 	///
 	/// Everything else about ``normalSkew(lowerBound:upperBound:skew:)`` comes straight
 	/// from Frontline's page: that it is a Myerson, that the bounds are ±3σ, that the
-	/// tail is `2Φ(-3)`. Only the map from `c` to the median is unstated upstream, so it
-	/// lives here by itself — one named, tested, documented function. If Frontline turns
-	/// out to use a different map, this body changes and nothing else does.
+	/// tail is `2Φ(-3)`. Only this map is unstated upstream, so it lives here by itself
+	/// — one named function, and the only place that would need changing if the
+	/// measurement below were ever contradicted.
 	///
-	/// ## Why this map
+	/// `PsiNormalSkew(0, 60, 0.5)` was sampled in Excel 2010 with Risk Solver, roughly
+	/// two hundred draws:
 	///
-	/// The two natural formulations agree, which removes the obvious fork: placing the
-	/// median linearly gives a Myerson asymmetry of `(1 − c)/(1 + c)`, and going
-	/// directly for a shape ratio that equals one at `c = 0` gives the same function.
+	/// | | this map | per-sigma alternative | measured |
+	/// |---|---|---|---|
+	/// | mean | 43.4396 | 34.45 | ≈ 43.5 |
+	/// | median | 45 | 35 | ≈ 45 |
+	/// | standard deviation | 9.1147 | 9.91 | ≈ 9 |
 	///
-	/// The exclusive range is the second reason and the stronger one. Under this map
-	/// `c → ±1` drives the median onto a bound, collapsing one arm of the Myerson to
-	/// zero width — a real degeneracy, which is exactly why the endpoints would be
-	/// excluded. A map that shifted the median by `c` standard deviations instead would
-	/// keep the median a comfortable `σ` inside the bounds at `c = ±1`, leaving no
-	/// reason for the interval to be open at all.
+	/// All three agree, and the agreement is worth more than the median alone: the mean
+	/// falls *below* the median — the left skew Frontline's prose describes — and that
+	/// number depends on the asymmetry `(1 − c)/(1 + c)`, the tail `z = 3` and the
+	/// coverage all being right at once. Matching mean, median and spread together pins
+	/// the whole distribution at `c = 0.5`, not one parameter of it.
 	///
-	/// That argument is evidence rather than proof, and the difference is easy to
-	/// settle if a reference is ever to hand: for `PsiNormalSkew(0, 60, 0.5)` this map
-	/// puts the median at **45**, where a per-sigma map would put it at 35. One
-	/// evaluation discriminates.
+	/// ## Why linear between those points
+	///
+	/// Two measured points — `c = 0` symmetric and `c = 0.5` above — fix a line without
+	/// proving the map is linear everywhere, so the structural argument still carries
+	/// the rest of the range. Under this map `c → ±1` drives the median onto a bound and
+	/// collapses one arm of the Myerson to zero width, which is a real degeneracy and
+	/// exactly why the endpoints are excluded. A per-sigma map would leave the median a
+	/// comfortable `σ` inside the bounds at `c = ±1`, giving no reason for the interval
+	/// to be open at all — and it is now also ruled out by measurement.
+	///
+	/// The two natural formulations agree, which is why there was no fork to choose
+	/// between: placing the median linearly gives a Myerson asymmetry of
+	/// `(1 − c)/(1 + c)`, and going directly for a shape ratio equal to one at `c = 0`
+	/// gives the same function.
 	///
 	/// - Parameters:
 	///   - lowerBound: `a`, the −3σ point.
