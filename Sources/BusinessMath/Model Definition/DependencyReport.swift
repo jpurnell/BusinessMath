@@ -173,90 +173,23 @@ enum DependencyGraph {
 
 	/// The strongly connected components of `graph`, in dependency order.
 	///
-	/// Tarjan's algorithm: one depth-first pass, `O(V + E)`, every component rather than the
-	/// first cycle. Components are emitted as their roots finish, which for a graph whose edges
-	/// point at dependencies means each component appears after everything it depends on.
+	/// Delegates to ``Graph/stronglyConnectedComponents``, which is the same Tarjan
+	/// traversal lifted out of this file and made generic. Nothing about the answer
+	/// changed: `GraphTests.parityWithDependencyGraph` runs both over the same inputs
+	/// and compares exactly, including the order components come back in.
 	///
-	/// Deterministic: vertices are entered in sorted order and each adjacency list is assumed
-	/// already sorted, so nothing about the result depends on `Set` or `Dictionary` iteration.
+	/// The lift fixed something this implementation documented rather than enforced. Its
+	/// determinism depended on each adjacency list arriving already sorted — true here,
+	/// because `accountNames(in:)` returns sorted output and there was exactly one
+	/// caller, and a silent hazard for any second one. ``Graph`` sorts at construction,
+	/// so the guarantee is a property of the value rather than a request in prose.
 	///
-	/// - Parameter graph: Account to the accounts it reads. Names with no entry are leaves —
-	///   supplied data — and are not vertices.
+	/// - Parameter graph: Account to the accounts it reads. Names with no entry are
+	///   leaves — supplied data — and are not vertices, which is what
+	///   `includeUnlistedTargets: false` states.
 	/// - Returns: The components, members sorted within each.
 	static func components(of graph: [String: [String]]) -> [[String]] {
-		var nextIndex = 0
-		var index: [String: Int] = [:]
-		var lowlink: [String: Int] = [:]
-		var componentStack: [String] = []
-		var onStack: Set<String> = []
-		var components: [[String]] = []
-
-		for root in graph.keys.sorted() {
-			guard index[root] == nil else { continue }
-
-			index[root] = nextIndex
-			lowlink[root] = nextIndex
-			nextIndex += 1
-			componentStack.append(root)
-			onStack.insert(root)
-
-			var work: [(name: String, next: Int)] = [(root, 0)]
-
-			while let frame = work.last {
-				let dependencies = graph[frame.name] ?? []
-
-				guard frame.next < dependencies.count else {
-					work.removeLast()
-					if let parent = work.last?.name {
-						lowlink[parent] = min(
-							lowlink[parent] ?? nextIndex,
-							lowlink[frame.name] ?? nextIndex
-						)
-					}
-					if lowlink[frame.name] == index[frame.name] {
-						components.append(pop(&componentStack, &onStack, upTo: frame.name))
-					}
-					continue
-				}
-
-				work[work.count - 1].next += 1
-				let dependency = dependencies[frame.next]
-
-				// A name nothing defines is supplied data, not a vertex.
-				guard graph[dependency] != nil else { continue }
-
-				if index[dependency] == nil {
-					index[dependency] = nextIndex
-					lowlink[dependency] = nextIndex
-					nextIndex += 1
-					componentStack.append(dependency)
-					onStack.insert(dependency)
-					work.append((dependency, 0))
-				} else if onStack.contains(dependency) {
-					lowlink[frame.name] = min(
-						lowlink[frame.name] ?? nextIndex,
-						index[dependency] ?? nextIndex
-					)
-				}
-			}
-		}
-
-		return components
-	}
-
-	/// Empties the component stack down to and including `root`, which is one component.
-	private static func pop(
-		_ stack: inout [String],
-		_ onStack: inout Set<String>,
-		upTo root: String
-	) -> [String] {
-		var component: [String] = []
-		while let member = stack.popLast() {
-			onStack.remove(member)
-			component.append(member)
-			if member == root { break }
-		}
-		return component.sorted()
+		Graph(adjacency: graph, includeUnlistedTargets: false).stronglyConnectedComponents
 	}
 
 	/// The components that are cycles, with a path recovered for each.
