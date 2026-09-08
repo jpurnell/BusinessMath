@@ -10,7 +10,33 @@ Build DCF models, optimize portfolios, run Monte Carlo simulations, and value se
 
 ---
 
-## Latest release: 2.14.0
+## Latest release: 2.15.0
+
+Risk Solver's distribution surface, finished — 52 names landed, 5 excluded because they resolve
+stored data or declare a solver role rather than computing anything.
+
+The parts most likely to matter outside that scope: **Student's t, gamma and chi-squared now take
+real-valued shapes**, so a fitted `ν` of 6.5 or a Satterthwaite correction is expressible;
+**EGARCH and APARCH** join `GarchOneOne` for asymmetric volatility; **`CompoundLossModel`** gives
+aggregate loss with a per-occurrence deductible and limit; and **`BranchAndBoundSolver.minlp(...)`**
+names the mixed-integer nonlinear solve that was always possible but undiscoverable.
+
+Additive. No signature changes, no deletions, and no behaviour changes to existing calls —
+`DistributionGamma(r:λ:)` and `DistributionChiSquared(degreesOfFreedom: Int)` are untouched, and
+the seeded sampling streams are preserved bit-for-bit.
+
+One correctness fix: `DayCountConvention` used `Calendar.current` at a fourth site, the same root
+cause 2.14.0 fixed at three. `siaThirty360` is added alongside `thirty360`, which keeps Excel's
+answer.
+
+### Previous release: 2.14.0
+
+The oracle audit, closed across all three tiers. Sixteen external oracles now stand behind the
+numerical estimators, and seven of them found something — including a Tukey HSD that ignored its
+degrees of freedom, mixed-model REML components 12–24% low, and an `irr`/`xirr` tolerance that
+made large models throw rather than converge.
+
+### Previous release: 2.7.0
 
 2.7.0 is additive: no signature changes, no deletions, no behaviour changes to existing calls.
 It adds `Statistics/Experiment/` — two-arm experiment design with `sampleSizePerArm`,

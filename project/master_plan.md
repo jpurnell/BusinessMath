@@ -38,6 +38,32 @@ suite depends on it.
 
 ## Current Status
 
+**2.15.0 shipped 2026-09-08** — Risk Solver's distribution surface, finished. 52 names
+landed and 5 excluded, and the five are excluded because they are not mathematics: they
+resolve stored data or declare a solver role, which is a spreadsheet host's job.
+
+**Three rows were blocked on a wrapper, not on mathematics.** `PsiGammaAlt`,
+`PsiChiSquareAlt` and `PsiStudentAlt` could not be fitted while their distributions took
+whole-number shapes — a Newton solve varies a parameter continuously, and rounding it to an
+integer each step gives a derivative that is zero almost everywhere. But `gammaCDF` and
+`gammaQuantile` already took a `Double` shape and were being handed `Double(r)` from an
+`Int` field, and `tCDF` converts `T(df)` on its second line. The mathematics was continuous
+throughout; only the public signatures were narrow. Widening them was most of the work, and
+`DistributionStudentT` was the single genuinely new type.
+
+**Two closed forms replaced quadrature that was right where it was tested.**
+`E(|z| − γz)^δ` on a grid is exact at `δ = 2`, so a test at the GARCH corner passes and the
+method looks sound; at fractional `δ` the integrand behaves like `|z|^δ` at the origin and
+Simpson's error falls off as `n^-(δ+1)` rather than `n^-4`. Writing the test against an
+*exact* oracle is what exposed it — a tolerance-tuned test would have passed the grid
+forever. Same shape as the audit's lesson below, one release later.
+
+**One number came from outside the package entirely.** `PsiNormalSkew`'s skew-to-median map
+is unstated in Frontline's documentation and was settled by sampling it in Excel: mean
+≈ 43.5, median ≈ 45, σ ≈ 9 against this implementation's 43.4396 / 45 / 9.1147, where the
+alternative reading predicted 34.45 / 35 / 9.91. Argument had reached a defensible answer;
+measurement is what made it true.
+
 **2.14.0 shipped 2026-09-07** — the oracle audit closed across all three tiers, and the
 defects it found: Tukey ignoring its degrees of freedom, the simplex pricing only two
 constraint shapes, branch-and-bound returning suboptimal answers as `.optimal`, BFGS
@@ -457,8 +483,11 @@ The CHANGELOG heading and the README's `from:` pin both moved to `2.6.0` in the 
       `SYD`, `VDB`, `ACCRINT`, plus the two `DayCountConvention` cases they need. Independent of
       the distribution work; measured as the higher priority after SwiftExcelFunctions found all
       3,425 corpus `YEARFRAC` calls use the default basis, which BusinessMath already covers.
-- [ ] Then the 33 distributions and the AR/GARCH family, which now have a contract to be written
-      against
+- [x] **The 33 distributions and the AR/GARCH family** — done across 2.13.0 and 2.15.0. 2.13.0
+      closed the 49-row Risk Solver work list; 2.15.0 closed the 57 names that list did not reach,
+      at 52 landed and 5 excluded. The contract this line was waiting on —
+      `ContinuousDistribution` from Phase 0 — is what made the `Psi*Alt` forms cost ten lines each
+      instead of a solver each, so the sequencing recorded here was right.
 
 ### Phase 2 — say when a number is inexact (in progress)
 
@@ -532,7 +561,21 @@ The earlier table was about *scope*; this one is about *what is being measured*.
 
 ---
 
-**Last Updated:** 2026-09-07 — reconciled for 2.14.0: Current Status leads with the closed
+**Last Updated:** 2026-09-08 — reconciled for 2.15.0: Current Status leads with the Risk
+Solver surface finished at 52 landed and 5 excluded, the three rows that were blocked on a
+narrow wrapper rather than on missing mathematics, the two closed forms that replaced
+quadrature exact only at its test point, and the `PsiNormalSkew` map settled by measuring
+Excel rather than by argument. The Roadmap's "then the 33 distributions and the AR/GARCH
+family" is marked done across 2.13.0 and 2.15.0, with the note that Phase 0's distribution
+contract is what made the `Psi*Alt` forms cheap — the sequencing recorded there was right.
+Two facts worth carrying forward: `git commit` after `git add` takes whatever *any* session
+has staged, so in a shared tree commit with an explicit pathspec — `git commit -- <paths>` —
+because foreground versus background was never the mechanism; and the codebase's
+`// stochastic:exempt` and `// fp-safety:disable` markers exist for genuine unseeded and
+constant-divisor paths, but each one this release turned out to be avoidable by reusing a
+free function or an identity that already existed.
+
+**Previously:** 2026-09-07 — reconciled for 2.14.0: Current Status leads with the closed
 oracle audit and the six defects fixed under it (Tukey's degrees of freedom, the simplex
 duals, the branch-and-bound root short-circuit, the BFGS stall, the unenforceable
 `timeLimit`, the two CVaR definitions). `CURRENT_OracleAudit.md` marks all three tiers

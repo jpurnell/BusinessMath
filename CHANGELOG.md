@@ -9,6 +9,173 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [2.15.0] - 2026-09-08
+
+Risk Solver's distribution surface, finished. 2.14.0 closed the 49-row work list; this closes
+the 57 names that list did not reach. **52 landed, 5 excluded** — and the five are excluded
+because they are not mathematics: `PsiSip`, `PsiSlurp`, `PsiTSSip`, `PsiCertified` and `PsiVary`
+resolve stored data or declare a solver role, which is a spreadsheet host's job rather than a
+library's.
+
+Three rows were blocked on the same thing and are worth naming, because the cause was not what
+it looked like. `PsiGammaAlt`, `PsiChiSquareAlt` and `PsiStudentAlt` could not be fitted while
+their distributions took whole-number shapes — a Newton solve varies a parameter continuously,
+and rounding it to an integer at every step gives a derivative that is zero almost everywhere.
+But the mathematics underneath was already continuous in each case: `gammaCDF` and
+`gammaQuantile` take a `Double` shape and were being handed `Double(r)` from an `Int` field;
+`tCDF` converts `T(df)` on its second line. Only the wrapper types were narrow.
+
+### Added
+
+- **A percentile-fitting solver, and 28 `Psi*Alt` forms through it.** `PercentileParameterisable`
+  takes a distribution family and a set of constraints — quantiles, a mean, a variance, a fixed
+  named parameter — and solves for the parameters by damped Newton on the residual vector.
+  Conformances land the `*Alt` rows at about ten lines each rather than one solver each.
+
+  The residual is a *vector*, not `‖r‖²`. Minimising the sum of squares squares the condition
+  number, which for a family whose quantile spans orders of magnitude is the difference between
+  converging and not.
+
+- **`DistributionStudentT`, with real-valued degrees of freedom.** `tCDF` and `studentTPDF`
+  already existed, and they serve a hypothesis test: statistic in, p-value out, with `ν` from
+  counting observations, where an `Int` is right. A distribution needs the inverse as well, needs
+  to be samplable, and needs `ν` to be a fitted shape under no obligation to be whole.
+
+  Its moments refuse where they do not exist — no mean at `ν ≤ 1`, no variance at `ν ≤ 2`, no
+  kurtosis at `ν ≤ 4`. Zero is the tempting answer for a Cauchy's mean because the density is
+  symmetric, and it is wrong: the integral does not converge and sample averages never settle.
+  Those ranges sit well inside where t distributions are actually fitted to returns.
+
+- **Continuous shapes for gamma and chi-squared.** `DistributionGamma.init?(shape:rate:)` and
+  `init?(shape:scale:)`; `DistributionChiSquared.init?(degreesOfFreedom: Double)`. Two named
+  gamma initialisers rather than one with a flag, because rate and scale are reciprocals: pass
+  one where the other is wanted and the distribution is wrong by a factor of `θ²` and entirely
+  plausible.
+
+  Integer shapes keep their existing samplers. That is not compatibility theatre — summing `k`
+  exponentials is the exact construction of an Erlang and consumes exactly `k` uniforms, where
+  Marsaglia–Tsang consumes an unbounded, data-dependent number.
+
+- **EGARCH(1,1) and APARCH(1,1)** — `ExponentialGarch` and `AsymmetricPowerArch`, the two
+  conditional-variance recursions `GarchOneOne` cannot express. One models the log variance so
+  its coefficients need no positivity constraint; the other raises volatility to a free power
+  instead of assuming the square. Both are asymmetric, which GARCH cannot be: it squares the
+  shock before the recursion ever sees its sign.
+
+  ARCH(1) gets a factory rather than a duplicate type, since `β = 0` is the entire difference,
+  and `GarchOneOne` gains an initialiser taking the volatility it should settle at rather than
+  the variance floor — which is how a model is actually stated.
+
+- **The ARMA family as one process**, covering AR(1), AR(2), MA(1), MA(2) and ARMA(1,1).
+
+- **Multivariate sampling.** `DistributionMVNormal` (covariance in, correlation and one shared
+  Cholesky underneath), plus `MultivariateResample` and `MultivariateShuffle` — whole rows with
+  and without replacement. Drawing columns independently would reproduce every marginal exactly
+  and destroy the dependence between them, which is usually the only reason the data was
+  multivariate.
+
+- **Fitting a distribution to a sample.** `DistributionMomentFit.init(sample:)` plus
+  `andersonDarlingStatistic`. It looks like one distribution being fitted and it is four: the
+  Johnson system partitions the moment plane, so which family returns is decided by where the
+  sample's moments land rather than by a caller guessing from a shortlist.
+
+  Anderson–Darling rather than Kolmogorov–Smirnov, because of where the weight sits. KS measures
+  the largest vertical gap, which is almost always mid-distribution; A–D divides by `F(1−F)`, so
+  the tails carry it. For a risk model a fit that is excellent through the body and wrong in the
+  last percentile is worse than useless, and KS will call it the best candidate.
+
+- **`CompoundLossModel`** — aggregate loss with a per-occurrence deductible and limit. The
+  deductible applies before the sum: a year of many small losses beneath it aggregates to zero
+  while the same total arriving as one loss does not. An aggregate deductible would price those
+  years identically. Both contracts exist; this is the one `PsiMakeInput` describes, and the type
+  will not silently substitute the other.
+
+- **Metalog shape reporting** — `modes()`, `antiModes()`, `quantileSlope(at:)`,
+  `density(atProbability:)` and a feasibility query that can be asked rather than caught. A
+  metalog with enough terms is free to be multimodal, and that is worth reporting rather than
+  discovering mid-simulation: a fit that reads as reasonable from its percentiles can carry bumps
+  nobody elicited.
+
+- **`PsiNormalSkew`, `PsiTriangGen`, `PsiPert`, histogram and cumulative-discrete distributions**,
+  and a metalog from a symmetric percentile triplet.
+
+- **A name for MINLP.** `BranchAndBoundSolver.minlp(...)` — branch-and-bound over a nonlinear
+  relaxation, which has been possible since the solver took its relaxation as a parameter but had
+  no name, so the API gave a reader no way to discover it.
+
+### Fixed
+
+- **`DayCountConvention` used `Calendar.current` at a fourth site.** 2.14.0 fixed three; this is
+  the fourth, and the same root cause — a local calendar decomposes a UTC-midnight date to the
+  previous local day. The 30/360 rule itself was always right and always matched Excel.
+
+  `siaThirty360` is added alongside it: `thirty360` keeps Excel's answer, `siaThirty360` gives the
+  standard's, which differ on whether the end-of-month test reads the start day before or after
+  the February adjustment. The DocC no longer calls `thirty360` "(US, NASD)", which it is not.
+
+- **Two closed forms replacing quadrature that was wrong where it mattered.** `E(|z| − γz)^δ`
+  was integrated on a grid, which is exact at `δ = 2` — so a test at the GARCH corner passes and
+  the method looks sound. At fractional `δ` the integrand behaves like `|z|^δ` near the origin,
+  where its higher derivatives are unbounded, and Simpson's error falls off as `n^-(δ+1)` rather
+  than `n^-4`: at `δ = 1.5` a grid of 800 is out by 7e-7 and doubling it buys a factor of five.
+
+  Splitting by the sign of `z` factors the tilt out and leaves the normal's absolute moment,
+  which is exact. Checked against 200,000-interval quadrature at five `(γ, δ)` pairs to 1e-13.
+
+  Separately, `E|z|` is now `2·φ(0)` through the library's own `normalPDF` — the same number by a
+  one-line argument, with no division by a constant and no second spelling of the Gaussian
+  constant.
+
+### Performance
+
+- **The augmented Lagrangian stopped re-deriving verdicts it already had.**
+  `InequalityOptimizer` runs up to 100 outer steps, each solving an inner subproblem. Its one
+  lever on the escalation path is `ρ`, which starts at 10, multiplies tenfold when feasibility
+  lags, and caps at `1/ulp ≈ 4.5e15` — so it saturates around the sixteenth step, after which `η`
+  and `ω` are derived from a constant and the multipliers are not banked. Every remaining step
+  repeats the last one.
+
+  On an infeasible node from an ordinary branch-and-bound search that meant a hundred outer steps
+  and 3.7 seconds to report a violation that had been flat since the twentieth — and infeasible
+  nodes are what branch-and-bound spends most of its time on, not an edge case. It now stops when
+  `ρ` is capped, the violation is above the tolerance that decides the verdict, and the violation
+  has not fallen for three consecutive steps: 3.7 s → 1.6 s, 100 outer steps → 17, with a
+  bit-identical answer. Nodes that converge are untouched, at the same 4 and 6 outer steps.
+
+  The guard is narrow on purpose, and the reason is recorded beside it. A first attempt tested the
+  stall on `max(violation, stationarity, complementarity)`; on a node whose feasible set was a
+  single point, stationarity stalled while the violation was still falling, the maximum hid that,
+  and the search stopped at a violation of 2.8e-6 that would have reached 1e-7. That flips a
+  feasible node to infeasible and prunes a live subtree — a wrong answer wearing a converged
+  answer's clothes, invisible from outside the search. The caller's verdict is
+  `violation ≤ tolerance` and nothing else, so that is the only quantity whose stalling may end
+  the search. A degenerate node staying slow is a cost; a correct node being pruned is not.
+
+### Changed
+
+- `DistributionGamma` stores a continuous shape. `init(r:λ:)` is unchanged and remains the Erlang
+  case. `DistributionChiSquared` stores continuous degrees of freedom and `init(degreesOfFreedom:
+  Int)` is unchanged. No existing call site changes, and the pinned seeded streams are preserved.
+
+### Verified against a reference
+
+- **`PsiNormalSkew`'s skew-to-median map was measured, not argued.** Frontline's page states that
+  the bounds are ±3σ and that the tail is fixed at `2Φ(−3)`, but gives no formula relating the
+  skew to the shape. Sampling `PsiNormalSkew(0, 60, 0.5)` in Excel 2010 with Risk Solver gives
+  mean ≈ 43.5, median ≈ 45, standard deviation ≈ 9, against this implementation's 43.4396 / 45 /
+  9.1147 — where the alternative reading under consideration predicted 34.45 / 35 / 9.91.
+
+  The mean is the part that proves the most: it falls *below* the median, which is the left skew
+  Frontline's prose describes, and its value depends on the Myerson asymmetry, the tail and the
+  coverage all being right at once.
+
+- Continuous gamma, chi-squared and Student's t are checked against eighteen `scipy.stats` values
+  for the fractional shapes that have no closed form, and against closed forms where they do:
+  `χ²(2)` is an exponential with mean two, `χ²(1)` is a squared standard normal, a unit-shape
+  gamma is an exponential, and `t(1)` is Cauchy.
+
+---
+
 ### [2.14.0] - 2026-09-07
 
 The oracle audit closed across all three tiers, and the defects it found. Sixteen external
