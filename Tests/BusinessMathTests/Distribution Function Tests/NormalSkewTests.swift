@@ -168,6 +168,64 @@ struct NormalSkewTests {
 		#expect(checked == 5, "only \(checked) of 5 skews were checked")
 	}
 
+	// MARK: - The inferred mapping, pinned in one place
+
+	@Test("The median mapping is the documented one, at values a reference can check")
+	func medianMappingIsPinned() throws {
+		// The single step Frontline's page does not state, written out as a table so
+		// that checking it against Risk Solver is reading one column. Each row is
+		// midpoint + c·(b−a)/2.
+		let cases: [(low: Double, high: Double, skew: Double, median: Double)] = [
+			(0, 60, 0.0, 30),
+			(0, 60, 0.5, 45),
+			(0, 60, -0.5, 15),
+			(0, 100, 0.25, 62.5),
+			(20, 80, 0.4, 62),
+			(-30, 30, -0.75, -22.5),
+			(1000, 1250, 0.2, 1150),
+		]
+		var checked = 0
+		for row in cases {
+			let median = try #require(DistributionMyerson.normalSkewMedian(lowerBound: row.low,
+																		   upperBound: row.high,
+																		   skew: row.skew))
+			#expect(Swift.abs(median - row.median) < 1e-9,
+					"(\(row.low), \(row.high), \(row.skew)): median \(median), expected \(row.median)")
+			// And the distribution's own median must be the same number, which is what
+			// ties the mapping to the thing that gets sampled.
+			let d = try #require(DistributionMyerson.normalSkew(lowerBound: row.low,
+																upperBound: row.high,
+																skew: row.skew))
+			#expect(Swift.abs(d.quantile(0.5) - row.median) < 1e-7,
+					"Q(0.5) is \(d.quantile(0.5)), not the mapped median \(row.median)")
+			checked += 1
+		}
+		#expect(checked == cases.count, "only \(checked) of \(cases.count) rows were checked")
+	}
+
+	@Test("The mapping is what distinguishes it from a per-sigma alternative")
+	func mappingIsDistinguishableFromPerSigma() throws {
+		// If the skew shifted the median by c standard deviations rather than by c
+		// half-ranges, PsiNormalSkew(0, 60, 0.5) would have its median at 35 rather
+		// than 45. This records the discriminating case so that if a reference value
+		// ever arrives, the check is one line and the consequence is one function.
+		let median = try #require(DistributionMyerson.normalSkewMedian(lowerBound: 0,
+																	   upperBound: 60, skew: 0.5))
+		let sigma: Double = 10
+		let perSigmaAlternative: Double = 30 + 0.5 * sigma
+		#expect(Swift.abs(median - 45) < 1e-12, "the half-range map gives \(median)")
+		#expect(Swift.abs(median - perSigmaAlternative) > 9,
+				"the two readings are meant to be far apart, not \(median) versus \(perSigmaAlternative)")
+	}
+
+	@Test("The mapping refuses what the factory refuses")
+	func mappingRefusals() {
+		#expect(DistributionMyerson.normalSkewMedian(lowerBound: 60, upperBound: 20, skew: 0) == nil)
+		#expect(DistributionMyerson.normalSkewMedian(lowerBound: 0, upperBound: 60, skew: 1) == nil)
+		#expect(DistributionMyerson.normalSkewMedian(lowerBound: 0, upperBound: 60, skew: -1) == nil)
+		#expect(DistributionMyerson.normalSkewMedian(lowerBound: 0, upperBound: 60, skew: .nan) == nil)
+	}
+
 	// MARK: - Refusals
 
 	@Test("Bounds and skew outside their stated ranges are refused")

@@ -952,3 +952,153 @@ public extension DistributionTriangular {
 		])
 	}
 }
+
+// MARK: - The three that were blocked on an integer parameter
+
+// `PsiChiSquareAlt`, `PsiGammaAlt` and `PsiStudentAlt` could not land while their
+// distributions took whole-number shapes: a Newton solve varies a parameter
+// continuously, and rounding one to an integer at each step gives a derivative that is
+// zero almost everywhere and undefined at the steps. The distributions are continuous
+// now, so these are ordinary conformances.
+
+extension DistributionGamma: PercentileParameterisable {
+
+	/// Shape then rate, matching the continuous initialiser.
+	public static var parameterNames: [String] { ["shape", "rate"] }
+
+	/// Builds from shape and rate.
+	///
+	/// - Parameter parameters: `shape` then `rate`.
+	/// - Returns: The distribution, or `nil` if either is not positive.
+	public static func make(parameters: [Double]) -> DistributionGamma? {
+		guard parameters.count == 2 else { return nil }
+		return DistributionGamma(shape: parameters[0], rate: parameters[1])
+	}
+
+	/// Mean `k/λ` and variance `k/λ²`, both elementary.
+	///
+	/// - Parameters:
+	///   - constraint: The constraint being evaluated.
+	///   - parameters: The candidate vector.
+	/// - Returns: The value the constraint asks about.
+	/// - Throws: ``ParameterFitError`` for a constraint this family cannot answer.
+	public func realise(_ constraint: ParameterConstraint<Double>, parameters: [Double]) throws -> Double {
+		switch constraint {
+		case .mean:
+			guard rate > 0 else { return .infinity }
+			return shape / rate
+		case .variance:
+			return Self.gammaVarianceOf(parameters)
+		case .standardDeviation:
+			return Self.gammaVarianceOf(parameters).squareRoot()
+		default:
+			return try defaultRealise(constraint, parameters: parameters)
+		}
+	}
+
+	/// `k/λ²`, bound in stages so no expression carries four operators.
+	///
+	/// - Parameter parameters: `shape` then `rate`.
+	/// - Returns: The variance, or infinity where the rate has collapsed.
+	private static func gammaVarianceOf(_ parameters: [Double]) -> Double {
+		let shape: Double = parameters[0]
+		let rate: Double = parameters[1]
+		guard rate > 0 else { return .infinity }
+		let squared: Double = rate * rate
+		// A rate small enough to square to zero has already produced a variance
+		// beyond representation, and infinity is the honest report of that.
+		guard squared > 0 else { return .infinity }
+		return shape / squared
+	}
+}
+
+extension DistributionChiSquared: PercentileParameterisable {
+
+	/// One parameter: the degrees of freedom.
+	public static var parameterNames: [String] { ["df"] }
+
+	/// Builds from the degrees of freedom.
+	///
+	/// - Parameter parameters: One value, `df`.
+	/// - Returns: The distribution, or `nil` for a non-positive `ν`.
+	public static func make(parameters: [Double]) -> DistributionChiSquared? {
+		guard parameters.count == 1 else { return nil }
+		return DistributionChiSquared(degreesOfFreedom: parameters[0])
+	}
+
+	/// Mean `ν` and variance `2ν`.
+	///
+	/// - Parameters:
+	///   - constraint: The constraint being evaluated.
+	///   - parameters: The candidate vector.
+	/// - Returns: The value the constraint asks about.
+	/// - Throws: ``ParameterFitError`` for a constraint this family cannot answer.
+	public func realise(_ constraint: ParameterConstraint<Double>, parameters: [Double]) throws -> Double {
+		switch constraint {
+		case .mean: return degreesOfFreedom
+		case .variance: return 2 * degreesOfFreedom
+		case .standardDeviation:
+			let spread: Double = 2 * degreesOfFreedom
+			return spread.squareRoot()
+		default:
+			return try defaultRealise(constraint, parameters: parameters)
+		}
+	}
+}
+
+extension DistributionStudentT: PercentileParameterisable {
+
+	/// One parameter: the degrees of freedom.
+	public static var parameterNames: [String] { ["df"] }
+
+	/// Builds from the degrees of freedom.
+	///
+	/// - Parameter parameters: One value, `df`.
+	/// - Returns: The distribution, or `nil` for a non-positive `ν`.
+	public static func make(parameters: [Double]) -> DistributionStudentT? {
+		guard parameters.count == 1 else { return nil }
+		return DistributionStudentT(degreesOfFreedom: parameters[0])
+	}
+
+	/// Degrees of freedom start near the boundary of a finite variance.
+	///
+	/// The default's spread is derived from the *values* the constraints mention, which
+	/// for a `t` are quantiles that say nothing about `ν`'s magnitude — a constraint at
+	/// `Q(0.99) = 2.8` and one at `Q(0.99) = 28` want very different `ν` and the values
+	/// do not indicate which. Fixed starts spanning the interesting range serve better.
+	///
+	/// - Parameter constraints: The constraints being fitted.
+	/// - Returns: Starting vectors, best first.
+	public static func initialGuesses(for constraints: [ParameterConstraint<Double>]) -> [[Double]] {
+		[[5], [2.5], [12], [40], [1.5], [200]]
+	}
+
+	/// The moments that exist, and a refusal where they do not.
+	///
+	/// - Parameters:
+	///   - constraint: The constraint being evaluated.
+	///   - parameters: The candidate vector.
+	/// - Returns: The value the constraint asks about.
+	/// - Throws: ``ParameterFitError`` where the moment does not exist at this `ν`.
+	public func realise(_ constraint: ParameterConstraint<Double>, parameters: [Double]) throws -> Double {
+		switch constraint {
+		case .mean:
+			guard let mean else {
+				throw ParameterFitError.unsupportedConstraint("a t with ν ≤ 1 has no mean")
+			}
+			return mean
+		case .variance:
+			guard let variance else {
+				throw ParameterFitError.unsupportedConstraint("a t with ν ≤ 2 has no variance")
+			}
+			return variance
+		case .standardDeviation:
+			guard let standardDeviation else {
+				throw ParameterFitError.unsupportedConstraint("a t with ν ≤ 2 has no variance")
+			}
+			return standardDeviation
+		default:
+			return try defaultRealise(constraint, parameters: parameters)
+		}
+	}
+}

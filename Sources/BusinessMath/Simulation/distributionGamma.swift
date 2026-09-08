@@ -188,22 +188,84 @@ public func gammaVariate<T: Real, G: RandomNumberGenerator>(shape: T, scale: T, 
 /// The Gamma distribution is useful for modeling waiting times and is a generalization
 /// of the exponential distribution. Common in queuing theory and reliability analysis.
 public struct DistributionGamma: DistributionRandom, Sendable {
-	var r: Int
-	var λ: Double
 
-	/// Creates a Gamma distribution generator.
+	/// The shape, `k`. Any positive real — an integer makes this an Erlang, which is
+	/// the special case, not the general one.
+	public let shape: Double
+
+	/// The rate, `λ`. The scale is its reciprocal.
+	public let rate: Double
+
+	/// The scale, `θ = 1/λ`.
+	public var scale: Double {
+		// `rate` is positive by construction in every initialiser.
+		guard rate > 0 else { return .nan }
+		return 1 / rate
+	}
+
+	/// The shape when it is exactly a positive integer, which is what decides whether
+	/// the sampler can take the exact Erlang route.
+	var integerShape: Int? {
+		guard shape > 0, shape <= 1_000_000 else { return nil }
+		// Deliberate exact IEEE comparison: the question is whether this shape *is* a
+		// whole number, not whether it is near one. A tolerance here would route a
+		// shape of 3.0000001 down the Erlang path and silently fit the wrong family.
+		guard shape.isEqual(to: shape.rounded()) else { return nil }
+		return Int(shape)
+	}
+
+	/// Creates an Erlang — a Gamma whose shape is a whole number.
+	///
 	/// - Parameters:
 	///   - r: Shape parameter (integer number of exponential variables to sum)
 	///   - λ: Rate parameter (inverse of scale parameter)
 	public init(r: Int, λ: Double) {
-		self.r = r
-		self.λ = λ
+		self.shape = Double(r)
+		self.rate = λ
+	}
+
+	/// Creates a Gamma with any positive real shape.
+	///
+	/// The general case, and the one Risk Solver's `PsiGammaAlt` needs: its shape is
+	/// continuous, so the Erlang initialiser above cannot express it. Nothing else
+	/// here changes — ``cdf(_:)`` and ``quantile(_:)`` were always computed through
+	/// the continuous incomplete gamma and merely had an integer handed to them.
+	///
+	/// - Parameters:
+	///   - shape: `k`, strictly positive.
+	///   - rate: `λ`, strictly positive. The scale is `1/λ`.
+	/// - Returns: `nil` unless both are positive and finite.
+	public init?(shape: Double, rate: Double) {
+		guard shape > 0, shape.isFinite else { return nil }
+		guard rate > 0, rate.isFinite else { return nil }
+		self.shape = shape
+		self.rate = rate
+	}
+
+	/// Creates a Gamma from a shape and a **scale**, the other common convention.
+	///
+	/// Offered separately rather than as a flag because the two parameterisations are
+	/// reciprocals of one another: a caller who passes a scale where a rate is wanted
+	/// gets a distribution that is wrong by a factor of `θ²` and looks entirely
+	/// plausible. Two names cannot be confused the way one name and a Boolean can.
+	///
+	/// - Parameters:
+	///   - shape: `k`, strictly positive.
+	///   - scale: `θ`, strictly positive.
+	/// - Returns: `nil` unless both are positive and finite.
+	public init?(shape: Double, scale: Double) {
+		guard scale > 0, scale.isFinite else { return nil }
+		let derivedRate: Double = 1 / scale
+		self.init(shape: shape, rate: derivedRate)
 	}
 
 	/// Generates a random value from the Gamma distribution.
 	/// - Returns: A random Double from the Gamma distribution
 	public func random() -> Double {
-		return distributionGamma(r: r, λ: λ)
+		guard let whole = integerShape else {
+			return gammaVariate(shape: shape, scale: scale)
+		}
+		return distributionGamma(r: whole, λ: rate)
 	}
 
 	/// Generates the next random value from the Gamma distribution.
@@ -223,7 +285,16 @@ extension DistributionGamma: SeedableDistribution {
 	/// - Parameter generator: The random source for the `r` uniform draws.
 	/// - Returns: A random Double from the Gamma distribution with configured shape and rate, or NaN for invalid parameters
 	public func next<G: RandomNumberGenerator>(using generator: inout G) -> Double {
-		return distributionGamma(r: r, λ: λ, using: &generator)
+		// Whole shapes keep the exponential-summation route. That is not compatibility
+		// theatre: summing `k` exponentials is the exact construction of an Erlang, it
+		// consumes exactly `k` uniforms where Marsaglia–Tsang consumes an unbounded
+		// data-dependent number, and `SeededStreamRegressionTests` pins the stream it
+		// produces. Rejection sampling is what a fractional shape needs, not what an
+		// integer one should be switched to.
+		guard let whole = integerShape else {
+			return gammaVariate(shape: shape, scale: scale, using: &generator)
+		}
+		return distributionGamma(r: whole, λ: rate, using: &generator)
 	}
 }
 
@@ -233,8 +304,8 @@ extension DistributionGamma: ContinuousDistribution {
 	/// This type is rate-parameterised, so the scale handed to
 	/// ``gammaCDF(_:shape:scale:)`` is `1/λ`.
 	public func cdf(_ x: Double) -> Double {
-		guard λ > 0 else { return Double.nan }
-		return gammaCDF(x, shape: Double(r), scale: 1 / λ)
+		guard rate > 0 else { return Double.nan }
+		return gammaCDF(x, shape: shape, scale: scale)
 	}
 
 	/// The value at which the CDF equals `p`.
@@ -242,8 +313,8 @@ extension DistributionGamma: ContinuousDistribution {
 	/// Root-found, through ``inverseRegularizedLowerIncompleteGamma(p:a:)``, so it is
 	/// held to a relative rather than absolute tolerance in the conformance battery.
 	public func quantile(_ p: Double) -> Double {
-		guard λ > 0 else { return Double.nan }
-		return totalizedResult { try gammaQuantile(p: p, shape: Double(r), scale: 1 / λ) }
+		guard rate > 0 else { return Double.nan }
+		return totalizedResult { try gammaQuantile(p: p, shape: shape, scale: scale) }
 	}
 
 	// Keeps its own `next(using:)`: Marsaglia–Tsang rejection, which draws an

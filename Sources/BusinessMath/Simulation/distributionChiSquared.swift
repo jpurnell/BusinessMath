@@ -183,10 +183,35 @@ public func distributionChiSquaredThrowing<T: Real, G: RandomNumberGenerator>(de
 /// ```
 @available(macOS 11.0, *)
 public struct DistributionChiSquared: DistributionRandom, Sendable {
-	/// The degrees of freedom parameter (df > 0)
-	let degreesOfFreedom: Int
 
-	/// Creates a new instance of `DistributionChiSquared` with the specified degrees of freedom.
+	/// The degrees of freedom, `ν`. Any positive real.
+	///
+	/// Continuous rather than integer because it genuinely is: `χ²(ν)` is `Gamma(ν/2, 2)`
+	/// and nothing in that requires `ν` to be whole. Fractional degrees of freedom are
+	/// ordinary in practice — Satterthwaite and Welch–Satterthwaite approximations produce
+	/// them, and so does any effective-sample-size correction.
+	public let degreesOfFreedom: Double
+
+	/// `ν` when it is exactly a positive integer, which is what lets the sampler keep
+	/// the route whose stream is pinned.
+	var integerDegreesOfFreedom: Int? {
+		guard degreesOfFreedom > 0, degreesOfFreedom <= 1_000_000 else { return nil }
+		// Exact by intent, as in `DistributionGamma.integerShape`: 4.0000001 degrees of
+		// freedom is a fractional `ν`, and rounding it into the sum-of-squares path
+		// would answer a different question from the one asked.
+		guard degreesOfFreedom.isEqual(to: degreesOfFreedom.rounded()) else { return nil }
+		return Int(degreesOfFreedom)
+	}
+
+	/// The equivalent Gamma: shape `ν/2`, scale `2`.
+	///
+	/// The identity every other member here is computed through, written once.
+	var asGamma: DistributionGamma? {
+		let halfDegrees: Double = degreesOfFreedom / 2
+		return DistributionGamma(shape: halfDegrees, scale: 2)
+	}
+
+	/// Creates a chi-squared with whole degrees of freedom.
 	///
 	/// - Parameters:
 	///   - degreesOfFreedom: The degrees of freedom parameter (df > 0)
@@ -194,6 +219,18 @@ public struct DistributionChiSquared: DistributionRandom, Sendable {
 		guard degreesOfFreedom > 0 else {
 			preconditionFailure("Degrees of freedom must be positive")
 		}
+		self.degreesOfFreedom = Double(degreesOfFreedom)
+	}
+
+	/// Creates a chi-squared with any positive real degrees of freedom.
+	///
+	/// - Parameter degreesOfFreedom: `ν`, strictly positive and finite.
+	/// - Returns: `nil` otherwise. Failable rather than trapping, unlike the integer
+	///   initialiser above: a fractional `ν` usually arrives from a computation such as
+	///   a Satterthwaite correction rather than from a literal, and a computation that
+	///   produced a non-positive `ν` is a result to handle, not a programmer error.
+	public init?(degreesOfFreedom: Double) {
+		guard degreesOfFreedom > 0, degreesOfFreedom.isFinite else { return nil }
 		self.degreesOfFreedom = degreesOfFreedom
 	}
 
@@ -201,7 +238,14 @@ public struct DistributionChiSquared: DistributionRandom, Sendable {
 	///
 	/// - Returns: A random value sampled from χ²(df), always non-negative
 	public func random() -> Double {
-		return distributionChiSquared(degreesOfFreedom: degreesOfFreedom)
+		guard let whole = integerDegreesOfFreedom else {
+			// The free function rather than `DistributionGamma.random()`, so the
+			// unseeded entry point stays in one place — the same place every other
+			// distribution in this directory keeps it.
+			let halfDegrees: Double = degreesOfFreedom / 2
+			return gammaVariate(shape: halfDegrees, scale: 2)
+		}
+		return distributionChiSquared(degreesOfFreedom: whole)
 	}
 
 	/// Generates the next random value from the Chi-squared distribution.
@@ -226,9 +270,16 @@ extension DistributionChiSquared: SeedableDistribution {
 	/// - Parameter generator: The random source for all standard normal draws.
 	/// - Returns: A random value sampled from χ²(df), always non-negative
 	public func next<G: RandomNumberGenerator>(using generator: inout G) -> Double {
+		// A sum of squared normals needs a whole number of them. That route is exact
+		// for integer `ν` and its stream is pinned, so it stays; a fractional `ν` has
+		// no such sum and goes through the Gamma this distribution is a case of.
+		guard let whole = integerDegreesOfFreedom else {
+			guard let gamma = asGamma else { return Double.nan }
+			return gamma.next(using: &generator)
+		}
 		let standardNormal = DistributionNormal(0.0, 1.0)
 		var sumOfSquares = 0.0
-		for _ in 0..<degreesOfFreedom {
+		for _ in 0..<whole {
 			let z = standardNormal.next(using: &generator)
 			sumOfSquares += z * z
 		}
@@ -246,13 +297,13 @@ extension DistributionChiSquared: ContinuousDistribution {
 	public func cdf(_ x: Double) -> Double {
 		guard degreesOfFreedom > 0 else { return Double.nan }
 		guard x >= 0 else { return 0 }
-		let shape = Double(degreesOfFreedom) / 2
+		let shape: Double = degreesOfFreedom / 2
 		return regularizedLowerIncompleteGamma(a: shape, x: x / 2)
 	}
 
 	/// The value at which the CDF equals `p`: 2·P⁻¹(p, ν/2).
 	public func quantile(_ p: Double) -> Double {
-		let shape = Double(degreesOfFreedom) / 2
+		let shape: Double = degreesOfFreedom / 2
 		let unitScale = totalizedResult {
 			try inverseRegularizedLowerIncompleteGamma(p: p, a: shape)
 		}

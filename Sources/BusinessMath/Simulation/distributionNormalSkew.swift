@@ -51,24 +51,16 @@ public extension DistributionMyerson {
 	///
 	/// ## The one thing the documentation does not state
 	///
-	/// It gives no formula relating `c` to the shape, only that `c` lies strictly
-	/// inside `(-1, 1)`, that zero is symmetric, and that a positive `c` skews left.
-	/// This places the median linearly between the bounds:
+	/// It gives no formula relating `c` to the shape. What it does say is that `c` lies
+	/// strictly inside `(-1, 1)`, that zero is symmetric, that a positive `c` skews
+	/// left, and — the most informative of the four — that the distribution reduces to
+	/// the symmetric case "when the skew argument is equidistant from the upper and
+	/// lower bounds". That sentence is loose, since a number in `(-1, 1)` is not
+	/// literally equidistant from anything, but it describes the skew argument as
+	/// *positioning something between the bounds*, which is the shape of the answer.
 	///
-	/// ```
-	/// median = (a + b)/2 + c · (b − a)/2
-	/// ```
-	///
-	/// Two arguments for that reading. First, the two natural formulations agree: a
-	/// linear median gives a Myerson asymmetry of `(1 − c)/(1 + c)`, which is also
-	/// what one writes down going directly for a shape ratio that is one at `c = 0`,
-	/// so there is no fork to choose between. Second, the exclusive range is the tell
-	/// — `c ∈ (-1, 1)` open corresponds exactly to `median ∈ (a, b)` open under this
-	/// map, where any exponential alternative would need a rate constant from nowhere
-	/// and would not explain why the endpoints are excluded.
-	///
-	/// The direction follows and matches the documentation: a positive `c` moves the
-	/// median toward `b`, which lengthens the *left* arm, which is a left skew.
+	/// See ``normalSkewMedian(lowerBound:upperBound:skew:)``, which is where that
+	/// reading lives and the only place it would need changing.
 	///
 	/// - Parameters:
 	///   - lowerBound: `a`, the −3σ point. Must be strictly below `upperBound`.
@@ -78,15 +70,60 @@ public extension DistributionMyerson {
 	/// - Returns: The distribution, or `nil` if the bounds are not ordered and finite
 	///   or the skew is outside `(-1, 1)`.
 	static func normalSkew(lowerBound: Double, upperBound: Double, skew: Double) -> DistributionMyerson? {
+		guard let median = normalSkewMedian(lowerBound: lowerBound,
+											upperBound: upperBound, skew: skew) else {
+			return nil
+		}
+		return DistributionMyerson(low: lowerBound, mode: median, high: upperBound,
+								   probability: Self.threeSigmaCoverage)
+	}
+
+	/// Where `PsiNormalSkew` puts the median for a given skew.
+	///
+	/// ```
+	/// median = (a + b)/2 + c · (b − a)/2
+	/// ```
+	///
+	/// ## This is the one inferred step, isolated on purpose
+	///
+	/// Everything else about ``normalSkew(lowerBound:upperBound:skew:)`` comes straight
+	/// from Frontline's page: that it is a Myerson, that the bounds are ±3σ, that the
+	/// tail is `2Φ(-3)`. Only the map from `c` to the median is unstated upstream, so it
+	/// lives here by itself — one named, tested, documented function. If Frontline turns
+	/// out to use a different map, this body changes and nothing else does.
+	///
+	/// ## Why this map
+	///
+	/// The two natural formulations agree, which removes the obvious fork: placing the
+	/// median linearly gives a Myerson asymmetry of `(1 − c)/(1 + c)`, and going
+	/// directly for a shape ratio that equals one at `c = 0` gives the same function.
+	///
+	/// The exclusive range is the second reason and the stronger one. Under this map
+	/// `c → ±1` drives the median onto a bound, collapsing one arm of the Myerson to
+	/// zero width — a real degeneracy, which is exactly why the endpoints would be
+	/// excluded. A map that shifted the median by `c` standard deviations instead would
+	/// keep the median a comfortable `σ` inside the bounds at `c = ±1`, leaving no
+	/// reason for the interval to be open at all.
+	///
+	/// That argument is evidence rather than proof, and the difference is easy to
+	/// settle if a reference is ever to hand: for `PsiNormalSkew(0, 60, 0.5)` this map
+	/// puts the median at **45**, where a per-sigma map would put it at 35. One
+	/// evaluation discriminates.
+	///
+	/// - Parameters:
+	///   - lowerBound: `a`, the −3σ point.
+	///   - upperBound: `b`, the +3σ point.
+	///   - skew: `c`, strictly inside `(-1, 1)`.
+	/// - Returns: The median, or `nil` if the bounds are unordered or the skew is
+	///   outside its range.
+	static func normalSkewMedian(lowerBound: Double, upperBound: Double, skew: Double) -> Double? {
 		guard lowerBound.isFinite, upperBound.isFinite, skew.isFinite else { return nil }
 		guard lowerBound < upperBound else { return nil }
 		guard skew > -1, skew < 1 else { return nil }
 		let midpoint: Double = (lowerBound + upperBound) / 2
 		let halfRange: Double = (upperBound - lowerBound) / 2
 		let offset: Double = skew * halfRange
-		let median: Double = midpoint + offset
-		return DistributionMyerson(low: lowerBound, mode: median, high: upperBound,
-								   probability: Self.threeSigmaCoverage)
+		return midpoint + offset
 	}
 
 	/// The standard deviation of the symmetric member, `(b − a)/6`.
