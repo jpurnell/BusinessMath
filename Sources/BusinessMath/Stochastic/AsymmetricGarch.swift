@@ -344,6 +344,57 @@ public struct AsymmetricPowerArch: StochasticProcess, Sendable {
 		self.inversePower = 1 / power
 	}
 
+	/// Creates an APARCH(1,1) from the volatility it should settle at, rather than from
+	/// the floor on `σ^δ`.
+	///
+	/// The counterpart of ``ExponentialGarch/init(name:unconditionalVolatility:shockWeight:persistenceWeight:leverage:magnitude:)``,
+	/// and the form a model is usually stated in — "20% annualised vol, δ of 1.5, a tilt
+	/// of 0.3" — where `ω` is whatever makes that true.
+	///
+	/// ## The derivation, and why it is not circular
+	///
+	/// `σ^δ` settles at `ω / (1 − α·κ − β)` where `κ = E(|z| − γz)^δ`, so
+	/// `ω = σ^δ (1 − α·κ − β)`. At `δ = 2` this collapses to the familiar
+	/// `ω = σ²(1 − α − β)`, since `κ = E[z²] = 1` there.
+	///
+	/// It looks as though `κ` should depend on the process and therefore on `ω`, which
+	/// would make this circular. It does not: `κ` is an expectation over the
+	/// *innovation*, not over the process, so it is fixed by `γ` and `δ` alone —
+	/// see ``expectedTiltedPower(asymmetry:power:)``. What it does depend on is the
+	/// innovation being standard normal, which is the same assumption
+	/// ``isStationary`` and every other analytical member here already makes.
+	///
+	/// - Parameters:
+	///   - name: A label for reporting.
+	///   - unconditionalVolatility: The `σ` the process settles at. Strictly positive.
+	///   - shockWeight: `α`, non-negative.
+	///   - persistenceWeight: `β`, non-negative.
+	///   - asymmetry: `γ`, strictly inside `(−1, 1)`.
+	///   - power: `δ`, strictly positive. Defaults to two.
+	/// - Returns: `nil` if any parameter is outside its support, or if the coefficients
+	///   are not stationary — a process that does not settle has no volatility to settle
+	///   at, so there is no `ω` to derive and refusing is the only honest answer.
+	public init?(name: String, unconditionalVolatility: Double, shockWeight: Double,
+				 persistenceWeight: Double, asymmetry: Double = 0, power: Double = 2) {
+		guard unconditionalVolatility > 0, unconditionalVolatility.isFinite else { return nil }
+		guard shockWeight >= 0, shockWeight.isFinite else { return nil }
+		guard persistenceWeight >= 0, persistenceWeight.isFinite else { return nil }
+		guard asymmetry > -1, asymmetry < 1 else { return nil }
+		guard power > 0, power.isFinite else { return nil }
+
+		let kappa: Double = Self.expectedTiltedPower(asymmetry: asymmetry, power: power)
+		let reaction: Double = shockWeight * kappa
+		let multiplier: Double = reaction + persistenceWeight
+		let decay: Double = 1 - multiplier
+		guard decay > 0 else { return nil }
+
+		let powered: Double = Double.pow(unconditionalVolatility, power)
+		let floor: Double = powered * decay
+		guard floor > 0, floor.isFinite else { return nil }
+		self.init(name: name, constant: floor, shockWeight: shockWeight,
+				  persistenceWeight: persistenceWeight, asymmetry: asymmetry, power: power)
+	}
+
 	/// Advances one period.
 	///
 	/// - Parameters:
@@ -413,6 +464,19 @@ public struct AsymmetricPowerArch: StochasticProcess, Sendable {
 	/// doubling it buys a factor of five rather than sixteen. The closed form is exact
 	/// at every `δ`, cheaper, and removes a tuning parameter that had no right answer.
 	public var expectedTiltedPower: Double {
+		Self.expectedTiltedPower(asymmetry: asymmetry, power: power)
+	}
+
+	/// `E(|z| − γz)^δ` from the two shape parameters alone, before any value exists.
+	///
+	/// Static because the unconditional-volatility initialiser needs it to derive `ω`,
+	/// and `ω` has to be known before there is a distribution to ask.
+	///
+	/// - Parameters:
+	///   - asymmetry: `γ`, strictly inside `(−1, 1)`.
+	///   - power: `δ`, strictly positive.
+	/// - Returns: The expectation under a standard normal innovation.
+	public static func expectedTiltedPower(asymmetry: Double, power: Double) -> Double {
 		let lowSide: Double = Double.pow(1 - asymmetry, power)
 		let highSide: Double = Double.pow(1 + asymmetry, power)
 		let sides: Double = lowSide + highSide

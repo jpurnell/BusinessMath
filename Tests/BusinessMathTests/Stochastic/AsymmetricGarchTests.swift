@@ -292,6 +292,59 @@ struct AsymmetricGarchTests {
 		#expect(GarchOneOne.arch(name: "arch", unconditionalVolatility: 0, shockWeight: 0.3) == nil)
 	}
 
+	@Test("Building an APARCH from its unconditional volatility settles where it was told to")
+	func aparchFromVolatility() throws {
+		// The round trip is the test: ask for a settling volatility, then read back what
+		// the process actually settles at. That exercises the derivation
+		// ω = σ^δ(1 − ακ − β) against `stationaryVariance`, which computes the same
+		// relation in the other direction through a κ it works out independently.
+		var checked = 0
+		for (vol, alpha, beta, gamma, delta) in [
+			(0.02, 0.08, 0.85, 0.0, 2.0),
+			(0.02, 0.08, 0.85, 0.4, 2.0),
+			(0.15, 0.10, 0.80, 0.3, 1.5),
+			(1.20, 0.05, 0.90, -0.5, 2.5),
+			(0.50, 0.06, 0.88, 0.25, 1.0),
+		] {
+			let process = try #require(AsymmetricPowerArch(name: "a", unconditionalVolatility: vol,
+														   shockWeight: alpha, persistenceWeight: beta,
+														   asymmetry: gamma, power: delta))
+			let settled = try #require(process.stationaryVariance)
+			let wanted: Double = vol * vol
+			#expect(Swift.abs(settled - wanted) < wanted * 1e-9,
+					"asked for σ=\(vol) at δ=\(delta), γ=\(gamma); settled at variance \(settled), wanted \(wanted)")
+			checked += 1
+		}
+		#expect(checked == 5, "only \(checked) of 5 constructions were checked")
+	}
+
+	@Test("At the GARCH corner the APARCH volatility derivation is the GARCH one")
+	func aparchVolatilityMatchesGarchAtTheCorner() throws {
+		// At δ = 2 and γ = 0, κ = E[z²] = 1, so ω = σ²(1 − α − β) — exactly what
+		// GarchOneOne's own volatility initialiser computes. The two must agree, and
+		// they share no code path to arrive at it.
+		let vol = 0.03, alpha = 0.07, beta = 0.9
+		let aparch = try #require(AsymmetricPowerArch(name: "a", unconditionalVolatility: vol,
+													  shockWeight: alpha, persistenceWeight: beta,
+													  asymmetry: 0, power: 2))
+		let garch = try #require(GarchOneOne(name: "g", unconditionalVolatility: vol,
+											 shockWeight: alpha, persistenceWeight: beta))
+		#expect(Swift.abs(aparch.constant - garch.constant) < garch.constant * 1e-12,
+				"ω differs: APARCH \(aparch.constant), GARCH \(garch.constant)")
+	}
+
+	@Test("A non-stationary APARCH has no volatility to settle at, and says so")
+	func aparchVolatilityRefusesNonStationary() {
+		// α + β above one at the GARCH corner: the process does not settle, so there is
+		// no σ for it to settle at and no ω to derive from one.
+		#expect(AsymmetricPowerArch(name: "a", unconditionalVolatility: 0.02,
+									shockWeight: 0.5, persistenceWeight: 0.7) == nil)
+		#expect(AsymmetricPowerArch(name: "a", unconditionalVolatility: 0,
+									shockWeight: 0.1, persistenceWeight: 0.8) == nil)
+		#expect(AsymmetricPowerArch(name: "a", unconditionalVolatility: 0.02,
+									shockWeight: 0.1, persistenceWeight: 0.8, asymmetry: 1) == nil)
+	}
+
 	@Test("Building a GARCH from its unconditional volatility settles where it was told to")
 	func garchFromVolatility() throws {
 		var checked = 0
