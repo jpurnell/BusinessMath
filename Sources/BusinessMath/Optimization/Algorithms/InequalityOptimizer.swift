@@ -234,6 +234,12 @@ public struct InequalityOptimizer<V: VectorSpace> where V.Scalar: Real {
 		var history: [(Int, V, V.Scalar, V.Scalar)] = []
 		var outerIterations = 0
 
+		// The smallest constraint violation reached so far, and how many consecutive
+		// outer steps have failed to beat it once the schedule has nothing left to give.
+		// Together these are the exhaustion test at the foot of the loop.
+		var bestResidual = V.Scalar.infinity
+		var exhaustedSteps = 0
+
 		for outerIter in 0..<maxIterations {
 			outerIterations = outerIter + 1
 
@@ -380,6 +386,61 @@ public struct InequalityOptimizer<V: VectorSpace> where V.Scalar: Real {
 				eta = Swift.max(constraintTolerance, one / V.Scalar.pow(rho, one / V.Scalar(10)))
 				omega = Swift.max(gradientTolerance, one / rho)
 			}
+
+			// Stop once the schedule has nothing left to try *and* feasibility has
+			// stopped improving.
+			//
+			// Two levers drive this method: ρ, raised when feasibility lags, and the
+			// ηₖ/ωₖ targets, tightened when it does not. Each has a floor — ρ is capped
+			// at 1/ulp because beyond it the penalty swamps the objective, and the
+			// targets clamp at the caller's own tolerances. Once every lever is at its
+			// floor, the next outer step differs from this one only in the iterate it
+			// starts from.
+			//
+			// ρ starts at 10 and multiplies tenfold, so the cap arrives around the
+			// sixteenth step; without this the remaining eighty-odd re-derive a verdict
+			// already reached. Measured on a genuinely infeasible node from an ordinary
+			// branch-and-bound search: a hundred outer steps and 3.7 seconds to report a
+			// violation that had been flat at 0.90 since the twentieth. Such nodes are
+			// what branch-and-bound spends most of its time on.
+			//
+			// ## Why the test is on the violation alone
+			//
+			// The caller's verdict is `violation ≤ constraintTolerance` and nothing
+			// else, so that is the quantity whose stalling settles the outcome. An
+			// earlier version of this tested the whole KKT residual —
+			// `max(violation, stationarity, complementarity)` — and it was wrong in a way
+			// worth recording: on a node whose feasible set was a single point, the
+			// stationarity term stalled while the violation was still falling, the
+			// maximum masked the progress, and the search stopped at a violation of
+			// 2.8e-6 that would have reached 1e-7 if left alone. That flipped a feasible
+			// node to `.infeasible` and pruned a subtree that should have been explored.
+			// A degenerate node staying slow is a cost; a correct node being pruned is a
+			// wrong answer.
+			//
+			// So the guard has three parts, and all are required: every lever at its
+			// floor, the violation above the tolerance that decides the verdict, and the
+			// violation not falling. Under those conditions more steps cannot change the
+			// answer — which is exactly when it is safe not to take them.
+			// ρ alone, not ρ together with the targets. η and ω are *derived* from ρ on
+			// the escalation path — η becomes 1/ρ^(1/10), which is still 0.027 even at
+			// the cap and never approaches `constraintTolerance` — so testing them for
+			// their floors is testing a condition that cannot occur, and an earlier
+			// version of this that did so never fired at all. Once ρ is capped both are
+			// constant, which is what the argument above actually needs.
+			let leversExhausted = rho >= Self.maximumPenalty
+			if leversExhausted && scaledViolation > constraintTolerance {
+				let threshold: V.Scalar = bestResidual * Self.exhaustionMargin
+				if scaledViolation < threshold {
+					bestResidual = scaledViolation
+					exhaustedSteps = 0
+				} else {
+					exhaustedSteps += 1
+				}
+				if exhaustedSteps >= Self.exhaustionSteps { break }
+			} else if scaledViolation < bestResidual {
+				bestResidual = scaledViolation
+			}
 		}
 
 		// Did not converge
@@ -489,6 +550,24 @@ public struct InequalityOptimizer<V: VectorSpace> where V.Scalar: Real {
 	private static var maximumPenalty: V.Scalar {
 		V.Scalar(1) / V.Scalar.ulpOfOne
 	}
+
+	/// How much better the constraint violation must be to count as progress once the
+	/// schedule is exhausted: one part in a hundred.
+	///
+	/// Not exact equality, though the argument above says the subproblem is literally
+	/// unchanged. The inner search is a BFGS over a finite-difference gradient, so two
+	/// runs from the same point can differ in the last bits; a strict test would read
+	/// that noise as progress and never fire.
+	private static var exhaustionMargin: V.Scalar {
+		V.Scalar(99) / V.Scalar(100)
+	}
+
+	/// How many consecutive exhausted steps without progress end the search.
+	///
+	/// Three rather than one, because the first step after a lever reaches its floor
+	/// still starts from an iterate the previous, looser schedule produced, and that one
+	/// step can genuinely improve. By the third there is nothing left untried.
+	private static var exhaustionSteps: Int { 3 }
 
 	/// The complementary-slackness residual `maxⱼ min(−gⱼ(x), μⱼ)`, relative to the
 	/// multiplier scale.

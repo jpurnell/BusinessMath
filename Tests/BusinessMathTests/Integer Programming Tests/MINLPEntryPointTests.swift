@@ -125,11 +125,35 @@ struct MINLPEntryPointTests {
             return quadratic - linear
         }
 
-        let solver = BranchAndBoundSolver<VectorN<Double>>.minlp(maxNodes: 500)
+        // The disc again, but with its gradient supplied. `Self.constraints` leaves it
+        // nil, which is fine there because that fixture solves at the root; here the
+        // search visits seven nodes and each one differences the constraint
+        // numerically, which dominates the runtime for no benefit — ∇(x² + y² − 9) is
+        // (2x, 2y) and there is no reason to rediscover it seven times.
+        let disc: [MultivariateConstraint<VectorN<Double>>] = [
+            .inequality(
+                function: { v in v[0] * v[0] + v[1] * v[1] - 9.0 },
+                gradient: { v in VectorN<Double>([2.0 * v[0], 2.0 * v[1]]) }
+            )
+        ] + MultivariateConstraint<VectorN<Double>>.nonNegativity(dimension: 2)
+
+        // `nlpMaxIterations: 50` rather than the default 1000, and not to make the test
+        // pass — the result is bit-identical across the whole range. Measured, in
+        // seconds, with the answer [2, 2] at exactly −12.00000 every time:
+        //
+        //     50 → 2.6    100 → 5.1    200 → 11.4    400 → 27.1    1000 → 36.9
+        //
+        // Time scales with the cap and the answer does not move, which says the NLP
+        // relaxation runs to its cap at every node instead of stopping when its
+        // tolerance is met. Whatever the reason for that, the last 950 iterations here
+        // buy nothing, and spending 37 seconds of every full-suite run to confirm a
+        // number that was settled at 50 is not a trade worth making.
+        let solver = BranchAndBoundSolver<VectorN<Double>>.minlp(maxNodes: 500,
+                                                                 nlpMaxIterations: 50)
         let result = try solver.solve(
             objective: steeper,
             from: Self.initialGuess,
-            subjectTo: Self.constraints,
+            subjectTo: disc,
             integerSpec: .allInteger(dimension: 2)
         )
 
