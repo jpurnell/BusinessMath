@@ -1,10 +1,8 @@
 # Handoff — 2026-09-08
 
 **2.15.0 is released, pushed and tagged. The tree is clean, the gate is 45/45 at zero, and
-there is no work in flight.** This is a good stopping point rather than a pause mid-task.
-
-The one thing that needs a decision is at the bottom, under *Worktrees*. Everything above
-it is state.
+there is no work in flight.** This is a good stopping point rather than a pause mid-task,
+and there is nothing waiting on a decision.
 
 ## State
 
@@ -76,24 +74,24 @@ Gaussian constant became `2·normalPDF(x: 0)`, a hand-rolled uniform became
 that already owned that entry point. Zero markers were added. Assume the same is possible
 before adding one.
 
-## Worktrees — the one decision waiting
+## Worktrees — done, nothing outstanding
 
-Three agent worktrees under `.claude/worktrees/` are dated **2026-08-10**, a month old:
+Pruned 2026-09-08. Four directories under `.claude/worktrees/` are gone, along with three
+`worktree-agent-*` branches. `git worktree list` shows only the main checkout.
 
-```
-agent-a14cf47c53ee99c22   11 modified files
-agent-a3154fd65f1e28520    7 modified files
-agent-a5aa29fab3e53904e   13 modified files
-```
+Checked before deleting, and recorded in case the question comes back:
 
-Their commits are ancestors of `main`, so the committed work is merged. The uncommitted
-modifications were compared file-by-file against `main`, and **`main` holds the newer
-version in every case that differs** — seeded RNG where the worktree has an unseeded draw,
-justification comments the worktree lacks, a fuller and corrected `TrustPlan.md`. They look
-like earlier iterations of work that subsequently landed in better form.
+- Three worktrees from 2026-08-10 held 31 modified files between them. Comparing each
+  against `main` showed `main` holding the newer version everywhere they differed, and the
+  equal-line-count cases settled it — they were `func x()` against `main`'s `func x() throws`,
+  and `samples.min()!` against `main`'s `try #require(samples.min())`. The worktrees held
+  pre-cleanup states from before the force unwraps came out.
+- A fourth, `agent-a064a9af` from April, was orphaned: its `.git` file pointed at a gitdir
+  that no longer existed, so git could not see it. It held five files absent from `main`,
+  and `git log --all` showed every one deliberately removed by a named commit — `37db2527`
+  de-cluttered the repo root, `6742c8dc` was housekeeping, and `09449cd1
+  refactor(macros): remove @MCPTool and @BuilderInitializable` took both macro files out
+  on purpose.
 
-That is evidence, not proof, so nothing was deleted. Full diffs are captured at
-`<scratchpad>/worktree-backup/*.diff` (86 KB), but a scratchpad does not survive
-indefinitely — **if these are to be pruned, capture the diffs somewhere durable first, or
-confirm they are dead and prune.** They cost a stale `git worktree list` and, per
-`feedback-worktree-spm-conflicts`, can interfere with SPM builds.
+Two of the removals failed first with "Directory not empty", which is Dropbox sync rather
+than git; a retry loop cleared them. See `feedback-worktree-spm-conflicts`.
