@@ -182,6 +182,82 @@ public struct SubscriptionBoxModel: Sendable {
 
     // MARK: - LTV Calculations
 
+    /// Contribution margin earned per subscriber per month.
+    ///
+    /// The same quantity as ``calculateGrossMarginPerBox()``, named for what
+    /// `Marketing/Value/` calls it. This is what acquisition cost is recovered out of.
+    public var marginPerPeriod: Double { calculateGrossMarginPerBox() }
+
+    /// Monthly retention, or `nil` if the churn rate is not a rate.
+    ///
+    /// - Returns: `1 − monthlyChurnRate`, or `nil` outside `[0, 1]`. A churn of 1.2 is not
+    ///   a retention of −0.2; it is a number that cannot have come from counting
+    ///   subscribers.
+    public var retentionRate: Double? {
+        guard monthlyChurnRate >= 0, monthlyChurnRate <= 1, monthlyChurnRate.isFinite else {
+            return nil
+        }
+        return 1 - monthlyChurnRate
+    }
+
+    /// Customer lifetime value, delegated to `Marketing/Value/`.
+    ///
+    /// ```swift
+    /// let model = SubscriptionBoxModel(initialSubscribers: 1_000, monthlyBoxPrice: 40,
+    ///                                  costOfGoodsPerBox: 15, shippingCostPerBox: 5,
+    ///                                  monthlyChurnRate: 0.08,
+    ///                                  newSubscribersPerMonth: 100,
+    ///                                  customerAcquisitionCost: 60)
+    /// let value = try model.lifetimeValue()
+    /// print(value.value)
+    /// ```
+    ///
+    /// Defaults to ``CLVDefinition/perpetuityDue`` — margin over churn, exactly what
+    /// ``calculateCustomerLifetimeValue()`` has always returned, now named.
+    ///
+    /// Zero churn throws ``CLVError/divergentPerpetuity(retention:discountRate:)`` rather
+    /// than returning zero, because nobody ever leaving is the case where the series does
+    /// not converge. A box sold at a loss keeps its **negative** lifetime value, which is
+    /// a finding rather than an error.
+    ///
+    /// - Parameters:
+    ///   - definition: Which lifetime value. Defaults to the industry convention.
+    ///   - discountRate: Monthly discount rate, non-negative.
+    ///   - horizon: Months to project, used only by ``CLVDefinition/finiteHorizon``.
+    /// - Returns: The value, with the retention and margin it came from.
+    /// - Throws: ``CLVError``.
+    public func lifetimeValue(definition: CLVDefinition = .perpetuityDue,
+                              discountRate: Double = 0,
+                              horizon: Int = 12) throws -> CLVResult<Double> {
+        guard let retention = retentionRate else { throw CLVError.invalidRetention }
+        return try customerLifetimeValue(marginPerPeriod: marginPerPeriod,
+                                         retention: retention,
+                                         definition: definition,
+                                         discountRate: discountRate,
+                                         horizon: horizon)
+    }
+
+    /// Unit economics against the acquisition cost, delegated to `Marketing/Value/`.
+    ///
+    /// - Parameters:
+    ///   - definition: Which lifetime value to put in the numerator.
+    ///   - discountRate: Monthly discount rate.
+    ///   - horizon: Months to project, for a finite horizon.
+    /// - Returns: The metrics, or `nil` when the acquisition cost is not positive, or when
+    ///   the margin is not — a box sold at a loss never recovers its acquisition cost, and
+    ///   the payback is absent rather than instant.
+    /// - Throws: ``CLVError`` if the lifetime value itself is undefined.
+    public func acquisitionMetrics(definition: CLVDefinition = .perpetuityDue,
+                                   discountRate: Double = 0,
+                                   horizon: Int = 12) throws -> AcquisitionMetrics<Double>? {
+        let value = try lifetimeValue(definition: definition,
+                                      discountRate: discountRate,
+                                      horizon: horizon)
+        return AcquisitionMetrics(lifetimeValue: value.value,
+                                  acquisitionCost: customerAcquisitionCost,
+                                  marginPerPeriod: marginPerPeriod)
+    }
+
     /// Calculate customer lifetime value.
     ///
     /// LTV = Gross Margin per Box / Churn Rate
@@ -189,7 +265,9 @@ public struct SubscriptionBoxModel: Sendable {
     /// This represents the total gross profit expected from a customer
     /// over their lifetime with the subscription.
     ///
-    /// - Returns: Customer lifetime value
+    /// - Returns: Customer lifetime value, or **zero when the churn rate is zero** — which
+    ///   is the case where the value is unbounded, not the case where it is nothing.
+    @available(*, deprecated, message: "Use lifetimeValue(definition:discountRate:horizon:), which returns the same number and throws on the zero-churn case this returns 0 for.")
     public func calculateCustomerLifetimeValue() -> Double {
         guard monthlyChurnRate > 0 else { return 0 }
         return calculateGrossMarginPerBox() / monthlyChurnRate // fp-safety:disable — guarded above
@@ -201,7 +279,8 @@ public struct SubscriptionBoxModel: Sendable {
     ///
     /// A healthy subscription business typically has LTV:CAC > 3.0
     ///
-    /// - Returns: LTV:CAC ratio
+    /// - Returns: LTV:CAC ratio, or 0 when the acquisition cost is not positive.
+    @available(*, deprecated, message: "Use acquisitionMetrics()?.ratio, which returns nil rather than zero when the ratio is undefined.")
     public func calculateLTVtoCAC() -> Double {
         guard customerAcquisitionCost > 0 else { return 0 }
         return calculateCustomerLifetimeValue() / customerAcquisitionCost // fp-safety:disable — guarded above
@@ -213,7 +292,10 @@ public struct SubscriptionBoxModel: Sendable {
     ///
     /// This represents how many months it takes to recover the customer acquisition cost.
     ///
-    /// - Returns: Number of months to payback CAC
+    /// - Returns: Number of months to payback CAC, or **zero when the gross margin is not
+    ///   positive** — a box sold at a loss never pays back, and zero months says it pays
+    ///   back instantly.
+    @available(*, deprecated, message: "Use acquisitionMetrics()?.paybackPeriods, which returns nil rather than zero for a box that never pays back.")
     public func calculateCACPaybackMonths() -> Double {
         let grossMargin = calculateGrossMarginPerBox()
         guard grossMargin > 0 else { return 0 }
@@ -240,7 +322,9 @@ public struct SubscriptionBoxModel: Sendable {
     ///
     /// Retention Rate = 1 - Churn Rate
     ///
-    /// - Returns: Monthly retention rate
+    /// - Returns: Monthly retention rate, which is **negative** for a churn rate above
+    ///   one rather than being refused.
+    @available(*, deprecated, message: "Use the retentionRate property, which returns nil for a churn rate outside [0, 1] instead of a negative retention.")
     public func calculateRetentionRate() -> Double {
         return 1.0 - monthlyChurnRate
     }
