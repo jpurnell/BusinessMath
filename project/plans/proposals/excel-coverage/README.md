@@ -30,9 +30,10 @@ Settled 2026-09-09 by reading the generator, after most of a day spent inferring
 Two sessions produced four successive explanations for an apparent set of discrepancies in
 these files. **All four were wrong, and there was never a discrepancy.**
 
-`corpus_usage.tsv` is produced by `testWhichFunctionsTheCorpusCalls` in
-`../BusinessMathExcel/Tests/BusinessMathExcelTests/CorpusMeasurementTests.swift`, which walks
-every `.xlsx` under `BUSINESSMATHEXCEL_CORPUS`, and inside each workbook:
+`corpus_usage.tsv` is produced by `testWhichFunctionsTheCorpusCalls` — **a sibling
+repository, not this one**: `BusinessMathExcel/Tests/BusinessMathExcelTests/CorpusMeasurementTests.swift`,
+the test at line 183, the corpus gate at line 59, the print at line 220. It walks every
+`.xlsx` under `BUSINESSMATHEXCEL_CORPUS`, and inside each workbook (lines 195–203):
 
 ```swift
 for sheet in workbook.sheets {
@@ -77,9 +78,30 @@ readable. 79 workbooks, all sheets.
 about 79 real workbooks, and not a ranking signal for the 726 other zero rows, which are the
 same single observation.
 
+### The answer was eleven lines above this section the whole time
+
+Worth recording precisely, because it is more useful than the finding.
+
+The **Regenerating** heading near the top of this file has said *"`corpus_usage.tsv` comes
+from BusinessMathExcel"* since `76cc2e58`, which predates every message of the investigation
+that followed. Neither session was missing information. One searched its own `Sources/`,
+`Tests/` and `scripts/`, found no generator, and concluded there was none — true of the tree
+searched, false as written. The other — this one — opened this very file with `head -6`,
+which stops seven lines short of the sentence naming the generator, and then spent four
+successive explanations inferring what the column meant.
+
+`head -6` on the file containing the answer is the first of the search disciplines failing on
+the document that would have ended the search. If that discipline needs a hard form, it is:
+**when you truncate a file you are consulting for provenance, you have not consulted it.**
+
+And the boundary is the part that beat both sessions independently: **the generator is not
+necessarily in the repository holding the data.** When a README names a sibling repository,
+that is the first place to look, not the last.
+
 ### Regenerating, and what to fix while doing it
 
-The provenance is fully reconstructable and the measurement is repeatable:
+The provenance is fully reconstructable and the measurement is repeatable. This section is
+the one that mattered, and it was here before any of the confusion above:
 
 ```
 BUSINESSMATHEXCEL_CORPUS="<roots>" swift test --filter testWhichFunctionsTheCorpusCalls
