@@ -10,7 +10,38 @@ Build DCF models, optimize portfolios, run Monte Carlo simulations, and value se
 
 ---
 
-## Latest release: 2.15.0
+## Latest release: 2.16.0
+
+The marketing leg, shipped additively. Twenty-eight new source files across four new areas of
+`Statistics/` — `LogisticRegression`, **Classification** (ROC/AUC, confusion matrix, calibration,
+gains), **Survival** (Kaplan–Meier, log-rank, restricted mean) and **Concentration** (Gini,
+Lorenz, top shares) — plus two new top-level areas: **`Network/`** (graph, Tarjan, topological
+sort, Brandes betweenness, PageRank, Louvain, Markov chains with absorption and removal effect)
+and **`Marketing/`** (customer lifetime value, acquisition cost, cohort retention, price
+elasticity and demand-curve fitting, response and uplift models, RFM, campaign depth).
+
+Additive. No signature changes, no deletions, no behaviour changes to existing calls. The three
+items that force a major version — `optimizeDetailed` gaining `throws`, deleting the deprecated
+`sampleSize`, and the template LTV delegation — are deliberately still waiting.
+
+**The theme is refusal.** Separated logistic data has no maximum-likelihood estimate, and the
+enormous coefficients an unguarded optimizer stops at arrive with a perfect in-sample AUC and no
+predictive validity; this throws instead, naming the predictors. A survival sample with no
+observed failures means short follow-up, not immortality. Inelastic demand has no
+profit-maximising price and the closed form returns a negative one. A cohort that has not reached
+its third month has no retention there, and counting it as zero drags the pooled curve down
+threefold while leaving it monotone and smooth. In each case the wrong answer is a well-formed
+number that nothing about its shape gives away.
+
+**Verified by identity wherever one exists.** AUC is computed independently as the Mann–Whitney
+statistic and must agree exactly, ties included. Kaplan–Meier is checked against the empirical
+survival function it must reduce to without censoring. Gini is computed twice from unrelated
+formulas. The two uplift estimators are algebraically the same number on a balanced design and
+are computed by entirely separate code paths. Three demand-curve optima are checked against the
+Lerner condition, which validates three closed forms against three elasticity functions at once.
+Several of those need no reference implementation at all.
+
+### Previous release: 2.15.0
 
 Risk Solver's distribution surface, finished — 52 names landed, 5 excluded because they resolve
 stored data or declare a solver role rather than computing anything.

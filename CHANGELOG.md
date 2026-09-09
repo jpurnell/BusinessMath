@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
-## [Unreleased]
+### [2.16.0] - 2026-09-08
 
 The marketing leg of 3.0.0, shipped additively. Twenty-eight new source files across four new
 areas of `Statistics/`, a new top-level `Network/`, and a new top-level `Marketing/`. Nothing
