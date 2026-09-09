@@ -431,7 +431,36 @@ recorded, rather than deleted.
    the current version is tested and gate-clean, and this is a judgment call about surface, not a
    defect.
 
-5. **Do the Excel defaults in §5.1 match current Excel for Mac**, or the version the corpus
+5. **Should the constraint penalty weight be a parameter?** It is the literal `100`, hardcoded
+   in **five** places — every constrained heuristic in the package:
+
+   | File | Line |
+   |---|---|
+   | `Heuristic/NelderMead.swift` | 507 |
+   | `Heuristic/DifferentialEvolution.swift` | 739 |
+   | `Heuristic/IslandModel.swift` | 315 |
+   | `Heuristic/SimulatedAnnealing.swift` | 415 |
+   | `Heuristic/ParticleSwarmOptimization.swift` | 768 |
+
+   All five have the same shape — `let penaltyWeight = 100`, then
+   `baseValue + penaltyWeight * penalty` — and none exposes a way to change it. So a caller
+   passing `constraints:` to *any* heuristic in this package gets a penalty scaled by a constant
+   chosen for no stated problem, and whether an infeasible point is admitted depends on how 100
+   compares with that objective's curvature. It is not a NelderMead quirk; it is an
+   unparameterised package-wide convention, and it is invisible at every call site.
+
+   Surfaced by the ETS fitting proposal, which routes around it: §3.3 there optimises over an
+   unbounded reparameterisation precisely because the penalty route offers no weight to choose.
+   That is a sound local answer and a poor general one — every other constrained caller is still
+   using 100.
+
+   Recorded as a question rather than a defect because the fix is a design choice: parameterise
+   it, adapt it (increase the weight across restarts until feasible), or document 100 as the
+   contract. Note that a **search trap** hides the fifth site: `IslandModel` writes
+   `V.Scalar(100)` where the others write `: V.Scalar = 100`, so a grep for `= <digit>` finds
+   four and looks exhaustive.
+
+6. **Do the Excel defaults in §5.1 match current Excel for Mac**, or the version the corpus
    workbooks were saved from? Convergence 1e-4 and forward derivatives are Excel Solver's
    documented defaults; whether every corpus workbook used them is not knowable from the file, and
    §7's GRG gate has to tolerate that.

@@ -88,6 +88,15 @@ consumer of `HoltWintersModel`, which is most of the reason it is worth writing:
 caller must *supply* `alpha: 0.2` and has no way to know whether 0.2 is any good for their
 series.
 
+**And Excel's `FORECAST.ETS` is not the only caller, nor even the only Excel-side one.**
+`psi_functions.tsv` carries **eight** `PsiForecast*` entries — `PsiForecast`,
+`PsiForecastARIMA`, `PsiForecastDoubleExp`, `PsiForecastETS`, `PsiForecastExp`,
+**`PsiForecastHoltWinters`**, `PsiForecastLinear` and `PsiForecastMovingAvg` — of which
+`PsiForecastETS(target_date, values, timeline, seasonality, data_completion, aggregation,
+simulate)` is Excel's six arguments plus a simulation flag. `PsiForecastHoltWinters` names the
+model being fitted here outright. So the fitter already has callers in two function families
+on the binding side, which is the argument for it living in neither.
+
 The division is settled and is stated in §3.5: mathematics here, spreadsheet argument
 semantics in SwiftExcelFunctions.
 
@@ -194,7 +203,11 @@ coordinate through the logistic `1/(1 + e^{-x})`.
 The reason is not elegance, and it is stronger than "the weight has to be tuned". **The weight
 cannot be tuned: it is hardcoded.** `NelderMead.minimizeWithPenalty` sets
 `let penaltyWeight: V.Scalar = 100` (`Optimization/Heuristic/NelderMead.swift:507`) and
-exposes no way to change it. So the penalty route does not offer a weight to choose badly —
+exposes no way to change it. **The same literal is hardcoded in all five constrained
+heuristics** — NelderMead 507, DifferentialEvolution 739, IslandModel 315, SimulatedAnnealing
+415, ParticleSwarmOptimization 768 — so this is not a NelderMead quirk to route around but an
+unparameterised package-wide convention. That belongs to the optimizer tier rather than to
+this proposal, and is recorded as §10.5 of `proposals/PROPOSAL_advanced_optimization_gap.md`. So the penalty route does not offer a weight to choose badly —
 it offers a constant chosen for other problems, and `alpha = 1.4` is admitted or the boundary
 distorted according to how 100 happens to compare with this objective's curvature. Under the
 transform an infeasible point cannot be *proposed*, so there is no weight and no tuning, and
@@ -365,22 +378,33 @@ protocol without a new conformance.
 
 ## 8. Open Questions
 
-1. **Which SMAPE denominator.** The halved form ranges over `[0, 2]`, the unhalved over
+1. **Which SMAPE denominator — and there is a decisive test for it that does not need
+   Excel's fitted model.** The halved form is exactly twice the unhalved, so its maximum is 2
+   rather than 1. On an alternating `+1, −1` series with `seasonality` forced to `0`, the model
+   cannot track the alternation, the forecast sits near the level, and SMAPE approaches its
+   maximum: **any returned value above 1 settles it as halved.** That turns a circular
+   comparison — which needs Excel's parameters to check Excel's metric — into a range question
+   that does not.
+
+   The original statement of the question follows.
+
+   **Which SMAPE denominator.** The halved form ranges over `[0, 2]`, the unhalved over
    `[0, 1]`, both are in the literature, and Microsoft's page names the metric without
    defining it. §3.4 picks the halved form; the tests pass under either, since symmetry and
    the zero cases hold for both. **This is the one number that may not match Excel**, and it
    should be settled against a real workbook before the binding claims conformance — not from
    a remembered range.
-2. **How close to the boundary the search may go, and this case is common.** `[0.0001, 0.9999]`
+2. ~~**How close to the boundary the search may go**~~ — **settled: snap at saturation.** `[0.0001, 0.9999]`
    is a chosen pair of constants, and a series whose true optimum is `alpha = 1` reports
    `0.9999`. That is not a pathological case kept in for completeness: **`alpha = 1` is the
    optimum for a random walk**, where the best forecast of tomorrow is today's value and no
    smoothing helps. Any series close to a random walk — which is most financial series — lands
    there. So `STAT` 1 will report `0.9999` regularly rather than rarely, and a reader
    comparing it against Excel sees a number that looks like a rounding bug.
-   Snapping to the boundary when the transform saturates is therefore the better default
-   rather than the alternative, and the leaning here should be reversed unless a workbook
-   shows Excel doing otherwise.
+   Snapping to the boundary when the transform saturates is therefore the default, agreed by
+   both sides. A workbook check is still worth running alongside §8.1 — `STAT` type 1 on a
+   random walk with `seasonality` `0`, where exactly `1` means Excel snaps too and `0.99…` means
+   it does not — but the choice here no longer waits on it.
 3. **Should an out-of-sample objective be offered as config**, per §6? Leaning yes, after the
    in-sample path is proven, so the two can be compared on the same series.
 4. **Does `fitETS` belong on `TimeSeries` or on `HoltWintersModel`?** Proposed on `TimeSeries`
