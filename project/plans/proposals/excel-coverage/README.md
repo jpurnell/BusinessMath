@@ -61,9 +61,49 @@ a larger Psi sweep than the one that produced these files. And `STDEV.S` agreein
 exactly (86,410) while differing on books (42 here, 79 there) is a separate question about the
 Excel half's book denominator, not the same fault.
 
-**"The 41-workbook corpus" is wrong** and was repeated on both sides of the conversation all
-day. `SUM` alone appears in 338 workbooks here. Forty-one was only ever how many carried Psi
-under some sweep, and it is not the denominator of anything in the `EXCEL` half.
+### "41 workbooks" is a numerator, not a corpus size
 
-Unresolved: which Psi sweep is authoritative, and why the two Excel book counts differ. Both
-need the private workbook corpus (`RISK_SOLVER_WORKBOOKS`) to settle.
+Repeated on both sides of the conversation all day as though it were the population. It is
+**41 of 2,236** — the number of workbooks in the document tree that contain *any* Psi
+function, from the one sweep that records its own denominator: `PROPOSAL_psi_bindings.md` §2
+in SwiftExcelFunctions, *"Measured across 2,236 workbooks: 27 distinct functions, 1,950 calls,
+41 workbooks."* Correct number, wrong framing. Quote it as "41 of 2,236" and it stops
+misleading.
+
+That sweep is **authoritative for the Psi family**, because it is the only one of the three
+that states what it measured and when. Against it, this matrix's `PSI` half is not merely a
+different population but a **demonstrably partial** one — three to five times lower on every
+shared row:
+
+| Function | Authoritative (2,236 swept) | This matrix's `PSI` half |
+|---|---|---|
+| `PsiOutput` | 167 / 41 | 24 / 11 |
+| `PsiMean` | 108 / 23 | 31 / 13 |
+| `PsiPercentile` | 28 / 3 | 28 / 4 |
+| `PsiStdDev` | 21 / 4 | 4 / 3 |
+
+**So a `PSI` zero in these files is not weak evidence — it is evidence from a sweep known to
+undercount.** Do not sequence on it. Use the proposal's table for anything in the Psi family.
+
+### The `EXCEL` half has a third denominator, and it is probably not 2,236 either
+
+`SUM` tops out at 338 books here, with `IF` at 239 and a steep fall after — no plateau to read
+a sweep size off directly. But `SUM` appears in essentially every non-trivial workbook, so a
+sweep of 2,236 finding it in 338 (15%) is not credible. The `EXCEL` half's denominator is far
+more likely to sit close to its own ceiling, near 338, with `SUM` at or near 100% of it. Only
+**69 of 518** `EXCEL` rows carry any books at all, and 88–90 distinct functions observed in
+total is low for two thousand workbooks and reasonable for a few hundred.
+
+Stated as an inference rather than a fact, because nothing in these files records it. The
+practical consequence stands either way: **there are three populations here, not two**, and no
+count should be compared across them.
+
+An `EXCEL` zero remains the strong one — absent from at least 338 workbooks, and plausibly
+from all of that half's sweep.
+
+### Still unresolved
+
+Why the two `EXCEL` book counts differ — `STDEV.S` at 42 here against 79 in a source comment,
+with the call count agreeing exactly at 86,410. That one is inside the Excel half and is not
+explained by any of the above. It needs the private workbook corpus
+(`RISK_SOLVER_WORKBOOKS`) to settle.
