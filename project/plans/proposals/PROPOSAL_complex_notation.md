@@ -122,6 +122,28 @@ not `i` or `j`.
 suffix; it is a malformed string, and returning `Complex(7, 0)` from it would be the
 plausible-wrong-answer this package's tests exist to catch.
 
+### 3.4 The coordinate form is rejected, deliberately
+
+`"(3.0, 4.0)"` — the format `description` produces *today* — must **not** parse.
+
+Three reasons, and the first is the one that matters:
+
+- **It is not distinctive.** A pair in parentheses is a point, a tuple, a size, an interval,
+  a range. Accepting it means any `"(a, b)"` a caller happens to hold becomes a complex
+  number, and a type that will read anything shaped vaguely like it is a type that will
+  silently accept the wrong input. The whole reason `3+4i` is worth adding is that it says
+  what it is.
+- **Two accepted forms make "lossless" ambiguous.** The conformance promises that what the
+  writer emits, the reader reads back. If the reader also accepts a second form the writer
+  never produces, the round-trip property no longer describes the type — it describes one
+  path through it.
+- **It is the format being replaced.** Accepting it for compatibility would preserve exactly
+  the representation §2.1 identifies as the problem.
+
+The migration cost is real and is the honest counter-argument: a caller who stored
+`description` output before this change cannot read it back afterwards. That is §7's
+territory, and the answer there is a release note rather than a permissive parser.
+
 ---
 
 ## 4. Constraints & Compliance
@@ -142,7 +164,8 @@ catches a writer that omits something the reader needs and a reader that mis-par
 the writer emits — which no pair of one-directional tests does.
 
 **Rejection cases get named tests**, because a parser's failures matter more than its
-successes: `"3+4"`, `"3+4k"`, `"i3"`, `"3i+4i"`, `""`, `"+"`.
+successes: `"3+4"`, `"3+4k"`, `"i3"`, `"3i+4i"`, `""`, `"+"`, and `"(3.0, 4.0)"` — the last
+being the one a reviewer is most likely to think should work. §3.4 is why it must not.
 
 **Known-value tests** for the eight rows of §3.2's table, which are the conventions rather
 than arithmetic.
