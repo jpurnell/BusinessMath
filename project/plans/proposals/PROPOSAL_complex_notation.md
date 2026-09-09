@@ -220,9 +220,13 @@ Rejected for now, on the same fact that rejected the conformance. `ComplexNotati
 a `Real` either, so it cannot satisfy `Real & Sendable & LosslessStringConvertible` any more
 than `Complex` can, and all five constraint sites stay closed to it. **No type built around
 `Complex` can open them** — the benefit the wrapper appears to preserve does not exist for any
-shape of this idea. Against that, the only known consumer — the `IM*` bindings, 21 functions
-parsing and formatting on both sides, so 42 conversions — reads worse:
+shape of this idea. Against that, the only known consumer — the engineering family, **26 rows: `COMPLEX` plus
+25 `IM*` functions**, parsing and formatting on both sides — reads worse:
 `ComplexNotation(s)?.value` where `Complex(notation: s)` would do.
+
+*(An earlier revision of this paragraph said 21. Counted against the coverage matrix: a
+naive `^IM` match returns 26 rows, but one of them is `IMAGE`, a lookup function marked
+"not ours". The family is `COMPLEX` and 25 genuine `IM*`.)*
 
 If a genuine `LosslessStringConvertible`-generic context ever appears, the wrapper is the
 right shape for it, and at that point it is five lines delegating to the member rather than a
@@ -247,9 +251,16 @@ conformance removed the hazard rather than mitigating it, which is the better ki
 
 ## 8. Open Questions
 
-1. **Should the writer be configurable at all** — a suffix parameter, a precision parameter —
-   or stay a single canonical form with any variation done by the caller? Leaning canonical:
-   a configurable `description` is a `description` nobody can rely on.
+1. ~~**Should the writer be configurable at all**~~ — **settled: canonical, on evidence
+   rather than on leaning.** The coverage matrix gives `COMPLEX(real_num, i_num, [suffix])`,
+   and that is the *only* row of the 26 where a suffix is selected at all; every `IM*` row
+   takes `inumber` and nothing else. Suffix choice is therefore an Excel-layer concern by
+   construction, exactly as §2.2 already separates it, and a canonical `i`-only writer
+   upstream is sufficient — §3.2 guarantees the suffix is the final character whenever there
+   is one, so a binding that wants `j` swaps one character.
+
+   This also protects §5: a configurable writer is one nobody can round-trip against, and the
+   single round-trip property is the whole test strategy.
 2. **How should a very large or very small component print?** `1e-300+1i` is correct and
    unreadable. Deferring to `RealType`'s own `description` is consistent and gives that
    result; a formatted alternative would need a precision decision this proposal has no basis
@@ -257,6 +268,11 @@ conformance removed the hazard rather than mitigating it, which is the better ki
 3. **Does `ExpressibleByStringLiteral` belong too?** It would allow `let z: Complex = "3+4i"`,
    which reads well — but a literal that can fail at runtime is a trap, and the initialiser
    is failable for good reason. Leaning no.
+4. **What does Excel emit for `COMPLEX(5, 0, "j")`** — does a zero imaginary part still carry
+   the suffix? §3.2 writes `5`, so the binding's trailing-character swap is a no-op there,
+   which is correct only if Excel agrees. **Not answerable from this side and deliberately not
+   guessed at**: it is a spec question for whoever writes the binding, and it belongs in the
+   Excel layer's own tests rather than in this codec's.
 
 ---
 
@@ -273,3 +289,10 @@ conformance removed the hazard rather than mitigating it, which is the better ki
 
 **Next action:** step 1. The reader is where the ambiguity lives, and writing it first means
 the writer is designed against a parser that already refuses what it should.
+
+**On urgency, recorded because it cuts against the obvious reading.** The 26 rows that consume
+this are every one of them **0 calls / 0 books** — absent from the usage corpus, not merely
+rare in it. `corpus_usage.tsv` lists only functions actually observed and contains none of
+them. So this is specification coverage with no measured demand behind it, and nothing
+downstream is blocked in any sense that should reorder a release. It is a good piece of work
+that can be done whenever it fits; it is not a dependency anyone is waiting on.
