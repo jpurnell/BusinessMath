@@ -736,7 +736,9 @@ public struct DifferentialEvolution<V: VectorSpace>: MultivariateOptimizer where
     ) throws -> MultivariateOptimizationResult<V> {
 
         // Penalty weight (adaptive)
-        let penaltyWeight: V.Scalar = 100
+        // The weight the caller chose, or the historical 100 by default. The
+        // config guarantees it is positive and finite, so no guard is needed here.
+        let penaltyWeight = V.Scalar(config.constraintPenaltyWeight)
 
         // Create penalized objective
         let penalizedObjective: (V) -> V.Scalar = { solution in

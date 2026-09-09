@@ -100,7 +100,7 @@ public enum MigrationTopology: Sendable, Equatable {
 /// ## Topics
 ///
 /// ### Creating Configurations
-/// - ``init(numberOfIslands:migrationInterval:migrationSize:topology:)``
+/// - ``init(numberOfIslands:migrationInterval:migrationSize:topology:constraintPenaltyWeight:)``
 /// - ``default``
 /// - ``highPerformance``
 ///
@@ -151,6 +151,24 @@ public struct IslandModelConfig: Sendable {
 
     // MARK: - Initialization
 
+    /// Weight on the constraint-violation penalty, when `constraints:` are supplied.
+    ///
+    /// Constrained solves here are handled by penalty: the optimizer minimises
+    /// `objective(x) + weight · Σ violation(x)²`, so this number decides how far outside the
+    /// feasible region an answer is allowed to settle. Raising it tightens feasibility and
+    /// steepens the surface near the boundary; lowering it does the reverse.
+    ///
+    /// **It has to be commensurate with the objective's scale, which is why it is a
+    /// parameter.** A penalty of 100 against an objective measured in millions is
+    /// negligible, and the solve returns an infeasible point without saying so. Until
+    /// 2.17.0 this was the literal `100` in all five constrained heuristics with no way to
+    /// change it anywhere in the optimizer tier.
+    ///
+    /// Defaults to `100`, unchanged, so no existing caller moves. A non-positive or
+    /// non-finite value falls back to that default rather than being honoured: a weight of
+    /// zero deletes the constraint silently, which is worse than any badly chosen weight.
+    public let constraintPenaltyWeight: Double
+
     /// Create an island model configuration.
     ///
     /// - Parameters:
@@ -158,12 +176,17 @@ public struct IslandModelConfig: Sendable {
     ///   - migrationInterval: Generations between migrations (default: 10)
     ///   - migrationSize: Number of elite migrants (default: 2)
     ///   - topology: Migration connectivity pattern (default: .ring)
-    public init(
+        ///   - constraintPenaltyWeight: Penalty weight for constrained solves (default: 100)
+        public init(
         numberOfIslands: Int = 4,
         migrationInterval: Int = 10,
         migrationSize: Int = 2,
-        topology: MigrationTopology = .ring
+        topology: MigrationTopology = .ring,
+    	constraintPenaltyWeight: Double = 100
     ) {
+        let penaltyFallback: Double = 100
+        let penaltyIsUsable = constraintPenaltyWeight > 0 && constraintPenaltyWeight.isFinite
+        self.constraintPenaltyWeight = penaltyIsUsable ? constraintPenaltyWeight : penaltyFallback
         self.numberOfIslands = numberOfIslands
         self.migrationInterval = migrationInterval
         self.migrationSize = migrationSize

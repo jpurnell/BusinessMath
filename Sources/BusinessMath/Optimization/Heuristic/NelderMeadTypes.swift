@@ -64,6 +64,24 @@ public struct NelderMeadConfig: Sendable {
     /// Maximum number of iterations
     public let maxIterations: Int
 
+    /// Weight on the constraint-violation penalty, when `constraints:` are supplied.
+    ///
+    /// Constrained solves here are handled by penalty: the optimizer minimises
+    /// `objective(x) + weight · Σ violation(x)²`, so this number decides how far outside the
+    /// feasible region an answer is allowed to settle. Raising it tightens feasibility and
+    /// steepens the surface near the boundary; lowering it does the reverse.
+    ///
+    /// **It has to be commensurate with the objective's scale, which is why it is a
+    /// parameter.** A penalty of 100 against an objective measured in millions is
+    /// negligible, and the solve returns an infeasible point without saying so. Until
+    /// 2.17.0 this was the literal `100` in all five constrained heuristics with no way to
+    /// change it anywhere in the optimizer tier.
+    ///
+    /// Defaults to `100`, unchanged, so no existing caller moves. A non-positive or
+    /// non-finite value falls back to that default rather than being honoured: a weight of
+    /// zero deletes the constraint silently, which is worse than any badly chosen weight.
+    public let constraintPenaltyWeight: Double
+
     /// Create a Nelder-Mead configuration.
     ///
     /// - Parameters:
@@ -74,15 +92,20 @@ public struct NelderMeadConfig: Sendable {
     ///   - initialSimplexSize: Initial simplex size (default: 1.0)
     ///   - tolerance: Convergence tolerance (default: 1e-6)
     ///   - maxIterations: Maximum iterations (default: 500)
-    public init(
+        ///   - constraintPenaltyWeight: Penalty weight for constrained solves (default: 100)
+        public init(
         reflectionCoefficient: Double = 1.0,
         expansionCoefficient: Double = 2.0,
         contractionCoefficient: Double = 0.5,
         shrinkCoefficient: Double = 0.5,
         initialSimplexSize: Double = 1.0,
         tolerance: Double = 1e-6,
-        maxIterations: Int = 500
+        maxIterations: Int = 500,
+    	constraintPenaltyWeight: Double = 100
     ) {
+        let penaltyFallback: Double = 100
+        let penaltyIsUsable = constraintPenaltyWeight > 0 && constraintPenaltyWeight.isFinite
+        self.constraintPenaltyWeight = penaltyIsUsable ? constraintPenaltyWeight : penaltyFallback
         self.reflectionCoefficient = reflectionCoefficient
         self.expansionCoefficient = expansionCoefficient
         self.contractionCoefficient = contractionCoefficient

@@ -92,7 +92,7 @@ public enum DifferentialEvolutionStrategy: Sendable {
 /// ## Topics
 ///
 /// ### Creating Configurations
-/// - ``init(populationSize:generations:mutationFactor:crossoverRate:strategy:seed:)``
+/// - ``init(populationSize:generations:mutationFactor:crossoverRate:strategy:seed:constraintPenaltyWeight:)``
 /// - ``default``
 /// - ``highPerformance``
 ///
@@ -153,6 +153,24 @@ public struct DifferentialEvolutionConfig: Sendable {
 
     // MARK: - Initialization
 
+    /// Weight on the constraint-violation penalty, when `constraints:` are supplied.
+    ///
+    /// Constrained solves here are handled by penalty: the optimizer minimises
+    /// `objective(x) + weight · Σ violation(x)²`, so this number decides how far outside the
+    /// feasible region an answer is allowed to settle. Raising it tightens feasibility and
+    /// steepens the surface near the boundary; lowering it does the reverse.
+    ///
+    /// **It has to be commensurate with the objective's scale, which is why it is a
+    /// parameter.** A penalty of 100 against an objective measured in millions is
+    /// negligible, and the solve returns an infeasible point without saying so. Until
+    /// 2.17.0 this was the literal `100` in all five constrained heuristics with no way to
+    /// change it anywhere in the optimizer tier.
+    ///
+    /// Defaults to `100`, unchanged, so no existing caller moves. A non-positive or
+    /// non-finite value falls back to that default rather than being honoured: a weight of
+    /// zero deletes the constraint silently, which is worse than any badly chosen weight.
+    public let constraintPenaltyWeight: Double
+
     /// Create a differential evolution configuration.
     ///
     /// - Parameters:
@@ -162,14 +180,19 @@ public struct DifferentialEvolutionConfig: Sendable {
     ///   - crossoverRate: CR parameter for recombination (default: 0.9)
     ///   - strategy: Mutation strategy (default: .rand1)
     ///   - seed: Random seed for reproducibility (default: nil)
-    public init(
+        ///   - constraintPenaltyWeight: Penalty weight for constrained solves (default: 100)
+        public init(
         populationSize: Int = 100,
         generations: Int = 200,
         mutationFactor: Double = 0.8,
         crossoverRate: Double = 0.9,
         strategy: DifferentialEvolutionStrategy = .rand1,
-        seed: UInt64? = nil
+        seed: UInt64? = nil,
+    	constraintPenaltyWeight: Double = 100
     ) {
+        let penaltyFallback: Double = 100
+        let penaltyIsUsable = constraintPenaltyWeight > 0 && constraintPenaltyWeight.isFinite
+        self.constraintPenaltyWeight = penaltyIsUsable ? constraintPenaltyWeight : penaltyFallback
         self.populationSize = populationSize
         self.generations = generations
         self.mutationFactor = mutationFactor
