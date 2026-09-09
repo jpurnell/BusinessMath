@@ -38,6 +38,32 @@ suite depends on it.
 
 ## Current Status
 
+**The marketing leg, unreleased and additive.** Twenty commits since 2.15.0 have added
+twenty-eight source files across four new areas of `Statistics/` — Regression's
+`LogisticRegression`, Classification, Survival, Concentration — a new top-level `Network/`
+(graph, traversal, centrality, community, Markov, projection) and a new top-level
+`Marketing/` (value, pricing, response, segmentation). Nothing was removed and no existing
+signature changed, so the largest additive surface in the project's history is a *minor*
+release. Stages 0 through 4 of `project/plans/upcoming/MarketingLeg.md` §3.5 are complete;
+stages 5 (attribution, basket, behavioural segmentation) and 6 (template LTV delegation)
+are open and mutually independent.
+
+The theme carries over from 2.14.0 and 2.15.0 unchanged: **refusal where the wrong answer is
+a well-formed number.** Separated logistic data has no MLE and the enormous coefficients an
+unguarded optimizer stops at come with a perfect in-sample AUC. A survival sample with no
+observed failures has short follow-up, not immortality. Inelastic demand has no
+profit-maximising price and the closed form returns a negative one. A cohort that has not
+reached offset three has no retention there, and scoring it as zero drags the pooled curve
+down threefold while leaving it monotone and smooth.
+
+And the verification discipline is the one the oracle audit taught: **an identity beats a
+fixture.** AUC is checked against the Mann–Whitney statistic exactly, ties included;
+Kaplan–Meier against the empirical survival function it must reduce to; Gini against its own
+second formula; the two uplift estimators against each other, algebraically equal on a
+balanced saturated design and computed by separate code paths; three demand-curve optima
+against the Lerner condition, which checks three closed forms against three elasticity
+functions at once. Several of those needed no reference implementation at all.
+
 **2.15.0 shipped 2026-09-08** — Risk Solver's distribution surface, finished. 52 names
 landed and 5 excluded, and the five are excluded because they are not mathematics: they
 resolve stored data or declare a solver role, which is a spreadsheet host's job.
@@ -414,6 +440,29 @@ not currently firing.
 
 ## Current Priorities
 
+1. **Finish the marketing leg — stages 5 and 6.** Stage 3 closed 2026-09-08, which was the
+   last thing gating both. Stage 5 is attribution, basket analysis and behavioural
+   segmentation, and §3.5 flags it as the schedule risk: the largest single piece with the
+   least slack. Every dependency it has now exists — `removalEffect` uses matrix surgery
+   rather than path truncation, `BipartiteProjection` and Louvain are done. Stage 6 is the
+   `SaaSModel`/`SubscriptionBoxModel` LTV delegation, which is source-breaking and therefore
+   belongs to 3.0.0 rather than to a point release.
+
+2. **The three items that actually force 3.0.0**, none of them started: `optimizeDetailed`
+   gaining `throws` so DE and PSO can refuse a seeded CPU fallback; deleting `sampleSize`,
+   deprecated since 2.7.0; and the stage 6 delegation. Everything else in the shadow-3.0.0
+   programme ships additively, which is the point of shipping it that way.
+
+3. **The six absent optimization algorithms** in
+   `project/plans/proposals/PROPOSAL_advanced_optimization_gap.md` — SQP, Interior Point,
+   GRG, Network Flow, Convexity and ADMM. Verified as real gaps 2026-09-08, with one
+   correction: Interior Point was written and removed, not never written. Network Flow can
+   now sit on the graph engine, which did not exist when the proposal was filed.
+
+---
+
+### Historical: the 2.6.0 hold, kept because the reasoning still applies
+
 **2.6.0 shipped 2026-08-15**, after being written and deliberately held. The hold was never about
 the code: the work that produced this release found defects in documentation nothing was checking —
 a runtime trap in `4.2` inherited from `ScenarioRunner`'s own `///` comments, two published figures
@@ -438,8 +487,10 @@ The CHANGELOG heading and the README's `from:` pin both moved to `2.6.0` in the 
    - 51 further `doc-comment-code` errors are in `Sources/BusinessMathMacros/` and are not
      author-fixable: the checker compiles those fences without the macro plugin. Proposal
      filed in the quality-gate repo; being handled separately.
-3. **Cut 2.6.0** — tag, revert the two version strings. Nothing is unpushed; `main` and
-   `origin/main` agree at 96 commits past `v2.5.2`.
+3. ~~**Cut 2.6.0** — tag, revert the two version strings.~~ Done, and nine minor releases
+   ago; the tree is now at 2.15.0 with `doc-comment-code` at zero and `--check all` passing
+   45 of 45. The two items above it are recorded as they stood at the time — item 2's "420
+   non-macro" was the live figure that week, not the current one.
 4. **Differential testing against published references** (TrustPlan §2.2) — still the highest
    ratio of defects-found to effort in the plan. It is how the discontinuous `inverseNormalCDF`,
    the `normalCDF` lower tail and the Black-Scholes negative prices were all found. Remaining
@@ -561,7 +612,20 @@ The earlier table was about *scope*; this one is about *what is being measured*.
 
 ---
 
-**Last Updated:** 2026-09-08 — reconciled for 2.15.0: Current Status leads with the Risk
+**Last Updated:** 2026-09-08 (late) — reconciled for the unreleased marketing leg. Current
+Status now leads with it: twenty-eight additive files across four new `Statistics/` areas, a
+new `Network/` and a new `Marketing/`, with nothing removed and no signature changed, which
+is what makes the largest additive surface in the project's history a minor release. Current
+Priorities was nine minor releases stale — it still opened on cutting 2.6.0 and quoted
+`doc-comment-code` at 420 — so the live work now leads and the 2.6.0 material is kept below
+it as history rather than deleted, because the argument for holding a release until the
+codebase is clean under its own new checkers is the same argument that applies next time.
+One fact worth carrying forward: the pre-commit hook runs a forty-checker gate and takes
+three to five minutes, so a commit needs a long command budget — and must still not be
+backgrounded, because backgrounding is what lets another session's staged work into the
+index.
+
+**Previously:** 2026-09-08 — reconciled for 2.15.0: Current Status leads with the Risk
 Solver surface finished at 52 landed and 5 excluded, the three rows that were blocked on a
 narrow wrapper rather than on missing mathematics, the two closed forms that replaced
 quadrature exact only at its test point, and the `PsiNormalSkew` map settled by measuring

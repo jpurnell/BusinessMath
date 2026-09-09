@@ -9,6 +9,185 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+## [Unreleased]
+
+The marketing leg of 3.0.0, shipped additively. Twenty-eight new source files across four new
+areas of `Statistics/`, a new top-level `Network/`, and a new top-level `Marketing/`. Nothing
+was removed and no existing signature changed, which is why the largest additive surface in
+the project's history is a **minor** release: the three items that genuinely force a major
+version — `optimizeDetailed` gaining `throws`, deleting the deprecated `sampleSize`, and the
+`SaaSModel`/`SubscriptionBoxModel` LTV delegation — are deliberately still waiting.
+
+**The theme is refusal.** Every area here has at least one case where the wrong answer is a
+well-formed number that nothing about its shape gives away, and in each the library returns
+`nil` or throws rather than produce it. Separated logistic data has no maximum-likelihood
+estimate, and the enormous coefficients an unguarded optimizer stops at come with a perfect
+in-sample AUC. A sample with one outcome class has zero AUC pairs, not an AUC of 0.5. A
+survival sample with no observed failures has follow-up too short to estimate anything, not
+immortality. Inelastic demand has no profit-maximising price, and the closed form returns a
+negative one. A cohort that has not yet reached offset three has no retention there, and
+scoring it as zero drags the pooled curve down by a factor of three while leaving it monotone
+and smooth.
+
+**Verification is by identity wherever an identity exists.** Reference values check one input;
+an identity checks all of them, and several of these need no reference implementation at all.
+AUC is computed independently as the Mann–Whitney statistic and must agree exactly, ties
+included. Kaplan–Meier is checked against the empirical survival function it must reduce to
+without censoring. Gini is computed twice from unrelated formulas. Modularity's
+all-one-community partition must score exactly zero. The two uplift estimators are
+algebraically the same number on a balanced saturated design and are computed by entirely
+separate code paths. The Lerner condition must hold at the profit optimum of all three demand
+forms, which checks three closed-form optima against three different elasticity functions at
+once. The binomial score equation forces fitted propensities to average to the observed
+response rate whenever an intercept is fitted.
+
+### Added
+
+- **`LogisticRegression`, and the fits it refuses.** A binomial GLM by iteratively reweighted
+  least squares, which for a canonical link is exact Newton rather than an approximation to
+  it. `LogisticFit` carries coefficients, standard errors, log-likelihood and iteration count.
+
+  It refuses under separation — `LogisticRegressionError.separation(variables:)`, naming the
+  offending predictors — with three detectors: a constant outcome, complete separation by a
+  threshold on one column, and quasi-complete separation on a level of a categorical one. What
+  it cannot detect exactly is separation by a linear combination no single column exhibits;
+  that one is caught downstream by the coefficients going non-finite and reported as separation
+  rather than as a convergence failure. The documented remedy is Firth's penalised likelihood,
+  which is not implemented, and saying so is better than returning the artifact.
+
+- **`Statistics/Classification/` — domain-neutral model evaluation.** `ClassifierEvaluation`
+  over scores and outcomes, exposing `auc`, `ks`, `confusionMatrix(threshold:)`,
+  `calibration(buckets:)` and `gains(buckets:)`, with `ROCCurve`, `ConfusionMatrix`,
+  `CalibrationCurve` and `GainsTable` as the result types.
+
+  Ties are consumed in one step so the trapezoid area is exactly the Mann–Whitney statistic
+  with half credit — the tie handling is the whole difficulty in AUC, and getting it wrong
+  produces a number that is right on data with no ties and quietly wrong on data with them.
+
+- **`Statistics/Survival/` — right-censored duration analysis.** `KaplanMeier` with Greenwood
+  standard errors, `LogRankTest` for a two-group comparison, and a shared `SurvivalCurve`
+  carrying `medianSurvival` and `restrictedMean(horizon:)`.
+
+  `medianSurvival` returns `nil` rather than the last observed time when the curve never
+  reaches one half. Under heavy censoring a curve can end at 0.75, and reporting its final
+  time as the median states something the data cannot support.
+
+- **`Statistics/Concentration/` — `Concentration`, with `gini`, `lorenzCurve`, `topShare(_:)`
+  and `paretoShare`.** Gini is computed in one pass over sorted values and cross-checked
+  against its Lorenz-area definition; the two formulas share no code.
+
+- **`Statistics/Experiment/SequentialTesting`.** `AlphaSpendingFunction` (O'Brien–Fleming,
+  Pocock and power families), `GroupSequentialDesign`, and `sequentialTypeOneError(boundaries:informationTimes:resolution:)`
+  — a numerical integration over the continuation region that reports what a set of boundaries
+  actually spends, rather than what they were designed to spend.
+
+- **`Network/` — a domain-neutral graph engine.** `Graph` with deterministic sorted adjacency
+  established at construction, `WeightedGraph` edges, `reversed`, `inDegrees`,
+  `stronglyConnectedComponents` (iterative Tarjan), `isCyclic` and `topologicalSort()`.
+
+  Centrality: `degreeCentrality`, `betweennessCentrality` (Brandes), `harmonicCloseness` —
+  the harmonic variant specifically so disconnection is defined rather than infinite —
+  `pageRank(...)` which returns `nil` on non-convergence, and `eigenvectorCentrality(...)`
+  which returns `nil` on a disconnected graph, where the power iteration localises onto one
+  component and reports the rest as zero.
+
+  Community: `modularity(of:)` and `louvainCommunities(...)`.
+
+  Markov: `TransitionMatrix` built from observed paths with row-stochastic validation,
+  `steadyState`, `absorptionProbability`, `expectedStepsToAbsorption(from:)`, and
+  `removalEffect(of:)` with `attributionShares` — the removal effect uses matrix surgery
+  (Anderl et al.) rather than rebuilding the chain from truncated paths, which is a different
+  estimator that happens to agree on simple examples.
+
+  Projection: `BipartiteProjection` from memberships to an affinity graph, with weighting
+  schemes.
+
+- **`Marketing/` — the marketing-shaped surfaces over all of the above.**
+
+  *Value.* `customerLifetimeValue(cohort:definition:discountRate:horizon:retention:marginPerPeriod:)`
+  takes the variant as a parameter — `CLVDefinition` is `.historic`, `.discountedHistoric`,
+  `.finiteHorizon` or `.perpetuity` — because "CLV" names at least four different quantities
+  and quoting one without saying which is how two teams compare numbers that were never the
+  same measurement. The perpetuity throws `CLVError.divergentPerpetuity` rather than return a
+  negative value when retention exceeds the discount factor. `AcquisitionMetrics` adds CAC,
+  the LTV:CAC ratio and payback periods. `CohortRetention` builds the retention triangle and
+  is described below.
+
+  *Pricing.* `PriceElasticity` fits the log-log form, where the slope *is* the elasticity.
+  `PriceResponseCurve` adds linear and semi-log alongside it with a common surface —
+  `quantity(at:)`, `elasticity(at:)`, `revenue(at:)`, `profit(at:marginalCost:)`,
+  `optimalPrice(marginalCost:)` — and `best(prices:quantities:among:)` to choose between them.
+
+  *Response.* `ResponseModel` over `LogisticRegression`, adding the baseline that makes a
+  propensity readable, `breakEvenPropensity(contactCost:marginPerResponse:)`, and a `score(_:)`
+  that refuses a mis-shaped population. `UpliftModel` in both standard estimators.
+  `optimalCampaignDepth(...)` for the profit-maximising contact depth over a gains table.
+
+  *Segmentation.* `RFMSegmentation` with recency, frequency and monetary tiers.
+
+- **`AsymmetricGarch.init?(name:unconditionalVolatility:shockWeight:persistenceWeight:asymmetry:power:)`**,
+  which builds a model from the volatility it settles at rather than from a constant term
+  nobody has an intuition for, plus `expectedTiltedPower(asymmetry:power:)` exposed as a static.
+
+### Changed
+
+- **`DependencyGraph.components(of:)` now delegates to `Graph.stronglyConnectedComponents`.**
+  Same Tarjan traversal, lifted out of `Model Definition/` and made generic. Ninety lines of
+  algorithm became three of delegation, and the old implementation was deleted in the same
+  commit that proved parity — `GraphTests.parityWithDependencyGraph` runs both over the same
+  inputs and compares exactly, including the order components come back in.
+
+  The lift fixed something the original documented rather than enforced. Its determinism
+  depended on every adjacency list arriving pre-sorted, which was true because there was
+  exactly one caller and a silent hazard for any second one. `Graph` sorts at construction, so
+  the guarantee is now a property of the value rather than a request in prose.
+
+### Notes
+
+- **Uplift is not response, and the distinction is load-bearing.** A response model ranks who
+  responds under treatment; an uplift model ranks who responds *because of* it, and the two
+  rankings can be nearly opposite. Customers who would have bought anyway score highest on
+  response and zero on uplift. Uplift can also be negative — a contact that talks someone out
+  of a purchase — which a response model cannot represent at all, having only ever seen one arm.
+
+- **Class-transformation uplift refuses an unbalanced design.** The `2p − 1` identity holds
+  only where treatment is allocated at one half. Away from it the transform still returns
+  numbers in [−1, 1] that read as uplifts, biased toward the treated arm's response rate, with
+  nothing in the output recording the design. The remedy is inverse-propensity reweighting,
+  which is not implemented.
+
+- **R² does not choose a demand form.** Each form is fitted in the space it is linear in, so a
+  log-log R² and a linear R² score different dependent variables. Data generated by an exact
+  straight line gives the log-log fit an R² of 0.975 while it misses by 2.75 units of quantity
+  at every point. `best(prices:quantities:among:)` selects on residual sum of squares measured
+  in units of quantity, which says the same thing about every form.
+
+- **Elasticity is a property of a point, not of a curve.** Only the log-log form has a single
+  elasticity. On a linear curve it is `bP/Q`, running from near zero at the quantity axis to
+  unbounded at the choke price, so `elasticity(at:)` takes the price.
+
+- **A retention triangle is not a rectangle.** `pooledRetention(offset:)` counts a cohort at an
+  offset only if that cohort was observed that long, and returns `nil` past the point where
+  none was. `periodRetention(offset:)` exists separately because dividing one pooled value by
+  the one before it compares two different sets of cohorts against each other; it restricts to
+  the cohorts observed at both offsets first.
+
+- **The cohort table and the Kaplan–Meier estimate deliberately disagree** once the triangle is
+  ragged, and a test pins that rather than papering over it. The table drops a cohort from a
+  column all at once; the estimator keeps it in the risk set for as long as it was observed.
+  The table describes what was seen, the estimator infers what would have been. Where every
+  cohort has the same window and nobody is censored the two coincide exactly.
+
+### Breaking Changes
+
+None. Every item above is additive.
+
+### Deprecations
+
+None new. `sampleSize`, deprecated in 2.7.0, is still present; its deletion waits for 3.0.0.
+
+---
+
 ### [2.15.0] - 2026-09-08
 
 Risk Solver's distribution surface, finished. 2.14.0 closed the 49-row work list; this closes
