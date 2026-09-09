@@ -9,6 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [Unreleased]
+
+### Added
+
+- **A `Complex` ↔ `String` codec, in the notation people actually write.**
+  `Complex<Double>(notation: "3+4i")` parses and `z.notation` writes, as two members on an
+  extension constrained to `RealType: LosslessStringConvertible`. Purely additive: nothing
+  existing changes behaviour, and `description` keeps returning the coordinate pair
+  `"(3.0, 4.0)"`.
+
+  That last point is the design decision worth recording. This is a **member, not a
+  `LosslessStringConvertible` conformance**. A conformance is global and unscoped — every
+  downstream caller's `"\(z)"` would change, with no import to drop and no way to opt out —
+  and it would buy nothing here, because `Complex` is not a `Real` and so cannot satisfy the
+  `Real & Sendable & LosslessStringConvertible` constraint that this package's generic sites
+  actually write.
+
+  The reader takes the variations a person types — a leading `+`, spaces around the operator,
+  `j` or `J` alongside `i` — and refuses everything else as `nil` rather than guessing.
+  `"3+4"` is not `Complex(7, 0)`; it is a malformed string. The coordinate form
+  `"(3.0, 4.0)"` is refused as well, deliberately: a pair in parentheses is equally a point,
+  a tuple, a size or a range, so accepting it would turn any of them into a complex number.
+
+  The writer is canonical rather than configurable, emitting only `i`, with the suffix always
+  the final character — a caller needing `j` swaps one character. A configurable writer would
+  also be one nothing could round-trip against, and round-trip is the whole test:
+  `Complex(notation: z.notation) == z` over a spread that includes both unit coefficients,
+  both zero parts, zero itself, `1e-300`, the extremes of `Double`, and the non-finite values.
+
 ### [2.17.0] - 2026-09-09
 
 Stage 5 of the marketing leg — attribution, market baskets and behavioural segmentation —
