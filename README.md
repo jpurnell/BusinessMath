@@ -10,7 +10,32 @@ Build DCF models, optimize portfolios, run Monte Carlo simulations, and value se
 
 ---
 
-## Latest release: 2.16.0
+## Latest release: 2.17.0
+
+Stage 5 of the marketing leg — **attribution**, **market baskets** and **behavioural
+segmentation** — and one shipped constant turned into a parameter.
+
+`Marketing/Attribution/` puts three models behind one protocol, sharing one contract:
+attributed credit sums to the total converted value. The heuristics — first touch, last touch,
+linear, position-based, time decay — never look at a journey that failed, which is why last
+touch scores an upper-funnel channel at exactly zero. `MarkovAttribution` reads the failures
+and values that same channel at a third of the budget, from the same ten journeys.
+`ShapleyAttribution` enumerates every coalition exactly and pays a null player precisely zero.
+
+`AssociationRules` reports lift and leverage beside confidence, because confidence is the
+number that misleads: a rule at 80% confidence whose consequent is in 80% of all baskets has a
+lift of exactly 1 and a leverage of exactly 0. `BehaviouralSegmentation` groups by feature
+similarity or by shared behaviour, and publishes the row order it used so a segmentation can be
+compared across runs.
+
+**One shipped constant is now a parameter.** The constraint penalty weight was the literal
+`100` in all five constrained heuristics with no way to change it. A penalty of 100 against an
+objective measured in millions is negligible, and the solve returns an infeasible point without
+saying so. `constraintPenaltyWeight` defaults to `100`, so nothing existing moves.
+
+Additive. No signature changes, no deletions, no behaviour changes to existing calls.
+
+### Previous release: 2.16.0
 
 The marketing leg, shipped additively. Twenty-eight new source files across four new areas of
 `Statistics/` — `LogisticRegression`, **Classification** (ROC/AUC, confusion matrix, calibration,

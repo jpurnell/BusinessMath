@@ -38,7 +38,24 @@ suite depends on it.
 
 ## Current Status
 
-**The marketing leg, unreleased and additive.** Twenty commits since 2.15.0 have added
+**2.17.0 shipped 2026-09-09** — stage 5 of the marketing leg, and one shipped constant turned
+into a parameter. `Marketing/Attribution/` puts heuristics, Markov removal effect and exact
+Shapley behind one protocol whose shared contract is efficiency; `Basket/AssociationRules`
+reports lift and leverage beside the confidence that misleads; `Segmentation/Behavioural`
+groups by feature similarity or shared behaviour and publishes the row order it used.
+
+**The constraint penalty weight is no longer hardcoded.** It was the literal `100` in all five
+constrained heuristics with no way in, which is a defect rather than a preference: the weight
+has to match the objective's scale, and 100 against an objective measured in millions returns
+an infeasible point while saying nothing. Found while reviewing an unrelated proposal, filed as
+§10.5 of the optimization gap proposal, fixed additively with the default unchanged.
+
+**Stage 6 is written and parked.** `feature/stage-6-template-delegation` carries the
+`SaaSModel`/`SubscriptionBoxModel` LTV delegation, which is source-breaking and therefore waits
+for 3.0.0 with the other two breaking items. 3.0.0 itself is deliberately not close — the
+scope wants more than one sweep before it is cut.
+
+**The marketing leg, now released through stage 5.** Twenty commits since 2.15.0 have added
 twenty-eight source files across four new areas of `Statistics/` — Regression's
 `LogisticRegression`, Classification, Survival, Concentration — a new top-level `Network/`
 (graph, traversal, centrality, community, Markov, projection) and a new top-level
@@ -440,13 +457,9 @@ not currently firing.
 
 ## Current Priorities
 
-1. **Finish the marketing leg — stages 5 and 6.** Stage 3 closed 2026-09-08, which was the
-   last thing gating both. Stage 5 is attribution, basket analysis and behavioural
-   segmentation, and §3.5 flags it as the schedule risk: the largest single piece with the
-   least slack. Every dependency it has now exists — `removalEffect` uses matrix surgery
-   rather than path truncation, `BipartiteProjection` and Louvain are done. Stage 6 is the
-   `SaaSModel`/`SubscriptionBoxModel` LTV delegation, which is source-breaking and therefore
-   belongs to 3.0.0 rather than to a point release.
+1. ~~**Finish the marketing leg — stages 5 and 6.**~~ Both done. Stage 5 shipped in 2.17.0;
+   stage 6 is written and parked on `feature/stage-6-template-delegation`, breaking by design.
+   **The marketing leg is complete.** What is left of it is a merge, not development.
 
 2. **The three items that actually force 3.0.0**, none of them started: `optimizeDetailed`
    gaining `throws` so DE and PSO can refuse a seeded CPU fallback; deleting `sampleSize`,
@@ -612,7 +625,23 @@ The earlier table was about *scope*; this one is about *what is being measured*.
 
 ---
 
-**Last Updated:** 2026-09-08 (late) — reconciled for the unreleased marketing leg. Current
+**Last Updated:** 2026-09-09 — reconciled for 2.17.0. Current Status leads with stage 5
+shipped and stage 6 written-and-parked, which completes the marketing leg as development;
+what remains of it is a merge. Priorities item 1 struck through accordingly. Records the
+constraint penalty weight as a shipped defect found and fixed — the literal `100` in five
+heuristics, unreachable by any caller — and notes that 3.0.0 is deliberately not close,
+wanting more than one sweep of its scope.
+
+Two facts worth carrying forward from the day this covers, both about evidence rather than
+code. A coverage matrix column labelled `books` counts **sheets**, and two sessions produced
+four wrong explanations for the resulting discrepancies before either read the generator that
+writes it — which lives in a *sibling repository* named in this project's own README. The
+rule that would have replaced all four: **read the generator before reasoning about the
+data**. And a `doc-run` article timeout appeared at machine load 41 and vanished at 10.8 on an
+untouched tree; under a zero-warnings policy a load artefact invites a permanent wrong edit,
+so establish that a finding is real before fixing it.
+
+**Previously:** 2026-09-08 (late) — reconciled for the unreleased marketing leg. Current
 Status now leads with it: twenty-eight additive files across four new `Statistics/` areas, a
 new `Network/` and a new `Marketing/`, with nothing removed and no signature changed, which
 is what makes the largest additive surface in the project's history a minor release. Current

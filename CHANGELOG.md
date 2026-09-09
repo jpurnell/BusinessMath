@@ -9,6 +9,113 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [2.17.0] - 2026-09-09
+
+Stage 5 of the marketing leg — attribution, market baskets and behavioural segmentation —
+and one shipped constant turned into a parameter. Additive throughout: no signature changed,
+nothing was removed, and the three items still waiting for 3.0.0 are still waiting.
+
+### Added
+
+- **`Marketing/Attribution/` — three models behind one protocol.** The contract they share is
+  **efficiency**: credit sums to the total value of the converting journeys, no more and no
+  less. It holds for heuristics, removal effect and Shapley alike, so it is tested once
+  against `AttributionModel` rather than three times against implementations.
+
+  `HeuristicAttribution` is first touch, last touch, linear, position-based and time decay.
+  None of them looks at a journey that failed, which is not an implementation gap but the
+  definition: with only the successes in view there is no way to tell a channel that appears
+  in every path from one that appears only in the winning ones. Last touch therefore scores an
+  upper-funnel channel at exactly zero — not "small", zero — and first touch inverts the same
+  error rather than fixing it. Time decay **requires** timings and throws without them,
+  because position is not recency.
+
+  `MarkovAttribution` reads the failures. Journeys become paths through a chain ending in a
+  conversion or a null state, and removing a channel means redirecting its traffic into
+  failure. On the fixture in the tests — five journeys where an upper-funnel channel opens and
+  a closer closes, five where the closer is alone and fails — last touch values the opener at
+  zero and removal effect values it at a third of the budget. Both are arithmetic on the same
+  ten journeys. Raw effects are exposed separately from the normalised shares because they do
+  not sum to one and are not meant to: normalising is where a measurement becomes a
+  convention.
+
+  `ShapleyAttribution` enumerates every coalition exactly, by subset-sum transform rather than
+  by rescanning journeys per coalition, and refuses above sixteen channels instead of sampling
+  — sixteen being both where the runtime turns and where `Double` stops holding the factorial
+  weights exactly. Its **null player** axiom is the one assertion in attribution that needs no
+  tolerance: a channel that changes no coalition's worth is paid precisely zero.
+
+- **`Marketing/Basket/AssociationRules.swift`.** Support, confidence, lift, leverage and
+  conviction over transactions, with Apriori itemset generation including the subset-pruning
+  step.
+
+  Confidence is the number that misleads, and the fixture makes it exact. "Eighty per cent of
+  baskets with bread also contain milk" sounds like a finding about bread; where milk is in
+  eighty per cent of *all* baskets it is a finding about milk, and lift is exactly 1, leverage
+  exactly 0 and conviction exactly 1 — three statistics sitting precisely on their null values
+  while confidence reads 0.8. Lift is also **symmetric**, so a rule written with an arrow and a
+  lift is mixing a directional statistic with one that carries no direction at all.
+
+  The rule list is sorted to a total order — lift, then support, then names — because two rules
+  can tie on both strength measures and Swift's sort is not stable.
+
+- **`Marketing/Segmentation/BehaviouralSegments.swift`.** Customers grouped by similarity of
+  their feature vectors (over `KMeans`) or by what they share (over `BipartiteProjection` and
+  Louvain). A customer in different segments under the two is not a contradiction: which you
+  want depends on whether you are about to send a discount or a recommendation.
+
+  Determinism is the design constraint, because segments get compared across runs. A
+  `[String: [Double]]` has no order, so feeding its values straight into k-means picks initial
+  centroids from a differently-ordered array each time and the same customers come back under
+  different labels, with every run looking reasonable. Rows are built in sorted key order and
+  that order is published as `orderedCustomers`, so it can be checked rather than trusted. The
+  GPU path is off by default for the same reason.
+
+### Changed
+
+- **The constraint penalty weight is a parameter.** Every constrained solve in this package is
+  handled by penalty — the optimizer minimises `objective(x) + weight · Σ violation²` — and
+  that weight was the literal `100`, hardcoded in `NelderMead`, `DifferentialEvolution`,
+  `IslandModel`, `SimulatedAnnealing` and `ParticleSwarmOptimization`, with no way for a caller
+  to change it anywhere in the optimizer tier.
+
+  It is a defect rather than a preference because the weight has to be commensurate with the
+  objective's scale. A penalty of 100 against an objective measured in millions is negligible:
+  the solve returns a point well outside the feasible region and **nothing in the result says
+  so**. Each of the five configs now takes `constraintPenaltyWeight`, defaulting to `100`, so
+  no existing caller moves.
+
+  A non-positive or non-finite value falls back to the default rather than being honoured. A
+  weight of zero deletes the constraint silently, and a caller who asked for a constrained
+  solve should not get an unconstrained one back without being told — that is worse than any
+  badly chosen positive weight.
+
+### Notes
+
+- **The property tested is monotonicity, not feasibility at a point.** Raising the weight must
+  not increase the violation, checked across four weights. "Weight 500 gives a feasible answer"
+  is passed by an implementation that ignores the parameter entirely; a parameter that does not
+  move the answer is not a parameter.
+
+- **Zero and absent mean different things in an attribution result.** A channel present at zero
+  was measured and earned nothing — which is the finding last touch makes about every channel
+  that never closes. A channel absent was not measurable by that model at all, which for the
+  heuristics is any channel appearing only in journeys that failed.
+
+- **A bucket with no controls is refused rather than scored.** Its control rate is zero over
+  zero; scored as zero its uplift becomes the full treated response rate — the largest number
+  in the table, in the bucket you were about to target.
+
+### Breaking Changes
+
+None. Every item above is additive.
+
+### Deprecations
+
+None new. `sampleSize`, deprecated in 2.7.0, is still present; its deletion waits for 3.0.0.
+
+---
+
 ### [2.16.0] - 2026-09-08
 
 The marketing leg of 3.0.0, shipped additively. Twenty-eight new source files across four new
