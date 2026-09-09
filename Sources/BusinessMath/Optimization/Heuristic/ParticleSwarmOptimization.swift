@@ -172,7 +172,9 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
     ///
     /// - Returns: Optimization result with best solution and fitness
     ///
-    /// - Throws: Never throws (constraints handled via penalty method)
+    /// - Throws: ``OptimizationError/invalidInput(message:)`` if a seeded run's GPU attempt
+    ///   is abandoned — see ``optimizeDetailed(objective:)``. Constraints themselves never
+    ///   throw; they are handled by the penalty method.
     ///
     /// ## Usage Example
     ///
@@ -193,7 +195,7 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
         }
 
         // Run unconstrained optimization
-        let detailedResult = optimizeDetailed(objective: objective)
+        let detailedResult = try optimizeDetailed(objective: objective)
 
         // Convert to MultivariateOptimizationResult
         return MultivariateOptimizationResult(
@@ -214,18 +216,26 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
     ///
     /// - Returns: Detailed result with convergence information
     ///
+    /// - Throws: ``OptimizationError/invalidInput(message:)`` when a **seeded** run's GPU
+    ///   attempt is abandoned after it has drawn from the generator. The CPU path is a
+    ///   different implementation — `Double` where the kernels are `Float` — so completing
+    ///   the run on it would return a different answer under a seed that promised one
+    ///   answer. Refusing is the only response that keeps the promise. An **unseeded** run
+    ///   never throws: it falls back to the CPU, which is what a caller who set no seed
+    ///   wanted. Sizes below the GPU threshold cannot reach either case.
+    ///
     /// ## Usage Example
     ///
     /// ```swift
     /// let sphere = { @Sendable (v: VectorN<Double>) -> Double in v.dot(v) }
     /// let optimizer = ParticleSwarmOptimization<VectorN<Double>>(config: .default, searchSpace: [(-10.0, 10.0), (-10.0, 10.0)])
-    /// let result = optimizer.optimizeDetailed(objective: sphere)
+    /// let result = try optimizer.optimizeDetailed(objective: sphere)
     /// print("Converged: \(result.converged)")
     /// print("Reason: \(result.convergenceReason)")
     /// ```
     public func optimizeDetailed(
         objective: @escaping (V) -> V.Scalar
-    ) -> ParticleSwarmResult<V> {
+    ) throws -> ParticleSwarmResult<V> {
 
         let dimension = searchSpace.count
         let swarmSize = config.swarmSize
@@ -290,13 +300,26 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
             var usedGPU = false
             #if canImport(Metal)
             if shouldUseGPU() {
-                if let gpuResult = runIterationGPU(
-                    velocities: velocities,
-                    positions: positions,
-                    personalBest: personalBest,
-                    globalBest: globalBest,
-                    dimension: dimension,
-                    velocityLimits: velocityLimits
+                // `shouldUseGPU()` has already decided the GPU applies, so everything inside
+                // the attempt is either a result or a mid-flight abort — never "the GPU did
+                // not apply here". That distinction is the whole defect this runner exists
+                // for: the attempt draws one kernel seed per particle before the first
+                // operation that can fail, so abandoning it without rewinding would leave
+                // the generator advanced and the CPU fallback resuming where no seed
+                // predicts. See GPU/GPUAttempt.swift.
+                let outcome = rng.attemptGPU(seeded: config.seed != nil) {
+                    try runIterationGPU(
+                        velocities: velocities,
+                        positions: positions,
+                        personalBest: personalBest,
+                        globalBest: globalBest,
+                        dimension: dimension,
+                        velocityLimits: velocityLimits
+                    )
+                }
+
+                if let gpuResult = try outcome.resultOrCPUFallback(
+                    operation: "GPU particle swarm iteration \(iteration)"
                 ) {
                     velocities = gpuResult.velocities
                     positions = gpuResult.positions
@@ -396,21 +419,21 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
     // MARK: - GPU Acceleration
 
     /// Check if GPU acceleration should be used for this swarm size.
-    private func shouldUseGPU() -> Bool {
+    ///
+    /// A seed is deliberately *not* one of the conditions. 2.6.0 declined the GPU whenever
+    /// one was set, because a mid-flight GPU failure would otherwise finish the run on the
+    /// CPU — a `Double` implementation where the kernels are `Float` — and return a
+    /// different answer under a seed that promised one. That was determinism bought by
+    /// giving up the acceleration for exactly the callers most likely to need it.
+    /// ``optimizeDetailed(objective:)`` now throws, so it can refuse a broken promise
+    /// instead of arranging never to be in a position to make one, and a seeded run reaches
+    /// the GPU again. See project/plans/proposals/GPUAttemptSeedContract.md §4.
+    ///
+    /// Internal rather than private so the tests can assert that a seeded configuration at
+    /// the threshold really does engage the GPU: a determinism test that quietly ran on the
+    /// CPU would pass while proving nothing about the path it is named for.
+    internal func shouldUseGPU() -> Bool {
         #if canImport(Metal)
-        // A seeded run cannot accept a CPU fallback: the kernels compute in Float where
-        // the CPU path computes in Double, so falling back returns a different answer
-        // under a seed that promises otherwise. `GeneticAlgorithm` refuses that fallback
-        // by throwing, but `optimizeDetailed` here is non-throwing public API and cannot.
-        //
-        // Until it can — the throwing signature is scheduled for 3.0.0, see
-        // project/plans/proposals/GPUAttemptSeedContract.md — a seeded run declines the
-        // GPU outright. That is determinism by construction rather than by vigilance, and
-        // it costs acceleration only for callers who asked for reproducibility.
-        guard config.seed == nil else {
-            return false
-        }
-
         return MetalDevice.shouldUseGPU(populationSize: config.swarmSize)
         #else
         return false
@@ -428,7 +451,17 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
     ///   - dimension: Number of dimensions
     ///   - velocityLimits: Optional velocity clamping limits
     ///
-    /// - Returns: Tuple of (new velocities, new positions), or nil on error
+    /// - Returns: Tuple of (new velocities, new positions), or `nil` when a Metal resource
+    ///   could not be obtained. Both that and a thrown error abandon the attempt; they
+    ///   differ only in whether there is an error to report to the caller.
+    ///
+    /// - Throws: ``OptimizationError/invalidInput(message:)`` when the dispatch itself
+    ///   fails — no command buffer, or a command buffer that ends in `.error`.
+    ///
+    /// - Important: Call this only through ``RNGWrapper/attemptGPU(seeded:_:)``. It draws
+    ///   one kernel seed per particle before the first operation that can fail, so
+    ///   abandoning it without the runner's rewind leaves the stream advanced past anything
+    ///   the seed predicts.
     private func runIterationGPU(
         velocities: [V],
         positions: [V],
@@ -436,7 +469,7 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
         globalBest: V,
         dimension: Int,
         velocityLimits: [(lower: V.Scalar, upper: V.Scalar)]?
-    ) -> (velocities: [V], positions: [V])? {
+    ) throws -> (velocities: [V], positions: [V])? {
         guard let metalDevice = MetalDevice.shared else { return nil }
 
         let swarmSize = velocities.count
@@ -513,14 +546,25 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
             return nil
         }
 
-        // Get pipeline
-        // silent: GPU pipeline unavailable — falls back to CPU path
-        guard let pipeline = try? metalDevice.getPSOUpdatePipeline() else { return nil }
+        // Get pipeline.
+        //
+        // `try` rather than `try?`: the caller can act on a pipeline that failed to build,
+        // and discarding the reason left an unseeded run silently slower with no way to
+        // find out why. A seeded run now needs the reason, because it is about to refuse.
+        let pipeline = try metalDevice.getPSOUpdatePipeline()
 
-        // Create command buffer and encoder
+        // Create command buffer and encoder.
+        //
+        // This throws rather than returning nil because by here the per-particle seeds are
+        // drawn and the buffers are filled, so failing is a mid-flight abort rather than
+        // "the GPU was never applicable". A queue that cannot vend a command buffer is
+        // transient resource exhaustion, which is why the original defect surfaced only
+        // under a full parallel run and never in isolation.
         guard let commandBuffer = metalDevice.commandQueue.makeCommandBuffer(),
               let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            return nil
+            throw OptimizationError.invalidInput(
+                message: "Metal command queue could not vend a command buffer for a particle swarm iteration"
+            )
         }
 
         encoder.setComputePipelineState(pipeline)
@@ -569,7 +613,12 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
         // check earlier in the session; these paths did not, and the gpu-safety checker
         // found them.
         guard commandBuffer.status != .error else {
-            return nil
+            throw OptimizationError.invalidInput(
+                message: """
+                    A particle swarm iteration did not complete on the GPU: \
+                    \(commandBuffer.error?.localizedDescription ?? "unknown Metal failure")
+                    """
+            )
         }
 
         // Read back results
@@ -800,7 +849,7 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
         }
 
         // Run optimization with penalized objective
-        let detailedResult = optimizeDetailed(objective: penalizedObjective)
+        let detailedResult = try optimizeDetailed(objective: penalizedObjective)
 
         return MultivariateOptimizationResult(
             solution: detailedResult.solution,
