@@ -182,9 +182,10 @@ draft proposed, and it was wrong on a fact I had not checked.
 
 The case for it was that the conformance makes `Complex` usable with everything already
 generic over `LosslessStringConvertible` — in this package, `PeriodDriver`,
-`LinearCycleSolver` and `IterativeCycleSolver`.
+`LinearCycleSolver`, `IterativeCycleSolver`, `ModelDefinition` and `FormulaEvaluator`.
+There are **five** such sites, not three; the count was checked against the tree.
 
-**`Complex` cannot satisfy any of those.** All three constrain their numeric type to
+**`Complex` cannot satisfy any of those.** All five constrain their numeric type to
 `Real & Sendable & LosslessStringConvertible`, and `Complex` is not a `Real` — it conforms to
 `AlgebraicField`, `AdditiveArithmetic`, `Numeric` and `ElementaryFunctions`, and `Real` is the
 constraint on its *component* type rather than on itself. So the conformance buys nothing
@@ -207,6 +208,25 @@ initialiser is failable for a reason.
 universally, so a reader refusing it is wrong for a whole discipline rather than permissive
 for Excel's sake. The *writer* emits only `i`; choosing `j` on output stays an Excel concern,
 since that is where the argument selecting it lives.
+
+**A wrapper type, `ComplexNotation<R: Real>`, owning the conformance.** A struct holding a
+`Complex<R>` and conforming to `LosslessStringConvertible` itself. It avoids every cost the
+conformance carried — the conformance is ours, so nothing is retroactive, nothing is global
+and unscoped, and no downstream caller's `"\(z)"` changes — and it adds one the member does
+not avoid: no member is added to a foreign type, so there is no ambiguity the day
+swift-numerics ships its own `notation`, which is the one residual risk §7 still carries.
+
+Rejected for now, on the same fact that rejected the conformance. `ComplexNotation<R>` is not
+a `Real` either, so it cannot satisfy `Real & Sendable & LosslessStringConvertible` any more
+than `Complex` can, and all five constraint sites stay closed to it. **No type built around
+`Complex` can open them** — the benefit the wrapper appears to preserve does not exist for any
+shape of this idea. Against that, the only known consumer — the `IM*` bindings, 21 functions
+parsing and formatting on both sides, so 42 conversions — reads worse:
+`ComplexNotation(s)?.value` where `Complex(notation: s)` would do.
+
+If a genuine `LosslessStringConvertible`-generic context ever appears, the wrapper is the
+right shape for it, and at that point it is five lines delegating to the member rather than a
+second parser. That ordering is what keeps one implementation of the grammar.
 
 **Ask swift-numerics to add it.** Still the better long-term answer and worth doing
 separately. Nothing here blocks on that conversation, and a member on an extension is far
