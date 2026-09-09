@@ -2,6 +2,7 @@
 
 **Status:** proposal, 2026-09-09. Phase 0 (Design).
 **Scope:** a `Complex` ↔ `String` codec in conventional `a+bi` notation, for BusinessMath.
+**Revised:** 2026-09-09 — a member rather than a conformance; see §6.
 **Motivated by:** Excel's 21 `IM*` functions, which need it — but the gap is not Excel's.
 
 ---
@@ -66,32 +67,34 @@ What is general, and belongs here:
 - reading `3+4i`, `-2.5i`, `5`, `i`, `-i`, `+i`, `3 + 4i`
 - writing the same, with the conventions a reader expects
 
-`LosslessStringConvertible` is already a constraint this package builds on — `PeriodDriver`,
-`LinearCycleSolver` and `IterativeCycleSolver` all require it of their numeric type — so the
-conformance is idiomatic here in a way it would not be next to a formula evaluator.
+This belongs beside the numerics because the notation is general, not because of any
+genericity it unlocks — §6 records the argument that claimed otherwise, and why it was wrong.
 
 ---
 
 ## 3. Proposed Architecture
 
-### 3.1 The conformance
+### 3.1 A member, not a conformance
 
 ```swift
-extension Complex: LosslessStringConvertible where RealType: LosslessStringConvertible {
+public extension Complex where RealType: LosslessStringConvertible {
 
-    /// Reads conventional notation: `"3+4i"`, `"-2.5i"`, `"5"`, `"i"`.
-    ///
-    /// Returns `nil` for anything it cannot read exactly. Lossless means lossless: a
-    /// string this accepts and a string this produces round-trip.
-    public init?(_ description: String)
+    /// This number in conventional notation: `"3+4i"`, `"-2.5i"`, `"5"`, `"i"`.
+    var notation: String { get }
 
-    /// Writes conventional notation.
-    public var description: String { get }
+    /// Reads conventional notation. `nil` for anything it cannot read exactly.
+    init?(notation: String)
 }
 ```
 
-`description` is a **behavioural change** to a type this package does not own, and §7 is about
-that.
+**`description` is left alone.** An earlier draft conformed `Complex` to
+`LosslessStringConvertible`, which would have replaced `description` for every downstream
+caller. That is a worse trade than it looked, and §6 records why the reasoning behind it was
+wrong.
+
+`notation` because the pair is symmetric and the word says what the string *is* rather than
+how it is styled. The name is not the load-bearing part — anything that is not `description`
+carries the same benefit.
 
 ### 3.2 What the writer decides
 
@@ -174,51 +177,53 @@ than arithmetic.
 
 ## 6. Alternatives Considered
 
-**Put it in SwiftExcelFunctions.** Rejected — §2.2. The notation predates and outlives the
-spreadsheet, and the package that owns numerics is where a numeric type's string form belongs.
-The Excel layer keeps what is genuinely Excel's.
+**Conform to `LosslessStringConvertible` and replace `description`.** This is what the first
+draft proposed, and it was wrong on a fact I had not checked.
 
-**Ask swift-numerics to add it.** The better long-term answer, and worth doing separately.
-Upstream has declined a `description` change before on ambiguity grounds, and this proposal
-does not block on that conversation. If they adopt it, this extension collapses to nothing.
+The case for it was that the conformance makes `Complex` usable with everything already
+generic over `LosslessStringConvertible` — in this package, `PeriodDriver`,
+`LinearCycleSolver` and `IterativeCycleSolver`.
 
-**A free function pair rather than a conformance.** `parseComplex(_:)` and
-`formatComplex(_:)` avoid touching `description`. Rejected because the conformance is what
-makes the type usable with everything already generic over `LosslessStringConvertible` —
-which in this package is `PeriodDriver` and both cycle solvers.
+**`Complex` cannot satisfy any of those.** All three constrain their numeric type to
+`Real & Sendable & LosslessStringConvertible`, and `Complex` is not a `Real` — it conforms to
+`AlgebraicField`, `AdditiveArithmetic`, `Numeric` and `ElementaryFunctions`, and `Real` is the
+constraint on its *component* type rather than on itself. So the conformance buys nothing
+here, and every cost in §7 was being paid for a benefit that does not exist.
+
+Rejected. The costs it avoids are worth listing because they were the whole of the old §7:
+`description` changing under every downstream caller; a redeclaration error the day
+swift-numerics adds its own conformance; and a cross-module retroactive conformance that
+Swift 6 warns about and would need annotating.
+
+**A free function pair, `parseComplex(_:)` and `formatComplex(_:)`.** Equivalent in safety and
+worse to read: `z.notation` at a call site says more than `formatComplex(z)`, and the failable
+initialiser is where a Swift reader looks for parsing.
+
+**`ExpressibleByStringLiteral`.** Would allow `let z: Complex = "3+4i"`, which reads well, but
+a literal that traps at runtime on a typo is a poor trade for four saved characters. The
+initialiser is failable for a reason.
 
 **Support `j` only in the Excel layer.** Rejected: electrical engineering writes `j`
-universally, so a reader that refuses it is wrong for a whole discipline rather than
-permissive for Excel's sake. The *writer* emits only `i`; choosing `j` on output stays an
-Excel concern, since that is where the argument selecting it lives.
+universally, so a reader refusing it is wrong for a whole discipline rather than permissive
+for Excel's sake. The *writer* emits only `i`; choosing `j` on output stays an Excel concern,
+since that is where the argument selecting it lives.
 
----
+**Ask swift-numerics to add it.** Still the better long-term answer and worth doing
+separately. Nothing here blocks on that conversation, and a member on an extension is far
+easier to retire than a conformance if they adopt one.
 
 ## 7. Source & API Compatibility
 
-**Conforming a type you do not own is the risk in this proposal, and it is worth stating
-plainly.**
+**Purely additive.** Two new members on an extension of a type from another module, both
+constrained to `RealType: LosslessStringConvertible`. Nothing existing changes behaviour,
+`description` keeps returning `"(3.0, 4.0)"`, and no downstream caller is affected.
 
-`Complex` already conforms to `CustomStringConvertible` upstream. Adding
-`LosslessStringConvertible` here changes what `description` returns for every existing caller
-in every package that imports BusinessMath — `(3.0, 4.0)` becomes `3+4i`.
+The one residual risk is a name collision: if swift-numerics later adds its own `notation`
+member, this becomes an ambiguity. That is a compile error rather than a silent change, and it
+is a member rather than a conformance, so retiring ours is a deletion.
 
-Three consequences:
-
-1. **Anything parsing the old format breaks.** Nothing in this package does; a downstream
-   consumer might.
-2. **If swift-numerics later adds its own conformance, this becomes a redeclaration** and
-   fails to compile. That is a loud failure rather than a silent one, which is the right
-   direction, but it will happen on a dependency bump.
-3. **A retroactive conformance across module boundaries** is exactly what Swift 6 warns about
-   and what `@retroactive` exists to annotate. It should be annotated.
-
-The alternative that avoids all three is §6's free-function pair, at the cost of the
-genericity that motivated the conformance. **Recommend the conformance, annotated, with the
-compatibility note in the release entry** — but this is the decision a reviewer should
-actually weigh, not the parser.
-
----
+This section was three paragraphs of real hazard in the previous draft. Removing the
+conformance removed the hazard rather than mitigating it, which is the better kind of fix.
 
 ## 8. Open Questions
 
@@ -242,7 +247,7 @@ actually weigh, not the parser.
 | 1 | The reader, with §5's rejection cases | Every malformed string in the list returns `nil` |
 | 2 | The writer, with §3.2's table | The eight conventions hold |
 | 3 | The round-trip property test | It passes over a spread including every special case |
-| 4 | `@retroactive`, and the §7 note in the changelog | A reviewer can see what changed for downstream callers |
+| 4 | Changelog entry | Additive, so the entry is a mention rather than a warning |
 
 ---
 
