@@ -19,8 +19,12 @@ import Numerics
 /// numeric convention stays in the binding layer where it belongs.
 ///
 /// ```swift
+/// let shape: [Double] = [0, 8, 15, 19, 20, 18, 12, 4, -6, -14, -19, -20]
 /// let months = (0..<24).map { Period.month(year: 2024 + $0 / 12, month: $0 % 12 + 1) }
-/// let sales = (0..<24).map { 100.0 + 10.0 * Double($0 % 12) }
+/// let sales: [Double] = (0..<24).map { index in
+///     let trend: Double = 100.0 + 2.0 * Double(index)
+///     return trend + shape[index % 12]
+/// }
 /// let series = TimeSeries(periods: months, values: sales)
 /// let resolution = try series.resolvedSeasonality(.detect)
 /// print(resolution.length)
@@ -79,8 +83,12 @@ public extension TimeSeries where T: BinaryFloatingPoint {
 	/// - Returns: The detected cycle length, or `nil` if no lag clears the band.
 	///
 	/// ```swift
+	/// let shape: [Double] = [0, 8, 15, 19, 20, 18, 12, 4, -6, -14, -19, -20]
 	/// let months = (0..<24).map { Period.month(year: 2024 + $0 / 12, month: $0 % 12 + 1) }
-	/// let sales = (0..<24).map { 100.0 + 10.0 * Double($0 % 12) }
+	/// let sales: [Double] = (0..<24).map { index in
+	///     let trend: Double = 100.0 + 2.0 * Double(index)
+	///     return trend + shape[index % 12]
+	/// }
 	/// let series = TimeSeries(periods: months, values: sales)
 	/// let cycle = series.detectedSeasonLength()
 	/// print(cycle ?? 1)
