@@ -30,6 +30,11 @@
 //  it. Had the enum not been extended, migrating would have silently renumbered every
 //  LTV in the library by one period's margin.
 //
+//  `LegacyTemplateEconomics` at the foot of this file reads all seven deprecated methods
+//  in one place, so that the whole legacy surface costs exactly one deprecation warning
+//  and one justification rather than ten of each. It should be deleted in the same commit
+//  that deletes the methods.
+//
 
 import Testing
 import Foundation
@@ -155,5 +160,140 @@ struct TemplateDelegationTests {
 		#expect(throws: CLVError.invalidRetention) {
 			_ = try Self.box(churn: -0.2).lifetimeValue()
 		}
+	}
+}
+
+// MARK: - The deprecated surface, read once
+
+/// Every answer the seven deprecated template methods give, gathered in one value.
+///
+/// This type is itself deprecated, which is what lets it call them without a warning of
+/// its own — Swift does not diagnose a deprecated symbol used inside another deprecated
+/// declaration. Swift Testing refuses `@Suite` and `@Test` on deprecated declarations, so
+/// the tests below cannot take the same route; they touch this type exactly once instead,
+/// which is why the whole legacy surface costs one warning rather than ten.
+///
+/// Delete this in the same commit that deletes the methods it reads.
+@available(*, deprecated, message: "Reads the deprecated template unit-economics methods.")
+struct LegacyTemplateEconomics {
+
+	// SaaS, well posed: 80% margin on $100 ARPU, 5% churn, $500 CAC.
+	let saasLTV: Double
+	let saasPayback: Double
+	let saasRatio: Double
+
+	// SaaS, the edges.
+	let saasLTVAtZeroChurn: Double
+	let saasPaybackWithoutCost: Double
+	let saasRatioWithoutCost: Double
+	let saasRatioAtZeroCost: Double
+
+	// Box, well posed: $20 margin per box, 8% churn, $60 CAC.
+	let boxLTV: Double
+	let boxRatio: Double
+	let boxPayback: Double
+
+	// Box, the edges.
+	let boxLTVAtZeroChurn: Double
+	let boxPaybackAtALoss: Double
+	let boxRetentionAboveOne: Double
+
+	init() {
+		let saas = TemplateDelegationTests.saas(margin: 0.80)
+		saasLTV = saas.calculateLTV()
+		saasPayback = saas.calculateCACPayback()
+		saasRatio = saas.calculateLTVtoCAC()
+
+		saasLTVAtZeroChurn = TemplateDelegationTests.saas(churn: 0).calculateLTV()
+		let withoutCost = TemplateDelegationTests.saas(cac: nil)
+		saasPaybackWithoutCost = withoutCost.calculateCACPayback()
+		saasRatioWithoutCost = withoutCost.calculateLTVtoCAC()
+		saasRatioAtZeroCost = TemplateDelegationTests.saas(cac: 0).calculateLTVtoCAC()
+
+		let box = TemplateDelegationTests.box()
+		boxLTV = box.calculateCustomerLifetimeValue()
+		boxRatio = box.calculateLTVtoCAC()
+		boxPayback = box.calculateCACPaybackMonths()
+
+		boxLTVAtZeroChurn = TemplateDelegationTests.box(churn: 0).calculateCustomerLifetimeValue()
+		boxPaybackAtALoss = TemplateDelegationTests.box(price: 20, cogs: 15, shipping: 8)
+			.calculateCACPaybackMonths()
+		boxRetentionAboveOne = TemplateDelegationTests.box(churn: 1.2).calculateRetentionRate()
+	}
+}
+
+@Suite("Template unit economics, as they were")
+struct LegacyTemplateEconomicsTests {
+
+	/// The one place the deprecated surface is touched.
+	static let legacy = LegacyTemplateEconomics()
+
+	@Test("Delegation preserves every number the old methods returned for sound input")
+	func delegationIsBehaviourPreserving() throws {
+		let legacy = Self.legacy
+
+		let saas = TemplateDelegationTests.saas(margin: 0.80)
+		let saasValue = try saas.lifetimeValue().value
+		#expect(Swift.abs(legacy.saasLTV - saasValue) < 1e-9,
+				"\(legacy.saasLTV) against \(saasValue)")
+		let saasMetrics = try #require(try saas.acquisitionMetrics())
+		#expect(Swift.abs(legacy.saasRatio - saasMetrics.ratio) < 1e-9,
+				"\(legacy.saasRatio) against \(saasMetrics.ratio)")
+
+		let box = TemplateDelegationTests.box()
+		let boxValue = try box.lifetimeValue().value
+		#expect(Swift.abs(legacy.boxLTV - boxValue) < 1e-9,
+				"\(legacy.boxLTV) against \(boxValue)")
+		let boxMetrics = try #require(try box.acquisitionMetrics())
+		#expect(Swift.abs(legacy.boxRatio - boxMetrics.ratio) < 1e-9,
+				"\(legacy.boxRatio) against \(boxMetrics.ratio)")
+		#expect(Swift.abs(legacy.boxPayback - boxMetrics.paybackPeriods) < 1e-9,
+				"\(legacy.boxPayback) against \(boxMetrics.paybackPeriods)")
+
+		let retention = try #require(TemplateDelegationTests.box().retentionRate)
+		#expect(Swift.abs(retention - 0.92) < 1e-12, "\(retention)")
+	}
+
+	@Test("The one method whose answer changes, and why it had to")
+	func paybackWasComputedOnRevenue() throws {
+		let legacy = Self.legacy
+		// $500 of cost against $100 of *revenue*.
+		#expect(Swift.abs(legacy.saasPayback - 5) < 1e-9, "\(legacy.saasPayback)")
+		// $500 against $80 of contribution margin, which is what the cost comes out of.
+		let metrics = try #require(try TemplateDelegationTests.saas(margin: 0.80).acquisitionMetrics())
+		#expect(Swift.abs(metrics.paybackPeriods - 6.25) < 1e-9, "\(metrics.paybackPeriods)")
+		// A quarter understated, and in the optimistic direction.
+		#expect(legacy.saasPayback < metrics.paybackPeriods)
+	}
+
+	@Test("Zero churn returned zero, which is the opposite of divergence")
+	func zeroChurnReturnedZero() {
+		#expect(Self.legacy.saasLTVAtZeroChurn == 0)
+		#expect(Self.legacy.boxLTVAtZeroChurn == 0)
+	}
+
+	@Test("A missing acquisition cost returned the best possible payback")
+	func missingCostReturnedZeroMonths() {
+		#expect(Self.legacy.saasPaybackWithoutCost == 0, "zero months is the best score there is")
+		#expect(Self.legacy.saasRatioWithoutCost == 0)
+	}
+
+	@Test("A zero acquisition cost divided by zero until this branch guarded it")
+	func zeroCostNoLongerReturnsInfinity() {
+		// Shipped behaviour was `calculateLTV() / 0`, which is +infinity — a ratio that
+		// clears every "healthy is above three" check ever written against it. The guard
+		// added on this branch makes it match the documented missing-cost answer instead.
+		#expect(Self.legacy.saasRatioAtZeroCost == 0)
+		#expect(!Self.legacy.saasRatioAtZeroCost.isInfinite)
+	}
+
+	@Test("A loss-making box reported instant payback")
+	func lossMakingBoxPaidBackInstantly() {
+		#expect(Self.legacy.boxPaybackAtALoss == 0, "it never pays back at all")
+	}
+
+	@Test("Retention could go negative")
+	func retentionCouldGoNegative() {
+		#expect(Swift.abs(Self.legacy.boxRetentionAboveOne - (-0.2)) < 1e-12)
 	}
 }
