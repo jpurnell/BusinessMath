@@ -101,9 +101,50 @@ count should be compared across them.
 An `EXCEL` zero remains the strong one — absent from at least 338 workbooks, and plausibly
 from all of that half's sweep.
 
+### The two columns of an `EXCEL` row were not measured by the same act
+
+`ReferenceFunctionTests.swift:13` in SwiftExcelFunctions names a denominator: *"Measured
+across 79 workbooks: `COLUMN` 86,620 calls, `INDIRECT` 20,978, `OFFSET` 9,798, `ROW` 1,222."*
+Against this matrix: `COLUMN` **86,620**, `OFFSET` **9,798**, `ROW` **1,222** — exact — and
+`INDIRECT` 21,017 against 20,978, off by 39 in 21,000, which reads as a re-run over a
+near-identical set.
+
+**So the `EXCEL` half's `calls` column is a 79-workbook sweep.** Its `books` column cannot be:
+`SUM` 338, `IF` 239, `SUMPRODUCT` 134. You cannot observe a function in 338 workbooks having
+read 79. The two columns of the same row come from different sweeps, so *no `EXCEL` row's
+`calls`/`books` pair is internally consistent* and the sentence "N calls across M workbooks"
+is not sayable from this data.
+
+That also dissolves the `STDEV.S` discrepancy entirely. 86,410 calls is the 79-workbook sweep;
+42 books is the larger one; a source comment saying *"86,410 times across 79 workbooks"* names
+the sweep it came from in a sentence that parses as a book count. **Nothing ever disagreed.**
+
+### But the zeros are weaker than this file makes them look
+
+Across all 813 rows, **no row has `calls > 0` with `books = 0`, and none has `calls = 0` with
+`books > 0`.** The two columns agree perfectly about which 88 functions are non-zero.
+
+Two independent sweeps would not do that. A book sweep four times larger than the call sweep
+should find at least one function the smaller one missed. So the `books` column was almost
+certainly computed only for functions the 79-workbook call sweep had already found — the
+larger sweep back-filled counts for a candidate list the smaller one produced.
+
+**Which means a `0 / 0` row inherits the smaller sweep's blind spots.** "Absent from ≥338
+workbooks" is not supportable; the defensible reading is **"not observed in the 79-workbook
+sweep, and not separately looked for in the larger one."** An earlier revision of this section
+called the `EXCEL` zero strong evidence on a ≥338-workbook population. That overstated it, and
+this paragraph is the correction.
+
+The practical consequence for sequencing: `COMPLEX`, every `IM*` and all four `FORECAST.ETS*`
+rows are still zero, and 79 workbooks is still a real sample with none of them in it — but it
+is 79, not 338, and it is the same sample for every zero in the file.
+
 ### Still unresolved
 
-Why the two `EXCEL` book counts differ — `STDEV.S` at 42 here against 79 in a source comment,
-with the call count agreeing exactly at 86,410. That one is inside the Excel half and is not
-explained by any of the above. It needs the private workbook corpus
-(`RISK_SOLVER_WORKBOOKS`) to settle.
+- What sweep produced the `EXCEL` half's `books` column, and whether it ever looked for the
+  725 functions that show `0 / 0`.
+- Why the `PSI` half undercounts the documented 2,236-workbook Psi sweep by three to five
+  times on every shared row.
+
+Both are "re-measure and label the denominator," both need `RISK_SOLVER_WORKBOOKS`, and
+neither blocks anything.
