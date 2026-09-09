@@ -50,6 +50,12 @@ requirements list:
 
 Five of eight are answered by code that already exists. The gap is a fitter and a metric.
 
+**Excel genuinely fits the parameters, and this had not been checked.** The premise under
+types 1–3 is that `STAT` reports a *searched* value rather than a constant, and it was taken
+from the documentation rather than observed. The §8.1 run settles it as a byproduct: alpha
+came back `0.126`, which is neither this library's `0.2` default nor a boundary value. Small
+enough to be worth writing down, because a whole third of the `STAT` table rests on it.
+
 ### 2.2 What is already here, including two things I said were not
 
 Verified against the 2.15.0 tree (`be704795`), by opening the files rather than by keyword
@@ -378,22 +384,29 @@ protocol without a new conformance.
 
 ## 8. Open Questions
 
-1. **Which SMAPE denominator — and there is a decisive test for it that does not need
-   Excel's fitted model.** The halved form is exactly twice the unhalved, so its maximum is 2
-   rather than 1. On an alternating `+1, −1` series with `seasonality` forced to `0`, the model
-   cannot track the alternation, the forecast sits near the level, and SMAPE approaches its
-   maximum: **any returned value above 1 settles it as halved.** That turns a circular
-   comparison — which needs Excel's parameters to check Excel's metric — into a range question
-   that does not.
+1. ~~**Which SMAPE denominator**~~ — **settled by measurement, 2026-09-09.** Excel for Mac,
+   `=FORECAST.ETS.STAT($D$21:$D$32,$C$21:$C$32,$D34,0)` over an alternating `+1, −1` series
+   with seasonality forced to `0`:
 
-   The original statement of the question follows.
+   | Statistic | Type | Result |
+   |---|---|---|
+   | SMAPE | 5 | **1.94306435** |
+   | MAE | 6 | 1.040036514 |
 
-   **Which SMAPE denominator.** The halved form ranges over `[0, 2]`, the unhalved over
-   `[0, 1]`, both are in the literature, and Microsoft's page names the metric without
-   defining it. §3.4 picks the halved form; the tests pass under either, since symmetry and
-   the zero cases hold for both. **This is the one number that may not match Excel**, and it
-   should be settled against a real workbook before the binding claims conformance — not from
-   a remembered range.
+   **Excel uses the halved denominator**, so §3.4's formula stands as written. The reading is
+   decisive rather than suggestive: the unhalved form `|a−f|/(|a|+|f|)` is bounded by **1** by
+   the triangle inequality, termwise and therefore in the mean, so no series can drive it to
+   1.943 by any route. The halved form is bounded by 2 and 1.943 sits just under it.
+
+   MAE corroborates rather than merely accompanies: actuals of ±1 against an MAE of 1.04 says
+   the forecasts sat near zero, which is exactly what puts each SMAPE term at `1/0.5 = 2` and
+   the mean just below it. Two numbers, one story.
+
+   The doc comment naming the convention is now *measured* rather than chosen — and it
+   remains the only place a caller learns which one they got, because §5's symmetry and
+   zero-case tests pass under either denominator. That was worth noting when the choice was
+   arbitrary and is worth more now that it is not.
+
 2. ~~**How close to the boundary the search may go**~~ — **settled: snap at saturation.** `[0.0001, 0.9999]`
    is a chosen pair of constants, and a series whose true optimum is `alpha = 1` reports
    `0.9999`. That is not a pathological case kept in for completeness: **`alpha = 1` is the
@@ -402,9 +415,20 @@ protocol without a new conformance.
    there. So `STAT` 1 will report `0.9999` regularly rather than rarely, and a reader
    comparing it against Excel sees a number that looks like a rounding bug.
    Snapping to the boundary when the transform saturates is therefore the default, agreed by
-   both sides. A workbook check is still worth running alongside §8.1 — `STAT` type 1 on a
-   random walk with `seasonality` `0`, where exactly `1` means Excel snaps too and `0.99…` means
-   it does not — but the choice here no longer waits on it.
+   both sides on the argument alone.
+
+   **This has NOT been measured, and one attempt to measure it failed twice.** The `STAT` type
+   1 readings taken alongside §8.1 do not bear on it: alpha → 1 is optimal for a *random
+   walk*, and both series tried were mean-reverting — an alternating `+1, −1` series is
+   maximally anti-persistent (returned `0.126`) and a trend with sawtooth noise is also
+   mean-reverting (returned `0.002`). Both are correct answers to a question nobody asked.
+   **The two questions need opposite data**, and running them on one series cannot answer
+   both.
+
+   To measure it properly: a genuinely driftless random walk, `STAT` type 1, seasonality `0`,
+   where exactly `1` means Excel snaps and `0.99…` means it does not. Note that twelve points
+   may be too few regardless, since the trend component absorbs part of a walk. The default
+   here does not wait on it.
 3. **Should an out-of-sample objective be offered as config**, per §6? Leaning yes, after the
    in-sample path is proven, so the two can be compared on the same series.
 4. **Does `fitETS` belong on `TimeSeries` or on `HoltWintersModel`?** Proposed on `TimeSeries`
