@@ -45,11 +45,12 @@ The first pass of this survey said 21 and named five as absent. Three of those f
 negatives, and **the reason is worth carrying to the next survey**: the probe searched file
 contents for *free functions* matching a name — `chiSquaredQuantile`, `lognormalQuantile`. But
 `DistributionChiSquared.quantile(_:)` and `DistributionLogNormal.quantile(_:)` are **methods on
-types**, and no keyword built from the distribution's name matches them. `BINOM.INV` is likewise
-an accumulation over `binomialPMF`, which is what `PsiBinomial` already does.
+types**, and no keyword built from the distribution's name matches them. Both arrive through
+`extension …: ContinuousDistribution`. `BINOM.INV` is likewise an accumulation over
+`binomialPMF`, which is what `PsiBinomial` already does.
 
-A name-shaped probe finds free functions and misses methods. Every survey of this kind should
-check the type as well as the symbol.
+A name-shaped probe finds free functions and misses methods on types, however those methods
+arrive. Every survey of this kind should check the type as well as the symbol.
 
 `betaCDF`, `chiSquaredCDF`, `binomialPMF`, `exponentialCDF`, `gammaCDF`, `poissonCDF`,
 `studentTPDF`, `tQuantile`, `zStatistic`, `DistributionHyperGeometric` and
