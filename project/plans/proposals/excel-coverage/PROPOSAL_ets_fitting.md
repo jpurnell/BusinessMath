@@ -206,19 +206,36 @@ remove the infeasibility. `minimize(_:from:constraints:)` supports the first via
 `MultivariateConstraint`. This proposes the second — optimise over `ℝ³` and map each
 coordinate through the logistic `1/(1 + e^{-x})`.
 
-The reason is not elegance, and it is stronger than "the weight has to be tuned". **The weight
-cannot be tuned: it is hardcoded.** `NelderMead.minimizeWithPenalty` sets
-`let penaltyWeight: V.Scalar = 100` (`Optimization/Heuristic/NelderMead.swift:507`) and
-exposes no way to change it. **The same literal is hardcoded in all five constrained
-heuristics** — NelderMead 507, DifferentialEvolution 739, IslandModel 315, SimulatedAnnealing
-415, ParticleSwarmOptimization 768 — so this is not a NelderMead quirk to route around but an
-unparameterised package-wide convention. That belongs to the optimizer tier rather than to
-this proposal, and is recorded as §10.5 of `proposals/PROPOSAL_advanced_optimization_gap.md`. So the penalty route does not offer a weight to choose badly —
-it offers a constant chosen for other problems, and `alpha = 1.4` is admitted or the boundary
-distorted according to how 100 happens to compare with this objective's curvature. Under the
-transform an infeasible point cannot be *proposed*, so there is no weight and no tuning, and
-the boundary behaviour is a property of the parameterisation rather than of a constant
-someone chose. The cost is that the optimum can only be approached asymptotically as
+The reason is not elegance, and the argument this section originally gave has expired.
+
+**What it used to say, and why it no longer holds.** The case was that the weight *cannot* be
+chosen: `100` was hardcoded in all five constrained heuristics with no way in. That was true
+when this was written and is false as of `6ccee43b`, which parameterises it — so the proposal
+would otherwise be arguing from a fact the tree contradicts. The finding that produced that
+commit is recorded as §10.5 of `proposals/PROPOSAL_advanced_optimization_gap.md`.
+
+**The argument that survives is better, and is about this objective specifically.** A penalty
+weight has no principled value *here*. The objective is a sum of squared one-step-ahead
+residuals, so it scales with the square of the series: data in units of 1 and data in units
+of 10⁶ put objectives twelve orders apart, and no single weight is right for both.
+Parameterising it therefore hands the caller a constant they have no basis to choose — on a
+fitter whose entire purpose is that a caller should not have to supply constants like
+`alpha: 0.2`. The transform needs none: an infeasible point cannot be *proposed*, rather than
+being penalised for existing, so the box is a property of the parameterisation instead of a
+number someone picked.
+
+**A third route exists and is worth naming**, because it would make a weight principled:
+normalise the objective. Dividing the residual sum by `n · variance(y)` makes it
+dimensionless, at which point a fixed penalty weight *is* scale-free and the objection above
+dissolves. Rejected here only because it buys nothing the transform does not already give —
+it adds a normalisation step, a division to guard, and a degenerate case at zero variance, to
+reach a place the transform reaches with no constant at all. It is the right move if the
+penalty route is ever wanted for another reason.
+
+§10.5's adaptive branch, if it lands, would change this analysis again: a weight that finds
+its own scale is a different proposition from one the caller must name.
+
+The cost of the transform is that the optimum can only be approached asymptotically as
 `x → ±∞`; §8.2 records that, and it is why `config` carries bounds of `[0.0001, 0.9999]`
 rather than `[0, 1]`.
 
