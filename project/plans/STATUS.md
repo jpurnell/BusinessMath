@@ -1,6 +1,6 @@
 # Plans — what is complete, what is open, what is in progress
 
-**Last reconciled:** 2026-09-09, at `v2.17.0`.
+**Last reconciled:** 2026-09-10, at `v3.0.0-alpha.3`.
 
 Every "complete" line below was checked against `Sources/` rather than taken from the plan's
 own status line, because several status lines were months stale. Where a claim rests on
@@ -10,11 +10,31 @@ inference rather than a file, it says so.
 
 ## In progress
 
-| | |
-|---|---|
-| **Stage 6 of the marketing leg** | Written, tested, gate-clean, parked on `feature/stage-6-template-delegation` (`6c3e1bd6`). Breaking, so it waits for 3.0.0. Development is done; what remains is a merge. |
+Nothing. No branch carries unmerged work.
 
-Nothing else is mid-flight. No branch other than that one carries unmerged work.
+~~**Stage 6 of the marketing leg** — parked on `feature/stage-6-template-delegation`
+(`6c3e1bd6`), waiting for 3.0.0 to merge.~~ **Merged at `2f1e92ed` and shipped in
+`v3.0.0-alpha.1`.** This section said "what remains is a merge" for a day after the merge
+happened, while the table below recorded it correctly — worth noting because the two halves
+of one file disagreed and only the summary was wrong. A reader who stopped at the top would
+have gone looking for a branch that was already gone.
+
+### Open, and new since this file was last reconciled
+
+**Distribution test suite review** — `proposals/REVIEW_distribution_tests.md`, September
+2026, covering 40 distribution/statistics test files and the 7 TestSupport files under them.
+It names 11 library defects, a TestSupport consolidation, and a per-file disposition for all
+40. Its own order of work is: library defects, then TestSupport, then the tests that are
+wrong, then rebuilding the statistical generation on the shared helpers. Not started.
+
+**Test-integrity sweep** — landed in `v3.0.0-alpha.3`: 41 tests that reported passed without
+asserting anything, and 8 of 18 disabled tests. **Ten disabled tests remain**, three of them
+blocked on product defects in `Sources/`:
+
+| Test | Blocked on |
+|---|---|
+| `AdditionalModelTests` ×2 — "Enable after adding validation" | Rate and capacity validation is absent |
+| `MonteCarloGPUIntegrationTests:723` | GPU device returns wrong results on initial runs; production path via `MonteCarloSimulation` is correct |
 
 ---
 

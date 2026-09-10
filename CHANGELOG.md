@@ -9,7 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
-### [Unreleased]
+### [3.0.0-alpha.3] - 2026-09-10
+
+**A bond grid that moved with the machine's time zone, and forty-one tests that could not
+fail.** No API changes: alpha.3 is alpha.2 plus one behavioural fix and a test suite that
+now reports what it actually did.
 
 ### Fixed
 
@@ -35,6 +39,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `private` declaration, where no other file could reach it. It is now internal and named
   `gregorianUTC`, deliberately not `cachedCalendar`: `Period` arithmetic uses that name for a
   cached `Calendar.current`, which is the opposite thing.
+
+### Testing
+
+- **A machine without Metal now skips the GPU suites, instead of passing them.** Thirty
+  tests across five suites opened with `guard let x = try helper() else { return }` or
+  `guard !results.isEmpty else { return }`, where the `nil` or the empty array meant "no GPU
+  here". That reports the test as **passed**. Swift Testing already distinguishes "did not
+  run" from "ran and was fine", and the difference is the whole point: a suite that silently
+  passes without a GPU is indistinguishable from one that works, which is how
+  `MonteCarloRNGTests` went a year without executing a single kernel.
+
+  `.requiresMetalGPU` joins `localOnly`, `benchmarkOnly` and `requiresParallelHardware` in
+  `ConditionTraits`. Its condition is device **and** runtime shader compiler, not device
+  alone, because those are two different absences and only one is benign: no `MTLDevice`
+  means skip, while an MSL compiler that rejects our source has found a defect and must
+  fail. With availability hoisted into the trait, a `nil` inside a test is no longer
+  ambiguous, so every guard became `try #require`.
+
+  Verified by negative control rather than by the green run. With the probe forced to
+  `false`, all 28 tests report `skipped` with the reason in 0.001s, against 0.499s when they
+  execute — a probe stuck at `false` would also have printed green, and would have been
+  strictly worse than the guards it replaced.
+
+- **An unmet precondition now fails a test, instead of ending it.** Eleven `guard ... else
+  { return }` sites across the ANOVA, Bayesian ICC, Holt-Winters, kernel-weighted agreement,
+  Metalog and FFT suites returned early — and reported passed. Six asserted nothing
+  beforehand: an empty fixture passed two determinism tests without loading a case, and a
+  zero mean-square deleted the one check that pins `F_between` to the right denominator.
+
+  Three `else { return }` in `Tests/` are deliberately kept: the base cases of two local
+  `recurse` functions and the no-op case of a private `Array.rotate`. None sits in a `@Test`
+  body and none can end a test early.
+
+- **Eight disabled tests re-enabled rather than re-explained.** Two `PeriodTests` were
+  disabled because "precondition() failures cannot be caught in Swift Testing" — true when
+  written, and no longer true. Both are now `#expect(processExitsWith: .failure)` and both
+  pass. What stood in for them is this release's subject in miniature: two `withKnownIssue`
+  blocks wrapping calls that never executed, closed by an `#expect(true)` added to satisfy a
+  checker.
+
+  Six benchmarks move from `.disabled()` to `.benchmarkOnly`, a trait this repository
+  already had for the case; five carried a bare `.disabled()` with no reason at all. They
+  pass — all five GPU benchmarks and all ten matrix-backend tests run green under
+  `RUN_BENCHMARKS=1`. The `.disabled()` was concealing working tests, and no reader could
+  learn that without editing the file.
+
+  Ten disabled tests remain; three are blocked on product defects and are filed, not fixed.
+
+- Suite is **7,631 tests in 680 suites**, exit 0. Gate 45/45, 0/0, 1,241 files examined.
 
 ### [3.0.0-alpha.2] - 2026-09-09
 

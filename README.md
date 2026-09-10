@@ -10,7 +10,7 @@ Build DCF models, optimize portfolios, run Monte Carlo simulations, and value se
 
 ---
 
-## Pre-release: 3.0.0-alpha.2
+## Pre-release: 3.0.0-alpha.3
 
 **The breaking set, and only the breaking set.** Three items that have been waiting for a
 major since August, shipped together as a pre-release.
@@ -19,7 +19,7 @@ major since August, shipped together as a pre-release.
 `from: "2.7.0"` you stay on 2.18.0 and nothing changes. To try the alpha, ask for it by name:
 
 ```swift
-.package(url: "https://github.com/jpurnell/BusinessMath.git", exact: "3.0.0-alpha.2")
+.package(url: "https://github.com/jpurnell/BusinessMath.git", exact: "3.0.0-alpha.3")
 ```
 
 What breaks:
@@ -48,6 +48,13 @@ per arm where the answer is 1,565. Use `Experiment.sampleSizePerArm(power:alpha:
 
 **This completes the breaking set.** All four items the scope document named as forcing a
 major have shipped. 3.0.0 final is this code with the pre-release suffix dropped.
+
+**alpha.3 adds no API.** One behavioural fix — `CouponPeriod` and `ACCRINT` walked the coupon
+schedule with `Calendar.current`, so a maturity given as a UTC midnight shifted the whole grid
+anywhere west of Greenwich, and `PRICE` came out about 0.017 per 100 of face off Microsoft's
+own worked example. Plus a sweep of the test suite: forty-one tests that reported *passed*
+without asserting anything now either assert or report *skipped*, and eight tests that were
+disabled for reasons that no longer held are running again.
 
 ### Latest stable: 2.18.0
 
