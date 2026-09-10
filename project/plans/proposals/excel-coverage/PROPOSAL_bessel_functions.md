@@ -100,36 +100,95 @@ Both arguments are numbers, and `N` is the order.
 | `X ≤ 0` for `BESSELK`, `BESSELY` | `#NUM!` — Kₙ and Yₙ are undefined there |
 | `X < 0` for `BESSELI`, `BESSELJ` | defined mathematically; see §3.1 |
 
-### 3.1 Negative `X`, which is not settled by the documentation
+### 3.1 Negative `X` — measured 2026-09-10, and half answered
 
-Jₙ and Iₙ *are* defined for negative `x` — both satisfy `f₋ₙ(−x) = (−1)ⁿ f(x)` — and
-Microsoft's reference says nothing about it. Kₙ and Yₙ are genuinely undefined, so those two
-need no decision.
+Jₙ and Iₙ *are* defined for negative `x` — both satisfy `f(−x) = (−1)ⁿ f(x)` — and
+Microsoft's reference says nothing about it. Kₙ and Yₙ are genuinely undefined there, so
+those two need no decision.
 
-Under ADR-001 the specification is Excel, not the mathematics, so **this must be measured
-rather than reasoned about**: evaluate `BESSELJ(-1.5, 2)` and `BESSELI(-1.5, 2)` in Excel and
-record what comes back. Three outcomes are possible and each implies a different guard:
+Under ADR-001 the specification is Excel, so this was measured rather than reasoned about:
 
-| Excel returns | Implication |
+| Cell | Excel returned |
 |---|---|
-| `0.2320876721` (i.e. the identity) | mirror by parity; no guard |
-| `#NUM!` | guard `x < 0` in all four, and note the departure from the mathematics |
-| something else | record it and match it |
+| `=BESSELJ(-1.5,2)` | `0.232087679` |
+| `=BESSELI(-1.5,2)` | `0.337834621` |
 
-**This is the one open question that must be answered before the code is written**, because it
-changes the guard clause, and a guard clause invented from the mathematics is exactly the kind
-of plausible-looking wrongness ADR-001 exists to prevent. It is a two-minute measurement.
+**What that settles: Excel does not refuse a negative `X`.** The `#NUM!` branch is
+eliminated, which removes the guard clause that would otherwise have to be written into
+all four functions. That is real progress and it is the larger half of the question.
 
-### 3.2 Excel's own accuracy is not assumed
+**What it does not settle: parity or absolute value.** Order 2 is even, so `(−1)ⁿ = +1` and
+the two candidate rules give *identical* answers. The measurement is consistent with both.
+Discriminating needs an **odd** order, where they differ in sign:
 
-Excel's numerical library was substantially reworked for 2007, and the Bessel functions are
-among the ones historically reported as weak at large arguments. Whether current Excel agrees
-with a correct implementation to full double precision is **unknown here and should not be
-assumed in either direction**. The test plan (§6) is therefore built on published reference
-values and on identities, not on what Excel returns; a comparison against live Excel is a
-separate, later check, and if it disagrees, ADR-001 §"where Excel departs from a standard"
-governs what happens next — including possibly nothing, if the departure is Excel's own
-inaccuracy rather than a different definition.
+| Cell | If parity | If \|x\| |
+|---|---|---|
+| `=BESSELJ(-1.5,1)` | `-0.557936508` | `+0.557936508` |
+| `=BESSELI(-1.5,1)` | `-0.981666429` | `+0.981666429` |
+
+Two cells. Until they are run, **`besselJ` and `besselI` should not be written**, because
+the sign convention is not recoverable from the code afterwards without redoing this.
+
+The proposal's own framing was at fault here: §3.1 originally offered `BESSELJ(-1.5, 2)` as
+the probe, and it is the one call in the family that cannot answer the question it was
+chosen to answer. An even order was picked because it matched the reference value already
+written down elsewhere in this document, which is a bad reason to choose a measurement.
+
+---
+
+### 3.2 Excel's own accuracy — the same two cells answered this unasked
+
+The measurement above was taken for the sign question and settled a different one as a
+byproduct. Set beside the true values, Excel's answers diverge at the **eighth significant
+figure**:
+
+| | Excel | True value | Absolute | Relative |
+|---|---|---|---|---|
+| J₂(1.5) | `0.232087679` | `0.2320876721442` | 6.9 × 10⁻⁹ | 3.0 × 10⁻⁸ |
+| I₂(1.5) | `0.337834621` | `0.3378346183357` | 2.7 × 10⁻⁹ | 7.9 × 10⁻⁹ |
+
+Both land around 10⁻⁸ relative, which is what a rational minimax approximation tuned for
+about eight digits produces — not a `Double` computed to its own precision. The true values
+here are derived from J₀(1.5), J₁(1.5), I₀(1.5) and I₁(1.5) through the three-term
+recurrences, so they are self-consistent to full precision and independent of anything
+this package computes.
+
+**One caveat before this is treated as settled.** The figures were read from cells showing
+nine significant digits. Display rounding cannot explain the gap — rounding
+`0.2320876721442` to nine significant figures gives `0.232087672`, not `0.232087679` — so
+the divergence is almost certainly real. But re-reading with the full mantissa would remove
+the last doubt:
+
+```
+=TEXT(BESSELJ(-1.5,2),"0.000000000000000E+00")
+=TEXT(BESSELI(-1.5,2),"0.000000000000000E+00")
+```
+
+### 3.3 What follows from Excel being the less accurate of the two
+
+This changes what an oracle comparison is worth for this family, and it changes it in a way
+that should be decided now rather than during a test failure.
+
+- **The test plan in §6 stands unchanged**, and this is the reason it was built on published
+  values and identities rather than on Excel: had it been an Excel oracle, a correct
+  implementation would now be failing it.
+- **ADR-001 does not apply.** Excel is the specification where it *defines* something
+  differently — a different day-count rule, a different sign convention. It is not the
+  specification for how many digits of a well-defined transcendental function are right.
+  Matching Excel's error would mean deliberately building a worse function to agree with a
+  worse one.
+- **So: implement to full `Double` precision, and expect ~10⁻⁸ disagreement with Excel.**
+  Any oracle harness that later reads these from a workbook needs a per-family tolerance
+  rather than the tolerance used for arithmetic, and that tolerance should be recorded as
+  *Excel's* error budget rather than ours.
+
+The two identity checks below would confirm the size of that budget directly, since both
+are exact and any residual is Excel's alone:
+
+```
+=BESSELJ(1.5,0)*BESSELY(1.5,1)-BESSELJ(1.5,1)*BESSELY(1.5,0)     exactly -2/(PI()*1.5) = -0.424413181578
+=BESSELI(1.5,0)*BESSELK(1.5,1)+BESSELI(1.5,1)*BESSELK(1.5,0)     exactly 1/1.5         =  0.666666666667
+```
 
 ---
 
@@ -310,7 +369,7 @@ later by someone who does not know why it was tight.
 
 | Step | Content |
 |---|---|
-| 0 | **Measure Excel's negative-`X` behaviour** (§3.1). Blocks the guard clause; two minutes. |
+| 0 | **Measure Excel's negative-`X` behaviour at an *odd* order** (§3.1). The even-order half is done and eliminated `#NUM!`; the sign convention is still open and still blocks steps 1 and 3. Two cells. |
 | 1 | `besselJ` — series/asymptotic J₀ and J₁, then the two-direction recurrence of §5.2. The hardest of the four; everything after reuses its structure. |
 | 2 | `besselY` — Y₀ and Y₁ (series-with-log, asymptotic), then upward recurrence. |
 | 3 | `besselI` — mirrors step 1, modified. |
@@ -346,12 +405,39 @@ already available.* That sentence is fine to publish.
 
 ## 9. Open questions
 
-1. **Negative `X` for `BESSELJ` and `BESSELI`** (§3.1). Blocks step 1. Measure, do not reason.
-2. **Does Excel's own answer agree to full double precision?** (§3.2). Does not block anything —
-   the tests are built on published values regardless — but it should be checked once, and if it
-   disagrees, recorded under ADR-001 rather than chased.
-3. **Scaled variants** (§5.4). Deliberately deferred. Worth revisiting if anything ever needs
-   Iₙ or Kₙ outside the range where the unscaled forms survive.
-4. **Should the order be `Int` everywhere?** (§4). Proposed yes. The alternative — a `T` order
-   with Excel's truncation baked in — makes the spreadsheet convention the library's convention,
-   which is backwards. Worth one look before four signatures are committed to.
+1. **Parity or absolute value for negative `X`** (§3.1). Half measured 2026-09-10: Excel
+   accepts a negative `X` rather than refusing it. The sign is still open and needs
+   `=BESSELJ(-1.5,1)` and `=BESSELI(-1.5,1)`. **Blocks steps 1 and 3.**
+2. **Confirm Excel's precision with the full mantissa** (§3.2). The nine-digit reading puts
+   Excel's error near 10⁻⁸ relative, which display rounding cannot account for. Does not
+   block anything — the tests never depended on Excel — but it fixes the tolerance any
+   future oracle run should use, and it is two `TEXT()` calls.
+3. **Scaled variants** (§5.4). Deliberately deferred. Worth revisiting if anything ever
+   needs Iₙ or Kₙ outside the range where the unscaled forms survive.
+4. **Should the order be `Int` everywhere?** (§4). Proposed yes. The alternative — a `T`
+   order with Excel's truncation baked in — makes the spreadsheet convention the library's
+   convention, which is backwards. Worth one look before four signatures are committed to.
+
+---
+
+## 10. Measurement log
+
+Kept because §3.2 was answered by a measurement taken for another purpose, and the next
+person should be able to see what was actually run rather than what was concluded.
+
+| Date | Call | Result | What it settled |
+|---|---|---|---|
+| 2026-09-10 | `=BESSELJ(-1.5,2)` | `0.232087679` | negative `X` accepted, not `#NUM!`; Excel ≈ 3.0 × 10⁻⁸ relative error |
+| 2026-09-10 | `=BESSELI(-1.5,2)` | `0.337834621` | as above; Excel ≈ 7.9 × 10⁻⁹ relative error |
+| pending | `=BESSELJ(-1.5,1)` | | parity vs absolute value |
+| pending | `=BESSELI(-1.5,1)` | | parity vs absolute value |
+| pending | Wronskian pair (§3.2) | | Excel's error budget, measured against an exact identity |
+
+Reference values at `x = 1.5`, cross-checked against each other through the three-term
+recurrences:
+
+| | J | Y | I | K |
+|---|---|---|---|---|
+| n=0 | 0.5118276717 | 0.3824489237 | 1.6467231898 | 0.2138055626 |
+| n=1 | 0.5579365079 | −0.4123086269 | 0.9816664286 | 0.2773878004 |
+| n=2 | 0.2320876721 | −0.9321937507 | 0.3378346183 | 0.5836559627 |
