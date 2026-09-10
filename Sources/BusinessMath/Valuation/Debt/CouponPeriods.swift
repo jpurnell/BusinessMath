@@ -105,12 +105,15 @@ public struct CouponPeriod<T: Real & BinaryFloatingPoint>: Sendable where T: Sen
 		}
 
 		let step = 12 / periodsPerYear
-		// Not `Calendar.current`: a coupon date is a date, not an instant, and the
-		// walk below reads it back as year-month-day. In any zone west of Greenwich
-		// a UTC midnight decomposes to the previous day, which moves the whole grid
-		// — and moves it asymmetrically, since a six-month step that crosses a
-		// daylight-saving boundary shifts where one that does not stays put. See the
-		// note on `gregorianUTC`.
+		// Not `Calendar.current`. The walk below adds months to a wall-clock time and
+		// reads the result back as year-month-day, which is only correct while the
+		// zone's UTC offset is the same on both dates. Across a daylight-saving
+		// transition it is not: stepping back six months from 15 November keeps 19:00
+		// local and lands on 23:00 UTC the *previous* day, moving the whole grid.
+		//
+		// A large fixed offset is harmless — `BondClockZoneInvarianceTests` shows the
+		// defect this replaces was invisible in Tokyo (+9), Niue (−11) and Kathmandu
+		// (+5:45) and visible only in New York and Lord Howe. See `gregorianUTC`.
 		let calendar = gregorianUTC
 
 		// Walk back from maturity until the date at or before settlement is found. The

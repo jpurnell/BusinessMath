@@ -18,11 +18,16 @@ now reports what it actually did.
 ### Fixed
 
 - **The coupon grid no longer moves with the machine's time zone.** `CouponPeriod` and
-  `ACCRINT`'s quasi-coupon walk stepped through the schedule with `Calendar.current`, so a
-  maturity given as a UTC midnight decomposed to the previous day anywhere west of Greenwich
-  and the whole grid shifted with it. Asymmetrically, too: a six-month step that crossed a
-  daylight-saving boundary moved where one that did not stayed put, which is why
-  `COUPPCD` came back right and `COUPNCD` came back a day early on the same bond.
+  `ACCRINT`'s quasi-coupon walk stepped through the schedule with `Calendar.current`, adding
+  months to a wall-clock time and reading the result back as year-month-day.
+
+  **The offset was never the problem; a change of offset was.** That arithmetic round-trips
+  to the correct instant whenever a zone's UTC offset is the same on both dates, however
+  large it is — so the defect was invisible in Tokyo (+9), Niue (−11) and Kathmandu (+5:45),
+  and visible in New York and Lord Howe, the two probe zones where the coupon dates fall on
+  opposite sides of a daylight-saving transition. It is also why `COUPPCD` came back right
+  and `COUPNCD` a day early on the same bond: November → May crosses into DST, May →
+  November crosses back and restores the offset.
 
   Everything defined on the grid inherited the error — `PRICE` was out by about 0.017 per
   100 of face on Microsoft's own worked example, and `YIELD` by 2.7 basis points of a

@@ -92,10 +92,11 @@ struct CouponPeriodCalendarTests {
 	/// The regression this file exists for, stated as a property rather than a value.
 	///
 	/// The same bond, described by instants an hour apart inside the same UTC day,
-	/// must produce the same grid. Under `Calendar.current` it did not: a maturity at
-	/// UTC midnight decomposed to the previous day in any zone west of Greenwich, and
-	/// the whole schedule shifted with it — asymmetrically, because a step that
-	/// crosses a daylight-saving boundary shifts and one that does not stay put.
+	/// must produce the same grid. Under `Calendar.current` it did not — but only in a
+	/// zone that changes offset during the year. Wall-clock month arithmetic
+	/// round-trips to the correct instant whenever the UTC offset is stable, however
+	/// large it is, so the defect was invisible in Tokyo and Niue and visible in New
+	/// York. `BondClockZoneInvarianceTests` sweeps that directly.
 	@Test("The grid does not move with the time of day")
 	func theGridIsIndependentOfTheHour() throws {
 		let maturity = Self.utc(2011, 11, 15)
