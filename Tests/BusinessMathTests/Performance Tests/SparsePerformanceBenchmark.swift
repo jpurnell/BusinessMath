@@ -37,8 +37,7 @@ private struct SplitMix64 {
 }
 
 @Suite("Sparse Matrix Performance Benchmarks", .serialized,
-       .enabled(if: ProcessInfo.processInfo.environment["RUN_BENCHMARKS"] != nil,
-                "Set RUN_BENCHMARKS=1 to enable. Skipped in CI to prevent timeout."))
+       .benchmarkOnly)
 struct SparsePerformanceBenchmark {
 
     // MARK: - Matrix-Vector Multiply Benchmarks

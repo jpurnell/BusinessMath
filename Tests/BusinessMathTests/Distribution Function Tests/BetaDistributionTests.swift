@@ -289,14 +289,27 @@ struct BetaDistributionTests {
 			distributionBeta(alpha: alpha, beta: beta, seed: seedSets[i])
 		}
 
-		// Simple autocorrelation test - consecutive samples shouldn't be correlated
-		var correlationSum = 0.0
+		// A normalised lag-1 autocorrelation, because the raw product moment could not
+		// fail. Beta(2, 2) has mean 0.5 and variance αβ/((α+β)²(α+β+1)) = 4/(16·5) = 0.05,
+		// so E[X₁X₂] = 0.25 + 0.05ρ. Asserting |E[X₁X₂] − 0.25| < 0.05 therefore asserts
+		// |ρ| < 1 — true of every possible correlation, including ρ = 0.999.
+		//
+		// Dividing by the sample variance removes that: ρ̂ is on [−1, 1] whatever the
+		// variance happens to be, so the bound is about dependence rather than about scale.
+		let mean = samples.reduce(0.0, +) / Double(sampleCount)
+		let centred = samples.map { $0 - mean }
+		var covariance = 0.0
 		for i in 0..<(sampleCount - 1) {
-			correlationSum += samples[i] * samples[i + 1]
+			covariance += centred[i] * centred[i + 1]
 		}
-		let autocorrelation = correlationSum / Double(sampleCount - 1)
-		let expected = 0.5 * 0.5  // E[X₁ × X₂] = E[X₁] × E[X₂] for independent samples
+		let variance = centred.reduce(0.0) { $0 + $1 * $1 }
+		let rho = covariance / variance
 
-		#expect(abs(autocorrelation - expected) < 0.05)
+		// 4/√n is four standard errors of a lag-1 correlation under independence, where
+		// se ≈ 1/√n. At n = 1000 that is 0.1265, and a stream with any real serial
+		// structure exceeds it.
+		let bound = 4.0 / Double(sampleCount).squareRoot()
+		#expect(abs(rho) < bound,
+				"lag-1 autocorrelation \(rho) exceeds \(bound), four standard errors under independence")
 	}
 }

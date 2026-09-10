@@ -8,6 +8,7 @@
 
 import Foundation
 import Testing
+import TestSupport  // .benchmarkOnly
 @testable import BusinessMath
 
 @Suite("Parallel Multi-Start Optimizer Tests", .serialized)
@@ -438,8 +439,7 @@ struct ParallelOptimizerTests {
 /// Performance tests that need exclusive CPU access
 /// Note: Serialized to avoid CPU contention with other parallel tests
 @Suite("Parallel Optimizer Performance Tests", .serialized,
-       .enabled(if: ProcessInfo.processInfo.environment["RUN_BENCHMARKS"] != nil,
-                "Set RUN_BENCHMARKS=1 to enable. Skipped in CI to prevent timeout."))
+       .benchmarkOnly)
 struct ParallelOptimizerPerformanceTests {
 
 	/// Test that parallel execution uses multiple cores

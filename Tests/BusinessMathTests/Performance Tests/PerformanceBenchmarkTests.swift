@@ -7,11 +7,11 @@
 
 import Foundation
 import Testing
+import TestSupport  // .benchmarkOnly
 @testable import BusinessMath
 
 @Suite("Performance Benchmark Tests", .serialized,
-       .enabled(if: ProcessInfo.processInfo.environment["RUN_BENCHMARKS"] != nil,
-                "Set RUN_BENCHMARKS=1 to enable. Skipped in CI to prevent timeout."))
+       .benchmarkOnly)
 struct PerformanceBenchmarkTests {
 
 	// MARK: - Basic Profiling Tests

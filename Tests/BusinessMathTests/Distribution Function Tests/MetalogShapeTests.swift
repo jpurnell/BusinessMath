@@ -213,7 +213,14 @@ struct MetalogShapeTests {
 		let inner: Double = modes[1] + modes[2]
 		#expect(Swift.abs(outer) < 1e-3, "the outer modes are not mirrored: \(modes[0]), \(modes[3])")
 		#expect(Swift.abs(inner) < 1e-3, "the inner modes are not mirrored: \(modes[1]), \(modes[2])")
-		let centre = d.antiModes()[1]
+		// Indexed after the count is required, not before. An out-of-range subscript is a
+		// trap, and a trap takes the whole test process down rather than failing this test.
+		// Four modes must have exactly three anti-modes between them, so the count is a
+		// claim worth making rather than a bound worth tolerating.
+		let antiModes = d.antiModes()
+		try #require(antiModes.count == 3,
+					 "four modes must separate three anti-modes, got \(antiModes.count)")
+		let centre = antiModes[1]
 		#expect(Swift.abs(centre) < 1e-3, "the central anti-mode is at \(centre), not zero")
 	}
 

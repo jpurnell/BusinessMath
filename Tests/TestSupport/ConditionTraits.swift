@@ -47,8 +47,21 @@ extension Trait where Self == ConditionTrait {
 	}
 
 	/// Runs the test only when parallel hardware has been opted into explicitly.
+	///
+	/// The message used to read "Skipped in CI", which it is not: the condition is the
+	/// presence of an environment variable, so the test skips on a developer's machine
+	/// exactly as it skips on a runner. Saying "in CI" told a reader that a local run would
+	/// exercise it, which is the opposite of what happens and the reason a skip like this
+	/// goes unnoticed for months.
+	///
+	/// `!= nil` rather than `== "1"`, matching ``benchmarkOnly``. Two opt-in gates in one
+	/// file disagreeing about whether `RUN_PARALLEL_TESTS=0` is a request is worse than
+	/// either convention on its own.
 	public static var requiresParallelHardware: Self {
-		.enabled(if: ProcessInfo.processInfo.environment["RUN_PARALLEL_TESTS"] == "1", "Skipped in CI: set RUN_PARALLEL_TESTS=1 to enable")
+		.enabled(
+			if: ProcessInfo.processInfo.environment["RUN_PARALLEL_TESTS"] != nil,
+			"Set RUN_PARALLEL_TESTS=1 to enable. This test needs parallel hardware to mean anything."
+		)
 	}
 
 	/// Runs the test only when benchmarks have been asked for explicitly.

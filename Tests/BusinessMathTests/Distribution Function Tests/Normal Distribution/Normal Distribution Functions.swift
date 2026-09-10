@@ -45,7 +45,13 @@ struct NormalDistributionFunctionTests {
 		let resultNotes = normDist(x: 10, mean: 10.1, stdev: 0.04)
 
 		#expect(abs(result - 0.5) < 1e-10)
-		#expect(abs(resultNotes - 0.00621) < 0.000001)
+		// Φ(−2.5) to full Double precision, not the 3-significant-figure 0.00621 this
+		// carried. That literal sat 3.35e-7 from the true value under a 1e-6 bound, so the
+		// assertion passed on a margin narrower than its own rounding error — luck, not
+		// evidence, and it capped the achievable tolerance six orders of magnitude short.
+		// Reference computed at 30+ digits; normalCDF is the erfc form and holds to here.
+		#expect(abs(resultNotes - 0.006209665325776291) < 1e-15,
+				"normDist(10, mean: 10.1, stdev: 0.04) is Φ(−2.5), got \(resultNotes)")
 	}
 
 	@Test("normSDist")

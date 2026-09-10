@@ -6,13 +6,13 @@
 //
 
 import Testing
+import TestSupport  // .benchmarkOnly
 import Foundation
 import Numerics
 @testable import BusinessMath
 
 @Suite("DDM Performance Tests", .serialized,
-       .enabled(if: ProcessInfo.processInfo.environment["RUN_BENCHMARKS"] != nil,
-                "Set RUN_BENCHMARKS=1 to enable. Skipped in CI to prevent timeout."))
+       .benchmarkOnly)
 struct DDMPerformanceTests {
 
     // MARK: - Single Calculation Performance
