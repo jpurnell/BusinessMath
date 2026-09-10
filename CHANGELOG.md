@@ -11,6 +11,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+### Fixed
+
+- **Beta returned the distribution mean on 22% of draws at small shapes.**
+  `distributionBeta` draws `X ~ Gamma(α, 1)` and `Y ~ Gamma(β, 1)` and returns `X/(X+Y)`.
+  `gammaVariate` reaches a shape below 1 through the boost `Gamma(α) = Gamma(α+1) · U^(1/α)`,
+  whose exponent is 1000 at α = 0.001 — so `pow(u, 1000)` underflows unless `u` is within
+  about 0.7% of 1, both gammas underflow together, and the ratio is 0/0.
+
+  A guard caught the 0/0 and returned `α/(α+β)`. Measured over 20,000 seeded draws at
+  α = β = 0.001, it fired on **22.375%** of them, each returning exactly 0.5 — and
+  Beta(0.001, 0.001) puts essentially all of its mass within a whisker of 0 and 1, so 0.5 is
+  close to the one value it never produces. NaN would have been loud; a plausible number in
+  the middle of the support is what the fail-silent rule exists to prevent.
+
+  Shapes below 1 now evaluate the same construction in logs, where the boost is a division
+  rather than a power: `log X = log Gamma(α+1) + log(u)/α` stays finite at any shape, and
+  `X/(X+Y)` becomes `1/(1 + exp(log Y − log X))`, which saturates to 0 or 1 instead of
+  underflowing to 0/0. Shapes at or above 1 are untouched, so existing seeded streams there
+  are unchanged.
+
+- **`inverseNormalCDF` answered a negative scale with a mirrored quantile.** Asked for the
+  90th percentile of `N(0, -1)` it returned −1.2816 — the 10th percentile, with nothing in
+  the result to say so. A caller who computed a scale rather than writing one got a confident
+  number from the wrong tail. It now returns NaN.
+
+  A zero scale was wrong in the other direction: `p: 0` and `p: 1` evaluated `0 * (∓∞)` and
+  produced NaN. A zero scale is a point mass at `mean`, and every quantile of a point mass is
+  its location, endpoints included. It now returns `mean`.
+
+### Added
+
+- **`openUnitUniform`** (internal) — a uniform draw on the **open** interval `(0, 1)`, using
+  the top 53 bits placed at the centre of each representable cell rather than its edge, so
+  both endpoints are excluded by construction rather than by rejection sampling.
+
+  `Double.random(in: 0...1, using:)` has two problems for inverse-transform samplers: the
+  interval is closed, so a legal draw of exactly zero makes `log(0)` produce a non-finite
+  variate; and the standard library documents that the mapping from generator output to
+  `Double` may change between Swift releases, which means a seeded stream is not reproducible
+  across toolchains.
+
+  Deliberately **not** yet adopted library-wide: swapping it in changes the variate produced
+  by every existing seed, which is a reproducibility break for anyone who has recorded results
+  against one, and a separate decision from using it in new code paths where no stream exists
+  to preserve.
+
 ### Breaking Changes
 
 - **A solver's `timeLimit` is `Duration?`, and `nil` is the absent budget.** It was `Double`

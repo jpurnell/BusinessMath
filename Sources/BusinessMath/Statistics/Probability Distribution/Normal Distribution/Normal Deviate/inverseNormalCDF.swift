@@ -88,12 +88,37 @@ import Numerics
 /// a whole run over one sample. Callers that need a finite value should clamp `p`
 /// before calling.
 ///
+/// ## Degenerate scales
+///
+/// `stdDev` is the only place an undefined answer can enter, since the quantile itself is
+/// total. Both of its degenerate cases are answered explicitly rather than left to
+/// arithmetic:
+///
+/// - **`stdDev == 0`** returns `mean` for every `p`. A zero scale is a point mass at
+///   `mean`, and every quantile of a point mass is its location. Left to arithmetic the
+///   endpoints evaluated `0 * (∓∞)` and produced NaN, which is not what a degenerate
+///   normal does.
+/// - **`stdDev < 0`** returns NaN. It used to return a *mirrored* quantile: asked for the
+///   90th percentile of `N(0, -1)` it answered −1.2816, the 10th. Nothing in the result
+///   said so, which is the failure this library's fail-silent rule exists to prevent —
+///   NaN is loud, and a plausible number drawn from the wrong tail is not. A caller that
+///   computed a scale rather than writing one is exactly who meets this.
+///
 /// ## References
 ///
 /// - Acklam, P.J. (2000) "An algorithm for computing the inverse normal cumulative
 ///   distribution function."
 /// - Moro, B. (1995) "The full Monte." *Risk* 8(2), 57-58.
 public func inverseNormalCDF<T: Real>(p: T, mean: T = 0, stdDev: T = 1) -> T {
+    // Asked before the scale is examined, so the point-mass shortcut below cannot answer
+    // `mean` to a question that was never posed.
+    guard !p.isNaN else { return p }
+    // A negative scale is not a distribution. Returning NaN rather than the mirrored
+    // quantile the arithmetic would produce; see "Degenerate scales" above.
+    guard stdDev >= 0 else { return T.nan }
+    // A point mass at `mean`: every quantile is the location, endpoints included. Taken
+    // before the multiply so `0 * (∓∞)` never arises.
+    guard stdDev > 0 else { return mean }
     return mean + stdDev * standardNormalQuantile(p)
 }
 
