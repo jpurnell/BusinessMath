@@ -1,4 +1,5 @@
 import Testing
+import TestSupport  // .requiresMetalGPU
 import Foundation
 #if canImport(Metal)
 import Metal
@@ -14,7 +15,7 @@ import Metal
 /// - Constant loading (CONST opcode)
 /// - Compound expressions (multiple operations)
 /// - Edge cases (division, zero, negative numbers)
-@Suite("Monte Carlo GPU Model Evaluator Tests")
+@Suite("Monte Carlo GPU Model Evaluator Tests", .requiresMetalGPU)
 struct MonteCarloModelEvaluatorTests {
 
     // MARK: - Bytecode Operation Definitions
@@ -240,7 +241,8 @@ struct MonteCarloModelEvaluatorTests {
 
         // Evaluate on GPU
         let gpuResults = try evaluateModelGPU(inputs: testInputs, bytecode: bytecode)
-        guard !gpuResults.isEmpty else { return } // Skip if Metal unavailable
+        try #require(!gpuResults.isEmpty,
+                     "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         // Evaluate on CPU and compare
         for (i, inputs) in testInputs.enumerated() {
@@ -266,7 +268,8 @@ struct MonteCarloModelEvaluatorTests {
         ]
 
         let gpuResults = try evaluateModelGPU(inputs: testInputs, bytecode: bytecode)
-        guard !gpuResults.isEmpty else { return }
+        try #require(!gpuResults.isEmpty,
+                     "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         for (i, inputs) in testInputs.enumerated() {
             let cpuResult = try evaluateModelCPU(inputs: inputs, bytecode: bytecode)
@@ -292,7 +295,8 @@ struct MonteCarloModelEvaluatorTests {
         ]
 
         let gpuResults = try evaluateModelGPU(inputs: testInputs, bytecode: bytecode)
-        guard !gpuResults.isEmpty else { return }
+        try #require(!gpuResults.isEmpty,
+                     "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         for (i, inputs) in testInputs.enumerated() {
             let cpuResult = try evaluateModelCPU(inputs: inputs, bytecode: bytecode)
@@ -318,7 +322,8 @@ struct MonteCarloModelEvaluatorTests {
         ]
 
         let gpuResults = try evaluateModelGPU(inputs: testInputs, bytecode: bytecode)
-        guard !gpuResults.isEmpty else { return }
+        try #require(!gpuResults.isEmpty,
+                     "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         for (i, inputs) in testInputs.enumerated() {
             let cpuResult = try evaluateModelCPU(inputs: inputs, bytecode: bytecode)
@@ -343,7 +348,8 @@ struct MonteCarloModelEvaluatorTests {
         ]
 
         let gpuResults = try evaluateModelGPU(inputs: testInputs, bytecode: bytecode)
-        guard !gpuResults.isEmpty else { return }
+        try #require(!gpuResults.isEmpty,
+                     "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         for (i, inputs) in testInputs.enumerated() {
             let cpuResult = try evaluateModelCPU(inputs: inputs, bytecode: bytecode)
@@ -372,7 +378,8 @@ struct MonteCarloModelEvaluatorTests {
         ]
 
         let gpuResults = try evaluateModelGPU(inputs: testInputs, bytecode: bytecode)
-        guard !gpuResults.isEmpty else { return }
+        try #require(!gpuResults.isEmpty,
+                     "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         for (i, inputs) in testInputs.enumerated() {
             let cpuResult = try evaluateModelCPU(inputs: inputs, bytecode: bytecode)
@@ -401,7 +408,8 @@ struct MonteCarloModelEvaluatorTests {
         ]
 
         let gpuResults = try evaluateModelGPU(inputs: testInputs, bytecode: bytecode)
-        guard !gpuResults.isEmpty else { return }
+        try #require(!gpuResults.isEmpty,
+                     "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         for (i, inputs) in testInputs.enumerated() {
             let cpuResult = try evaluateModelCPU(inputs: inputs, bytecode: bytecode)
@@ -428,7 +436,8 @@ struct MonteCarloModelEvaluatorTests {
         ]
 
         let gpuResults = try evaluateModelGPU(inputs: testInputs, bytecode: bytecode)
-        guard !gpuResults.isEmpty else { return }
+        try #require(!gpuResults.isEmpty,
+                     "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         for (i, inputs) in testInputs.enumerated() {
             let cpuResult = try evaluateModelCPU(inputs: inputs, bytecode: bytecode)
@@ -453,7 +462,8 @@ struct MonteCarloModelEvaluatorTests {
         ]
 
         let gpuResults = try evaluateModelGPU(inputs: testInputs, bytecode: bytecode)
-        guard !gpuResults.isEmpty else { return }
+        try #require(!gpuResults.isEmpty,
+                     "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         // All results should be 0
         for gpuResult in gpuResults {
@@ -479,7 +489,8 @@ struct MonteCarloModelEvaluatorTests {
         ]
 
         let gpuResults = try evaluateModelGPU(inputs: testInputs, bytecode: bytecode)
-        guard !gpuResults.isEmpty else { return }
+        try #require(!gpuResults.isEmpty,
+                     "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         for (i, inputs) in testInputs.enumerated() {
             let cpuResult = try evaluateModelCPU(inputs: inputs, bytecode: bytecode)

@@ -43,7 +43,7 @@ import Metal
 /// ``MetalShaderSource/randomNumberGeneration``, which is the same text production
 /// compiles and carries both address-space overloads, and a compilation failure is
 /// now thrown rather than mistaken for "no GPU on this machine".
-@Suite("Monte Carlo GPU RNG Quality Tests")
+@Suite("Monte Carlo GPU RNG Quality Tests", .requiresMetalGPU)
 struct MonteCarloRNGTests {
 
 	/// Little-endian byte encoding of a `Float`, for the GPU's parameter buffer.
@@ -374,7 +374,8 @@ struct MonteCarloRNGTests {
 
     @Test("GPU RNG uniformity within one stream (Chi-square test)")
     func testUniformity() throws {
-        guard let samples = try streamUniforms(count: 100_000, seed: Self.fixedSeed) else { return }
+        let samples = try #require(try streamUniforms(count: 100_000, seed: Self.fixedSeed),
+                                   "this suite runs only where Metal works, so the sampler cannot return nil")
 
         #expect(samples.allSatisfy { $0 >= 0.0 && $0 <= 1.0 })
 
@@ -395,7 +396,8 @@ struct MonteCarloRNGTests {
     /// has its own test below.
     @Test("GPU RNG independence within one stream (lag-1 autocorrelation)")
     func testIndependenceWithinStream() throws {
-        guard let samples = try streamUniforms(count: 50_000, seed: Self.fixedSeed) else { return }
+        let samples = try #require(try streamUniforms(count: 50_000, seed: Self.fixedSeed),
+                                   "this suite runs only where Metal works, so the sampler cannot return nil")
 
         let autocorr = autocorrelation(samples: samples, lag: 1)
         #expect(abs(autocorr) < 0.05,
@@ -447,7 +449,8 @@ struct MonteCarloRNGTests {
     /// moved the structure one step out.
     @Test("Adjacent threads' first draws are independent", arguments: MonteCarloRNGTests.crossThreadSeeds)
     func adjacentThreadFirstDrawsAreIndependent(seed: UInt64) throws {
-        guard let samples = try firstDrawPerThread(count: 50_000, seed: seed) else { return }
+        let samples = try #require(try firstDrawPerThread(count: 50_000, seed: seed),
+                                   "this suite runs only where Metal works, so the sampler cannot return nil")
 
         for lag in 1...5 {
             let crossStream = autocorrelation(samples: samples, lag: lag)
@@ -470,7 +473,8 @@ struct MonteCarloRNGTests {
     @Test("Cross-thread first draws are uniform (K-S)", arguments: MonteCarloRNGTests.crossThreadSeeds)
     func crossThreadFirstDrawsAreUniform(seed: UInt64) throws {
         let count = 10_000
-        guard let samples = try firstDrawPerThread(count: count, seed: seed) else { return }
+        let samples = try #require(try firstDrawPerThread(count: count, seed: seed),
+                                   "this suite runs only where Metal works, so the sampler cannot return nil")
 
         let ksStatistic = kolmogorovSmirnovTest(samples: samples) { x in x }
         let critical = ksCritical01(count)
@@ -491,7 +495,8 @@ struct MonteCarloRNGTests {
     /// zero, neither of which is what is being asserted.
     @Test("The same base seed gives the same draws, a different one does not")
     func seededDispatchIsReproducible() throws {
-        guard let first = try firstDrawPerThread(count: 4096, seed: Self.fixedSeed) else { return }
+        let first = try #require(try firstDrawPerThread(count: 4096, seed: Self.fixedSeed),
+                                 "this suite runs only where Metal works, so the sampler cannot return nil")
         let second = try #require(try firstDrawPerThread(count: 4096, seed: Self.fixedSeed))
         let other = try #require(try firstDrawPerThread(count: 4096, seed: Self.fixedSeed &+ 1))
 
@@ -519,7 +524,8 @@ struct MonteCarloRNGTests {
     func seedingNeverProducesTheAbsorbingState() throws {
         // The unique (baseSeed, tid) that drives SplitMix64's counter to zero.
         let adversarial = UInt64(0) &- 0x9E37_79B9_7F4A_7C15
-        guard let constructed = try seededStates(count: 1, seed: adversarial) else { return }
+        let constructed = try #require(try seededStates(count: 1, seed: adversarial),
+                                       "this suite runs only where Metal works, so the sampler cannot return nil")
         #expect(constructed[0].x == 0, "the constructed case should be the one that zeroes s0")
         // s1 is mix(0x9E3779B97F4A7C15) — SplitMix64's output for a counter that has just
         // wrapped to zero. The value follows from the mixing constants above rather than
@@ -538,8 +544,9 @@ struct MonteCarloRNGTests {
 
     @Test("Box-Muller transform produces standard normal")
     func testBoxMullerStandardNormal() throws {
-        guard let samples = try streamNormals(count: 10_000, mean: 0.0, stdDev: 1.0,
-                                              seed: Self.fixedSeed) else { return }
+        let samples = try #require(try streamNormals(count: 10_000, mean: 0.0, stdDev: 1.0,
+                                   seed: Self.fixedSeed),
+                                   "this suite runs only where Metal works, so the sampler cannot return nil")
 
         let mean = samples.reduce(0.0, +) / Float(samples.count)
         let variance = samples.map { pow($0 - mean, 2) }.reduce(0.0, +) / Float(samples.count)
@@ -554,8 +561,9 @@ struct MonteCarloRNGTests {
         let targetMean: Float = 100.0
         let targetStdDev: Float = 15.0
 
-        guard let samples = try streamNormals(count: 10_000, mean: targetMean, stdDev: targetStdDev,
-                                              seed: Self.fixedSeed) else { return }
+        let samples = try #require(try streamNormals(count: 10_000, mean: targetMean, stdDev: targetStdDev,
+                                   seed: Self.fixedSeed),
+                                   "this suite runs only where Metal works, so the sampler cannot return nil")
 
         let mean = samples.reduce(0.0, +) / Float(samples.count)
         let variance = samples.map { pow($0 - mean, 2) }.reduce(0.0, +) / Float(samples.count)
@@ -568,7 +576,8 @@ struct MonteCarloRNGTests {
     @Test("Kolmogorov-Smirnov test for uniform distribution")
     func testKSUniform() throws {
         let count = 10_000
-        guard let samples = try streamUniforms(count: count, seed: Self.fixedSeed) else { return }
+        let samples = try #require(try streamUniforms(count: count, seed: Self.fixedSeed),
+                                   "this suite runs only where Metal works, so the sampler cannot return nil")
 
         let ksStatistic = kolmogorovSmirnovTest(samples: samples) { x in x }
         let critical = ksCritical01(count)
@@ -580,8 +589,9 @@ struct MonteCarloRNGTests {
     @Test("Kolmogorov-Smirnov test for normal distribution")
     func testKSNormal() throws {
         let count = 10_000
-        guard let samples = try streamNormals(count: count, mean: 0.0, stdDev: 1.0,
-                                              seed: Self.fixedSeed) else { return }
+        let samples = try #require(try streamNormals(count: count, mean: 0.0, stdDev: 1.0,
+                                   seed: Self.fixedSeed),
+                                   "this suite runs only where Metal works, so the sampler cannot return nil")
 
         let normalCDF: (Float) -> Float = { x in
             0.5 * (1.0 + erf(x / sqrt(2.0)))

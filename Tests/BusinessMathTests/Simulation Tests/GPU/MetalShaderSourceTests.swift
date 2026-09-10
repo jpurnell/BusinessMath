@@ -21,7 +21,7 @@ import Metal
 /// So a syntax error in the shared text would not fail anything. It would silently
 /// turn the GPU path off across the whole package and leave a green test run behind.
 /// These tests are the thing that notices.
-@Suite("Metal Shader Source")
+@Suite("Metal Shader Source", .requiresMetalGPU)
 struct MetalShaderSourceTests {
 
 	#if canImport(Metal)
@@ -48,7 +48,8 @@ struct MetalShaderSourceTests {
 
 	@Test("The shared RNG source compiles")
 	func sharedSourceCompiles() throws {
-		guard let device = try compiler() else { return }
+		let device = try #require(try compiler(),
+								  "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
 		let source = """
 		#include <metal_stdlib>
@@ -80,7 +81,8 @@ struct MetalShaderSourceTests {
 	/// radius is 0, so both variates are exactly the mean.
 	@Test("The pole guard holds on the GPU")
 	func poleGuardHoldsOnDevice() throws {
-		guard let device = try compiler() else { return }
+		let device = try #require(try compiler(),
+								  "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
 		let source = """
 		#include <metal_stdlib>
@@ -140,8 +142,6 @@ struct MetalShaderSourceTests {
 	/// package reads that `nil` as "no GPU here" and passes.
 	@Test("Both production kernel libraries still build")
 	func productionKernelsCompile() throws {
-		guard try compiler() != nil else { return }
-
 		// Compiling is necessary but not sufficient: a library that builds and then
 		// exposes none of the entry points the package dispatches to is the same silent
 		// fallback. So each device is unwrapped and then asked to do its actual work.

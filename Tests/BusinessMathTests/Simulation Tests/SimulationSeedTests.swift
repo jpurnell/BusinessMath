@@ -141,9 +141,10 @@ struct SimulationSeedTests {
 	}
 
 	#if canImport(Metal)
-	@Test("GPU: same seed produces identical results")
+	@Test("GPU: same seed produces identical results", .requiresMetalGPU)
 	func gpuSameSeedIdentical() throws {
-		guard MonteCarloGPUDevice() != nil else { return }
+		_ = try #require(MonteCarloGPUDevice(),
+						 "the trait guarantees a working GPU, so a nil device means the production kernel failed to compile")
 		let model = try MonteCarloExpressionModel { builder in builder[0] + builder[1] }
 		func gpuSim() -> MonteCarloSimulation {
 			var simulation = MonteCarloSimulation(iterations: 10_000, enableGPU: true, seed: 42, expressionModel: model)
@@ -183,9 +184,10 @@ struct AsyncRunTests {
 	}
 
 	#if canImport(Metal)
-	@Test("Async GPU run with seed matches sync GPU run")
+	@Test("Async GPU run with seed matches sync GPU run", .requiresMetalGPU)
 	func asyncMatchesSyncGPU() async throws {
-		guard MonteCarloGPUDevice() != nil else { return }
+		_ = try #require(MonteCarloGPUDevice(),
+						 "the trait guarantees a working GPU, so a nil device means the production kernel failed to compile")
 		let model = try MonteCarloExpressionModel { builder in builder[0] + builder[1] }
 		func gpuSim() -> MonteCarloSimulation {
 			var simulation = MonteCarloSimulation(iterations: 10_000, enableGPU: true, seed: 9, expressionModel: model)

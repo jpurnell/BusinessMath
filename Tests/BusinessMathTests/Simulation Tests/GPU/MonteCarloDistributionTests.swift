@@ -14,7 +14,7 @@ import Metal
 /// - Uniform distribution (range, mean matching)
 /// - Triangular distribution (mode, shape matching)
 /// - Mixed distribution scenarios
-@Suite("Monte Carlo GPU Distribution Sampler Tests")
+@Suite("Monte Carlo GPU Distribution Sampler Tests", .requiresMetalGPU)
 struct MonteCarloDistributionTests {
 
     // MARK: - Helper: CPU Distribution Sampling
@@ -280,7 +280,8 @@ struct MonteCarloDistributionTests {
             param3: 0.0,
             count: sampleCount
         )
-        guard !gpuSamples.isEmpty else { return } // Skip if Metal unavailable
+        try #require(!gpuSamples.isEmpty,
+                     "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         // Compare statistics
         let cpuMean = calculateMean(cpuSamples)
@@ -313,7 +314,8 @@ struct MonteCarloDistributionTests {
             param3: 0.0,
             count: sampleCount
         )
-        guard !gpuSamples.isEmpty else { return } // Skip if Metal unavailable
+        try #require(!gpuSamples.isEmpty,
+                     "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         let gpuSamplesDouble = gpuSamples.map { Double($0) }
 
@@ -345,7 +347,8 @@ struct MonteCarloDistributionTests {
             param3: Float(mode),
             count: sampleCount
         )
-        guard !gpuSamples.isEmpty else { return } // Skip if Metal unavailable
+        try #require(!gpuSamples.isEmpty,
+                     "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         let gpuSamplesDouble = gpuSamples.map { Double($0) }
 
@@ -419,7 +422,8 @@ struct MonteCarloDistributionTests {
             param3: 0.0,
             count: 1000
         )
-        guard !degenerateSamples.isEmpty else { return }
+        try #require(!degenerateSamples.isEmpty,
+                     "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
         #expect(degenerateSamples.allSatisfy { abs($0 - 5.0) < 0.001 }, "Degenerate uniform should be constant")
 
         // Normal with zero stdDev (degenerate)
@@ -430,7 +434,8 @@ struct MonteCarloDistributionTests {
             param3: 0.0,
             count: 1000
         )
-        guard !zeroStdDevSamples.isEmpty else { return }
+        try #require(!zeroStdDevSamples.isEmpty,
+                     "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
         let zeroStdMean = zeroStdDevSamples.map { Double($0) }.reduce(0.0, +) / Double(zeroStdDevSamples.count)
         #expect(abs(zeroStdMean - 50.0) < 0.1, "Near-zero stdDev should cluster around mean")
     }

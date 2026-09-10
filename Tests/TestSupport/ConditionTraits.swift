@@ -6,6 +6,9 @@
 //
 import Testing
 import Foundation
+#if canImport(Metal)
+import Metal
+#endif
 
 extension Trait where Self == ConditionTrait {
 
@@ -74,4 +77,63 @@ extension Trait where Self == ConditionTrait {
 			"Set RUN_BENCHMARKS=1 to enable. This test asserts only elapsed time."
 		)
 	}
+
+	/// Runs the test only where Metal can actually execute a kernel.
+	///
+	/// The GPU suites used to open each test with `guard let x = try helper() else { return }`,
+	/// where `nil` meant "this machine has no GPU". That reports the test as **passed**.
+	/// Swift Testing already has a way to say "did not run" — a condition trait, which
+	/// reports **skipped** — and the difference is the whole point: a suite that silently
+	/// passes on a machine without a GPU is indistinguishable from one that works, which is
+	/// how `MonteCarloRNGTests` went a year without executing a single kernel.
+	///
+	/// The condition is device **and** compiler, not device alone, because those are two
+	/// different absences and only one of them is benign. A machine with no `MTLDevice`
+	/// cannot run these tests and should skip. A machine whose runtime MSL compiler rejects
+	/// our shader source has found a real defect and must fail. Testing only for the device
+	/// would report the second as the first — the exact confusion ``MonteCarloRNGTests``
+	/// documents in its suite comment, where a kernel that could not compile was swallowed
+	/// by `try?` and read as "no GPU on this machine".
+	///
+	/// A trivial kernel is the probe because it is the smallest thing that distinguishes
+	/// them: if *it* fails to compile, nothing on this machine compiles, and the failure is
+	/// not about our source. `try?` is deliberate there and is the one place it belongs —
+	/// the thrown error is the answer being asked for, not an error being discarded.
+	public static var requiresMetalGPU: Self {
+		.enabled(
+			if: MetalAvailability.canRunKernels,
+			"No Metal device that compiles MSL on this machine: the GPU path cannot be exercised here"
+		)
+	}
+}
+
+/// Whether this machine can compile and run Metal kernels.
+///
+/// Backs ``Trait/requiresMetalGPU``. Separated from the trait so the probe runs **once per
+/// process** rather than once per test: `static let` is lazily initialised and cached, and
+/// the thirty-odd GPU tests that consult it would otherwise each pay a device lookup and a
+/// shader compile.
+public enum MetalAvailability {
+
+	/// `true` where a Metal device exists, compiles MSL at runtime, and yields a command queue.
+	///
+	/// All three are required before a GPU test can assert anything, and each can be absent
+	/// independently — a device with no command queue is as unusable as no device at all.
+	/// Any of them missing means "skip", never "fail".
+	public static let canRunKernels: Bool = {
+		#if canImport(Metal)
+		guard let device = MTLCreateSystemDefaultDevice() else { return false }
+		let trivial = """
+		#include <metal_stdlib>
+		using namespace metal;
+		kernel void trivial(device float* out [[buffer(0)]], uint tid [[thread_position_in_grid]]) {
+		    out[tid] = 1.0f;
+		}
+		"""
+		guard (try? device.makeLibrary(source: trivial, options: nil)) != nil else { return false }
+		return device.makeCommandQueue() != nil
+		#else
+		return false
+		#endif
+	}()
 }
