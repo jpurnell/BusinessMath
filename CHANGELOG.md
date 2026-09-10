@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
-### [Unreleased]
+### [2.18.0] - 2026-09-09
 
 Two additions, both purely additive: a Holt-Winters model can now choose its own smoothing
 parameters, and complex numbers can be read and written in the notation people actually use.
@@ -119,6 +119,49 @@ No existing signature changed.
   also be one nothing could round-trip against, and round-trip is the whole test:
   `Complex(notation: z.notation) == z` over a spread that includes both unit coefficients,
   both zero parts, zero itself, `1e-300`, the extremes of `Double`, and the non-finite values.
+
+### Fixed
+
+- **A GPU read-back could return fewer vectors than the population it described.** Both
+  `DifferentialEvolution` and `ParticleSwarmOptimization` read Metal results back one vector
+  at a time and appended only on a successful conversion:
+
+  ```
+  if let vector = V.fromArray(components) { population.append(vector) }
+  ```
+
+  A failed conversion appends nothing, so the batch comes back **shorter** — and
+  `DifferentialEvolution` then runs `newPopulation[i] = trialPopulation[i]` across
+  `0..<popSize`. That is an out-of-range crash rather than a wrong answer, and nothing before
+  it says anything is amiss. `ParticleSwarmOptimization` had the same shape twice, for
+  velocities and positions.
+
+  Unreachable through the public API today, because both optimizers gate the GPU on
+  `VectorN<Double>` and `VectorN.fromArray` accepts any length. It was one conformance away
+  from reachable: `Vector1D`, `Vector2D`, `Vector3D`, `Double` and `Float` all return `nil` on
+  a length mismatch — which is also what makes it testable without a GPU.
+
+  New `VectorSpace.vectors(fromFlat:count:dimension:)` returns **every element or `nil`, never
+  a prefix**. `nil` means fall back to the CPU, which is what both optimizers already do when
+  Metal is unavailable, so the recovery path is one that already existed and was already
+  tested.
+
+### Documentation
+
+- **Chapter 7, Marketing Analytics** — a guide through nine questions a marketing team
+  actually asks, in the order they come up, with an accompanying playground.
+
+  The organising theme is the one the whole area was built around: almost every quantity in
+  marketing analytics can be computed several ways, the ways disagree, and nothing about the
+  resulting number says which one you got. So the variant is a parameter rather than a hidden
+  choice. The chapter closes on a table of seven plausible wrong answers the library declines
+  to give.
+
+  Every example in it compiled and ran under `doc-run`, which caught two defects a reviewer
+  would not have: a section documenting API that exists only on an unmerged branch, and an
+  uplift fixture that separated in the treatment arm and was correctly refused by the model.
+
+---
 
 ### [2.17.0] - 2026-09-09
 
