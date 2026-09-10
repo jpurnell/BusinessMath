@@ -40,6 +40,20 @@ public enum CLVDefinition: Sendable, Equatable, CaseIterable {
 	/// that the retention rate observed over a few periods holds forever. It is the
 	/// limit of ``finiteHorizon`` as the horizon grows, which is checked in the tests.
 	case perpetuity
+
+	/// `m·(1 + d)/(1 + d − r)`. The same perpetuity valued as an **annuity due**.
+	///
+	/// The difference from ``perpetuity`` is exactly one period's margin, for any
+	/// retention and any discount rate, because this one counts the margin arriving *now*
+	/// and the ordinary perpetuity starts a period from now.
+	///
+	/// This is the convention behind the formula the subscription industry actually
+	/// quotes. At a zero discount rate it is `m/(1 − r)` — margin over churn — which is
+	/// what every SaaS spreadsheet computes and what this library's own templates have
+	/// always returned. Naming it is what lets the two live together: at 5% churn they
+	/// differ by 5%, small enough to look like rounding and large enough to move a
+	/// valuation.
+	case perpetuityDue
 }
 
 /// What can go wrong computing a lifetime value.
@@ -65,6 +79,9 @@ public enum CLVError: Error, Sendable, Equatable {
 
 	/// A projecting definition was asked for without the margin it projects.
 	case missingMargin
+
+	/// A backward-looking definition was asked for with no history to look back at.
+	case definitionNeedsHistory(CLVDefinition)
 }
 
 /// One customer's observed history.
@@ -199,14 +216,13 @@ public func customerLifetimeValue<T: Real & Sendable & BinaryFloatingPoint>(
 
 	case .perpetuity:
 		guard let rate = estimated else { throw CLVError.invalidRetention }
-		guard rate >= T.zero, rate <= T(1) else { throw CLVError.invalidRetention }
-		let denominator: T = 1 + discountRate - rate
-		guard denominator > T.zero else {
-			throw CLVError.divergentPerpetuity(retention: Double(rate),
-											   discountRate: Double(discountRate))
-		}
-		let numerator: T = margin * rate
-		value = numerator / denominator
+		value = try Self_perpetuity(margin: margin, retention: rate,
+									discountRate: discountRate, due: false)
+
+	case .perpetuityDue:
+		guard let rate = estimated else { throw CLVError.invalidRetention }
+		value = try Self_perpetuity(margin: margin, retention: rate,
+									discountRate: discountRate, due: true)
 	}
 
 	let net: T? = meanCost.map { value - $0 }
@@ -256,4 +272,114 @@ private func Self_estimatedRetention<T: Real & Sendable & BinaryFloatingPoint>(
 	}
 	guard !ratios.isEmpty else { return nil }
 	return ratios.reduce(T.zero, +) / T(ratios.count)
+}
+
+/// The perpetuity, in either convention.
+///
+/// Ordinary: `m·r/(1 + d − r)`, the first margin arriving one period from now.
+/// Due: `m·(1 + d)/(1 + d − r)`, the first arriving immediately. The two differ by exactly
+/// `m`, which is the identity the tests pin.
+///
+/// - Parameters:
+///   - margin: Margin per period.
+///   - retention: Per-period survival, in `[0, 1]`.
+///   - discountRate: Per-period discount rate, non-negative.
+///   - due: Whether the first margin arrives now.
+/// - Returns: The present value.
+/// - Throws: ``CLVError/invalidRetention`` or ``CLVError/divergentPerpetuity(retention:discountRate:)``.
+private func Self_perpetuity<T: Real & Sendable & BinaryFloatingPoint>(
+	margin: T,
+	retention: T,
+	discountRate: T,
+	due: Bool
+) throws -> T {
+	guard retention >= T.zero, retention <= T(1) else { throw CLVError.invalidRetention }
+	let denominator: T = 1 + discountRate - retention
+	guard denominator > T.zero else {
+		throw CLVError.divergentPerpetuity(retention: Double(retention),
+										   discountRate: Double(discountRate))
+	}
+	let factor: T = due ? 1 + discountRate : retention
+	let numerator: T = margin * factor
+	return numerator / denominator
+}
+
+/// Lifetime value from parameters rather than from a cohort.
+///
+/// ```swift
+/// let value = try customerLifetimeValue(marginPerPeriod: 100,
+///                                       retention: 0.95,
+///                                       definition: .perpetuityDue)
+/// print(value.value)
+/// ```
+///
+/// ## When there is no cohort to measure
+///
+/// ``customerLifetimeValue(cohort:definition:discountRate:horizon:retention:marginPerPeriod:)``
+/// estimates margin and retention from customer histories. A subscription business models
+/// both parametrically long before it has those histories — the plan says the margin and
+/// the churn assumption, and the LTV follows. This is that entry point, and it is what the
+/// model templates in `Fluent API/Templates/` delegate to.
+///
+/// ``CLVDefinition/historic`` and ``CLVDefinition/discountedHistoric`` are refused here.
+/// They average what a cohort actually earned; with no cohort there is nothing to average,
+/// and returning the forward-looking number under a backward-looking name would misreport
+/// where it came from.
+///
+/// - Parameters:
+///   - marginPerPeriod: Margin earned per period a customer stays. May be negative — a
+///     loss-making product has a negative lifetime value, which is a finding.
+///   - retention: Per-period survival, in `[0, 1]`. One minus churn.
+///   - definition: Which quantity to compute. Defaults to
+///     ``CLVDefinition/perpetuityDue``, the convention the subscription industry quotes.
+///   - discountRate: Per-period discount rate, non-negative. Defaults to zero.
+///   - horizon: Periods to project, used only by ``CLVDefinition/finiteHorizon``.
+/// - Returns: The value, carrying the parameters it was given and a cohort size of zero.
+/// - Throws: ``CLVError``.
+public func customerLifetimeValue<T: Real & Sendable & BinaryFloatingPoint>(
+	marginPerPeriod: T,
+	retention: T,
+	definition: CLVDefinition = .perpetuityDue,
+	discountRate: T = T.zero,
+	horizon: Int = 12
+) throws -> CLVResult<T> {
+	guard marginPerPeriod.isFinite else { throw CLVError.missingMargin }
+	guard discountRate >= T.zero, discountRate.isFinite else {
+		throw CLVError.invalidDiscountRate
+	}
+	guard retention >= T.zero, retention <= T(1) else { throw CLVError.invalidRetention }
+
+	let value: T
+	switch definition {
+	case .historic, .discountedHistoric:
+		throw CLVError.definitionNeedsHistory(definition)
+
+	case .finiteHorizon:
+		guard horizon > 0 else { throw CLVError.invalidHorizon }
+		var total: T = T.zero
+		for period in 1...horizon {
+			let periods: T = T(period)
+			let survival: T = T.pow(retention, periods)
+			let discount: T = T.pow(1 + discountRate, periods)
+			guard discount > T.zero else { throw CLVError.invalidDiscountRate }
+			let contribution: T = marginPerPeriod * survival
+			total += contribution / discount
+		}
+		value = total
+
+	case .perpetuity:
+		value = try Self_perpetuity(margin: marginPerPeriod, retention: retention,
+									discountRate: discountRate, due: false)
+
+	case .perpetuityDue:
+		value = try Self_perpetuity(margin: marginPerPeriod, retention: retention,
+									discountRate: discountRate, due: true)
+	}
+
+	return CLVResult(value: value,
+					 definition: definition,
+					 estimatedRetention: retention,
+					 averageMargin: marginPerPeriod,
+					 cohortSize: 0,
+					 netOfAcquisition: nil)
 }

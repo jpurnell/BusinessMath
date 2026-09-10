@@ -188,12 +188,93 @@ public struct SaaSModel: Sendable {
 
     // MARK: - LTV Calculations
 
+    /// Contribution margin earned per customer per month.
+    ///
+    /// `ARPU × gross margin`, with a missing gross margin read as 100%. This is what
+    /// acquisition cost is recovered out of, and what ``lifetimeValue(definition:discountRate:horizon:)``
+    /// projects forward.
+    public var marginPerPeriod: Double {
+        let margin = grossMargin ?? 1.0
+        return averageRevenuePerUser * margin
+    }
+
+    /// Monthly retention, or `nil` if the churn rate is not a rate.
+    ///
+    /// - Returns: `1 − churnRate`, or `nil` outside `[0, 1]`. A churn rate of 1.2 is not a
+    ///   retention of −0.2; it is a number that cannot have come from counting customers.
+    public var retentionRate: Double? {
+        guard churnRate >= 0, churnRate <= 1, churnRate.isFinite else { return nil }
+        return 1 - churnRate
+    }
+
+    /// Customer lifetime value, delegated to `Marketing/Value/`.
+    ///
+    /// ```swift
+    /// let model = SaaSModel(initialMRR: 10_000, churnRate: 0.05,
+    ///                       newCustomersPerMonth: 100, averageRevenuePerUser: 100,
+    ///                       grossMargin: 0.8)
+    /// let value = try model.lifetimeValue()
+    /// print(value.value)
+    /// ```
+    ///
+    /// Defaults to ``CLVDefinition/perpetuityDue``, which is `margin / churn` — exactly
+    /// what ``calculateLTV()`` has always returned, now with a name that says which of the
+    /// several quantities called "LTV" it is.
+    ///
+    /// What changes is the edges. Zero churn throws
+    /// ``CLVError/divergentPerpetuity(retention:discountRate:)`` rather than returning
+    /// zero: nobody ever leaving is the case where the series does not converge, and zero
+    /// is the opposite of the truth. A churn rate outside `[0, 1]` throws rather than
+    /// producing a number from it.
+    ///
+    /// - Parameters:
+    ///   - definition: Which lifetime value. Defaults to the industry convention.
+    ///   - discountRate: Monthly discount rate, non-negative. Defaults to zero.
+    ///   - horizon: Months to project, used only by ``CLVDefinition/finiteHorizon``.
+    /// - Returns: The value, with the retention and margin it was computed from.
+    /// - Throws: ``CLVError``.
+    public func lifetimeValue(definition: CLVDefinition = .perpetuityDue,
+                              discountRate: Double = 0,
+                              horizon: Int = 12) throws -> CLVResult<Double> {
+        guard let retention = retentionRate else { throw CLVError.invalidRetention }
+        return try customerLifetimeValue(marginPerPeriod: marginPerPeriod,
+                                         retention: retention,
+                                         definition: definition,
+                                         discountRate: discountRate,
+                                         horizon: horizon)
+    }
+
+    /// Unit economics against the acquisition cost, delegated to `Marketing/Value/`.
+    ///
+    /// - Parameters:
+    ///   - definition: Which lifetime value to put in the numerator.
+    ///   - discountRate: Monthly discount rate.
+    ///   - horizon: Months to project, for a finite horizon.
+    /// - Returns: The metrics, or `nil` when there is no acquisition cost to compare
+    ///   against — either because none was supplied or because it is zero, which is not an
+    ///   excellent ratio but an undefined one. `nil` also covers a non-positive margin,
+    ///   where the payback never arrives rather than arriving instantly.
+    /// - Throws: ``CLVError`` if the lifetime value itself is undefined.
+    public func acquisitionMetrics(definition: CLVDefinition = .perpetuityDue,
+                                   discountRate: Double = 0,
+                                   horizon: Int = 12) throws -> AcquisitionMetrics<Double>? {
+        guard let cost = customerAcquisitionCost else { return nil }
+        let value = try lifetimeValue(definition: definition,
+                                      discountRate: discountRate,
+                                      horizon: horizon)
+        return AcquisitionMetrics(lifetimeValue: value.value,
+                                  acquisitionCost: cost,
+                                  marginPerPeriod: marginPerPeriod)
+    }
+
     /// Calculate Customer Lifetime Value.
     ///
     /// LTV is calculated as: (ARPU * Gross Margin) / Churn Rate
     /// If no gross margin is specified, assumes 100% (1.0).
     ///
-    /// - Returns: Customer Lifetime Value
+    /// - Returns: Customer Lifetime Value, or **zero when the churn rate is zero** — which
+    ///   is the case where the value is unbounded, not the case where it is nothing.
+    @available(*, deprecated, message: "Use lifetimeValue(definition:discountRate:horizon:), which returns the same number and throws on the zero-churn case this returns 0 for.")
     public func calculateLTV() -> Double {
         let margin = grossMargin ?? 1.0
         guard churnRate > 0 else { return 0 }
@@ -206,7 +287,12 @@ public struct SaaSModel: Sendable {
     ///
     /// Payback period = CAC / ARPU
     ///
-    /// - Returns: Number of months to recover CAC, or 0 if CAC is not specified
+    /// - Returns: Number of months to recover CAC, or **zero if CAC is not specified** —
+    ///   zero being the best score on this scale, returned for missing data. Note also
+    ///   that this divides by revenue where `SubscriptionBoxModel` divides by margin;
+    ///   acquisition cost is recovered out of gross profit, so this understates payback
+    ///   whenever gross margin is below 100%.
+    @available(*, deprecated, message: "Use acquisitionMetrics()?.paybackPeriods, which divides by contribution margin rather than revenue and returns nil rather than zero when there is no cost.")
     public func calculateCACPayback() -> Double {
         guard let cac = customerAcquisitionCost else { return 0 }
         guard averageRevenuePerUser > 0 else { return 0 }
@@ -219,9 +305,16 @@ public struct SaaSModel: Sendable {
     ///
     /// A healthy SaaS business typically has an LTV:CAC ratio > 3.0.
     ///
-    /// - Returns: LTV:CAC ratio, or 0 if CAC is not specified
+    /// - Returns: LTV:CAC ratio, or 0 if CAC is not specified.
+    @available(*, deprecated, message: "Use acquisitionMetrics()?.ratio, which returns nil rather than dividing by a zero cost.")
     public func calculateLTVtoCAC() -> Double {
         guard let cac = customerAcquisitionCost else { return 0 }
+        // The guard below is the one this method shipped without: it checked that a cost
+        // was *present* and never that it was positive, so a zero cost divided through to
+        // infinity — a ratio that clears every "healthy is above three" check ever
+        // written against it. Zero matches the documented missing-cost answer; the
+        // replacement refuses instead of choosing between two wrong numbers.
+        guard cac > 0 else { return 0 }
         return calculateLTV() / cac
     }
 

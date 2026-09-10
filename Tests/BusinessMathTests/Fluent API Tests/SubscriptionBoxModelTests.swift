@@ -191,7 +191,7 @@ import RealModule
 
     // MARK: - LTV Tests
 
-    @Test("SubscriptionBoxModel_CustomerLifetimeValue") func LSubscriptionBoxModel_CustomerLifetimeValue() {
+    @Test("SubscriptionBoxModel_CustomerLifetimeValue") func LSubscriptionBoxModel_CustomerLifetimeValue() throws {
         // Given: A subscription box model
         let model = SubscriptionBoxModel(
             initialSubscribers: 1_000,
@@ -204,7 +204,7 @@ import RealModule
         )
 
         // When: Calculating LTV
-        let ltv = model.calculateCustomerLifetimeValue()
+        let ltv = try model.lifetimeValue().value
 
         // Then: LTV = Gross Margin per Box / Churn Rate
         // $24.99 / 0.08 ≈ $312.38
@@ -213,7 +213,7 @@ import RealModule
 
     // MARK: - Unit Economics Tests
 
-    @Test("SubscriptionBoxModel_LTVtoCAC") func LSubscriptionBoxModel_LTVtoCAC() {
+    @Test("SubscriptionBoxModel_LTVtoCAC") func LSubscriptionBoxModel_LTVtoCAC() throws {
         // Given: A subscription box model
         let model = SubscriptionBoxModel(
             initialSubscribers: 1_000,
@@ -226,14 +226,14 @@ import RealModule
         )
 
         // When: Calculating LTV:CAC ratio
-        let ratio = model.calculateLTVtoCAC()
+        let ratio = try #require(try model.acquisitionMetrics()).ratio
 
         // Then: LTV:CAC = $312.38 / $40 ≈ 7.81
         #expect(abs(ratio - 7.81) < 0.1)
         #expect(ratio > 3.0, "Healthy LTV:CAC should be > 3.0")
     }
 
-    @Test("SubscriptionBoxModel_CACPaybackMonths") func LSubscriptionBoxModel_CACPaybackMonths() {
+    @Test("SubscriptionBoxModel_CACPaybackMonths") func LSubscriptionBoxModel_CACPaybackMonths() throws {
         // Given: A subscription box model
         let model = SubscriptionBoxModel(
             initialSubscribers: 1_000,
@@ -246,7 +246,7 @@ import RealModule
         )
 
         // When: Calculating CAC payback period
-        let months = model.calculateCACPaybackMonths()
+        let months = try #require(try model.acquisitionMetrics()).paybackPeriods
 
         // Then: Payback = CAC / Gross Margin per Box
         // $40 / $24.99 ≈ 1.6 months
@@ -300,7 +300,7 @@ import RealModule
 
     // MARK: - Retention Tests
 
-    @Test("SubscriptionBoxModel_RetentionRate") func LSubscriptionBoxModel_RetentionRate() {
+    @Test("SubscriptionBoxModel_RetentionRate") func LSubscriptionBoxModel_RetentionRate() throws {
         // Given: A subscription box model
         let model = SubscriptionBoxModel(
             initialSubscribers: 1_000,
@@ -313,7 +313,7 @@ import RealModule
         )
 
         // When: Calculating retention rate
-        let retention = model.calculateRetentionRate()
+        let retention = try #require(model.retentionRate)
 
         // Then: Retention = 1 - Churn Rate
         // 1 - 0.08 = 0.92 (92%)

@@ -158,7 +158,7 @@ import RealModule
 
     // MARK: - LTV Calculation Tests
 
-    @Test("SaaSModel_LTVCalculation") func LSaaSModel_LTVCalculation() {
+    @Test("SaaSModel_LTVCalculation") func LSaaSModel_LTVCalculation() throws {
         // Given: A model with known parameters
         let model = SaaSModel(
             initialMRR: 10_000,
@@ -168,14 +168,14 @@ import RealModule
         )
 
         // When: Calculating customer lifetime value
-        let ltv = model.calculateLTV()
+        let ltv = try model.lifetimeValue().value
 
         // Then: LTV should be ARPU / churn rate
         // $100 / 0.05 = $2,000
         #expect(abs(ltv - 2_000) < 1.0)
     }
 
-    @Test("SaaSModel_LTVCalculation_WithGrossMargin") func LSaaSModel_LTVCalculation_WithGrossMargin() {
+    @Test("SaaSModel_LTVCalculation_WithGrossMargin") func LSaaSModel_LTVCalculation_WithGrossMargin() throws {
         // Given: A model with gross margin specified
         let model = SaaSModel(
             initialMRR: 10_000,
@@ -186,7 +186,7 @@ import RealModule
         )
 
         // When: Calculating customer lifetime value
-        let ltv = model.calculateLTV()
+        let ltv = try model.lifetimeValue().value
 
         // Then: LTV should be (ARPU * gross margin) / churn rate
         // ($100 * 0.80) / 0.05 = $1,600
@@ -195,7 +195,7 @@ import RealModule
 
     // MARK: - CAC Payback Tests
 
-    @Test("SaaSModel_CACPayback") func LSaaSModel_CACPayback() {
+    @Test("SaaSModel_CACPayback") func LSaaSModel_CACPayback() throws {
         // Given: A model with CAC specified
         let model = SaaSModel(
             initialMRR: 10_000,
@@ -206,16 +206,17 @@ import RealModule
         )
 
         // When: Calculating CAC payback period
-        let paybackMonths = model.calculateCACPayback()
+        let metrics = try #require(try model.acquisitionMetrics())
+        let paybackMonths = metrics.paybackPeriods
 
-        // Then: Payback should be CAC / ARPU
-        // $500 / $100 = 5 months
+        // Then: Payback should be CAC / contribution margin, which with no gross margin
+        // specified is ARPU. $500 / $100 = 5 months.
         #expect(abs(paybackMonths - 5.0) < 0.1)
     }
 
     // MARK: - Unit Economics Tests
 
-    @Test("SaaSModel_UnitEconomics_LTVtoCAC") func LSaaSModel_UnitEconomics_LTVtoCAC() {
+    @Test("SaaSModel_UnitEconomics_LTVtoCAC") func LSaaSModel_UnitEconomics_LTVtoCAC() throws {
         // Given: A model with both LTV and CAC
         let model = SaaSModel(
             initialMRR: 10_000,
@@ -226,7 +227,7 @@ import RealModule
         )
 
         // When: Calculating LTV:CAC ratio
-        let ltvToCACRatio = model.calculateLTVtoCAC()
+        let ltvToCACRatio = try #require(try model.acquisitionMetrics()).ratio
 
         // Then: LTV:CAC should be 2000 / 500 = 4.0 (healthy is > 3.0)
         #expect(abs(ltvToCACRatio - 4.0) < 0.1)

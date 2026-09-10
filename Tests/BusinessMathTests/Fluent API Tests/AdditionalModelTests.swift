@@ -197,7 +197,7 @@ struct SaaSModelAdditionalTests {
 	}
 
 	@Test
-	func cacPaybackUsesArpu() {
+	func cacPaybackUsesArpu() throws {
 		let s = SaaSModel(
 			initialMRR: 10_000,
 			churnRate: 0.05,
@@ -205,7 +205,9 @@ struct SaaSModelAdditionalTests {
 			averageRevenuePerUser: 100,
 			customerAcquisitionCost: 500
 		)
-		let payback = s.calculateCACPayback()
+		// With no gross margin specified the contribution margin is ARPU itself, so this
+		// is the same 5.0 the revenue-based calculation returned.
+		let payback = try #require(try s.acquisitionMetrics()).paybackPeriods
 		#expect(ApproxHelpers.approxEqual(payback, 5.0, accuracy: 0.1))
 	}
 }
@@ -232,7 +234,7 @@ struct SubscriptionBoxModelAdditionalTests {
 	}
 
 	@Test
-	func ltvIgnoresCACAndUsesGrossMarginPerBox() {
+	func ltvIgnoresCACAndUsesGrossMarginPerBox() throws {
 		let sb = SubscriptionBoxModel(
 			initialSubscribers: 1_000,
 			monthlyBoxPrice: 49.99,
@@ -243,7 +245,7 @@ struct SubscriptionBoxModelAdditionalTests {
 			customerAcquisitionCost: 200 // Large CAC should not affect LTV
 		)
 		let gmPerBox = sb.calculateGrossMarginPerBox() // 24.99
-		let ltv = sb.calculateCustomerLifetimeValue()
+		let ltv = try sb.lifetimeValue().value
 		#expect(ApproxHelpers.approxEqual(ltv, gmPerBox / sb.monthlyChurnRate, accuracy: 1.0))
 	}
 }
