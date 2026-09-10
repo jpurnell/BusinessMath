@@ -141,25 +141,28 @@ struct PeriodTests {
 		}
 	}
 
-	@Test("Monthly period invalid month causes precondition failure",
-	      .disabled("Test crashes the test runner - precondition() failures cannot be caught in Swift Testing"))
-	func monthlyPeriodInvalidMonth() {
-		// Month must be 1-12, otherwise precondition failure
-		// Swift Testing cannot catch precondition failures, so this test is disabled
-		// to prevent crashing the entire test suite.
-
-		// NOTE: This test documents that Period.month() validates input with precondition(),
-		// which is intentional API design for programmer errors (not runtime errors).
-
-		withKnownIssue("precondition() cannot be caught in Swift Testing") {
-			_ = Period.month(year: 2025, month: 0)  // Should trigger precondition failure
+	// An exit test spawns a child process, which iOS, tvOS and watchOS do not permit.
+	#if os(macOS) || os(Linux)
+	@Test("A month outside 1...12 traps rather than returning a Period")
+	func monthlyPeriodInvalidMonth() async {
+		// `Period.month` validates with `precondition`, which is the right call for a
+		// programmer error: an out-of-range month is a bug at the call site, not a
+		// condition to recover from at runtime. Asserting a trap needs a process that is
+		// allowed to die, and an exit test provides exactly that.
+		//
+		// This test was disabled with the reason "precondition() failures cannot be caught
+		// in Swift Testing". That was true when it was written and is not true now — the
+		// framework gained exit tests. What stood in for it was two `withKnownIssue` blocks
+		// around calls that never ran, closed by `#expect(true)`: an assertion that holds
+		// whatever the code does.
+		await #expect(processExitsWith: .failure) {
+			_ = Period.month(year: 2025, month: 0)
 		}
-
-		withKnownIssue("precondition() cannot be caught in Swift Testing") {
-			_ = Period.month(year: 2025, month: 13)  // Should trigger precondition failure
+		await #expect(processExitsWith: .failure) {
+			_ = Period.month(year: 2025, month: 13)
 		}
-	    #expect(true) // TEST-QUALITY: validates no-throw execution
 	}
+	#endif
 
 	// MARK: - Factory Methods: Quarterly
 
@@ -177,25 +180,21 @@ struct PeriodTests {
 		}
 	}
 
-	@Test("Quarterly period invalid quarter causes precondition failure",
-	      .disabled("Test crashes the test runner - precondition() failures cannot be caught in Swift Testing"))
-	func quarterlyPeriodInvalidQuarter() {
-		// Quarter must be 1-4, otherwise precondition failure
-		// Swift Testing cannot catch precondition failures, so this test is disabled
-		// to prevent crashing the entire test suite.
-
-		// NOTE: This test documents that Period.quarter() validates input with precondition(),
-		// which is intentional API design for programmer errors (not runtime errors).
-
-		withKnownIssue("precondition() cannot be caught in Swift Testing") {
-			_ = Period.quarter(year: 2025, quarter: 0)  // Should trigger precondition failure
+	// An exit test spawns a child process, which iOS, tvOS and watchOS do not permit.
+	#if os(macOS) || os(Linux)
+	@Test("A quarter outside 1...4 traps rather than returning a Period")
+	func quarterlyPeriodInvalidQuarter() async {
+		// The month case above carries the reasoning; this is the same contract on the
+		// other factory, and it is tested separately because a shared guard is exactly
+		// the kind of thing that gets applied to one and not the other.
+		await #expect(processExitsWith: .failure) {
+			_ = Period.quarter(year: 2025, quarter: 0)
 		}
-
-		withKnownIssue("precondition() cannot be caught in Swift Testing") {
-			_ = Period.quarter(year: 2025, quarter: 5)  // Should trigger precondition failure
+		await #expect(processExitsWith: .failure) {
+			_ = Period.quarter(year: 2025, quarter: 5)
 		}
-	    #expect(true) // TEST-QUALITY: validates no-throw execution
 	}
+	#endif
 
 	// MARK: - Factory Methods: Annual
 

@@ -1,4 +1,5 @@
 import Testing
+import TestSupport  // .benchmarkOnly, .requiresMetalGPU
 import Foundation
 @testable import BusinessMath
 
@@ -9,13 +10,15 @@ import Foundation
 ///
 /// **Note**: These tests are manual benchmarks, not part of regular test suite.
 /// Run individually to measure performance on your hardware.
-/// All tests are disabled by default - enable individually for benchmarking.
-@Suite("Monte Carlo GPU Performance Benchmarks")
+/// All tests assert elapsed time, so they run only under RUN_BENCHMARKS=1 and only
+/// where Metal works. See `.benchmarkOnly` for why a timing test is opt-in rather than
+/// disabled: disabled means nobody can run it without editing the file.
+@Suite("Monte Carlo GPU Performance Benchmarks", .benchmarkOnly, .requiresMetalGPU)
 struct MonteCarloGPUPerformanceTests {
 
     // MARK: - Small Simulation Benchmark (1K iterations)
 
-    @Test("1K iterations: CPU should be faster (GPU overhead)", .disabled())
+    @Test("1K iterations: CPU should be faster (GPU overhead)")
     func benchmark1KIterations() throws {
         #if canImport(Metal)
         guard MonteCarloGPUDevice() != nil else {
@@ -65,7 +68,7 @@ struct MonteCarloGPUPerformanceTests {
 
     // MARK: - Medium Simulation Benchmark (10K iterations)
 
-    @Test("10K iterations: GPU should show 5-10x speedup", .disabled())
+    @Test("10K iterations: GPU should show 5-10x speedup")
     func benchmark10KIterations() throws {
         #if canImport(Metal)
         guard MonteCarloGPUDevice() != nil else {
@@ -121,7 +124,7 @@ struct MonteCarloGPUPerformanceTests {
 
     // MARK: - Large Simulation Benchmark (100K iterations)
 
-    @Test("100K iterations: GPU performance benchmark", .disabled())
+    @Test("100K iterations: GPU performance benchmark")
     func benchmark100KIterations() throws {
         #if canImport(Metal)
         guard MonteCarloGPUDevice() != nil else {
@@ -184,7 +187,7 @@ struct MonteCarloGPUPerformanceTests {
 
     // MARK: - Very Large Simulation Benchmark (1M iterations)
 
-    @Test("1M iterations: GPU should show 50-100x speedup", .disabled())
+    @Test("1M iterations: GPU should show 50-100x speedup")
     func benchmark1MIterations() throws {
         #if canImport(Metal)
         guard MonteCarloGPUDevice() != nil else {
@@ -240,7 +243,7 @@ struct MonteCarloGPUPerformanceTests {
 
     // MARK: - Model Complexity Benchmark
 
-    @Test("Complex model vs simple model performance", .disabled())
+    @Test("Complex model vs simple model performance")
     func benchmarkModelComplexity() throws {
         #if canImport(Metal)
         guard MonteCarloGPUDevice() != nil else {

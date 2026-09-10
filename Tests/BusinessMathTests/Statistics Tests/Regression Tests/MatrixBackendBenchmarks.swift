@@ -6,6 +6,7 @@
 //
 
 import Testing
+import TestSupport  // .benchmarkOnly
 import TestSupport
 import Foundation
 @testable import BusinessMath
@@ -43,12 +44,13 @@ private struct SplitMix64Bench: RandomNumberGenerator {
 ///
 /// ## Running Benchmarks
 ///
-/// These tests are disabled by default to prevent timeouts during normal test runs.
+/// These tests assert elapsed time, so they are opt-in rather than disabled: a disabled
+/// suite needs a file edit before anyone can run it, an opt-in one needs an env var.
 /// To run them explicitly:
 /// ```bash
-/// swift test --filter MatrixBackendBenchmarks --enable-disabled-tests
+/// RUN_BENCHMARKS=1 swift test --filter MatrixBackendBenchmarks
 /// ```
-@Suite("Matrix Backend Performance Benchmarks", .disabled("Performance benchmarks are slow - run explicitly when needed"))
+@Suite("Matrix Backend Performance Benchmarks", .benchmarkOnly)
 struct MatrixBackendBenchmarks {
 
     // MARK: - Helper Functions
