@@ -194,7 +194,7 @@ struct StreamingFrequencyDomainTests {
 
     #if canImport(Accelerate)
     @Test("Accelerate FFT: matches Pure Swift bin-for-bin (tightened in v2.1.3)")
-    func accelerateMatchesPureSwift() {
+    func accelerateMatchesPureSwift() throws {
         let pureBackend = PureSwiftFFTBackend()
         let accelBackend = AccelerateFFTBackend()
         let n = 256
@@ -217,8 +217,8 @@ struct StreamingFrequencyDomainTests {
         // v2.1.1 fixed AccelerateFFTBackend to apply a ×0.25 scaling
         // correction; this test locks that fix in by requiring exact
         // bin-by-bin agreement at machine precision.
-        #expect(pureSpectrum.count == accelSpectrum.count)
-        guard pureSpectrum.count == accelSpectrum.count else { return }
+        try #require(pureSpectrum.count == accelSpectrum.count,
+                     "the two backends returned different bin counts, so no bin-by-bin comparison is possible")
         for k in 0..<pureSpectrum.count {
             let p = pureSpectrum[k]
             let a = accelSpectrum[k]
@@ -356,7 +356,7 @@ struct StreamingFrequencyDomainTests {
     }
 
     @Test("FFT with very large amplitude signal (1e10)")
-    func fftVeryLargeAmplitude() {
+    func fftVeryLargeAmplitude() throws {
         let backend = PureSwiftFFTBackend()
         let n = 64
 
@@ -375,7 +375,8 @@ struct StreamingFrequencyDomainTests {
         }
 
         // Peak should still be at bin 5
-        guard spectrum.count > 1 else { return }
+        try #require(spectrum.count > 1,
+                     "a one-bin spectrum has no peak to locate, which would skip the assertion below")
         let peakBin = (1..<spectrum.count).max(by: { spectrum[$0] < spectrum[$1] }) ?? 1
         #expect(peakBin == 5)
     }
@@ -395,7 +396,7 @@ struct StreamingFrequencyDomainTests {
     // MARK: - Stress Tests
 
     @Test("FFT on 4096-sample signal", .timeLimit(testHangGuard))
-    func stressTestLargeFFT() {
+    func stressTestLargeFFT() throws {
         let backend = PureSwiftFFTBackend()
         let n = 4096
         let sampleRate = 4096.0
@@ -413,7 +414,8 @@ struct StreamingFrequencyDomainTests {
         #expect(spectrum.count == n / 2 + 1)
 
         // Verify peak is at 100 Hz (bin 100)
-        guard spectrum.count > 1 else { return }
+        try #require(spectrum.count > 1,
+                     "a one-bin spectrum has no peak to locate, which would skip the assertion below")
         let peakBin = (1..<spectrum.count).max(by: { spectrum[$0] < spectrum[$1] }) ?? 1
         let peakFreq = Double(peakBin) * sampleRate / Double(n)
         #expect(abs(peakFreq - 100.0) < 2.0)

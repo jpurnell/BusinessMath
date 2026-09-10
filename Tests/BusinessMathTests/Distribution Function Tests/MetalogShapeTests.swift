@@ -208,8 +208,7 @@ struct MetalogShapeTests {
 		let d = try DistributionMetalog(fittingProbabilities: probabilities,
 										values: values, terms: 10)
 		let modes = d.modes()
-		#expect(modes.count == 4, "expected four modes, got \(modes.count)")
-		guard modes.count == 4 else { return }
+		try #require(modes.count == 4, "expected four modes, got \(modes.count)")
 		let outer: Double = modes[0] + modes[3]
 		let inner: Double = modes[1] + modes[2]
 		#expect(Swift.abs(outer) < 1e-3, "the outer modes are not mirrored: \(modes[0]), \(modes[3])")

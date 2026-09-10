@@ -187,8 +187,8 @@ struct HoltWintersReferenceTests {
 		let family = fixture.cases
 			.filter { $0.name.hasPrefix("levelOnly") }
 			.sorted { $0.values.count < $1.values.count }
-		#expect(family.count == 4, "expected the four levelOnly series, got \(family.count)")
-		guard family.count == 4 else { return }
+		try #require(family.count == 4,
+					 "expected the four levelOnly series, got \(family.count)")
 
 		var firstForecasts: [Double] = []
 		for entry in family {
@@ -347,7 +347,8 @@ struct HoltWintersReferenceTests {
 	@Test("A zero horizon returns nothing")
 	func zeroHorizon() throws {
 		let fixture = try Self.loadFixture()
-		guard let entry = fixture.cases.first else { return }
+		let entry = try #require(fixture.cases.first,
+								 "the fixture is empty, so this test asserted nothing")
 		let model = try Self.trained(entry)
 		#expect(model.predictValues(periods: 0).isEmpty)
 		#expect(model.predictValues(periods: -1).isEmpty)

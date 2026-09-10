@@ -167,12 +167,14 @@ struct NestedANOVATests {
 		let result = try nestedANOVA(data)
 
 		// F_between = MS_between / MS_subgroups (NOT MS_within)
-		guard result.msSubgroupsWithin > 0 else { return }
+		try #require(result.msSubgroupsWithin > 0,
+					 "this fixture varies within subgroups, so the F_between denominator cannot be zero")
 		let expectedF = result.msBetweenGroups / result.msSubgroupsWithin
 		#expect(abs(result.fBetweenGroups - expectedF) < 1e-10)
 
 		// F_subgroups = MS_subgroups / MS_within
-		guard result.msWithinSubgroups > 0 else { return }
+		try #require(result.msWithinSubgroups > 0,
+					 "this fixture varies within subgroups, so the F_subgroups denominator cannot be zero")
 		let expectedFSub = result.msSubgroupsWithin / result.msWithinSubgroups
 		#expect(abs(result.fSubgroupsWithin - expectedFSub) < 1e-10)
 	}

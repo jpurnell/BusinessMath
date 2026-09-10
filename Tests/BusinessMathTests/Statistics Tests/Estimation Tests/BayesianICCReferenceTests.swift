@@ -221,7 +221,8 @@ struct BayesianICCReferenceTests {
 		// above mean anything, because a rerun could give a different answer and the
 		// tolerance would be absorbing the difference.
 		let fixture = try Self.loadFixture()
-		guard let entry = fixture.cases.first else { return }
+		let entry = try #require(fixture.cases.first,
+								 "the fixture is empty, so this test asserted nothing")
 
 		let first = try bayesianICC(entry.ratings, model: .twoWayRandom,
 									priors: Self.vaguePriors, config: Self.config(seed: 4242))
