@@ -103,3 +103,45 @@ extension RNGWrapper {
 		}
 	}
 }
+
+// MARK: - Resolution
+
+extension GPUAttemptOutcome {
+
+	/// The GPU's result, or `nil` when the caller should run its CPU path instead.
+	///
+	/// ``GPUAttemptOutcome`` makes an abandonment impossible to miss; this decides what an
+	/// abandonment *means*. The first optimizer to adopt the runner answered that inline,
+	/// which is the shape the whole abstraction exists to avoid: the rule then lives at one
+	/// call site and does not travel to the next one. Every optimizer that can refuse routes
+	/// through here instead, so there is one definition of the answer rather than three.
+	///
+	/// - Parameter operation: What was being attempted, named as it would read in an error
+	///   message — "GPU differential evolution generation". A refusal a caller cannot place
+	///   in the run is barely better than the wrong answer it replaced.
+	/// - Returns: The GPU's result, or `nil` when the caller should run its CPU path.
+	/// - Throws: ``OptimizationError/invalidInput(message:)`` when abandoning breaks a seed
+	///   promise. The CPU path is a different implementation — `Double` where the kernels
+	///   are `Float` — so running it under a seed answers a question the caller did not ask.
+	internal func resultOrCPUFallback(operation: String) throws -> Success? {
+		switch self {
+		case .completed(let value):
+			return value
+
+		case .abandoned(let abandonment):
+			// An unseeded caller asked for resilience, and the CPU path delivers it.
+			guard abandonment.seedPromiseBroken else {
+				return nil
+			}
+
+			let cause = abandonment.underlying.map(String.init(describing:)) ?? "no result"
+			throw OptimizationError.invalidInput(
+				message: """
+					\(operation) failed on a seeded run, and falling back to the CPU would \
+					return a different answer for the same seed — the kernels compute in Float \
+					where the CPU path computes in Double. Underlying failure: \(cause)
+					"""
+			)
+		}
+	}
+}

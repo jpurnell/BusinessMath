@@ -1,7 +1,8 @@
 # Design Proposal — A GPU attempt that cannot break the seed promise
 
-**Status:** Accepted — abstraction implemented in 2.6.0; §4 deferred to 3.0.0
-**Author:** Session of 2026-08-12
+**Status:** Accepted — abstraction implemented in 2.6.0; §4 implemented 2026-09-09 on
+`feature/gpu-seeded-acceleration`, see the amendment at §4.1
+**Author:** Session of 2026-08-12, amended 2026-09-09
 **Area:** `Optimization/Heuristic` (GPU fallback paths)
 
 ---
@@ -121,6 +122,14 @@ while making it impossible to *not notice*. `GeneticAlgorithm.evolvePopulation` 
 throws and maps `seedPromiseBroken` to an error. `DifferentialEvolution` and
 `ParticleSwarmOptimization` record it in their result until §4 is decided.
 
+> **Amended 2026-09-09.** The premise in the first sentence of this section — that DE and
+> PSO cannot propagate — no longer holds: both `optimizeDetailed` methods now throw (§4.1).
+> The signature stands anyway, on the second argument rather than the first. `attemptGPU`
+> reports rather than throws because *it* cannot know what an abandonment costs; that
+> depends on the caller's promise, not on the failure. What changed is that the resolution
+> is no longer written out at each call site — see
+> `GPUAttemptOutcome.resultOrCPUFallback(operation:)`.
+
 This also matches the project's fail-silent rule, which permits either horn: *"never
 return plausible-but-wrong results; throw **or annotate degradation**."*
 
@@ -179,6 +188,67 @@ together again.
 Chosen over (1) because (1) adds a public property to two result types purely as a
 staging step, and a flag a caller can forget to check is a weaker guarantee than a run
 that is deterministic by construction.
+
+### 4.1 Amendment (2026-09-09) — (2) implemented, and why not an additive shape
+
+Implemented on `feature/gpu-seeded-acceleration`: `DifferentialEvolution.optimizeDetailed`
+and `ParticleSwarmOptimization.optimizeDetailed` now `throws`, both adopt `attemptGPU`, and
+the 2.6.0 seeded-GPU guards are deleted. The 2026-08-12 decision is confirmed rather than
+reinterpreted — but it was taken under two facts that have since changed, so it is worth
+recording what was re-examined instead of letting the original text carry a weight it was
+not written to bear.
+
+**What changed since the decision.** The penalty weight was hardcoded at 100 then; 2.17.0
+made it `constraintPenaltyWeight` on all five heuristic configs. That is relevant here for
+what it demonstrates rather than what it does: the *configuration* surface of these
+optimizers has grown additively, twice, while the *result* surface has not, and the reason
+is that only the config had anywhere to put a new fact. A run that cannot keep its promise
+is not a configuration fact. Note also how the new property handles a bad argument — a
+non-positive or non-finite weight is silently clamped to the default, because the
+initialiser has no way to refuse either. That is the same shape of defect one layer up, and
+it is an argument for giving these types the ability to say no, not against it.
+
+**The additive shape was reconsidered and rejected.** Swift cannot overload on `throws`
+alone, so "additive" here means a *second permanent name* for the same operation, with
+`optimizeDetailed` deprecated beside it. Three things sink it:
+
+1. It resurrects exactly what (3) was chosen to avoid. The 2026-08-12 text picked the
+   interim guard over the `usedCPUFallback` flag on the grounds that "3.0.0 inherits no
+   interim surface to deprecate". A deprecated twin is a *permanent* surface to deprecate,
+   which is strictly worse than the temporary guard it would replace.
+2. The deprecated method would have to keep the seeded-GPU guard to stay honest — it still
+   cannot refuse — so it stays permanently unaccelerated for seeded callers, and a
+   deprecation warning is the only thing telling them why. That is option (1)'s weakness
+   (a signal the caller can ignore) with more API attached.
+3. Two spellings of one operation, differing in whether the seed promise is enforceable, is
+   a worse thing to explain than one signature that changed.
+
+**The blast radius was smaller than estimated.** `v3.0.0_SCOPE.md` §1.2 put it at "67
+in-repo call sites plus five DocC tutorials". The measured cost of the change is **22
+lines**: 4 internal call sites in `Sources` (each optimizer's `minimize` and
+`minimizeWithPenalty`), 15 in tests, 1 DocC fence, and 2 doc-comment examples. The
+overestimate came from counting every occurrence of the identifier, but `GeneticAlgorithm`,
+`NelderMead`, `SimulatedAnnealing` and `IslandModel` each have their own `optimizeDetailed`
+and are untouched by this. The scope document should be corrected; the decision does not
+change, since 22 breaking call sites and 67 both argue the same way.
+
+**Two things landed that §2 and §3 did not anticipate:**
+
+- `GPUAttemptOutcome.resultOrCPUFallback(operation:)`. §3 tabulated the resolution rule and
+  `GeneticAlgorithm` then wrote it inline — which is the same failure the whole abstraction
+  exists to prevent, one level up: a rule that lives at a call site does not travel to the
+  next one. With three optimizers needing it, the rule is now a method on the outcome, and
+  the tests that pin it (`GPUAttemptResolutionTests`) need neither a GPU nor an optimizer.
+- `shouldUseGPU()` on both optimizers is `internal` rather than `private`. §5 asked for a
+  non-vacuity assertion on `MetalDevice.shouldUseGPU(populationSize: 1000)`; that catches a
+  machine with no usable Metal device, but not a *guard inside the optimizer* sending a
+  seeded run to the CPU — which is precisely the condition being removed here, and the one
+  under which the seeded determinism tests passed for a year while testing the CPU. The
+  suite now asserts that a seeded configuration at the threshold engages the GPU.
+
+Not done here, and still open from §1.2 of the scope document: `commandBuffer.status` in
+`MonteCarloGPUDevice` and `MetalMatrixBackend`, `IslandModel` swallowing
+`GeneticAlgorithm`'s throw, and `EnterpriseValueBridge.valuePerShare`.
 
 ---
 

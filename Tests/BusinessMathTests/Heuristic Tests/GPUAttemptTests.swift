@@ -121,3 +121,82 @@ struct GPUAttemptTests {
 		)
 	}
 }
+
+/// Resolving an outcome is the half of the contract every optimizer shares.
+///
+/// ``GPUAttemptOutcome`` forces a call site to *notice* an abandonment; it does not say
+/// what to do about one. `GeneticAlgorithm` wrote that answer inline, which is how the
+/// rule failed to travel the first time — so this suite pins the resolution itself, once,
+/// independently of any optimizer and of any GPU.
+@Suite("GPU Attempt Resolution")
+struct GPUAttemptResolutionTests {
+
+	/// A failure that reports something recognisable, so the message assertions below test
+	/// propagation rather than the spelling of a synthesised description.
+	private struct QueueExhausted: Error, CustomStringConvertible {
+		var description: String { "command queue exhausted" }
+	}
+
+	@Test("A completed outcome resolves to its value")
+	func completedOutcomeResolvesToItsValue() throws {
+		let outcome = GPUAttemptOutcome<Int>.completed(7)
+		let resolved = try outcome.resultOrCPUFallback(operation: "test dispatch")
+
+		#expect(resolved == 7, "a completed attempt is the answer, not a fallback")
+	}
+
+	@Test("An unseeded abandonment resolves to the CPU fallback")
+	func unseededAbandonmentResolvesToCPU() throws {
+		let abandonment = GPUAttemptAbandonment(seedPromiseBroken: false, underlying: QueueExhausted())
+		let outcome = GPUAttemptOutcome<Int>.abandoned(abandonment)
+
+		let resolved = try outcome.resultOrCPUFallback(operation: "test dispatch")
+
+		#expect(resolved == nil, "an unseeded caller asked for resilience, so the CPU path is the right answer")
+	}
+
+	/// The whole point of the throwing signature: a seeded run gets a refusal instead of a
+	/// different answer computed by a different implementation.
+	@Test("A seeded abandonment refuses rather than falling back")
+	func seededAbandonmentRefuses() {
+		let abandonment = GPUAttemptAbandonment(seedPromiseBroken: true, underlying: QueueExhausted())
+		let outcome = GPUAttemptOutcome<Int>.abandoned(abandonment)
+
+		#expect(throws: OptimizationError.self) {
+			try outcome.resultOrCPUFallback(operation: "test dispatch")
+		}
+	}
+
+	/// A refusal a caller cannot act on is only marginally better than a wrong answer, so
+	/// the message names both what was attempted and why it stopped.
+	@Test("The refusal names the operation and the underlying failure")
+	func refusalCarriesContext() {
+		let abandonment = GPUAttemptAbandonment(seedPromiseBroken: true, underlying: QueueExhausted())
+		let outcome = GPUAttemptOutcome<Int>.abandoned(abandonment)
+
+		do {
+			_ = try outcome.resultOrCPUFallback(operation: "GPU differential evolution generation")
+			Issue.record("a seeded abandonment must not resolve to a value")
+		} catch let error as OptimizationError {
+			guard case .invalidInput(let message) = error else {
+				Issue.record("expected invalidInput, got \(error)")
+				return
+			}
+			#expect(message.contains("GPU differential evolution generation"), "the caller needs to know what was attempted")
+			#expect(message.contains("command queue exhausted"), "the caller needs to know why it stopped")
+		} catch {
+			Issue.record("unexpected error: \(error)")
+		}
+	}
+
+	/// A `nil` return carries no error, and the refusal still has to be a refusal.
+	@Test("A seeded abandonment with no underlying error still refuses")
+	func seededAbandonmentWithoutErrorRefuses() {
+		let abandonment = GPUAttemptAbandonment(seedPromiseBroken: true, underlying: nil)
+		let outcome = GPUAttemptOutcome<Int>.abandoned(abandonment)
+
+		#expect(throws: OptimizationError.self) {
+			try outcome.resultOrCPUFallback(operation: "test dispatch")
+		}
+	}
+}
