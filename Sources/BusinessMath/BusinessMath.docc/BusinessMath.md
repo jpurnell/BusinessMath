@@ -187,3 +187,7 @@ This documentation is organized like a book with five main parts:
 
 - <doc:6.1-InventoryManagementGuide>
 - <doc:6.2-ChoosingInventoryModel>
+
+### Marketing Analytics
+
+- <doc:7.1-MarketingAnalyticsGuide>
