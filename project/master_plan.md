@@ -38,6 +38,8 @@ suite depends on it.
 
 ## Current Status
 
+**3.0.0-alpha.2 shipped 2026-09-09** — the breaking set complete.
+
 **3.0.0-alpha.1 shipped 2026-09-09** — the breaking set, and only the breaking set. Both
 parked branches merged: the `SaaSModel`/`SubscriptionBoxModel` LTV delegation with
 `CLVDefinition.perpetuityDue` and a parametric `customerLifetimeValue`, and `optimizeDetailed`
@@ -52,9 +54,18 @@ prevent — the question was never whether anyone used the API today.
 Nothing was added to justify the number. §0.1 of the scope document has said since
 2026-08-23 that exactly three things force the major, and this is that list arriving.
 
-**One breaking item remains undone: deleting `sampleSize`**, deprecated in 2.7.0. It is the
-only thing between the alpha and 3.0.0 final, and it needs to go into that release rather
-than after it — removing a public symbol is what majors are for.
+**3.0.0-alpha.2 deletes `sampleSize`**, which completes the breaking set. All four items
+§0.1 named as forcing a major have now shipped: `optimizeDetailed` throwing, the
+`CLVDefinition` case, the template delegation, and this deletion. **3.0.0 final is this code
+with the pre-release suffix dropped**, once the alpha has been exercised.
+
+The deletion is worth recording for its arc rather than its size. `sampleSize` was Cochran's
+single-sample survey formula under an A/B test's summary line, understating a two-arm sizing
+by 4.07× — 384 per arm where the answer is 1,565 — so a team using it ran at a quarter of the
+sample they needed and read the null result as "no difference". Found in the 2.6.0 audit,
+deprecated additively in 2.7.0 alongside a correct replacement, and deleted eleven releases
+later. The finding outlived the function: the correction-factor test still asserts 4.07×,
+with the legacy 384.145735 recorded as a constant rather than recomputed.
 
 **2.18.0 shipped 2026-09-09** — the ETS parameter fitter, a complex-number text codec, one
 GPU read-back fix, and chapter 7 on marketing analytics.

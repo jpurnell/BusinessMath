@@ -61,35 +61,3 @@ public func pValue<T: Real>(obsA: Int, convA: Int, obsB: Int, convB: Int) -> T {
 	let pValue = normSDist(zScore: zScore)
 	return pValue
 }
-
-
-/// Computes a single-sample survey size by Cochran's formula. **Not** an A/B test size.
-///
-/// - Warning: This function's parameters describe a survey — a confidence level, a
-///   population size, and a margin of error — and its body is Cochran's finite-population
-///   formula. It is missing everything a two-arm power calculation needs: there is no
-///   power term, no second arm's variance, and `error` is a margin of error around one
-///   proportion rather than a difference between two.
-///
-///   At 95% confidence, `p = 0.5` and `error = 0.05` it returns **384** per arm, where
-///   detecting a 0.50 → 0.55 difference at 80% power needs **1,565** — understated by
-///   **4.1x**. A test sized this way fails to reach significance and reads as
-///   "no difference."
-///
-///   Use ``Experiment/sampleSizePerArm(power:alpha:tails:)``.
-///
-/// - Parameters:
-/// 	- ci: The level of confidence of a sample is expressed as a percentage and describes the extent to which you can be sure it is representative of the target population; that is, how frequently the true percentage of the population who would select a response lies within the confidence interval. For example, if you have a confidence level of 90%, if you were to conduct the survey 100 times, the survey would yield the exact same results 90 times out of those 100 times.
-/// 	- p: The accuracy of the research outputs also varies according to the percentage of the sample that chooses a given response. If 98% of the population select "Yes" and 2% select "No," there is a low chance of error. However, if 35% of the population select "Yes" and 65% select "No", there is a higher chance an error will be made, regardless of the sample size. When selecting the sample size required for a given level of accuracy, researchers should use the worst-case percentage; i.e., 50%.
-/// 	- n: Population Size: The population size is the total number of people in the target population. For example, if you were performing research that was based on the people living in the UK, the full population would be approximately 66 million. Likewise, if you were conducting research on an organization, the total size of the population would be the number of employees who work for that organization.
-/// 	e: Margin of Error: Margin of error is also measured in percentage terms. It indicates the extent to which the outputs of the sample population are reflective of the overall population. The lower the margin of error, the nearer the researcher is to having an accurate response at a given confidence level.
-@available(*, deprecated, message: "Use Experiment.sampleSizePerArm(power:alpha:tails:) instead. This is Cochran's single-sample survey formula, not a two-arm power calculation: it has no power term, no second arm's variance, and no minimum detectable effect. It understates the sample size an A/B test needs by roughly 4.1x.")
-public func sampleSize<T: Real>(ci: T, proportion p: T, n: T, error: T ) -> T where T: BinaryFloatingPoint {
-	let z = zScore(ci: ci)
-	let z2 = T.pow(z, 2)
-	let error2 = T.pow(error, 2)
-	let pq = p * (T(1) - p)
-	let num = (z2 * pq) / error2
-	let den = T(1) + (z2 * pq) / (error2 * n)
-	return num / den
-}

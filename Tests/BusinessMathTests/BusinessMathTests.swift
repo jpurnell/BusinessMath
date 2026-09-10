@@ -563,17 +563,6 @@ struct UnassortedTests {
 		#expect(2.0 * (1.0 - noGap) > 0.05)
 	}
 	
-	@available(*, deprecated, message: "Exercises the deprecated sampleSize on purpose.")
-	@Test("Sample size calculation") func testSampleSizeCalculation() {
-//		Let's pretend we're sending our first A/B test. Our list has 1,000 people in it and has a 95% deliverability rate. We want to be 95% confident our winning email metrics fall within a 5-point interval of our population metrics. This will calculate the minimum number of people we need to send each variant to in order to determine significance.
-		let ci = 0.95
-		let p = 0.5
-		let n = 950.0
-		let e = 0.05
-		let result = sampleSize(ci: ci, proportion: p, n: n, error: e)
-		#expect(abs(result - 273.5372) < 0.0001)
-	}
-	
 	@Test("Margin of error") func testMarginOfError() {
 		let result = marginOfError(0.95, sampleProportion: 0.5, sampleSize: 274, totalPopulation: 950)
 		#expect(abs(result - 0.04997) < 0.00001)

@@ -45,20 +45,26 @@ struct TwoProportionPowerTests {
 
 	// MARK: - The defect this release exists to fix
 
-	@available(*, deprecated, message: "Exercises the deprecated sampleSize on purpose.")
-	@Test("The corrected sizing is ~4.07x the legacy Cochran survey formula")
-	func correctedSizingExceedsLegacyByTheDocumentedFactor() throws {
+	@Test("The corrected sizing is ~4.07x what the deleted Cochran survey formula gave")
+	func correctedSizingExceedsTheLegacyFactor() throws {
 		let design = Experiment<Double>.twoProportion(baseline: 0.50, minimumDetectableEffect: 0.05)
 		let corrected = Double(try design.sampleSizePerArm(power: 0.80, alpha: 0.05, tails: .two))
 
-		// The legacy function, pinned at its current behaviour so this release
-		// cannot change it by accident before 3.0.0 deletes it.
-		let legacy = sampleSize(ci: 0.95, proportion: 0.5, n: 1_000_000_000.0, error: 0.05)
+		// 384.145735 is what `sampleSize(ci:proportion:n:error:)` returned at these
+		// parameters. The function was deleted in 3.0.0-alpha.2, so the number is recorded
+		// here as a constant rather than recomputed — which is the honest form for a
+		// historical measurement, and keeps the finding that motivated the deprecation
+		// after the thing it measured is gone.
+		//
+		// A team sizing an A/B test with the survey formula ran it at a quarter of the
+		// sample it needed, failed to reach significance, and read the null result as
+		// "no difference."
+		let legacy: Double = 384.145735
+		let factor: Double = corrected / legacy
 
-		#expect(abs(legacy - 384.145735) < 1e-4,
-			"Legacy sampleSize should still return 384.146; got \(legacy)")
-		#expect(abs(corrected / legacy - 4.0731) < 0.001,
-			"Correction factor should be ~4.073x; got \(corrected / legacy)")
+		#expect(abs(factor - 4.0731) < 0.001,
+			"Correction factor should be ~4.073x; got \(factor)")
+		#expect(corrected > 1_500, "the corrected sizing is 1,565 per arm; got \(corrected)")
 	}
 
 	// MARK: - Round-trip

@@ -10,7 +10,7 @@ Build DCF models, optimize portfolios, run Monte Carlo simulations, and value se
 
 ---
 
-## Pre-release: 3.0.0-alpha.1
+## Pre-release: 3.0.0-alpha.2
 
 **The breaking set, and only the breaking set.** Three items that have been waiting for a
 major since August, shipped together as a pre-release.
@@ -19,7 +19,7 @@ major since August, shipped together as a pre-release.
 `from: "2.7.0"` you stay on 2.18.0 and nothing changes. To try the alpha, ask for it by name:
 
 ```swift
-.package(url: "https://github.com/jpurnell/BusinessMath.git", exact: "3.0.0-alpha.1")
+.package(url: "https://github.com/jpurnell/BusinessMath.git", exact: "3.0.0-alpha.2")
 ```
 
 What breaks:
@@ -41,8 +41,13 @@ Every deprecated method returned `0` for something that is not zero — a lifeti
 zero where the perpetuity diverges, a payback of zero months for missing data, an LTV:CAC of
 **infinity** at zero cost. The replacements refuse instead.
 
-`sampleSize`, deprecated in 2.7.0, is still present. It is the fourth breaking item and the
-only one not done.
+**`sampleSize(ci:proportion:n:error:)` is deleted** — the fourth and last breaking item.
+Deprecated in 2.7.0 and gone after eleven releases. It was Cochran's single-sample survey
+formula wearing an A/B test's summary line, understating a two-arm sizing by **4.07×**: 384
+per arm where the answer is 1,565. Use `Experiment.sampleSizePerArm(power:alpha:tails:)`.
+
+**This completes the breaking set.** All four items the scope document named as forcing a
+major have shipped. 3.0.0 final is this code with the pre-release suffix dropped.
 
 ### Latest stable: 2.18.0
 

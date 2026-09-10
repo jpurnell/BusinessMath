@@ -123,22 +123,6 @@ import Glibc
         #expect(twoSided > 0.05)
     }
 
-    // Test 4: Sample Size Calculation
-    @available(*, deprecated, message: "Exercises the deprecated sampleSize on purpose.")
-    @Test("SampleSizeCalculation") func LSampleSizeCalculation() {
-        // Example: Calculate required sample size for 95% confidence, 5% margin of error
-        let confidence = 0.95
-        let proportion = 0.5  // Worst case: 50%
-        let populationSize = 10000.0
-        let marginOfError = 0.05
-
-        let result: Double = sampleSize(ci: confidence, proportion: proportion, n: populationSize, error: marginOfError)
-
-        // Should be around 370 for these parameters
-        #expect(result > 300)
-        #expect(result < 400)
-    }
-
     // Test 5: Confidence Interval
     @Test("ConfidenceInterval") func LConfidenceInterval() {
         // Test confidence interval calculation

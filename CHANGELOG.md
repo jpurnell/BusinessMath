@@ -9,6 +9,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [3.0.0-alpha.2] - 2026-09-09
+
+**`sampleSize` is deleted.** The fourth and last breaking item, and the one the whole
+2.7.0 → 3.0.0 arc existed to reach.
+
+### Breaking Changes
+
+- **`sampleSize(ci:proportion:n:error:)` is removed.** Deprecated in 2.7.0 with a migration
+  message naming its replacement; that deprecation has now shipped through eleven releases.
+
+  It was Cochran's **single-sample survey formula** wearing an A/B test's summary line. Its
+  parameters describe a survey — a confidence level, a population size, a margin of error —
+  and it was missing everything a two-arm power calculation needs: no power term, no second
+  arm's variance, and `error` a margin around one proportion rather than a difference between
+  two.
+
+  At 95% confidence, `p = 0.5`, `error = 0.05` it returned **384** per arm. Detecting a
+  0.50 → 0.55 difference at 80% power needs **1,565** — understated by **4.07×**. A team
+  sizing a test with it ran at roughly a quarter of the sample they needed, failed to reach
+  significance, and read the null result as "no difference."
+
+  Use ``Experiment/sampleSizePerArm(power:alpha:tails:)``, which has shipped since 2.7.0 and
+  reproduces R's `power.prop.test`.
+
+### Notes
+
+- **The finding outlived the function.** `correctedSizingExceedsTheLegacyFactor` still asserts
+  the 4.07× correction, with `384.145735` recorded as a **constant** rather than recomputed —
+  the honest form for a historical measurement once the thing that produced it is gone. Two
+  tests that existed only to exercise the deleted function were removed with it.
+
+- **This completes the breaking set.** All four items §0.1 of the scope document named as
+  forcing a major have now shipped: `optimizeDetailed` throwing, the `CLVDefinition` case, the
+  template delegation, and this deletion. 3.0.0 final is the same code with the pre-release
+  suffix dropped, once the alpha has been exercised.
+
+---
+
 ### [3.0.0-alpha.1] - 2026-09-09
 
 **The breaking set, and only the breaking set.** Three items that have been waiting for a
