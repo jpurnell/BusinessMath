@@ -1,175 +1,138 @@
-# Handoff — 2026-09-09
+# Handoff — 2026-09-10
 
-**v2.16.0 is released. Stage 5 of the marketing leg is complete — only stage 6 is left,
-and it is deliberately held for the real 3.0.0 because it is the breaking one.** Work
-ships additively as point releases.
+**`3.0.0-alpha.2` is released and the breaking set is complete.** `main` is clean, CI-green,
+and nothing is in flight. The next decision is whether the alpha has been exercised enough to
+drop the pre-release suffix.
 
 ## State
 
 | | |
 |---|---|
-| branch | `main` at `265e2130`, pushed |
-| last tag | `v2.16.0` (`c9d0c650`), released, GitHub release published |
-| tests | 7,528 in 669 suites |
+| branch | `main` at `90f773be`, pushed, CI green |
+| latest stable | `v2.18.0` — what `from:` consumers resolve to |
+| latest pre-release | `v3.0.0-alpha.2` |
+| tests | 7,626 in 679 suites |
 | gate | `quality-gate --no-cache --check all --continue-on-failure` → 45/45, 0/0 |
 | working tree | clean except `project/plans/proposals/excel_function_coverage_matrix_bak.tsv` — **the user's own backup, deliberately untracked, leave it alone** |
 
 Always `--check all`. Plain `--no-cache` runs 40 of 45 and prints an identical PASSED line.
 
-## The plan being executed
+## What shipped today
 
-Both plans are approved and current:
-- `project/plans/upcoming/MarketingLeg.md` — the spec. §3.5 has the build order, §4 the API surface.
-- `project/plans/upcoming/v3.0.0_SCOPE.md` — four spines, and §0.1 on what actually forces the major.
+Five releases in one day, which is unusual and worth reading in order:
 
-**Strategy the user chose:** ship the marketing leg additively as point releases — a
-"shadow 3.0.0" — and cut the real 3.0.0 later for the breaking items only.
+| Release | Contents |
+|---|---|
+| `2.16.0` | Marketing leg stages 0–4 — 28 additive files, four new `Statistics/` areas, `Network/`, `Marketing/` |
+| `2.17.0` | Stage 5 — attribution (heuristics, Markov removal effect, exact Shapley), association rules, behavioural segmentation. Plus parameterising the constraint penalty weight |
+| `2.18.0` | ETS parameter fitter, complex-notation codec, a GPU read-back crash fix, chapter 7 |
+| `3.0.0-alpha.1` | The breaking set: `optimizeDetailed` throws, `CLVDefinition.perpetuityDue`, template LTV delegation with seven deprecations |
+| `3.0.0-alpha.2` | `sampleSize` deleted — the fourth and last breaking item |
 
-**Only three things genuinely force the major**, and none has been done:
-1. DE/PSO `optimizeDetailed` → `throws` (spine 1, GPU determinism)
-2. Deleting `sampleSize` — deprecated in 2.7.0, deletion waits
-3. `SaaSModel` / `SubscriptionBoxModel` LTV delegation
+**The marketing leg is complete.** All six stages of `completed/marketing/MarketingLeg.md`.
 
-## Build-order progress
+## The one decision waiting
 
-| Stage | Contents | State |
-|---|---|---|
-| **0 — Foundation** | LogisticRegression, Classification, Survival, Concentration | **done** |
-| **1 — Graph** | `Network/Graph`, Traversal, Model Definition parity cut | **done** |
-| **2 — Experiment** | SequentialTesting; the rest shipped in 2.7.0 | **done** |
-| **3 — Marketing core** | Value, Pricing, Response, Segmentation — eight files | **done** |
-| **4 — Graph consumers** | Markov, Centrality, Projection, Community | **done** |
-| **5 — Attribution** | `Attribution/`, `Basket/`, `Segmentation/Behavioural` | **done** |
-| **6 — Templates** | SaaSModel / SubscriptionBox LTV delegation | **open**, and breaking |
+**Drop the `-alpha.2` suffix and cut `3.0.0` final?** Nothing technical is outstanding. The
+question is whether the alpha has been used enough to trust.
 
-Stage 5 landed in three commits: `744c316d` (the attribution trio), `f7396c95`
-(association rules), `265e2130` (behavioural segmentation).
+If yes it is a docs-only release: retitle the CHANGELOG section, update README's pre-release
+block, reconcile `master_plan.md`, tag, publish without `--prerelease`.
 
-### What is left, and the order the user wants it in
+## Why the alphas are pre-releases, and do not undo it
 
-**Stage 6 is the only thing left in the leg, and it should not ship as a point release.**
-Delegating `SaaSModel` / `SubscriptionBoxModel` to `customerLifetimeValue` is source-
-breaking, so it belongs with the other two breaking items in the real 3.0.0:
+The user initially asked for the breaking work as `2.19.0`, reasoning that nothing was using
+what it broke. That is true and is not the whole question: **this project's own README tells
+consumers `from: "2.7.0"`**, which in SPM means `.upToNextMajor` — so a 2.19.0 would have
+pulled every existing consumer into three source-breaking changes on their next
+`swift package update`, with no constraint that would have stopped it. SPM **excludes
+pre-releases from `from:` ranges**, which is why the alphas reach only callers who name them
+exactly. GitHub still shows 2.18.0 as Latest.
 
-1. DE/PSO `optimizeDetailed` → `throws` (spine 1, GPU determinism)
-2. Deleting `sampleSize` — deprecated in 2.7.0
-3. The stage 6 delegation
+Also: `3.0.0a` is **not valid semver** — SPM would ignore the tag entirely and nobody could
+depend on it by version. The hyphen in `-alpha.1` is load-bearing.
 
-**Before stage 6, the user expects more statistical work for Excel coverage.** Their
-words: *"I think there may be some more statistical function implementations to get to
-100% coverage of Excel's functionality, so we'll probably take that before we get to
-stage 6, or we may just implement it in a branch until we've got everything we want for
-v3.0.0b in place."* So the next question to settle is which of those two — Excel
-statistical coverage on `main` as more point releases, or a `v3.0.0b` branch that
-accumulates the breaking work. Ask before assuming.
+## Open work, in the order it is likely to be picked up
 
-**Another session is working the Excel coverage buckets.** It identified itself as
-SwiftExcelFunctions and has a plan landing in `project/plans/proposals/excel-coverage/`.
-Coordinate before starting Excel statistical work — that is its territory, and the
-overlap with stage 6 sequencing is exactly what the user flagged.
+1. **`project/plans/STATUS.md` is the ledger.** Read it before anything else — it says what is
+   complete, open and in progress across 130 plan files, with the evidence for each line and
+   an explicit marker where a claim is inference rather than a file.
+2. **Six absent optimization algorithms** — `proposals/PROPOSAL_advanced_optimization_gap.md`,
+   audited and real. SQP, Interior Point, GRG, Network Flow, Convexity, ADMM. §10.5's
+   "parameterise the penalty weight" branch closed in 2.17.0; **adapting it across restarts is
+   still open** and is the better answer for a caller who does not know their objective's scale.
+3. **Excel coverage**: exactly **one** row of 49 is genuinely absent — `ImportanceSampling`.
+   Everything else is present or excluded. Three planned-not-started buckets remain:
+   `PROPOSAL_compatibility_and_lookup.md`, and the ETS/complex bindings which are the *other*
+   session's work, not ours.
+4. **A test-quality proposal in a sibling repo** —
+   `../../Tools/quality-gate-swift-project/plans/proposals/TestQualityAuditor_SemanticRules.md`.
+   Eight new rules plus a mutation-testing path. **BusinessMath does not pass it**: 11
+   `guard let … else { return }` in tests that pass silently on nil, and 18 disabled tests
+   whose stated reasons include two unfixed product defects.
 
-**Owed at the next tag:** CHANGELOG has no `Unreleased` section for the four commits since
-`v2.16.0`, and `master_plan.md`'s Current Status still describes the leg as unreleased
-with stages 5 and 6 open. Both were fully reconciled at `2aab7e86`, so this is small.
+## Cross-session context
 
-## How this work has been done, and why it keeps paying
+Another Claude session works **SwiftExcelFunctions** and cannot reach this tree. The lane is
+settled: **mathematics here, spreadsheet argument semantics there.** It is building the Excel
+argument layer against `ETSSeasonality` and `ETSFit`, which shipped in 2.18.0 — **do not change
+those shapes without telling it.**
 
-Strict TDD — RED, GREEN, commit at each green state — with one rule that has mattered more
-than any other:
+Its corpus work produced one finding worth carrying: the coverage matrix's column labelled
+`books` **counts sheets**, over a **79-workbook** sweep. A `0/0` row means "absent from every
+formula on every sheet of those 79" — one sample, not a ranking signal across 726 rows. The
+full account is in `project/plans/proposals/excel-coverage/README.md`.
 
-**Verify against an identity, not a fixture.** Every piece so far is checked by something
-that must be true rather than by stored numbers:
+## Traps, in the order they bite
 
-- IRLS against an independent BFGS likelihood maximisation
-- The binomial score equation `Σ(y − p) = 0` — fitted propensities average to the observed
-  response rate whenever an intercept is fitted, whatever the other predictors are
-- AUC against the Mann–Whitney statistic — exact, including the half-credit for ties
-- Kaplan–Meier against the empirical survival function it must reduce to without censoring
-- Cohort retention against Kaplan–Meier, and its area against the restricted mean
-- Gini against its own second definition
-- Modularity's all-one-community identity, exactly zero
-- A Markov chain reproducing the conversion rate of the journeys it was built from
-- Finite-horizon CLV converging on the perpetuity formula
-- Two-model and class-transformation uplift, algebraically the same number on a balanced
-  saturated design and agreeing to 1e-9 through independent code paths
-- The Lerner condition `(P* − c)/P* = −1/ε(P*)` at the optimum of all three demand forms —
-  one identity checking three closed-form optima against three elasticity functions
-- The efficiency axiom across every `AttributionModel` — credit sums to the converted
-  value for heuristics, removal effect and Shapley alike, tested in one loop over the
-  protocol rather than per implementation
-- Shapley's null player, which is exact rather than approximate: a channel that changes no
-  coalition's worth is paid `== 0`, the one assertion in attribution needing no tolerance
-- `support(A ∪ C) = confidence · support(A)`, conditional probability rearranged
-- A basket's co-occurrence count against the shared-count weight of a `BipartiteProjection`
-  over the same transactions — one quantity, two modules, no shared code
-- Both segmentation methods partitioning: every customer in exactly one segment, sizes
-  summing to the input count
+**Budget nine minutes for a commit and a push.** Both hooks run a 40-checker gate. At machine
+load above ~60 even that is not enough — a push timed out twice today. Pass a long `timeout`;
+never background a commit.
 
-Several of those need no reference implementation at all. See
-`feedback-exact-oracle-beats-tolerance` in memory: a method that is wrong everywhere can be
-exact at the one point you tested, and that has happened in this repo.
+**Commit with an explicit FILE pathspec.** `git commit -- <file>`, never `git add <directory>`
+— a directory pathspec swept the user's untracked backup into a commit today. And a `git mv`
+stages **two** entries; a pathspec naming only the new path leaves the deletion staged, which
+later blocks a merge.
 
-**The other half is refusing rather than returning a plausible number.** Separated logistic
-data has no MLE; a single outcome class has zero AUC pairs, not an AUC of zero; a survival
-sample with no failures means short follow-up, not immortality; inelastic demand has no
-optimal price and the closed form returns a *negative* one; a divergent CLV perpetuity
-likewise. Each is a case where the wrong answer is indistinguishable from the right one by
-inspection. Stage 3 added four more: a mis-shaped population scored as a column of one
-halves, a break-even ratio above one, an uplift bucket with no controls, and a retention
-column averaged with cohorts that never reached it.
+**A gate run from inside `.claude/worktrees/` examines ZERO files and prints PASSED.** The
+tracked config excludes that path. Copy the config, drop the exclusion, and **check the file
+count** — a real run reports ~1,240.
 
-## Traps, in the order they will bite
+**`doc-run` article timeouts are load artefacts above roughly load 30.** Four errors at load
+41, zero at 10.8, unchanged tree. Under a zero-warnings policy this invites a permanent wrong
+edit to a DocC file. Run `uptime` before believing one.
 
-**Budget nine minutes for a commit.** The pre-commit hook runs a 40-of-45 gate, which
-outruns the Bash tool's two-minute default and gets killed at exactly the wrong moment.
-Pass an explicit long `timeout`. Do **not** background the commit to get around it — see
-`feedback-background-commit-race`.
+**No suppression markers, ever.** `// stochastic:exempt`, `// fp-safety:disable`, `// LIVE:`
+exist and are used elsewhere. Every case this work would have needed one was avoidable by
+reusing something that already existed. Zero added across roughly fifty commits.
 
-**Commit with an explicit pathspec.** `git commit -- <paths>`, never a bare `git commit`
-after `git add`. Git builds from the whole index, so another session's staged work comes
-along — this happened here in a *foreground* commit, putting another session's file rename
-into `affa6c91`.
+**The gate rejects `#expect(x != nil)`, `!= 0`, and `==` on floating point.** Assert the
+value; name the comparison (`isEqual(to:)` for a deliberate IEEE one). It also flags a test
+call that omits a parameter defaulted to a seed — state the seed at the call site.
 
-**Do not reach for the suppression markers.** `// stochastic:exempt` and
-`// fp-safety:disable` exist and are used elsewhere, but every case this work would have
-needed one was avoidable by reusing something that already existed. Zero added across
-twenty commits.
+## How this work has been done
 
-**`doc-run` timeouts scale with machine load, not with code.** Three errors at load 335, one
-at 130, zero at 22, on an unchanged tree. Re-run it alone on a quiet machine before blaming
-a change — this cost two false attributions in one session. See
-`feedback-docrun-load-sensitive`.
+Strict TDD, commit at each green state, and one rule that has mattered more than any other:
 
-**The gate flags a test call that omits a defaulted `seed:`.** Even when the default is a
-fixed constant, so the test is deterministic today — the point is that it would silently
-stop being so if the default ever changed, and nothing in the test recorded the
-dependency. State the seed at the call site. Do **not** reach for the
-`// Justification:` escape the diagnostic offers; that is a suppression annotation.
+**Verify against an identity, not a fixture.** AUC against the Mann–Whitney statistic
+exactly; Kaplan–Meier against the empirical survival function it must reduce to; Gini against
+its own second formula; the two uplift estimators against each other, algebraically equal on a
+balanced design and computed by separate code paths; the Lerner condition at the optimum of
+all three demand forms; Shapley's null player, which is exact rather than approximate.
 
-**The gate rejects `#expect(x != nil)` and `#expect(x != 0)`** as weak assertions, and it
-is right to. Assert the value. When that reads as awkward the fixture is usually wrong: the
-fix here was to replace a "does it fit at all" check with data that hits its choke price
-exactly, so the assertion became a slope and an intercept.
+**And write the stub.** The strongest test-design question found today: *what is the simplest
+wrong implementation that still passes this?* The ETS proposal's headline assertion — "fitted
+error ≤ the library defaults" — was passed by a fitter returning its starting point, and was
+replaced with a comparison against a 1,331-point brute-force grid.
 
-**My own recurring mistakes, so the next session can skip them:**
-- A doc `///` fence must compile standalone. Three fences in one session referenced bindings
-  they did not define. Write the bindings into the fence from the start.
-- An empty array or dictionary literal in a test gives the compiler nothing to infer a
-  generic parameter from — annotate it. Four times.
-- A test method named after the function under test *shadows* it inside the suite.
-  `func optimalPrice()` broke six call sites.
-- **Do not assert a number you have not measured.** "The wrong form still scores above
-  0.99" was a guess; it is 0.975. Compute it, then write it down — and say in the comment
-  that it was measured.
+## The thing that cost the most, so it is not repeated
 
-## Where to pick up
+Five hours went into reconciling coverage numbers across three files. The answer was that one
+column labelled `books` counts **sheets**, and it was readable in forty lines of Swift in a
+**sibling repository** that this repo's own README names. Both sessions searched the tree they
+were standing in.
 
-Ask the user which of the two paths they want before writing anything: Excel statistical
-coverage as further point releases on `main`, or a `v3.0.0b` branch accumulating the three
-breaking items. They raised both and settled neither.
-
-Either way, coordinate with the SwiftExcelFunctions session first — the Excel coverage
-buckets are its work, and duplicating them would waste both sessions.
-
-Stage 6 itself is small and specified: `MarketingLeg.md` §3.3 for the delegation,
-`v3.0.0_SCOPE.md` §0.1 for why it forces the major.
+**Read the generator before reasoning about the data.** Two corollaries, each of which beat a
+session independently: the generator is frequently **not** in the repository holding the data,
+and **a truncated read of a provenance document is not a read of it** — the first look at the
+file that held the answer was `head -6`, seven lines short.

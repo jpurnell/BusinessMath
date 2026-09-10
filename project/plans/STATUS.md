@@ -20,13 +20,18 @@ Nothing else is mid-flight. No branch other than that one carries unmerged work.
 
 ## Open, and genuinely so
 
-### The three items that force 3.0.0
+### ~~The items that force 3.0.0~~ — all shipped
 
-| Item | Where | State |
-|---|---|---|
-| `optimizeDetailed` → `throws` | `proposals/GPUAttemptSeedContract.md` §4 | Decided, not built. **See the note below — the defect it fixes is already mitigated.** |
-| Delete `sampleSize` | `completed/v2.7.0_SCOPE.md` | Deprecated in 2.7.0, deletion waits |
-| `SaaSModel`/`SubscriptionBox` LTV delegation | `completed/marketing/MarketingLeg.md` §3.3 | **Built**, on the branch above |
+| Item | Shipped in |
+|---|---|
+| `optimizeDetailed` → `throws` on DE and PSO | `v3.0.0-alpha.1` |
+| `CLVDefinition.perpetuityDue` + parametric CLV | `v3.0.0-alpha.1` |
+| `SaaSModel`/`SubscriptionBox` LTV delegation | `v3.0.0-alpha.1` |
+| Delete `sampleSize` | `v3.0.0-alpha.2` |
+
+**3.0.0 final is this code with the pre-release suffix dropped**, once the alpha has been
+exercised. Both feature branches are fully merged into `main` (0 commits ahead) and can be
+deleted.
 
 ### Optimization — six algorithms, audited and real
 
