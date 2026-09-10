@@ -118,26 +118,26 @@ struct InverseNormalCDFTests {
 
     // MARK: - Round trip
 
-    /// An `erfc`-based normal CDF, accurate in the lower tail.
+    /// Round trip through the library's own CDF, tails included.
     ///
-    /// The library's `normalCDF(x:)` computes `(1 + erf(x / sqrt(2))) / 2`, which
-    /// cancels catastrophically as `erf` approaches `-1`. Fed the *exact* quantile
-    /// it still returns a relative error of 2.2e-5 at `p = 1e-12`, 8.3e-8 at
-    /// `1e-10` and 5.3e-10 at `1e-8`. That is a property of the forward function,
-    /// not of the inverse, so round-trip assertions in the tail are made against
-    /// this form instead — otherwise the test measures `normalCDF`, not the code
-    /// under test. The complement form has a measured error of ~1e-15 throughout.
-    private func accurateLowerCDF(_ x: Double) -> Double {
-        return 0.5 * erfc(-x / 2.0.squareRoot())
-    }
-
-    @Test("Round trip against an accurate CDF, tails included")
-    func roundTripAccurate() {
+    /// This used to be two tests and a private helper. The helper was an `erfc`-based CDF,
+    /// written because `normalCDF(x:)` computed `(1 + erf(x/√2))/2` — which cancels
+    /// catastrophically as `erf` approaches −1, and returned a relative error of 2.2e-5 at
+    /// `p = 1e-12` even when fed the exact quantile. Round-tripping through it would have
+    /// measured the forward function rather than the inverse, so the tail assertions used
+    /// the local copy and the library-CDF test was fenced off at `p >= 1e-4`.
+    ///
+    /// `normalCDF` has been `erfc(-x/√2)/2` since `91ca7f03`, which is what the helper was.
+    /// The helper was therefore asserting that two spellings of one formula agree, and the
+    /// fence was protecting against a defect that no longer existed — while its comment went
+    /// on describing the old behaviour, which is the more durable kind of wrong.
+    @Test("Round trip through the library CDF, tails included")
+    func roundTripLibraryCDF() {
         let ps: [Double] = [1e-12, 1e-10, 1e-8, 1e-6, 1e-4, 1e-3, 0.01, 0.05,
                             0.1, 0.25, 0.4, 0.49]
         for p in ps {
             let z = inverseNormalCDF(p: p)
-            let back = accurateLowerCDF(z)
+            let back = normalCDF(x: z)
             #expect(abs(back - p) / p < 1e-13,
                     "p=\(p): round-tripped to \(back), rel err \(abs(back - p) / p)")
         }
@@ -145,23 +145,9 @@ struct InverseNormalCDFTests {
         for p in ps {
             let upper = 1.0 - p
             let z = inverseNormalCDF(p: upper)
-            let back = 1.0 - accurateLowerCDF(-z)
+            let back = 1.0 - normalCDF(x: -z)
             #expect(abs(back - upper) < 1e-15,
                     "p=\(upper): round-tripped to \(back)")
-        }
-    }
-
-    @Test("Round trip through the library CDF where the library CDF is sound")
-    func roundTripLibraryCDF() {
-        // Restricted to `p >= 1e-4`: below that the assertion would be measuring
-        // the cancellation in `normalCDF(x:)` described above, not this function.
-        let ps: [Double] = [1e-4, 1e-3, 0.01, 0.05, 0.1, 0.25, 0.4, 0.5, 0.6,
-                            0.75, 0.9, 0.95, 0.99, 0.999, 0.9999, 1.0 - 1e-6]
-        for p in ps {
-            let z = inverseNormalCDF(p: p)
-            let back = normalCDF(x: z)
-            #expect(abs(back - p) / p < 1e-12,
-                    "p=\(p): round-tripped to \(back), rel err \(abs(back - p) / p)")
         }
     }
 
@@ -176,7 +162,7 @@ struct InverseNormalCDFTests {
 
     @Test("Reverse round trip: inverseNormalCDF(CDF(z)) == z")
     func reverseRoundTrip() {
-        // Run over the lower half only, and with the accurate CDF. Recovering a
+        // Run over the lower half only. Recovering a
         // large *positive* z is limited by the representation of p itself: at
         // z = 6 the probability is 0.999999999, whose complement survives to only
         // about 9 significant digits in a Double, so no algorithm can return
@@ -184,7 +170,7 @@ struct InverseNormalCDFTests {
         // symmetry test instead.
         for i in -600...0 {
             let z = Double(i) / 100.0
-            let p = accurateLowerCDF(z)
+            let p = normalCDF(x: z)
             guard p > 0, p < 0.5 else { continue }
             let back = inverseNormalCDF(p: p)
             #expect(abs(back - z) < 1e-12, "z=\(z) round-tripped to \(back)")

@@ -13,6 +13,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **PERT's shape parameters lost four significant digits beside a central mode.** The shapes
+  were computed through the mean, `α = (μ−a)(2m−a−b)/((m−μ)(b−a))`, where both factors of the
+  denominator vanish when the mode is central — so the expression is `0/0` there and
+  ill-conditioned around there, and a hand-placed `1e-12` window stepped over it.
+
+  Measured immediately outside that window, the relative error in `α` was **2.5e-4**. The
+  λ-form `α = 1 + λ(m−a)/(b−a)`, `β = 1 + λ(b−m)/(b−a)` gives the same shapes — at
+  `(0, 1, 4)` both give `(2, 4)`, at `(0, 3, 4)` both give `(4, 2)` — from positive lengths
+  over a positive span, with nothing that cancels. The branch and its continuity test are
+  gone rather than made more careful.
+
+- **Myerson's quantile was least accurate exactly where its symmetric branch handed over.**
+  `(bʳ − 1)/(b − 1)` was written literally, and `pow(b, r) − 1` discards the information the
+  answer is made of when `b` is near 1. Measured at `b − 1 = 1e-9`, the quantile sat
+  **4.89e-6** from the limit where the perturbation justifies 5e-8 — about a hundred times
+  too far, and worst at the boundary of the `1e-9` window that existed to avoid it.
+
+  `expm1(r · log1p(b − 1))` never forms `bʳ` and never subtracts 1 from something near 1, so
+  it is exact to rounding at any `b`. The CDF gets the matching `log1p`. The window closes
+  from `1e-9` to the only case with no general form: `b − 1` not a normal number.
+
 - **Beta returned the distribution mean on 22% of draws at small shapes.**
   `distributionBeta` draws `X ~ Gamma(α, 1)` and `Y ~ Gamma(β, 1)` and returns `X/(X+Y)`.
   `gammaVariate` reaches a shape below 1 through the boost `Gamma(α) = Gamma(α+1) · U^(1/α)`,

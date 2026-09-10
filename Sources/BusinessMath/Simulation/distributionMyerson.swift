@@ -95,6 +95,10 @@ public struct DistributionMyerson: ContinuousDistribution, Sendable {
 	private let upperArm: Double
 	private let inverseAsymmetryLessOne: Double
 	private let inverseLogAsymmetry: Double
+	/// `b − 1`, kept alongside its reciprocal so the CDF can use `log1p` on it.
+	private let asymmetryLessOne: Double
+	/// `log b`, computed as `log1p(b − 1)` so it stays exact as `b` approaches 1.
+	private let logAsymmetry: Double
 
 	/// The standard deviation of the normal branch, `(high − low)/(2z)`.
 	private let symmetricScale: Double
@@ -148,10 +152,20 @@ public struct DistributionMyerson: ContinuousDistribution, Sendable {
 		guard ratio.isFinite, ratio > 0 else { return nil }
 		self.asymmetry = ratio
 
-		// Within this of 1 the general formula loses more precision to cancellation in
-		// `b − 1` than the normal branch loses by being a limit, so the limit is the
-		// better answer as well as the defined one.
-		let symmetric = abs(ratio - 1) < 1e-9
+		// Only where `b − 1` is not a normal number: zero, subnormal, or non-finite. Those
+		// are exactly the offsets whose reciprocal overflows, and they are the only ones the
+		// general form cannot handle.
+		//
+		// The window used to be `1e-9`, on the reasoning that the general formula lost more
+		// to cancellation in `b − 1` than the limit lost by being a limit. That was true of
+		// the formula as written — `pow(b, r) − 1` discards the information the answer is
+		// made of when `b` is near 1 — and it made the branch *least* accurate exactly where
+		// it handed over. Measured at `b − 1 = 1e-9`, the quantile sat 4.89e-6 from the
+		// limit where the perturbation justifies 5e-8: about a hundred times too far.
+		//
+		// `expm1(r · log1p(b − 1))` never forms `bʳ` and never subtracts 1 from something
+		// near 1, so it is exact to rounding at any `b`, and the window can close to nothing.
+		let symmetric = !(ratio - 1).isNormal
 		self.isSymmetric = symmetric
 
 		let span: Double = high - low
@@ -167,12 +181,18 @@ public struct DistributionMyerson: ContinuousDistribution, Sendable {
 		if symmetric {
 			self.inverseAsymmetryLessOne = 0
 			self.inverseLogAsymmetry = 0
+			self.asymmetryLessOne = 0
+			self.logAsymmetry = 0
 		} else {
 			let offset: Double = ratio - 1
-			let logRatio: Double = Foundation.log(ratio)
+			// `log1p(b − 1)` rather than `log(b)`: the two agree away from 1, and only the
+			// first keeps its significant digits as `b` approaches it.
+			let logRatio: Double = Foundation.log1p(offset)
 			guard offset != 0, logRatio != 0, logRatio.isFinite else { return nil }
 			self.inverseAsymmetryLessOne = 1 / offset
 			self.inverseLogAsymmetry = 1 / logRatio
+			self.asymmetryLessOne = offset
+			self.logAsymmetry = logRatio
 		}
 	}
 
@@ -190,8 +210,10 @@ public struct DistributionMyerson: ContinuousDistribution, Sendable {
 			return mode + symmetricScale * standard
 		}
 		let exponent: Double = standard * inverseZ
-		let powered: Double = Foundation.pow(asymmetry, exponent)
-		let shifted: Double = powered - 1
+		// `bʳ − 1` written so the subtraction never happens. `pow(b, r) - 1` loses every
+		// significant digit when `bʳ` is near 1, which is the whole near-symmetric regime.
+		let scaled: Double = exponent * logAsymmetry
+		let shifted: Double = Foundation.expm1(scaled)
 		return mode + upperArm * shifted * inverseAsymmetryLessOne
 	}
 
@@ -212,14 +234,18 @@ public struct DistributionMyerson: ContinuousDistribution, Sendable {
 		// Invert the quantile: b^(Φ⁻¹(p)/z) = 1 + (x − mode)(b − 1)/(high − mode).
 		let deviation: Double = x - mode
 		let scaled: Double = deviation * inverseUpperArm
-		let inner: Double = 1 + scaled * (asymmetry - 1)
+		let displacement: Double = scaled * asymmetryLessOne
+		let inner: Double = 1 + displacement
 
 		// Off the bounded end of the support. The bound is where `inner` reaches zero,
 		// and beyond it there is no `p` to solve for — the distribution simply does not
 		// reach. Answering 0 or 1 is the protocol's requirement and is also the truth.
 		guard inner > 0 else { return asymmetry > 1 ? 0 : 1 }
 
-		let logInner: Double = Foundation.log(inner)
+		// `log1p` on the displacement, matching `expm1` in the quantile: the two are
+		// inverses of each other and both avoid forming a value near 1 only to take its
+		// logarithm.
+		let logInner: Double = Foundation.log1p(displacement)
 		let standard: Double = z * logInner * inverseLogAsymmetry
 		return normalCDF(x: standard, mean: 0, stdDev: 1)
 	}
