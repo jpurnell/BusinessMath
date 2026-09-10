@@ -164,7 +164,7 @@ struct TimeLimitEnforcementTests {
 			constraints.append(.inequality { point in point[i] - 6.0 })
 		}
 
-		let limit = 1.0
+		let limit = Duration.seconds(1)
 		let solver = BranchAndBoundSolver<VectorN<Double>>(
 			maxNodes: 10_000,
 			timeLimit: limit,
@@ -187,7 +187,7 @@ struct TimeLimitEnforcementTests {
 		let spent = evaluations.value
 		#expect(spent < 400,
 				"""
-				a \(limit)s limit at \(costPerEvaluation) per evaluation spent \(spent) \
+				a \(limit) limit at \(costPerEvaluation) per evaluation spent \(spent) \
 				evaluations — over four seconds of modelled work, so the deadline is not \
 				reaching inside the relaxation (\(result.nodesExplored) nodes, status \(result.status))
 				""")
@@ -234,7 +234,7 @@ struct TimeLimitEnforcementTests {
 		}
 
 		let solver = BranchAndBoundSolver<VectorN<Double>>(
-			maxNodes: 10_000, timeLimit: 120.0,
+			maxNodes: 10_000, timeLimit: .seconds(120),
 			relaxationSolver: NonlinearRelaxationSolver())
 		let result = try solver.solve(
 			objective: objective, from: VectorN([1.0, 1.0]),

@@ -34,8 +34,12 @@ public struct BranchAndCutSolver<V: VectorSpace> where V.Scalar == Double, V: Se
     /// Whether to enable mixed-integer rounding cuts
     public let enableMIRCuts: Bool
 
-    /// Time limit in seconds (0 = no limit)
-    public let timeLimit: Double
+    /// How long the search may run, or `nil` for no limit.
+    ///
+    /// Unbounded by default, unlike ``BranchAndBoundSolver``, which stops at 300 seconds.
+    /// The two disagreed before as `0` against `300.0`, where only one of those numbers
+    /// meant what it looked like.
+    public let timeLimit: Duration?
 
     /// Relative gap tolerance for early termination
     public let relativeGapTolerance: Double
@@ -56,7 +60,7 @@ public struct BranchAndCutSolver<V: VectorSpace> where V.Scalar == Double, V: Se
     ///   - cutTolerance: Tolerance for cut violation—cuts with violation below this are not added (default: 1e-6)
     ///   - enableCoverCuts: Enable cover cuts for 0-1 knapsack constraints (default: false)
     ///   - enableMIRCuts: Enable mixed-integer rounding cuts (default: true)
-    ///   - timeLimit: Time limit in seconds, 0 for no limit (default: 0)
+    ///   - timeLimit: How long the search may run, or `nil` for no limit (default: `nil`)
     ///   - relativeGapTolerance: Relative optimality gap for early termination (default: 1e-4 = 0.01%)
     ///   - nodeSelection: Strategy for selecting next node to explore (default: `.bestBound`)
     ///   - branchingRule: Rule for selecting branching variable (default: `.mostFractional`)
@@ -66,7 +70,7 @@ public struct BranchAndCutSolver<V: VectorSpace> where V.Scalar == Double, V: Se
         cutTolerance: Double = 1e-6,
         enableCoverCuts: Bool = false,
         enableMIRCuts: Bool = true,
-        timeLimit: Double = 0,
+        timeLimit: Duration? = nil,
         relativeGapTolerance: Double = 1e-4,
         nodeSelection: NodeSelectionStrategy = .bestBound,
         branchingRule: BranchingRule = .mostFractional

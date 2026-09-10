@@ -9,6 +9,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [Unreleased]
+
+### Breaking Changes
+
+- **A solver's `timeLimit` is `Duration?`, and `nil` is the absent budget.** It was `Double`
+  with `0` documented as "no limit" — a sentinel, and the one value a caller is most likely
+  to read as its exact opposite.
+
+  It had already cost a defect in that opposite direction. The elapsed comparison was
+  unguarded, so `elapsed > .seconds(0)` was true the moment the clock advanced at all, and a
+  zero budget expired at the first node rather than never. `BranchAndCutSolver`'s `timeLimit`
+  *defaulted* to `0`, so a default-constructed solver returned `success: false` with the
+  objective at infinity for every problem it was ever given. Nothing caught it, because no
+  test constructed one and every branch-and-bound test passed a positive budget.
+
+  The guard that fixed it was correct, and is now gone because there is nothing left to
+  guard: `nil` removes the absent case from the expression entirely, so there is no sentinel
+  to forget. `Duration.zero` falls through to the comparison and expires immediately, which
+  is now the right answer rather than the bug.
+
+  It also makes the two solvers' defaults legible. They disagreed before as `300.0` against
+  a literal `0` — same concept, opposite meaning at the same value. They now read
+  `.seconds(300)` and `nil`, and the disagreement is deliberate rather than accidental.
+
+  **Migration:** `timeLimit: 300.0` becomes `timeLimit: .seconds(300)`; `timeLimit: 0`
+  becomes `timeLimit: nil`. Affects `BranchAndBoundSolver`, `BranchAndCutSolver`,
+  `BranchAndBoundSolver.minlp` and `CapitalBudgetingOptimizer`.
+
+  Comparisons get better as a side effect. `Duration` is integer-backed, so
+  `solver.timeLimit == .seconds(60)` is exact — the tests that read
+  `abs(solver.timeLimit - 60.0) < 1e-6` were carrying a floating-point tolerance for a value
+  that was never really a measurement.
+
+  **Landed in the alpha window on purpose.** After 3.0.0 final it would have forced a 4.0.0
+  for a sentinel cleanup, which is what a pre-release period is for.
+
 ### [3.0.0-alpha.3] - 2026-09-10
 
 **A bond grid that moved with the machine's time zone, and forty-one tests that could not

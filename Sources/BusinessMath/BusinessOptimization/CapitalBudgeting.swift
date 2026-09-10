@@ -162,7 +162,7 @@ public struct CapitalBudgetingResult: Sendable {
 ///
 /// ## Example
 /// ```swift
-/// let optimizer = CapitalBudgetingOptimizer(maxNodes: 50_000, timeLimit: 120.0)
+/// let optimizer = CapitalBudgetingOptimizer(maxNodes: 50_000, timeLimit: .seconds(120))
 ///
 /// let projects = [
 ///     CapitalProject(name: "Project A", npv: 100_000, cost: 300_000),
@@ -178,18 +178,18 @@ public struct CapitalBudgetingResult: Sendable {
 /// ```
 public struct CapitalBudgetingOptimizer: Sendable {
     private let maxNodes: Int
-    private let timeLimit: Double
+    private let timeLimit: Duration?
 
     /// Creates a capital budgeting optimizer with solver limits.
     ///
     /// - Parameters:
     ///   - maxNodes: Maximum number of branch-and-bound nodes to explore.
     ///     Higher values allow finding better solutions but take longer. Default: 10,000.
-    ///   - timeLimit: Maximum solver time in seconds. Solver stops after this duration
-    ///     and returns the best solution found. Default: 60 seconds.
+    ///   - timeLimit: How long the solver may run, or `nil` for no limit. It stops after
+    ///     this duration and returns the best solution found. Default: 60 seconds.
     public init(
         maxNodes: Int = 10_000,
-        timeLimit: Double = 60.0
+        timeLimit: Duration? = .seconds(60)
     ) {
         self.maxNodes = maxNodes
         self.timeLimit = timeLimit

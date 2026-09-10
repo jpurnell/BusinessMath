@@ -429,7 +429,7 @@ struct BranchAndBoundTests {
         }
 
         // The solver's own timeLimit enforces the time bound; assert on the logical outcome.
-        let solver = BranchAndBoundSolver<VectorN<Double>>(timeLimit: 5.0)
+        let solver = BranchAndBoundSolver<VectorN<Double>>(timeLimit: .seconds(5))
 
         let result = try solver.solve(
             objective: objective,

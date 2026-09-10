@@ -51,7 +51,7 @@ struct BranchAndBoundRefactoringTests {
         let customSolver = SimplexRelaxationSolver(lpTolerance: 1e-7)
         let solver = BranchAndBoundSolver<VectorN<Double>>(
             maxNodes: 5000,
-            timeLimit: 60.0,
+            timeLimit: .seconds(60),
             relativeGapTolerance: 1e-3,
             nodeSelection: .depthFirst,
             branchingRule: .mostFractional,
@@ -63,7 +63,7 @@ struct BranchAndBoundRefactoringTests {
         )
 
         #expect(solver.maxNodes == 5000)
-        #expect(abs(solver.timeLimit - 60.0) < 1e-6)
+        #expect(solver.timeLimit == .seconds(60))
     }
 
     // MARK: - Solving Tests

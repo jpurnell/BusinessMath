@@ -191,7 +191,7 @@ struct MINLPEntryPointTests {
         let reference = BranchAndBoundSolver<VectorN<Double>>()
 
         #expect(named.maxNodes == reference.maxNodes)
-        #expect(identical(named.timeLimit, reference.timeLimit))
+        #expect(named.timeLimit == reference.timeLimit)
         #expect(identical(named.relativeGapTolerance, reference.relativeGapTolerance))
         #expect(named.nodeSelection == reference.nodeSelection)
         #expect(named.branchingRule == reference.branchingRule)
@@ -205,7 +205,7 @@ struct MINLPEntryPointTests {
     func minlpForwardsConfiguration() {
         let solver = BranchAndBoundSolver<VectorN<Double>>.minlp(
             maxNodes: 37,
-            timeLimit: 12.5,
+            timeLimit: .milliseconds(12_500),
             nodeSelection: .depthFirst,
             branchingRule: .pseudoCost,
             integralityTolerance: 1e-7,
@@ -213,7 +213,7 @@ struct MINLPEntryPointTests {
         )
 
         #expect(solver.maxNodes == 37)
-        #expect(identical(solver.timeLimit, 12.5))
+        #expect(solver.timeLimit == .milliseconds(12_500))
         #expect(solver.nodeSelection == .depthFirst)
         #expect(solver.branchingRule == .pseudoCost)
         #expect(identical(solver.integralityTolerance, 1e-7))

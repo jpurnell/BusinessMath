@@ -87,7 +87,8 @@ extension BranchAndBoundSolver {
     ///
     /// - Parameters:
     ///   - maxNodes: Maximum nodes to explore before terminating (default: 10,000)
-    ///   - timeLimit: Maximum time in seconds, 0 for no limit (default: 300.0)
+    ///   - timeLimit: How long the search may run, or `nil` for no limit (default: 300 seconds).
+    ///     `.zero` is a deadline already missed, not a request for unlimited time.
     ///   - relativeGapTolerance: Relative optimality gap to stop when `gap < tolerance` (default: 1e-4 = 0.01%)
     ///   - nodeSelection: Strategy for selecting next node (default: `.bestBound`)
     ///   - branchingRule: Strategy for selecting branching variable (default: `.mostFractional`)
@@ -127,7 +128,7 @@ extension BranchAndBoundSolver {
     ///   - ``RelaxationSolver``
     public static func minlp(
         maxNodes: Int = 10_000,
-        timeLimit: Double = 300.0,
+        timeLimit: Duration? = .seconds(300),
         relativeGapTolerance: Double = 1e-4,
         nodeSelection: NodeSelectionStrategy = .bestBound,
         branchingRule: BranchingRule = .mostFractional,

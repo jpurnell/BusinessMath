@@ -18,8 +18,15 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
     /// Maximum nodes to explore before terminating
     public let maxNodes: Int
 
-    /// Maximum time in seconds
-    public let timeLimit: Double
+    /// How long the search may run, or `nil` for no limit.
+    ///
+    /// `nil` rather than a sentinel. This was `Double` with `0` meaning "no limit", which
+    /// is the one value a caller is most likely to read as its opposite -- and did: an
+    /// unguarded elapsed check made `.seconds(0)` expire at the first node, and
+    /// ``BranchAndCutSolver`` *defaulted* to `0`, so a default-constructed solver failed
+    /// every problem it was given. `Duration.zero` now means an already-missed deadline,
+    /// which is what it reads like, and needs no guard to say so.
+    public let timeLimit: Duration?
 
     /// Relative optimality tolerance (stop when gap < tolerance)
     public let relativeGapTolerance: Double
@@ -180,7 +187,8 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
     ///
     /// - Parameters:
     ///   - maxNodes: Maximum nodes to explore before terminating (default: 10,000)
-    ///   - timeLimit: Maximum time in seconds, 0 for no limit (default: 300.0)
+    ///   - timeLimit: How long the search may run, or `nil` for no limit (default: 300 seconds).
+    ///     `.zero` is a deadline already missed, not a request for unlimited time.
     ///   - relativeGapTolerance: Relative optimality gap to stop when `gap < tolerance` (default: 1e-4 = 0.01%)
     ///   - nodeSelection: Strategy for selecting next node (default: `.bestBound`)
     ///   - branchingRule: Strategy for selecting branching variable (default: `.mostFractional`)
@@ -212,7 +220,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
     ///     on modelled time rather than measured time.
     public init(
         maxNodes: Int = 10_000,
-        timeLimit: Double = 300.0,
+        timeLimit: Duration? = .seconds(300),
         relativeGapTolerance: Double = 1e-4,
         nodeSelection: NodeSelectionStrategy = .bestBound,
         branchingRule: BranchingRule = .mostFractional,
@@ -400,7 +408,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
         // handed to the relaxation solver. Checking `timeLimit` only between nodes
         // bounds nothing: a node is an arbitrary program over the caller's
         // objective, and a one-second limit was measured taking 153 seconds.
-        let deadline: ContinuousClock.Instant? = timeLimit > 0 ? startTime + .seconds(timeLimit) : nil
+        let deadline: ContinuousClock.Instant? = timeLimit.map { startTime.advanced(by: $0) }
         var queue = NodeQueue<V>(strategy: nodeSelection, minimize: minimize)
         var incumbent: (solution: V, value: Double)? = nil
         var bestBound = minimize ? -Double.infinity : Double.infinity
@@ -506,14 +514,17 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                 )
             }
 
-            // `timeLimit > 0` guards the documented "0 for no limit" contract. Without it
-            // the comparison reads `elapsed > .seconds(0)`, which is true as soon as the
-            // clock advances at all — so a zero budget expired at the first node instead of
-            // never. That is not a slow solver but a silent one, and it reached callers:
-            // BranchAndCutSolver's `timeLimit` *defaults* to 0, so a default-constructed
-            // solver returned `success: false` with the objective at infinity for every
-            // problem it was ever given. Nothing caught it because no test constructed one.
-            if timeLimit > 0 && (clock.now - startTime) > .seconds(timeLimit) {
+            // `if let` is the whole guard now. The `timeLimit > 0` test that used to stand
+            // here was defending a sentinel: `0` meant "no limit", so the comparison
+            // `elapsed > .seconds(0)` -- true as soon as the clock moves at all -- had to be
+            // suppressed by hand. Forgetting to suppress it expired a zero budget at the
+            // first node instead of never, and BranchAndCutSolver *defaulted* to 0, so a
+            // default-constructed solver failed every problem it was ever given.
+            //
+            // With `Duration?` the absent case is absent from the expression entirely, so
+            // there is no sentinel to forget. `.zero` falls through to the comparison and
+            // expires immediately, which is now the correct answer rather than the bug.
+            if let limit = timeLimit, (clock.now - startTime) > limit {
                 let gap = incumbent.map { abs($0.value - bestBound) / max(abs($0.value), 1.0) } ?? .infinity
 
                 // Unshift solution if variable shifting was applied

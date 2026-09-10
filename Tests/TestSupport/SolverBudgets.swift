@@ -17,21 +17,25 @@ import Foundation
 /// change to the code under test. `maxNodes` is the machine-independent budget; pair this
 /// constant with it and the node count becomes the only thing that can stop the search.
 ///
-/// ## Why zero
+/// ## Why nil
+
+/// ``BranchAndBoundSolver/init(maxNodes:timeLimit:...)`` takes `Duration?`, and `nil` is
+/// the absent budget. That is a change of type, not of behaviour: the parameter was
+/// `Double` with `0` documented as "no limit", and this constant was `0`.
 ///
-/// ``BranchAndBoundSolver/init(maxNodes:timeLimit:...)`` documents `timeLimit: 0` as
-/// "no limit", and now implements it. It did not when this constant was introduced: the
-/// elapsed check was unguarded, so `elapsed > .seconds(0)` was true at the first node and
-/// a zero budget expired immediately rather than never. This constant was a 10⁹-second
-/// sentinel working around that. The guard was added in the same pass, so the workaround
-/// is gone and the documented contract is the implementation.
+/// The name is still worth keeping over a bare `nil` at seventeen call sites. `nil` says
+/// the argument was not supplied; `unboundedSolverTimeLimit` says the test is deliberately
+/// removing the clock from a claim about the answer. Those are different statements and
+/// only one of them survives review.
 ///
-/// The name is kept rather than inlining `0` at ten call sites, because `timeLimit: 0`
-/// reads like an absent value and `timeLimit: unboundedSolverTimeLimit` reads like the
-/// claim being made. `.infinity` and `.greatestFiniteMagnitude` remain unavailable —
-/// `Duration.seconds(_:)` traps converting either to its 128-bit representation.
+/// What is gone is the reason this constant used to need a paragraph. It was once a
+/// 10⁹-second sentinel working around an unguarded elapsed check that made `timeLimit: 0`
+/// expire at the first node rather than never; then it became `0` once that was guarded.
+/// Now the absent case is absent from the type, so there is no sentinel to guard and
+/// nothing to work around. `.zero` means an already-missed deadline, which is what it
+/// reads like.
 ///
 /// This is deliberately not a *budget*. Widening a real budget (30s → 300s) buys time and
 /// leaves the flake in place; removing the clock from the picture is what makes the
 /// assertion mean what it says.
-public let unboundedSolverTimeLimit: Double = 0
+public let unboundedSolverTimeLimit: Duration? = nil
