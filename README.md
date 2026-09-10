@@ -10,7 +10,35 @@ Build DCF models, optimize portfolios, run Monte Carlo simulations, and value se
 
 ---
 
-## Latest release: 2.17.0
+## Latest release: 2.18.0
+
+Three additions, one fix, and a new chapter.
+
+**A Holt-Winters model can choose its own smoothing parameters.** `TimeSeries.fitETS()`
+searches for alpha, beta and gamma rather than making you supply `alpha: 0.2` and hope.
+`ETSSeasonality` names the three cases a spreadsheet encodes in one numeric argument —
+non-seasonal, auto-detect, explicit cycle — and `smape` joins `mae`, `mape` and `rmse` with
+the halved denominator Excel actually uses, which was measured rather than chosen.
+
+**Complex numbers read and write in the notation people use.** `Complex(notation: "3+4i")`
+parses and `z.notation` writes, as members on an extension rather than a
+`LosslessStringConvertible` conformance — `description` still returns `"(3.0, 4.0)"`, because
+a conformance is global and unscoped and would change every downstream caller's string
+interpolation with no way to opt out.
+
+**One fix worth reading if you use the GPU optimizers.** A Metal read-back could return fewer
+vectors than the population it described, which the caller then indexed by population size —
+an out-of-range crash rather than a wrong answer. Unreachable through the public API today
+and one conformance away from reachable. A batch conversion now returns every element or
+`nil`, never a prefix.
+
+**Chapter 7, Marketing Analytics**, with a playground. Nine questions in the order a
+marketing team asks them, and a closing table of the plausible wrong answers this library
+refuses to give.
+
+Additive apart from the fix. No signature changes, no deletions.
+
+### Previous release: 2.17.0
 
 Stage 5 of the marketing leg — **attribution**, **market baskets** and **behavioural
 segmentation** — and one shipped constant turned into a parameter.

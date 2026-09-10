@@ -120,9 +120,26 @@ public struct HoltWintersModel<T: Real & Sendable & Codable>: Sendable {
 	/// ```
 	public mutating func train(values: [T]) throws {
 		let required = seasonalPeriods * 2
-		guard values.count >= required else {
+		guard trainIfSufficient(values: values) else {
 			throw ForecastError.insufficientData(required: required, got: values.count)
 		}
+	}
+
+	/// The same training pass as ``train(values:)``, reporting insufficient data as a value
+	/// rather than throwing.
+	///
+	/// `train(values:)` has exactly one failure and it is a length precondition. The ETS
+	/// parameter search evaluates this pass hundreds of times per fit, over points whose
+	/// length it has already checked, and a thrown error there is not something any caller
+	/// can act on — it would be caught and discarded, which is the shape that hides real
+	/// failures. Returning the fact instead keeps the discard out of the code entirely.
+	///
+	/// - Parameter values: The training observations.
+	/// - Returns: `false`, leaving the model untrained, when `values` holds fewer than
+	///   `2 * seasonalPeriods` observations.
+	internal mutating func trainIfSufficient(values: [T]) -> Bool {
+		let required = seasonalPeriods * 2
+		guard values.count >= required else { return false }
 
 		// Initialize level as average of first seasonal cycle
 		let initialLevel = values.prefix(seasonalPeriods).reduce(T(0), +) / T(seasonalPeriods)
@@ -182,6 +199,7 @@ public struct HoltWintersModel<T: Real & Sendable & Codable>: Sendable {
 		self.seasonal = currentSeasonal
 		self.residuals = errors
 		self.trainedCount = values.count
+		return true
 	}
 
 	/// Train the Holt-Winters model on a time series (convenience method).

@@ -9,6 +9,160 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [2.18.0] - 2026-09-09
+
+Two additions, both purely additive: a Holt-Winters model can now choose its own smoothing
+parameters, and complex numbers can be read and written in the notation people actually use.
+No existing signature changed.
+
+### Added
+
+- **`smape(_:_:)`** in `Statistics/Descriptors/Error Metrics/`, beside `mae`, `mape` and
+  `rmse` and in the same shape — a free function returning a ratio, `NaN` for empty or
+  mismatched input.
+
+  Two conventions circulate for the denominator and the choice is not cosmetic: halved gives
+  a `[0, 2]` range, unhalved `[0, 1]`. **This one is measured, not chosen.** Excel's
+  `FORECAST.ETS.STAT` with `statistic_type` 5 returned `1.94306435` on an alternating
+  `+1, −1` series, and the unhalved form cannot exceed `1` by the triangle inequality —
+  termwise and therefore in the mean — so no series could drive it there by any route. The
+  MAE reading alongside it corroborates rather than merely accompanies: actuals of ±1
+  against an MAE of 1.04 says the forecasts sat near zero, which is exactly what puts each
+  term at `1/0.5 = 2`.
+
+  A term whose actual *and* forecast are zero contributes **zero**, not `NaN`: a forecast
+  that predicted nothing and got nothing was not wrong. Tested by the property that names
+  it — `smape(a, f)` is bit-for-bit equal to `smape(f, a)` across positives, negatives, and
+  zeros on each side and both.
+
+- **`ETSSeasonality`** — `.none`, `.detect`, `.periods(Int)`, with
+  `TimeSeries.detectedSeasonLength(maxLag:)` and `TimeSeries.resolvedSeasonality(_:)`.
+
+  A spreadsheet encodes non-seasonal / auto-detect / explicit-cycle in one optional numeric
+  argument. That is a sum type wearing a number, so it arrives here as a sum type and the
+  numeric convention stays in the binding layer.
+
+  **Nothing here reimplements detection.** `dominantSeasonLength(maxLag:)` has been public in
+  `Time Series/Diagnostics/Autocorrelation.swift` all along, and already answers the question
+  in the shape a spreadsheet asks it — strongest lag `h ≥ 2` clearing the white-noise band
+  `1.96/√n`, and the no-detectable-pattern answer. Two earlier passes over this area recorded
+  that no such thing existed. Both were wrong, and this is where that is written down rather
+  than quietly dropped, because the same mistake produced the same overestimate twice. The
+  new surface supplies the sensible default ceiling — half the series, the longest cycle that
+  could repeat at all — and turns a choice into the cycle length a fit will use.
+
+  Detection never overrides an explicit length, so a resolution carries `wasDetected`
+  alongside `length`: a caller has to be able to tell an answer that came from the data apart
+  from one they gave themselves.
+
+- **`TimeSeries.fitETS(seasonality:config:)`**, returning `ETSFit` / `ETSFitErrors` /
+  `ETSConvergence`, configured by `ETSFitConfig`.
+
+  Until now a caller of `HoltWintersModel` had to *supply* `alpha: 0.2` and had no way to
+  know whether `0.2` was any good for their series. The parameters are now searched for, by
+  minimising the in-sample sum of squared one-step-ahead residuals — the standard for ETS
+  (Hyndman) rather than a guess at what a spreadsheet does, which is unpublished. The
+  returned model is trained and is already a `Forecaster`, so `backtest(_:config:)` accepts
+  it directly.
+
+  **The box `[0, 1]³` is held by reparameterisation, not by penalty.** A penalty weight has
+  no principled value here: the objective scales with the square of the series, so data in
+  units of 1 and data in units of 10⁶ put objectives twelve orders apart and no single weight
+  is right for both. Parameterising it would hand the caller a constant they have no basis to
+  choose — on a fitter whose entire purpose is that they should not have to. Under the
+  logistic transform an infeasible point cannot be *proposed*, so the box is a property of
+  the parameterisation instead of a number someone picked.
+
+  The transform reaches its limits only asymptotically, so the feasible box sits a hair
+  inside `[0, 1]` and **a saturated parameter is snapped to the true boundary**. That is not
+  tidiness: `alpha = 1` is the optimum for a random walk, where the best forecast of tomorrow
+  is today's value, so any series close to one lands there — which is most financial series.
+  Reporting `0.9999` would show up regularly and read like a rounding bug.
+
+  Non-seasonal fits search **two** parameters, not three. With a cycle length of 1 gamma has
+  nothing to smooth, and searching it would wander over a flat dimension and report a
+  meaningless value.
+
+  The test that carries the weight is not "beats the library defaults" — `≤` is satisfied by
+  equality, so a fitter that starts at `0.2 / 0.1 / 0.1` and returns them unchanged passes
+  it. It is **fitted SSE ≤ the best point of a 0.1-resolution grid over the feasible box**:
+  1,331 trainings seasonal, 121 non-seasonal, affordable once on a short series, and no
+  fixed-point stub passes it because the grid contains the stub's answer by construction.
+  Measured 2026-09-09, both comparisons hold strictly. The defaults comparison is kept as
+  well, as a **strict** inequality on a random walk where the defaults are known to be poor.
+
+  Together with `detectedSeasonLength`, this answers `FORECAST.ETS.SEASONALITY` outright and
+  all seven of `FORECAST.ETS.STAT`'s model statistics; the eighth reads the timeline and
+  never reaches a model.
+
+- **A `Complex` ↔ `String` codec, in the notation people actually write.**
+  `Complex<Double>(notation: "3+4i")` parses and `z.notation` writes, as two members on an
+  extension constrained to `RealType: LosslessStringConvertible`. Purely additive: nothing
+  existing changes behaviour, and `description` keeps returning the coordinate pair
+  `"(3.0, 4.0)"`.
+
+  That last point is the design decision worth recording. This is a **member, not a
+  `LosslessStringConvertible` conformance**. A conformance is global and unscoped — every
+  downstream caller's `"\(z)"` would change, with no import to drop and no way to opt out —
+  and it would buy nothing here, because `Complex` is not a `Real` and so cannot satisfy the
+  `Real & Sendable & LosslessStringConvertible` constraint that this package's generic sites
+  actually write.
+
+  The reader takes the variations a person types — a leading `+`, spaces around the operator,
+  `j` or `J` alongside `i` — and refuses everything else as `nil` rather than guessing.
+  `"3+4"` is not `Complex(7, 0)`; it is a malformed string. The coordinate form
+  `"(3.0, 4.0)"` is refused as well, deliberately: a pair in parentheses is equally a point,
+  a tuple, a size or a range, so accepting it would turn any of them into a complex number.
+
+  The writer is canonical rather than configurable, emitting only `i`, with the suffix always
+  the final character — a caller needing `j` swaps one character. A configurable writer would
+  also be one nothing could round-trip against, and round-trip is the whole test:
+  `Complex(notation: z.notation) == z` over a spread that includes both unit coefficients,
+  both zero parts, zero itself, `1e-300`, the extremes of `Double`, and the non-finite values.
+
+### Fixed
+
+- **A GPU read-back could return fewer vectors than the population it described.** Both
+  `DifferentialEvolution` and `ParticleSwarmOptimization` read Metal results back one vector
+  at a time and appended only on a successful conversion:
+
+  ```
+  if let vector = V.fromArray(components) { population.append(vector) }
+  ```
+
+  A failed conversion appends nothing, so the batch comes back **shorter** — and
+  `DifferentialEvolution` then runs `newPopulation[i] = trialPopulation[i]` across
+  `0..<popSize`. That is an out-of-range crash rather than a wrong answer, and nothing before
+  it says anything is amiss. `ParticleSwarmOptimization` had the same shape twice, for
+  velocities and positions.
+
+  Unreachable through the public API today, because both optimizers gate the GPU on
+  `VectorN<Double>` and `VectorN.fromArray` accepts any length. It was one conformance away
+  from reachable: `Vector1D`, `Vector2D`, `Vector3D`, `Double` and `Float` all return `nil` on
+  a length mismatch — which is also what makes it testable without a GPU.
+
+  New `VectorSpace.vectors(fromFlat:count:dimension:)` returns **every element or `nil`, never
+  a prefix**. `nil` means fall back to the CPU, which is what both optimizers already do when
+  Metal is unavailable, so the recovery path is one that already existed and was already
+  tested.
+
+### Documentation
+
+- **Chapter 7, Marketing Analytics** — a guide through nine questions a marketing team
+  actually asks, in the order they come up, with an accompanying playground.
+
+  The organising theme is the one the whole area was built around: almost every quantity in
+  marketing analytics can be computed several ways, the ways disagree, and nothing about the
+  resulting number says which one you got. So the variant is a parameter rather than a hidden
+  choice. The chapter closes on a table of seven plausible wrong answers the library declines
+  to give.
+
+  Every example in it compiled and ran under `doc-run`, which caught two defects a reviewer
+  would not have: a section documenting API that exists only on an unmerged branch, and an
+  uplift fixture that separated in the treatment arm and was correctly refused by the model.
+
+---
+
 ### [2.17.0] - 2026-09-09
 
 Stage 5 of the marketing leg — attribution, market baskets and behavioural segmentation —
