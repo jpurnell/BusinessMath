@@ -11,7 +11,12 @@ import Numerics
 /// A cached calendar, Gregorian and fixed to UTC.
 ///
 /// Creating `Calendar` instances is expensive and every method here does calendar
-/// arithmetic, so the instance is created once, following ``Period``'s own pattern.
+/// arithmetic, so the instance is created once.
+///
+/// It is deliberately *not* named `cachedCalendar`, which is the name `Period`
+/// arithmetic uses for a cached `Calendar.current` — the opposite of this one. Two
+/// calendars with opposite semantics under one name is how the wrong one gets
+/// reached for.
 ///
 /// **Not `Calendar.current`.** A day count is a statement about calendar dates —
 /// 29 February to 31 December is 301 days under 30/360 in every office in the world —
@@ -30,7 +35,18 @@ import Numerics
 /// A Gregorian calendar is also correct on its own terms here: 30/360 and its
 /// relatives are Gregorian conventions, and evaluating them in a non-Gregorian
 /// current locale would be wrong regardless of the zone.
-private let cachedCalendar: Calendar = {
+///
+/// ## Internal, and shared, because the doctrine above was file-scoped
+///
+/// This reasoning was written here and applied here, while `Calendar.current` stayed
+/// in every other file that walks a schedule of dates — ``CouponPeriod`` and
+/// `ACCRINT`'s quasi-coupon grid among them. A rule stated in one file's private
+/// declaration is not a rule the package follows, and the coupon grid drifted a day
+/// for exactly the reason set out above.
+///
+/// Reach for this rather than `Calendar.current` anywhere a calendar date is being
+/// treated as a date rather than as an instant.
+let gregorianUTC: Calendar = {
 	var calendar = Calendar(identifier: .gregorian)
 	calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .gmt
 	return calendar
@@ -414,7 +430,7 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 	/// month-length table, so the leap rule is applied by the calendar rather than
 	/// restated here.
 	private static func isLastDayOfFebruary(_ date: Date) -> Bool {
-		let calendar = cachedCalendar
+		let calendar = gregorianUTC
 		let parts = calendar.dateComponents([.month], from: date)
 		guard parts.month == 2 else { return false }
 		guard let tomorrow = calendar.date(byAdding: .day, value: 1, to: date) else { return false }
@@ -440,7 +456,7 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 			return -forward
 		}
 
-		let calendar = cachedCalendar
+		let calendar = gregorianUTC
 		guard let startYear = calendar.dateComponents([.year], from: start).year,
 			  let endYear = calendar.dateComponents([.year], from: end).year else {
 			return T.zero
@@ -485,7 +501,7 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 			return -forward
 		}
 
-		let calendar = cachedCalendar
+		let calendar = gregorianUTC
 		let startParts = calendar.dateComponents([.year, .month, .day], from: start)
 		let endParts = calendar.dateComponents([.year, .month, .day], from: end)
 		guard let startYear = startParts.year, let endYear = endParts.year,
@@ -532,7 +548,7 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 	private static func intervalContainsLeapDay(
 		from start: Date, to end: Date, startYear: Int, endYear: Int
 	) -> Bool {
-		let calendar = cachedCalendar
+		let calendar = gregorianUTC
 		for year in [startYear, endYear] where daysInYear(of: year) == 366 {
 			let components = DateComponents(year: year, month: 2, day: 29)
 			guard let leapDay = calendar.date(from: components) else { continue }
@@ -595,7 +611,7 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 	/// Excel's model is civil dates with the time of day discarded — which is what this
 	/// now does, and the reason the two agree.
 	private static func civilDaysBetween(_ start: Date, _ end: Date) -> Int {
-		let calendar = cachedCalendar
+		let calendar = gregorianUTC
 		let from = calendar.startOfDay(for: start)
 		let to = calendar.startOfDay(for: end)
 		return calendar.dateComponents([.day], from: from, to: to).day ?? 0
@@ -631,7 +647,7 @@ public enum DayCountConvention: String, Codable, Hashable, CaseIterable, Sendabl
 	}
 
 	private static func thirty360Days(from start: Date, to end: Date, style: ThirtyStyle) -> Int {
-		let calendar = cachedCalendar
+		let calendar = gregorianUTC
 		let from = calendar.dateComponents([.year, .month, .day], from: start)
 		let to = calendar.dateComponents([.year, .month, .day], from: end)
 

@@ -9,6 +9,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [Unreleased]
+
+### Fixed
+
+- **The coupon grid no longer moves with the machine's time zone.** `CouponPeriod` and
+  `ACCRINT`'s quasi-coupon walk stepped through the schedule with `Calendar.current`, so a
+  maturity given as a UTC midnight decomposed to the previous day anywhere west of Greenwich
+  and the whole grid shifted with it. Asymmetrically, too: a six-month step that crossed a
+  daylight-saving boundary moved where one that did not stayed put, which is why
+  `COUPPCD` came back right and `COUPNCD` came back a day early on the same bond.
+
+  Everything defined on the grid inherited the error — `PRICE` was out by about 0.017 per
+  100 of face on Microsoft's own worked example, and `YIELD` by 2.7 basis points of a
+  basis point. Small enough to read as a rounding difference, which is what makes it worth
+  a changelog entry.
+
+  **Invisible from inside this package.** `ExcelBondFunctionTests` builds its dates with
+  `Calendar.current` as well, so the tests and the code agreed with each other in every zone.
+  It surfaced only when SwiftExcelFunctions handed in the UTC midnights that an Excel date
+  serial decodes to. `CouponPeriodCalendarTests` now pins the grid in UTC against Microsoft's
+  published COUP* example, which is a check the old code could not have passed.
+
+  The rule this violated was already written down — in `DayCountConvention.swift`, on a
+  `private` declaration, where no other file could reach it. It is now internal and named
+  `gregorianUTC`, deliberately not `cachedCalendar`: `Period` arithmetic uses that name for a
+  cached `Calendar.current`, which is the opposite thing.
+
 ### [3.0.0-alpha.2] - 2026-09-09
 
 **`sampleSize` is deleted.** The fourth and last breaking item, and the one the whole

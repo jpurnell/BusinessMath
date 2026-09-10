@@ -119,7 +119,9 @@ private func quasiCouponDates(
 			value: "\(periodsPerYear) per year", expectedRange: "1, 2, 3, 4, 6 or 12")
 	}
 	let step = 12 / periodsPerYear
-	let calendar = Calendar.current
+	// The same walk as ``CouponPeriod``'s, and the same reason not to use
+	// `Calendar.current`. See the note on `gregorianUTC`.
+	let calendar = gregorianUTC
 
 	var dates: [Date] = [firstInterest]
 

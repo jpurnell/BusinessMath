@@ -105,7 +105,13 @@ public struct CouponPeriod<T: Real & BinaryFloatingPoint>: Sendable where T: Sen
 		}
 
 		let step = 12 / periodsPerYear
-		let calendar = Calendar.current
+		// Not `Calendar.current`: a coupon date is a date, not an instant, and the
+		// walk below reads it back as year-month-day. In any zone west of Greenwich
+		// a UTC midnight decomposes to the previous day, which moves the whole grid
+		// — and moves it asymmetrically, since a six-month step that crosses a
+		// daylight-saving boundary shifts where one that does not stays put. See the
+		// note on `gregorianUTC`.
+		let calendar = gregorianUTC
 
 		// Walk back from maturity until the date at or before settlement is found. The
 		// bound is a backstop against a non-terminating walk, not a limit on realistic
