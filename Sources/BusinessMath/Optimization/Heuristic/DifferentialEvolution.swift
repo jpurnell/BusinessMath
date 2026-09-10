@@ -688,18 +688,21 @@ public struct DifferentialEvolution<V: VectorSpace>: MultivariateOptimizer where
 
         // Read back trials from GPU
         let trialsPtr = trialsBuffer.contents().bindMemory(to: Float.self, capacity: popSize * dimension)
-        var trialPopulation = [V]()
-        trialPopulation.reserveCapacity(popSize)
-
-        for i in 0..<popSize {
-            var components = [V.Scalar]()
-            components.reserveCapacity(dimension)
-            for d in 0..<dimension {
-                components.append(V.Scalar(trialsPtr[i * dimension + d]))
-            }
-            if let vec = V.fromArray(components) {
-                trialPopulation.append(vec)
-            }
+        // Read the whole buffer flat, then convert as one batch. The earlier form appended
+        // only on a successful conversion, so a failure left `trialPopulation` shorter than
+        // `popSize` — and the selection loop below indexes it by `0..<popSize`, which is an
+        // out-of-range crash rather than a wrong answer. `vectors(fromFlat:count:dimension:)`
+        // returns every element or none, and `nil` here means fall back to the CPU exactly as
+        // an unavailable Metal device does.
+        var flatTrials = [V.Scalar]()
+        flatTrials.reserveCapacity(popSize * dimension)
+        for index in 0..<(popSize * dimension) {
+            flatTrials.append(V.Scalar(trialsPtr[index]))
+        }
+        guard let trialPopulation = V.vectors(fromFlat: flatTrials,
+                                              count: popSize,
+                                              dimension: dimension) else {
+            return nil
         }
 
         // Evaluate trial fitness on CPU (can't run Swift closures on GPU)
@@ -736,7 +739,9 @@ public struct DifferentialEvolution<V: VectorSpace>: MultivariateOptimizer where
     ) throws -> MultivariateOptimizationResult<V> {
 
         // Penalty weight (adaptive)
-        let penaltyWeight: V.Scalar = 100
+        // The weight the caller chose, or the historical 100 by default. The
+        // config guarantees it is positive and finite, so no guard is needed here.
+        let penaltyWeight = V.Scalar(config.constraintPenaltyWeight)
 
         // Create penalized objective
         let penalizedObjective: (V) -> V.Scalar = { solution in

@@ -9,6 +9,267 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [2.18.0] - 2026-09-09
+
+Two additions, both purely additive: a Holt-Winters model can now choose its own smoothing
+parameters, and complex numbers can be read and written in the notation people actually use.
+No existing signature changed.
+
+### Added
+
+- **`smape(_:_:)`** in `Statistics/Descriptors/Error Metrics/`, beside `mae`, `mape` and
+  `rmse` and in the same shape — a free function returning a ratio, `NaN` for empty or
+  mismatched input.
+
+  Two conventions circulate for the denominator and the choice is not cosmetic: halved gives
+  a `[0, 2]` range, unhalved `[0, 1]`. **This one is measured, not chosen.** Excel's
+  `FORECAST.ETS.STAT` with `statistic_type` 5 returned `1.94306435` on an alternating
+  `+1, −1` series, and the unhalved form cannot exceed `1` by the triangle inequality —
+  termwise and therefore in the mean — so no series could drive it there by any route. The
+  MAE reading alongside it corroborates rather than merely accompanies: actuals of ±1
+  against an MAE of 1.04 says the forecasts sat near zero, which is exactly what puts each
+  term at `1/0.5 = 2`.
+
+  A term whose actual *and* forecast are zero contributes **zero**, not `NaN`: a forecast
+  that predicted nothing and got nothing was not wrong. Tested by the property that names
+  it — `smape(a, f)` is bit-for-bit equal to `smape(f, a)` across positives, negatives, and
+  zeros on each side and both.
+
+- **`ETSSeasonality`** — `.none`, `.detect`, `.periods(Int)`, with
+  `TimeSeries.detectedSeasonLength(maxLag:)` and `TimeSeries.resolvedSeasonality(_:)`.
+
+  A spreadsheet encodes non-seasonal / auto-detect / explicit-cycle in one optional numeric
+  argument. That is a sum type wearing a number, so it arrives here as a sum type and the
+  numeric convention stays in the binding layer.
+
+  **Nothing here reimplements detection.** `dominantSeasonLength(maxLag:)` has been public in
+  `Time Series/Diagnostics/Autocorrelation.swift` all along, and already answers the question
+  in the shape a spreadsheet asks it — strongest lag `h ≥ 2` clearing the white-noise band
+  `1.96/√n`, and the no-detectable-pattern answer. Two earlier passes over this area recorded
+  that no such thing existed. Both were wrong, and this is where that is written down rather
+  than quietly dropped, because the same mistake produced the same overestimate twice. The
+  new surface supplies the sensible default ceiling — half the series, the longest cycle that
+  could repeat at all — and turns a choice into the cycle length a fit will use.
+
+  Detection never overrides an explicit length, so a resolution carries `wasDetected`
+  alongside `length`: a caller has to be able to tell an answer that came from the data apart
+  from one they gave themselves.
+
+- **`TimeSeries.fitETS(seasonality:config:)`**, returning `ETSFit` / `ETSFitErrors` /
+  `ETSConvergence`, configured by `ETSFitConfig`.
+
+  Until now a caller of `HoltWintersModel` had to *supply* `alpha: 0.2` and had no way to
+  know whether `0.2` was any good for their series. The parameters are now searched for, by
+  minimising the in-sample sum of squared one-step-ahead residuals — the standard for ETS
+  (Hyndman) rather than a guess at what a spreadsheet does, which is unpublished. The
+  returned model is trained and is already a `Forecaster`, so `backtest(_:config:)` accepts
+  it directly.
+
+  **The box `[0, 1]³` is held by reparameterisation, not by penalty.** A penalty weight has
+  no principled value here: the objective scales with the square of the series, so data in
+  units of 1 and data in units of 10⁶ put objectives twelve orders apart and no single weight
+  is right for both. Parameterising it would hand the caller a constant they have no basis to
+  choose — on a fitter whose entire purpose is that they should not have to. Under the
+  logistic transform an infeasible point cannot be *proposed*, so the box is a property of
+  the parameterisation instead of a number someone picked.
+
+  The transform reaches its limits only asymptotically, so the feasible box sits a hair
+  inside `[0, 1]` and **a saturated parameter is snapped to the true boundary**. That is not
+  tidiness: `alpha = 1` is the optimum for a random walk, where the best forecast of tomorrow
+  is today's value, so any series close to one lands there — which is most financial series.
+  Reporting `0.9999` would show up regularly and read like a rounding bug.
+
+  Non-seasonal fits search **two** parameters, not three. With a cycle length of 1 gamma has
+  nothing to smooth, and searching it would wander over a flat dimension and report a
+  meaningless value.
+
+  The test that carries the weight is not "beats the library defaults" — `≤` is satisfied by
+  equality, so a fitter that starts at `0.2 / 0.1 / 0.1` and returns them unchanged passes
+  it. It is **fitted SSE ≤ the best point of a 0.1-resolution grid over the feasible box**:
+  1,331 trainings seasonal, 121 non-seasonal, affordable once on a short series, and no
+  fixed-point stub passes it because the grid contains the stub's answer by construction.
+  Measured 2026-09-09, both comparisons hold strictly. The defaults comparison is kept as
+  well, as a **strict** inequality on a random walk where the defaults are known to be poor.
+
+  Together with `detectedSeasonLength`, this answers `FORECAST.ETS.SEASONALITY` outright and
+  all seven of `FORECAST.ETS.STAT`'s model statistics; the eighth reads the timeline and
+  never reaches a model.
+
+- **A `Complex` ↔ `String` codec, in the notation people actually write.**
+  `Complex<Double>(notation: "3+4i")` parses and `z.notation` writes, as two members on an
+  extension constrained to `RealType: LosslessStringConvertible`. Purely additive: nothing
+  existing changes behaviour, and `description` keeps returning the coordinate pair
+  `"(3.0, 4.0)"`.
+
+  That last point is the design decision worth recording. This is a **member, not a
+  `LosslessStringConvertible` conformance**. A conformance is global and unscoped — every
+  downstream caller's `"\(z)"` would change, with no import to drop and no way to opt out —
+  and it would buy nothing here, because `Complex` is not a `Real` and so cannot satisfy the
+  `Real & Sendable & LosslessStringConvertible` constraint that this package's generic sites
+  actually write.
+
+  The reader takes the variations a person types — a leading `+`, spaces around the operator,
+  `j` or `J` alongside `i` — and refuses everything else as `nil` rather than guessing.
+  `"3+4"` is not `Complex(7, 0)`; it is a malformed string. The coordinate form
+  `"(3.0, 4.0)"` is refused as well, deliberately: a pair in parentheses is equally a point,
+  a tuple, a size or a range, so accepting it would turn any of them into a complex number.
+
+  The writer is canonical rather than configurable, emitting only `i`, with the suffix always
+  the final character — a caller needing `j` swaps one character. A configurable writer would
+  also be one nothing could round-trip against, and round-trip is the whole test:
+  `Complex(notation: z.notation) == z` over a spread that includes both unit coefficients,
+  both zero parts, zero itself, `1e-300`, the extremes of `Double`, and the non-finite values.
+
+### Fixed
+
+- **A GPU read-back could return fewer vectors than the population it described.** Both
+  `DifferentialEvolution` and `ParticleSwarmOptimization` read Metal results back one vector
+  at a time and appended only on a successful conversion:
+
+  ```
+  if let vector = V.fromArray(components) { population.append(vector) }
+  ```
+
+  A failed conversion appends nothing, so the batch comes back **shorter** — and
+  `DifferentialEvolution` then runs `newPopulation[i] = trialPopulation[i]` across
+  `0..<popSize`. That is an out-of-range crash rather than a wrong answer, and nothing before
+  it says anything is amiss. `ParticleSwarmOptimization` had the same shape twice, for
+  velocities and positions.
+
+  Unreachable through the public API today, because both optimizers gate the GPU on
+  `VectorN<Double>` and `VectorN.fromArray` accepts any length. It was one conformance away
+  from reachable: `Vector1D`, `Vector2D`, `Vector3D`, `Double` and `Float` all return `nil` on
+  a length mismatch — which is also what makes it testable without a GPU.
+
+  New `VectorSpace.vectors(fromFlat:count:dimension:)` returns **every element or `nil`, never
+  a prefix**. `nil` means fall back to the CPU, which is what both optimizers already do when
+  Metal is unavailable, so the recovery path is one that already existed and was already
+  tested.
+
+### Documentation
+
+- **Chapter 7, Marketing Analytics** — a guide through nine questions a marketing team
+  actually asks, in the order they come up, with an accompanying playground.
+
+  The organising theme is the one the whole area was built around: almost every quantity in
+  marketing analytics can be computed several ways, the ways disagree, and nothing about the
+  resulting number says which one you got. So the variant is a parameter rather than a hidden
+  choice. The chapter closes on a table of seven plausible wrong answers the library declines
+  to give.
+
+  Every example in it compiled and ran under `doc-run`, which caught two defects a reviewer
+  would not have: a section documenting API that exists only on an unmerged branch, and an
+  uplift fixture that separated in the treatment arm and was correctly refused by the model.
+
+---
+
+### [2.17.0] - 2026-09-09
+
+Stage 5 of the marketing leg — attribution, market baskets and behavioural segmentation —
+and one shipped constant turned into a parameter. Additive throughout: no signature changed,
+nothing was removed, and the three items still waiting for 3.0.0 are still waiting.
+
+### Added
+
+- **`Marketing/Attribution/` — three models behind one protocol.** The contract they share is
+  **efficiency**: credit sums to the total value of the converting journeys, no more and no
+  less. It holds for heuristics, removal effect and Shapley alike, so it is tested once
+  against `AttributionModel` rather than three times against implementations.
+
+  `HeuristicAttribution` is first touch, last touch, linear, position-based and time decay.
+  None of them looks at a journey that failed, which is not an implementation gap but the
+  definition: with only the successes in view there is no way to tell a channel that appears
+  in every path from one that appears only in the winning ones. Last touch therefore scores an
+  upper-funnel channel at exactly zero — not "small", zero — and first touch inverts the same
+  error rather than fixing it. Time decay **requires** timings and throws without them,
+  because position is not recency.
+
+  `MarkovAttribution` reads the failures. Journeys become paths through a chain ending in a
+  conversion or a null state, and removing a channel means redirecting its traffic into
+  failure. On the fixture in the tests — five journeys where an upper-funnel channel opens and
+  a closer closes, five where the closer is alone and fails — last touch values the opener at
+  zero and removal effect values it at a third of the budget. Both are arithmetic on the same
+  ten journeys. Raw effects are exposed separately from the normalised shares because they do
+  not sum to one and are not meant to: normalising is where a measurement becomes a
+  convention.
+
+  `ShapleyAttribution` enumerates every coalition exactly, by subset-sum transform rather than
+  by rescanning journeys per coalition, and refuses above sixteen channels instead of sampling
+  — sixteen being both where the runtime turns and where `Double` stops holding the factorial
+  weights exactly. Its **null player** axiom is the one assertion in attribution that needs no
+  tolerance: a channel that changes no coalition's worth is paid precisely zero.
+
+- **`Marketing/Basket/AssociationRules.swift`.** Support, confidence, lift, leverage and
+  conviction over transactions, with Apriori itemset generation including the subset-pruning
+  step.
+
+  Confidence is the number that misleads, and the fixture makes it exact. "Eighty per cent of
+  baskets with bread also contain milk" sounds like a finding about bread; where milk is in
+  eighty per cent of *all* baskets it is a finding about milk, and lift is exactly 1, leverage
+  exactly 0 and conviction exactly 1 — three statistics sitting precisely on their null values
+  while confidence reads 0.8. Lift is also **symmetric**, so a rule written with an arrow and a
+  lift is mixing a directional statistic with one that carries no direction at all.
+
+  The rule list is sorted to a total order — lift, then support, then names — because two rules
+  can tie on both strength measures and Swift's sort is not stable.
+
+- **`Marketing/Segmentation/BehaviouralSegments.swift`.** Customers grouped by similarity of
+  their feature vectors (over `KMeans`) or by what they share (over `BipartiteProjection` and
+  Louvain). A customer in different segments under the two is not a contradiction: which you
+  want depends on whether you are about to send a discount or a recommendation.
+
+  Determinism is the design constraint, because segments get compared across runs. A
+  `[String: [Double]]` has no order, so feeding its values straight into k-means picks initial
+  centroids from a differently-ordered array each time and the same customers come back under
+  different labels, with every run looking reasonable. Rows are built in sorted key order and
+  that order is published as `orderedCustomers`, so it can be checked rather than trusted. The
+  GPU path is off by default for the same reason.
+
+### Changed
+
+- **The constraint penalty weight is a parameter.** Every constrained solve in this package is
+  handled by penalty — the optimizer minimises `objective(x) + weight · Σ violation²` — and
+  that weight was the literal `100`, hardcoded in `NelderMead`, `DifferentialEvolution`,
+  `IslandModel`, `SimulatedAnnealing` and `ParticleSwarmOptimization`, with no way for a caller
+  to change it anywhere in the optimizer tier.
+
+  It is a defect rather than a preference because the weight has to be commensurate with the
+  objective's scale. A penalty of 100 against an objective measured in millions is negligible:
+  the solve returns a point well outside the feasible region and **nothing in the result says
+  so**. Each of the five configs now takes `constraintPenaltyWeight`, defaulting to `100`, so
+  no existing caller moves.
+
+  A non-positive or non-finite value falls back to the default rather than being honoured. A
+  weight of zero deletes the constraint silently, and a caller who asked for a constrained
+  solve should not get an unconstrained one back without being told — that is worse than any
+  badly chosen positive weight.
+
+### Notes
+
+- **The property tested is monotonicity, not feasibility at a point.** Raising the weight must
+  not increase the violation, checked across four weights. "Weight 500 gives a feasible answer"
+  is passed by an implementation that ignores the parameter entirely; a parameter that does not
+  move the answer is not a parameter.
+
+- **Zero and absent mean different things in an attribution result.** A channel present at zero
+  was measured and earned nothing — which is the finding last touch makes about every channel
+  that never closes. A channel absent was not measurable by that model at all, which for the
+  heuristics is any channel appearing only in journeys that failed.
+
+- **A bucket with no controls is refused rather than scored.** Its control rate is zero over
+  zero; scored as zero its uplift becomes the full treated response rate — the largest number
+  in the table, in the bucket you were about to target.
+
+### Breaking Changes
+
+None. Every item above is additive.
+
+### Deprecations
+
+None new. `sampleSize`, deprecated in 2.7.0, is still present; its deletion waits for 3.0.0.
+
+---
+
 ### [2.16.0] - 2026-09-08
 
 The marketing leg of 3.0.0, shipped additively. Twenty-eight new source files across four new

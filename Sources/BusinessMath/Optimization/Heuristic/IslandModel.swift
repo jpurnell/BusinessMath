@@ -312,7 +312,9 @@ public struct IslandModel<V: VectorSpace>: MultivariateOptimizer where V.Scalar:
         _ objective: @escaping @Sendable (V) -> V.Scalar,
         constraints: [MultivariateConstraint<V>]
     ) -> @Sendable (V) -> V.Scalar {
-        let penaltyWeight = V.Scalar(100)
+        // The weight the caller chose, or the historical 100 by default. The
+        // config guarantees it is positive and finite, so no guard is needed here.
+        let penaltyWeight = V.Scalar(islandConfig.constraintPenaltyWeight)
 
         return { solution in
             let baseValue = objective(solution)

@@ -576,10 +576,10 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
         let newVelocitiesPointer = newVelocitiesBuffer.contents().bindMemory(to: Float.self, capacity: swarmSize * dimension)
         let newPositionsPointer = newPositionsBuffer.contents().bindMemory(to: Float.self, capacity: swarmSize * dimension)
 
-        var newVelocities = [V]()
-        var newPositions = [V]()
-        newVelocities.reserveCapacity(swarmSize)
-        newPositions.reserveCapacity(swarmSize)
+        var flatVelocities = [V.Scalar]()
+        var flatPositions = [V.Scalar]()
+        flatVelocities.reserveCapacity(swarmSize * dimension)
+        flatPositions.reserveCapacity(swarmSize * dimension)
 
         for i in 0..<swarmSize {
             var vComponents = [V.Scalar]()
@@ -593,8 +593,21 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
                 pComponents.append(V.Scalar(newPositionsPointer[idx]))
             }
 
-            if let vel = V.fromArray(vComponents) { newVelocities.append(vel) }
-            if let pos = V.fromArray(pComponents) { newPositions.append(pos) }
+            flatVelocities.append(contentsOf: vComponents)
+            flatPositions.append(contentsOf: pComponents)
+        }
+
+        // Converted as two batches rather than appended per particle. The earlier form
+        // appended only on success, so a failed conversion returned arrays shorter than the
+        // swarm — and every caller indexes them by particle. All or nothing; `nil` means
+        // fall back to the CPU, as an unavailable Metal device already does.
+        guard let newVelocities = V.vectors(fromFlat: flatVelocities,
+                                            count: swarmSize,
+                                            dimension: dimension),
+              let newPositions = V.vectors(fromFlat: flatPositions,
+                                           count: swarmSize,
+                                           dimension: dimension) else {
+            return nil
         }
 
         return (velocities: newVelocities, positions: newPositions)
@@ -765,7 +778,9 @@ public struct ParticleSwarmOptimization<V: VectorSpace>: MultivariateOptimizer w
     ) throws -> MultivariateOptimizationResult<V> {
 
         // Penalty weight
-        let penaltyWeight: V.Scalar = 100
+        // The weight the caller chose, or the historical 100 by default. The
+        // config guarantees it is positive and finite, so no guard is needed here.
+        let penaltyWeight = V.Scalar(config.constraintPenaltyWeight)
 
         // Create penalized objective
         let penalizedObjective: (V) -> V.Scalar = { solution in

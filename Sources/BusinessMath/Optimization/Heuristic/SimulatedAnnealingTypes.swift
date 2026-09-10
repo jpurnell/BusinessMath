@@ -68,6 +68,24 @@ public struct SimulatedAnnealingConfig: Sendable {
     /// Optional random seed for reproducibility
     public let seed: UInt64?
 
+    /// Weight on the constraint-violation penalty, when `constraints:` are supplied.
+    ///
+    /// Constrained solves here are handled by penalty: the optimizer minimises
+    /// `objective(x) + weight · Σ violation(x)²`, so this number decides how far outside the
+    /// feasible region an answer is allowed to settle. Raising it tightens feasibility and
+    /// steepens the surface near the boundary; lowering it does the reverse.
+    ///
+    /// **It has to be commensurate with the objective's scale, which is why it is a
+    /// parameter.** A penalty of 100 against an objective measured in millions is
+    /// negligible, and the solve returns an infeasible point without saying so. Until
+    /// 2.17.0 this was the literal `100` in all five constrained heuristics with no way to
+    /// change it anywhere in the optimizer tier.
+    ///
+    /// Defaults to `100`, unchanged, so no existing caller moves. A non-positive or
+    /// non-finite value falls back to that default rather than being honoured: a weight of
+    /// zero deletes the constraint silently, which is worse than any badly chosen weight.
+    public let constraintPenaltyWeight: Double
+
     /// Create a simulated annealing configuration.
     ///
     /// - Parameters:
@@ -79,7 +97,8 @@ public struct SimulatedAnnealingConfig: Sendable {
     ///   - reheatInterval: Optional reheat interval (default: nil)
     ///   - reheatTemperature: Temperature for reheating (default: nil)
     ///   - seed: Optional RNG seed (default: nil)
-    public init(
+        ///   - constraintPenaltyWeight: Penalty weight for constrained solves (default: 100)
+        public init(
         initialTemperature: Double = 100.0,
         finalTemperature: Double = 0.001,
         coolingRate: Double = 0.95,
@@ -87,8 +106,12 @@ public struct SimulatedAnnealingConfig: Sendable {
         perturbationScale: Double = 0.3,
         reheatInterval: Int? = nil,
         reheatTemperature: Double? = nil,
-        seed: UInt64? = nil
+        seed: UInt64? = nil,
+    	constraintPenaltyWeight: Double = 100
     ) {
+        let penaltyFallback: Double = 100
+        let penaltyIsUsable = constraintPenaltyWeight > 0 && constraintPenaltyWeight.isFinite
+        self.constraintPenaltyWeight = penaltyIsUsable ? constraintPenaltyWeight : penaltyFallback
         self.initialTemperature = initialTemperature
         self.finalTemperature = finalTemperature
         self.coolingRate = coolingRate

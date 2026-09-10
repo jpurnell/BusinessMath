@@ -10,7 +10,60 @@ Build DCF models, optimize portfolios, run Monte Carlo simulations, and value se
 
 ---
 
-## Latest release: 2.16.0
+## Latest release: 2.18.0
+
+Three additions, one fix, and a new chapter.
+
+**A Holt-Winters model can choose its own smoothing parameters.** `TimeSeries.fitETS()`
+searches for alpha, beta and gamma rather than making you supply `alpha: 0.2` and hope.
+`ETSSeasonality` names the three cases a spreadsheet encodes in one numeric argument —
+non-seasonal, auto-detect, explicit cycle — and `smape` joins `mae`, `mape` and `rmse` with
+the halved denominator Excel actually uses, which was measured rather than chosen.
+
+**Complex numbers read and write in the notation people use.** `Complex(notation: "3+4i")`
+parses and `z.notation` writes, as members on an extension rather than a
+`LosslessStringConvertible` conformance — `description` still returns `"(3.0, 4.0)"`, because
+a conformance is global and unscoped and would change every downstream caller's string
+interpolation with no way to opt out.
+
+**One fix worth reading if you use the GPU optimizers.** A Metal read-back could return fewer
+vectors than the population it described, which the caller then indexed by population size —
+an out-of-range crash rather than a wrong answer. Unreachable through the public API today
+and one conformance away from reachable. A batch conversion now returns every element or
+`nil`, never a prefix.
+
+**Chapter 7, Marketing Analytics**, with a playground. Nine questions in the order a
+marketing team asks them, and a closing table of the plausible wrong answers this library
+refuses to give.
+
+Additive apart from the fix. No signature changes, no deletions.
+
+### Previous release: 2.17.0
+
+Stage 5 of the marketing leg — **attribution**, **market baskets** and **behavioural
+segmentation** — and one shipped constant turned into a parameter.
+
+`Marketing/Attribution/` puts three models behind one protocol, sharing one contract:
+attributed credit sums to the total converted value. The heuristics — first touch, last touch,
+linear, position-based, time decay — never look at a journey that failed, which is why last
+touch scores an upper-funnel channel at exactly zero. `MarkovAttribution` reads the failures
+and values that same channel at a third of the budget, from the same ten journeys.
+`ShapleyAttribution` enumerates every coalition exactly and pays a null player precisely zero.
+
+`AssociationRules` reports lift and leverage beside confidence, because confidence is the
+number that misleads: a rule at 80% confidence whose consequent is in 80% of all baskets has a
+lift of exactly 1 and a leverage of exactly 0. `BehaviouralSegmentation` groups by feature
+similarity or by shared behaviour, and publishes the row order it used so a segmentation can be
+compared across runs.
+
+**One shipped constant is now a parameter.** The constraint penalty weight was the literal
+`100` in all five constrained heuristics with no way to change it. A penalty of 100 against an
+objective measured in millions is negligible, and the solve returns an infeasible point without
+saying so. `constraintPenaltyWeight` defaults to `100`, so nothing existing moves.
+
+Additive. No signature changes, no deletions, no behaviour changes to existing calls.
+
+### Previous release: 2.16.0
 
 The marketing leg, shipped additively. Twenty-eight new source files across four new areas of
 `Statistics/` — `LogisticRegression`, **Classification** (ROC/AUC, confusion matrix, calibration,
