@@ -38,6 +38,24 @@ suite depends on it.
 
 ## Current Status
 
+**3.0.0-alpha.1 shipped 2026-09-09** — the breaking set, and only the breaking set. Both
+parked branches merged: the `SaaSModel`/`SubscriptionBoxModel` LTV delegation with
+`CLVDefinition.perpetuityDue` and a parametric `customerLifetimeValue`, and `optimizeDetailed`
+throwing on DE and PSO so a seeded run can use the GPU again.
+
+Shipped as a **pre-release** deliberately. `from:` ranges exclude pre-releases, so the
+README's own `from: "2.7.0"` keeps every existing consumer on 2.18.0 until they ask for the
+alpha by exact version. A minor bump would have upgraded them into three source-breaking
+changes on their next `swift package update`, which is the thing a major version exists to
+prevent — the question was never whether anyone used the API today.
+
+Nothing was added to justify the number. §0.1 of the scope document has said since
+2026-08-23 that exactly three things force the major, and this is that list arriving.
+
+**One breaking item remains undone: deleting `sampleSize`**, deprecated in 2.7.0. It is the
+only thing between the alpha and 3.0.0 final, and it needs to go into that release rather
+than after it — removing a public symbol is what majors are for.
+
 **2.18.0 shipped 2026-09-09** — the ETS parameter fitter, a complex-number text codec, one
 GPU read-back fix, and chapter 7 on marketing analytics.
 
@@ -649,7 +667,20 @@ The earlier table was about *scope*; this one is about *what is being measured*.
 
 ---
 
-**Last Updated:** 2026-09-09 (later) — reconciled for 2.18.0. Current Status leads with the
+**Last Updated:** 2026-09-09 (evening) — reconciled for 3.0.0-alpha.1. Current Status leads
+with both branches merged and the reason the release is a pre-release rather than a minor:
+`from:` ranges exclude pre-releases, so this reaches only callers who name it. Records that
+deleting `sampleSize` is the one breaking item left and belongs in 3.0.0 final rather than
+after it.
+
+Two facts worth carrying forward. Neither branch had been tested *with the other* until the
+merge — each was green alone, and the combination is what actually ships, so it was built,
+tested and gated as a combination before anything was tagged. And a clean textual merge over
+the same functions is exactly when to check the semantic one: 2.18.0's batch-conversion fix
+and the GPU branch's throwing signature both touched the same two read-back functions,
+merged without conflict, and both were verified present afterwards rather than assumed.
+
+**Previously:** 2026-09-09 (later) — reconciled for 2.18.0. Current Status leads with the
 ETS fitter, the complex codec, the GPU read-back fix and chapter 7, and records that the two
 parked branches together constitute 3.0.0 with the `sampleSize` deletion still to do. The
 sequence agreed with the user is: review both branches for feature-completeness, then cut

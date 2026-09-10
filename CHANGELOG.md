@@ -9,6 +9,100 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [3.0.0-alpha.1] - 2026-09-09
+
+**The breaking set, and only the breaking set.** Three items that have been waiting for a
+major since August, now shipped together as a pre-release so that consumers pinned with
+`from:` are not upgraded into them — SPM excludes pre-releases from version ranges, so this
+reaches only callers who ask for it by name.
+
+Everything else in 2.x remains as it was. Nothing new was added to justify the number; the
+scope document has said since 2026-08-23 that exactly these things force a major, and this
+is that list arriving rather than a programme being cut short.
+
+### Breaking Changes
+
+- **`optimizeDetailed` now `throws`** on `DifferentialEvolution` and
+  `ParticleSwarmOptimization`. Every call site needs `try`.
+
+  A GPU path that consumes randomness, fails, and falls back to the CPU returns a different
+  answer under a seed that promised otherwise. 2.6.0 shipped an interim — both optimizers
+  declined the GPU outright when a seed was set — which was correct and cost acceleration for
+  exactly the callers most likely to want it. A throwing signature lets the optimizer
+  **refuse** instead of silently substituting, so the guard is gone and GPU plus seed work
+  together again.
+
+  `GeneticAlgorithm.optimizeDetailed` has thrown since 2.6.0; this brings the other two into
+  line. `NelderMead` and `SimulatedAnnealing` are **not** changed — neither consumes a seed on
+  a GPU path, so making them throw would break callers for nothing.
+
+- **`CLVDefinition` gains `perpetuityDue`**, and `CLVError` gains `definitionNeedsHistory`.
+  A `switch` over either that was exhaustive will stop compiling.
+
+  `perpetuityDue` is the annuity-due perpetuity: `m·(1 + d)/(1 + d − r)`, which differs from
+  ``CLVDefinition/perpetuity`` by exactly one period's margin for any retention and any
+  discount rate. At a zero discount rate it is `m/(1 − r)` — margin over churn — which is what
+  every subscription spreadsheet computes and what this library's own templates have always
+  returned. Naming it is what makes the template delegation below **value-preserving**.
+
+- **Seven template methods are deprecated.** Warnings rather than errors, but a consumer
+  building with warnings-as-errors must migrate.
+
+  | Deprecated | In favour of | Same number? |
+  |---|---|---|
+  | `SaaSModel.calculateLTV()` | `lifetimeValue().value` | Yes |
+  | `SaaSModel.calculateCACPayback()` | `acquisitionMetrics()?.paybackPeriods` | **No** — divides by margin, not revenue |
+  | `SaaSModel.calculateLTVtoCAC()` | `acquisitionMetrics()?.ratio` | Yes |
+  | `SubscriptionBoxModel.calculateCustomerLifetimeValue()` | `lifetimeValue().value` | Yes |
+  | `SubscriptionBoxModel.calculateLTVtoCAC()` | `acquisitionMetrics()?.ratio` | Yes |
+  | `SubscriptionBoxModel.calculateCACPaybackMonths()` | `acquisitionMetrics()?.paybackPeriods` | Yes |
+  | `SubscriptionBoxModel.calculateRetentionRate()` | `retentionRate` | Yes |
+
+  Six of seven return an identical number for well-posed input. The one that renumbers was
+  wrong: acquisition cost is recovered out of gross profit, and it divided by revenue —
+  understating payback by exactly the gross margin, 5 months where the answer is 6.25 at 80%.
+
+### Added
+
+- **A parametric `customerLifetimeValue(marginPerPeriod:retention:definition:discountRate:horizon:)`.**
+  A subscription business models LTV from a margin and a churn assumption long before it has
+  cohort histories to measure, and the cohort entry point cannot express that. The historic
+  definitions are refused here rather than approximated — with no cohort there is nothing to
+  average, and returning the forward-looking number under a backward-looking name would
+  misreport where it came from.
+
+- **`lifetimeValue(definition:discountRate:horizon:)`, `acquisitionMetrics(...)` and
+  `retentionRate`** on both model templates, replacing the seven deprecated methods above.
+
+### Fixed
+
+Each deprecated method returned `0` for something that is not zero, and the replacements
+refuse instead:
+
+| Case | What it returned | What it returns now |
+|---|---|---|
+| Zero churn | `0` — the case where the perpetuity *diverges* | throws |
+| Missing acquisition cost | `0` months — the best score on that scale | `nil` |
+| Zero acquisition cost | **infinity** — clears every "healthy is above 3" check | `nil` |
+| A box sold at a loss | `0` months, i.e. instant payback | `nil` |
+| Churn above one | a **negative** retention | `nil` |
+
+The zero-cost case was a live division by zero, confirmed by probe. The deprecated body now
+guards it too — leaving a division by zero in place because the method is on its way out is
+not a defensible reason to leave it.
+
+### Notes
+
+- **The determinism test that mattered was not the determinism test.** The seeded-run
+  assertion passed for a year while running entirely on the CPU, because a guard inside the
+  optimizer is invisible to an assertion on the Metal device. There are now assertions that the
+  seeded path actually reaches the GPU.
+
+- **`sampleSize`, deprecated in 2.7.0, is still present.** It is the fourth breaking item and
+  the only one not done. Deleting it will need its own major unless it goes into 3.0.0 final.
+
+---
+
 ### [2.18.0] - 2026-09-09
 
 Two additions, both purely additive: a Holt-Winters model can now choose its own smoothing

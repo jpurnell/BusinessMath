@@ -10,7 +10,41 @@ Build DCF models, optimize portfolios, run Monte Carlo simulations, and value se
 
 ---
 
-## Latest release: 2.18.0
+## Pre-release: 3.0.0-alpha.1
+
+**The breaking set, and only the breaking set.** Three items that have been waiting for a
+major since August, shipped together as a pre-release.
+
+`from:` ranges **exclude pre-releases**, so if your `Package.swift` says
+`from: "2.7.0"` you stay on 2.18.0 and nothing changes. To try the alpha, ask for it by name:
+
+```swift
+.package(url: "https://github.com/jpurnell/BusinessMath.git", exact: "3.0.0-alpha.1")
+```
+
+What breaks:
+
+- **`optimizeDetailed` throws** on `DifferentialEvolution` and `ParticleSwarmOptimization`,
+  so every call site needs `try`. That is what lets a seeded run use the GPU again: 2.6.0's
+  interim declined the GPU outright when a seed was set, because a fallback to the CPU
+  returns a different answer under a seed that promised otherwise. A throwing signature lets
+  the optimizer refuse rather than silently substitute.
+- **`CLVDefinition` gains `perpetuityDue`** — an exhaustive `switch` will stop compiling. It
+  is the annuity-due perpetuity, `margin / churn` at a zero discount rate, which is what
+  every subscription spreadsheet computes. Naming it is what makes the template delegation
+  below value-preserving rather than a silent renumbering.
+- **Seven template methods are deprecated**, six of which return an identical number through
+  their replacement. The seventh was wrong: CAC payback divided by revenue where acquisition
+  cost comes out of gross profit.
+
+Every deprecated method returned `0` for something that is not zero — a lifetime value of
+zero where the perpetuity diverges, a payback of zero months for missing data, an LTV:CAC of
+**infinity** at zero cost. The replacements refuse instead.
+
+`sampleSize`, deprecated in 2.7.0, is still present. It is the fourth breaking item and the
+only one not done.
+
+### Latest stable: 2.18.0
 
 Three additions, one fix, and a new chapter.
 
