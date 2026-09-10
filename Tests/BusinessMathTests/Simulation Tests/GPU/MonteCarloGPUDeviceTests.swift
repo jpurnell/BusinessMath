@@ -1,4 +1,5 @@
 import Testing
+import TestSupport  // .requiresMetalGPU
 import Foundation
 #if canImport(Metal)
 import Metal
@@ -12,7 +13,7 @@ import Metal
 /// - Buffer allocation and data transfer
 /// - Kernel execution coordination
 /// - Error handling and graceful degradation
-@Suite("Monte Carlo GPU Device Manager Tests")
+@Suite("Monte Carlo GPU Device Manager Tests", .requiresMetalGPU)
 struct MonteCarloGPUDeviceTests {
 
     // MARK: - Test Configuration Types
@@ -31,9 +32,8 @@ struct MonteCarloGPUDeviceTests {
     @Test("GPU device initialization")
     func testDeviceInitialization() throws {
         #if canImport(Metal)
-        guard let metalDevice = MetalDevice.shared else {
-            return // Skip if Metal unavailable
-        }
+        let metalDevice = try #require(MetalDevice.shared,
+                                       "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         // Verify device exists
         let device = metalDevice.device
@@ -46,9 +46,8 @@ struct MonteCarloGPUDeviceTests {
     @Test("Kernel compilation from source")
     func testKernelCompilation() throws {
         #if canImport(Metal)
-        guard let metalDevice = MetalDevice.shared else {
-            return // Skip if Metal unavailable
-        }
+        let metalDevice = try #require(MetalDevice.shared,
+                                       "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         let device = metalDevice.device
 
@@ -82,19 +81,16 @@ struct MonteCarloGPUDeviceTests {
     @Test("Buffer allocation and data transfer")
     func testBufferManagement() throws {
         #if canImport(Metal)
-        guard let metalDevice = MetalDevice.shared else {
-            return // Skip if Metal unavailable
-        }
+        let metalDevice = try #require(MetalDevice.shared,
+                                       "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         let device = metalDevice.device
         let count = 1000
 
         // Allocate buffer
         let bufferSize = count * MemoryLayout<Float>.stride
-        guard let buffer = device.makeBuffer(length: bufferSize, options: .storageModeShared) else {
-            #expect(Bool(false), "Failed to allocate buffer")
-            return
-        }
+        let buffer = try #require(device.makeBuffer(length: bufferSize, options: .storageModeShared),
+                                  "the device reported success but would not allocate a buffer")
 
         // Write data to buffer
         let testData: [Float] = (0..<count).map { Float($0) }
@@ -118,9 +114,8 @@ struct MonteCarloGPUDeviceTests {
     @Test("Simple kernel execution")
     func testKernelExecution() throws {
         #if canImport(Metal)
-        guard let metalDevice = MetalDevice.shared else {
-            return // Skip if Metal unavailable
-        }
+        let metalDevice = try #require(MetalDevice.shared,
+                                       "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         let device = metalDevice.device
         let commandQueue = metalDevice.commandQueue
@@ -150,9 +145,8 @@ struct MonteCarloGPUDeviceTests {
         // Create and initialize buffer
         var inputData: [Float] = (0..<count).map { Float($0) }
         let bufferSize = count * MemoryLayout<Float>.stride
-        guard let buffer = device.makeBuffer(bytes: &inputData, length: bufferSize, options: .storageModeShared) else {
-            return
-        }
+        let buffer = try #require(device.makeBuffer(bytes: &inputData, length: bufferSize, options: .storageModeShared),
+                                  "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         // Execute kernel
         let commandBuffer = try #require(commandQueue.makeCommandBuffer())
@@ -182,9 +176,8 @@ struct MonteCarloGPUDeviceTests {
     @Test("RNG initialization kernel")
     func testRNGInitialization() throws {
         #if canImport(Metal)
-        guard let metalDevice = MetalDevice.shared else {
-            return // Skip if Metal unavailable
-        }
+        let metalDevice = try #require(MetalDevice.shared,
+                                       "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         let device = metalDevice.device
         let commandQueue = metalDevice.commandQueue
@@ -243,10 +236,10 @@ struct MonteCarloGPUDeviceTests {
         let stateSize = count * MemoryLayout<(UInt64, UInt64)>.stride
         let outputSize = count * MemoryLayout<Float>.stride
 
-        guard let stateBuffer = device.makeBuffer(length: stateSize, options: .storageModeShared),
-              let outputBuffer = device.makeBuffer(length: outputSize, options: .storageModeShared) else {
-            return
-        }
+        let stateBuffer = try #require(device.makeBuffer(length: stateSize, options: .storageModeShared),
+                                       "the device reported success but would not allocate a buffer")
+        let outputBuffer = try #require(device.makeBuffer(length: outputSize, options: .storageModeShared),
+                                        "the device reported success but would not allocate a buffer")
 
         // Initialize RNG
         var seed: UInt64 = 12345
@@ -295,9 +288,8 @@ struct MonteCarloGPUDeviceTests {
     @Test("Multi-buffer coordination")
     func testMultiBufferCoordination() throws {
         #if canImport(Metal)
-        guard let metalDevice = MetalDevice.shared else {
-            return // Skip if Metal unavailable
-        }
+        let metalDevice = try #require(MetalDevice.shared,
+                                       "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         let device = metalDevice.device
         let commandQueue = metalDevice.commandQueue
@@ -330,11 +322,12 @@ struct MonteCarloGPUDeviceTests {
         var dataB: [Float] = (0..<count).map { Float($0 * 2) }
 
         let bufferSize = count * MemoryLayout<Float>.stride
-        guard let bufferA = device.makeBuffer(bytes: &dataA, length: bufferSize, options: .storageModeShared),
-              let bufferB = device.makeBuffer(bytes: &dataB, length: bufferSize, options: .storageModeShared),
-              let bufferC = device.makeBuffer(length: bufferSize, options: .storageModeShared) else {
-            return
-        }
+        let bufferA = try #require(device.makeBuffer(bytes: &dataA, length: bufferSize, options: .storageModeShared),
+                                   "the device reported success but would not allocate a buffer")
+        let bufferB = try #require(device.makeBuffer(bytes: &dataB, length: bufferSize, options: .storageModeShared),
+                                   "the device reported success but would not allocate a buffer")
+        let bufferC = try #require(device.makeBuffer(length: bufferSize, options: .storageModeShared),
+                                   "the device reported success but would not allocate a buffer")
 
         // Execute kernel
         let commandBuffer = try #require(commandQueue.makeCommandBuffer())
@@ -389,9 +382,8 @@ struct MonteCarloGPUDeviceTests {
     @Test("Error handling for invalid buffer size")
     func testErrorHandling() throws {
         #if canImport(Metal)
-        guard let metalDevice = MetalDevice.shared else {
-            return // Skip if Metal unavailable
-        }
+        let metalDevice = try #require(MetalDevice.shared,
+                                       "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         let device = metalDevice.device
 
@@ -409,9 +401,8 @@ struct MonteCarloGPUDeviceTests {
     @Test("Memory reuse pattern")
     func testMemoryReuse() throws {
         #if canImport(Metal)
-        guard let metalDevice = MetalDevice.shared else {
-            return // Skip if Metal unavailable
-        }
+        let metalDevice = try #require(MetalDevice.shared,
+                                       "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         let device = metalDevice.device
         let bufferSize = 1024 * MemoryLayout<Float>.stride

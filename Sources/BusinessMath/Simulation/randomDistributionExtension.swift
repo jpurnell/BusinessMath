@@ -68,6 +68,6 @@ extension Double {
 	///   - stdDev: Standard deviation of underlying normal
 	/// - Returns: Random value from LogNormal(mean, stdDev)
 	public static func randomLogNormal(mean: Double, stdDev: Double) -> Double {
-		return distributionLogNormal(mean: mean, stdDev: stdDev)
+		return distributionLogNormal(logMean: mean, logStdDev: stdDev)
 	}
 }

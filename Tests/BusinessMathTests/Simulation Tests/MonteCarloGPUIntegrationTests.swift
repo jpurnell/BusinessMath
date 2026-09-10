@@ -1,4 +1,5 @@
 import Testing
+import TestSupport  // .requiresMetalGPU
 import Foundation
 #if canImport(Metal)
 import Metal
@@ -13,7 +14,7 @@ import Metal
 /// - Graceful fallback when GPU unavailable
 /// - enableGPU flag control
 /// - Real-world financial models
-@Suite("Monte Carlo GPU Integration Tests")
+@Suite("Monte Carlo GPU Integration Tests", .requiresMetalGPU)
 struct MonteCarloGPUIntegrationTests {
 
     // MARK: - Helper: Create Simple Model Bytecode
@@ -52,9 +53,8 @@ struct MonteCarloGPUIntegrationTests {
     @Test("GPU device manager simple execution")
     func testGPUDeviceManager() throws {
         #if canImport(Metal)
-        guard let gpuDevice = MonteCarloGPUDevice() else {
-            return // Skip if Metal unavailable
-        }
+        let gpuDevice = try #require(MonteCarloGPUDevice(),
+                                     "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         // Simple addition: inputs[0] + inputs[1]
         let distributions: [(Int32, (Float, Float, Float))] = [
@@ -90,9 +90,8 @@ struct MonteCarloGPUIntegrationTests {
     @Test("GPU vs CPU statistical equivalence")
     func testGPUvsCPUEquivalence() throws {
         #if canImport(Metal)
-        guard let gpuDevice = MonteCarloGPUDevice() else {
-            return // Skip if Metal unavailable
-        }
+        let gpuDevice = try #require(MonteCarloGPUDevice(),
+                                     "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         let iterations = 10_000
 
@@ -141,9 +140,8 @@ struct MonteCarloGPUIntegrationTests {
     @Test("Financial model: Revenue × Price - Costs")
     func testFinancialModel() throws {
         #if canImport(Metal)
-        guard let gpuDevice = MonteCarloGPUDevice() else {
-            return // Skip if Metal unavailable
-        }
+        let gpuDevice = try #require(MonteCarloGPUDevice(),
+                                     "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         // Model: Revenue × Price multiplier - Fixed costs
         let distributions: [(Int32, (Float, Float, Float))] = [
@@ -213,9 +211,8 @@ struct MonteCarloGPUIntegrationTests {
     @Test("Multiple distribution types in one simulation")
     func testMixedDistributions() throws {
         #if canImport(Metal)
-        guard let gpuDevice = MonteCarloGPUDevice() else {
-            return // Skip if Metal unavailable
-        }
+        let gpuDevice = try #require(MonteCarloGPUDevice(),
+                                     "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         // Mix of Normal, Uniform, and Triangular distributions
         let distributions: [(Int32, (Float, Float, Float))] = [
@@ -256,9 +253,8 @@ struct MonteCarloGPUIntegrationTests {
 	@Test("Edge case: constant distribution", .disabled("Metal initialization quirk in test environment"))
     func disabledTestConstantDistribution() throws {
         #if canImport(Metal)
-        guard let gpuDevice = MonteCarloGPUDevice() else {
-            return // Skip if Metal unavailable
-        }
+        let gpuDevice = try #require(MonteCarloGPUDevice(),
+                                     "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         // Degenerate case: Uniform(5, 5) = constant 5
         let distributions: [(Int32, (Float, Float, Float))] = [
@@ -723,9 +719,8 @@ struct MonteCarloGPUIntegrationTests {
     @Test("Reproducibility with seed", .disabled("Metal initialization quirk in test environment - GPU device calls produce incorrect results on initial runs, but production code via MonteCarloSimulation works correctly"))
     func disabledTestReproducibility() throws {
         #if canImport(Metal)
-        guard let gpuDevice = MonteCarloGPUDevice() else {
-            return // Skip if Metal unavailable
-        }
+        let gpuDevice = try #require(MonteCarloGPUDevice(),
+                                     "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         let distributions: [(Int32, (Float, Float, Float))] = [
             (0, (100.0, 10.0, 0.0))

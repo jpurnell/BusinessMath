@@ -50,7 +50,7 @@ private struct SplitMix64Bench: RandomNumberGenerator {
 /// ```bash
 /// RUN_BENCHMARKS=1 swift test --filter MatrixBackendBenchmarks
 /// ```
-@Suite("Matrix Backend Performance Benchmarks", .benchmarkOnly)
+@Suite("Matrix Backend Performance Benchmarks", .benchmarkOnly, .requiresMetalGPU)
 struct MatrixBackendBenchmarks {
 
     // MARK: - Helper Functions
@@ -112,10 +112,8 @@ struct MatrixBackendBenchmarks {
     #if canImport(Metal)
     @Test("Metal backend: 100×100 matrix multiplication")
     func metalSmallMultiply() throws {
-        guard let backend = MetalMatrixBackend() else {
-            print("Metal not available, skipping benchmark")
-            return
-        }
+        let backend = try #require(MetalMatrixBackend(),
+                                   "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         let A = randomMatrix(rows: 100, cols: 100)
         let B = randomMatrix(rows: 100, cols: 100)
@@ -166,10 +164,8 @@ struct MatrixBackendBenchmarks {
     #if canImport(Metal)
     @Test("Metal backend: 500×500 matrix multiplication")
     func metalMediumMultiply() throws {
-        guard let backend = MetalMatrixBackend() else {
-            print("Metal not available, skipping benchmark")
-            return
-        }
+        let backend = try #require(MetalMatrixBackend(),
+                                   "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         let A = randomMatrix(rows: 500, cols: 500)
         let B = randomMatrix(rows: 500, cols: 500)
@@ -220,10 +216,8 @@ struct MatrixBackendBenchmarks {
     #if canImport(Metal)
     @Test("Metal backend: 1000×1000 matrix multiplication", .timeLimit(.minutes(3)))
     func metalLargeMultiply() throws {
-        guard let backend = MetalMatrixBackend() else {
-            print("Metal not available, skipping benchmark")
-            return
-        }
+        let backend = try #require(MetalMatrixBackend(),
+                                   "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         let A = randomMatrix(rows: 1000, cols: 1000)
         let B = randomMatrix(rows: 1000, cols: 1000)

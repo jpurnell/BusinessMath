@@ -188,8 +188,8 @@ struct PercentileFittingTests {
 		// The median is what was stated as a quantile.
 		#expect(abs(fitted.quantile(0.5) - 8) < 1e-6, "median \(fitted.quantile(0.5))")
 		// And the mean exceeds it, as a right-skewed distribution's must.
-		let variance: Double = fitted.stdDev * fitted.stdDev
-        let realisedMean: Double = Foundation.exp(fitted.mean + variance / 2)
+		let variance: Double = fitted.logStdDev * fitted.logStdDev
+        let realisedMean: Double = Foundation.exp(fitted.logMean + variance / 2)
 		#expect(abs(realisedMean - 10) < 1e-6, "mean \(realisedMean)")
 		#expect(realisedMean > fitted.quantile(0.5))
 	}

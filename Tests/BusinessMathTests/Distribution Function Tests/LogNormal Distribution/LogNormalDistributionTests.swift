@@ -47,7 +47,7 @@ struct LogNormalDistributionTests {
 		let seeds = Self.seedsForLogNormal(count: sampleCount)
 
 		for i in 0..<sampleCount {
-			let sample: Double = distributionLogNormal(mean: mean, stdDev: stdDev, seeds[i].u1, seeds[i].u2)
+			let sample: Double = distributionLogNormal(logMean: mean, logStdDev: stdDev, seeds[i].u1, seeds[i].u2)
 			#expect(sample > 0, "LogNormal values must be positive")
 			#expect(sample.isFinite, "LogNormal values must be finite")
 			#expect(!sample.isNaN, "LogNormal values must not be NaN")
@@ -64,7 +64,7 @@ struct LogNormalDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionLogNormal(mean: mean, stdDev: stdDev, seeds[i].u1, seeds[i].u2)
+			let sample: Double = distributionLogNormal(logMean: mean, logStdDev: stdDev, seeds[i].u1, seeds[i].u2)
 			samples.append(sample)
 		}
 
@@ -87,13 +87,13 @@ struct LogNormalDistributionTests {
 		// Test with mean=1, stdDev=0.5
 		var samples1: [Double] = []
 		for i in 0..<sampleCount {
-			samples1.append(distributionLogNormal(mean: 1.0, stdDev: 0.5, seeds[i].u1, seeds[i].u2))
+			samples1.append(distributionLogNormal(logMean: 1.0, logStdDev: 0.5, seeds[i].u1, seeds[i].u2))
 		}
 
 		// Test with mean=2, stdDev=1.0
 		var samples2: [Double] = []
 		for i in 0..<sampleCount {
-			samples2.append(distributionLogNormal(mean: 2.0, stdDev: 1.0, seeds[i].u1, seeds[i].u2))
+			samples2.append(distributionLogNormal(logMean: 2.0, logStdDev: 1.0, seeds[i].u1, seeds[i].u2))
 		}
 
 		// All should be positive
@@ -118,7 +118,7 @@ struct LogNormalDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionLogNormal(mean: underlyingMean, stdDev: underlyingStdDev, seeds[i].u1, seeds[i].u2))
+			samples.append(distributionLogNormal(logMean: underlyingMean, logStdDev: underlyingStdDev, seeds[i].u1, seeds[i].u2))
 		}
 
 		let sorted = samples.sorted()
@@ -139,7 +139,7 @@ struct LogNormalDistributionTests {
 
 		var logNormalSamples: [Double] = []
 		for i in 0..<sampleCount {
-			logNormalSamples.append(distributionLogNormal(mean: underlyingMean, stdDev: underlyingStdDev, seeds[i].u1, seeds[i].u2))
+			logNormalSamples.append(distributionLogNormal(logMean: underlyingMean, logStdDev: underlyingStdDev, seeds[i].u1, seeds[i].u2))
 		}
 
 		// Take log of samples
@@ -163,7 +163,7 @@ struct LogNormalDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionLogNormal(mean: mean, stdDev: stdDev, seeds[i].u1, seeds[i].u2))
+			samples.append(distributionLogNormal(logMean: mean, logStdDev: stdDev, seeds[i].u1, seeds[i].u2))
 		}
 
 		let empiricalMean = samples.reduce(0, +) / Double(samples.count)
@@ -188,7 +188,7 @@ struct LogNormalDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionLogNormal(mean: mean, variance: variance, seeds[i].u1, seeds[i].u2))
+			samples.append(distributionLogNormal(logMean: mean, logVariance: variance, seeds[i].u1, seeds[i].u2))
 		}
 
 		// All positive
@@ -212,7 +212,7 @@ struct LogNormalDistributionTests {
 		for i in 0..<100 {
 			let u1 = Double(i + 1) / 101.0
 			let u2 = Double(i + 51) / 151.0
-			let sample: Double = distributionLogNormal(mean: mean, stdDev: stdDev, u1, u2)
+			let sample: Double = distributionLogNormal(logMean: mean, logStdDev: stdDev, u1, u2)
 			#expect(sample > 0)
 			#expect(sample.isFinite)
 		}
@@ -229,7 +229,7 @@ struct LogNormalDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionLogNormal(mean: mean, stdDev: stdDev, seeds[i].u1, seeds[i].u2))
+			samples.append(distributionLogNormal(logMean: mean, logStdDev: stdDev, seeds[i].u1, seeds[i].u2))
 		}
 
 		// Check right-skewed (mean > median for lognormal)
@@ -268,8 +268,8 @@ struct LogNormalDistributionTests {
 		var samplesHighVar: [Double] = []
 
 		for i in 0..<sampleCount {
-			samplesLowVar.append(distributionLogNormal(mean: mean, stdDev: 0.3, seeds[i].u1, seeds[i].u2))
-			samplesHighVar.append(distributionLogNormal(mean: mean, stdDev: 1.5, seeds[i].u1, seeds[i].u2))
+			samplesLowVar.append(distributionLogNormal(logMean: mean, logStdDev: 0.3, seeds[i].u1, seeds[i].u2))
+			samplesHighVar.append(distributionLogNormal(logMean: mean, logStdDev: 1.5, seeds[i].u1, seeds[i].u2))
 		}
 
 		// Higher variance should produce wider range
@@ -291,7 +291,7 @@ struct LogNormalDistributionTests {
 		// Simulate 1-year returns
 		var returns: [Double] = []
 		for i in 0..<sampleCount {
-			returns.append(distributionLogNormal(mean: annualReturn, stdDev: annualVolatility, seeds[i].u1, seeds[i].u2))
+			returns.append(distributionLogNormal(logMean: annualReturn, logStdDev: annualVolatility, seeds[i].u1, seeds[i].u2))
 		}
 
 		// All returns should be positive
@@ -313,7 +313,7 @@ struct LogNormalDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionLogNormal(mean: mean, stdDev: stdDev, seeds[i].u1, seeds[i].u2))
+			samples.append(distributionLogNormal(logMean: mean, logStdDev: stdDev, seeds[i].u1, seeds[i].u2))
 		}
 
 		let sorted = samples.sorted()
@@ -338,7 +338,7 @@ struct LogNormalDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionLogNormal(mean: mean, stdDev: stdDev, seeds[i].u1, seeds[i].u2))
+			samples.append(distributionLogNormal(logMean: mean, logStdDev: stdDev, seeds[i].u1, seeds[i].u2))
 		}
 
 		// Should see some very large values
@@ -359,8 +359,8 @@ struct LogNormalDistributionTests {
 		var samples2: [Double] = []
 
 		for i in 0..<100 {
-			samples1.append(distributionLogNormal(mean: mean, stdDev: stdDev, seeds[i].u1, seeds[i].u2))
-			samples2.append(distributionLogNormal(mean: mean, stdDev: stdDev, seeds[i].u1, seeds[i].u2))
+			samples1.append(distributionLogNormal(logMean: mean, logStdDev: stdDev, seeds[i].u1, seeds[i].u2))
+			samples2.append(distributionLogNormal(logMean: mean, logStdDev: stdDev, seeds[i].u1, seeds[i].u2))
 		}
 
 		// Reproducibility is a bit-for-bit claim, and `==` cannot make it: it reports
@@ -373,9 +373,11 @@ struct LogNormalDistributionTests {
 	func logNormalStructParameters() {
 		// Seeded: an unseeded draw made this assertion a coin flip. See geometricStructNext.
 		var rng = DeterministicRNG(seed: 10006)
-		let mean = 2.0
-		let variance = 1.0  // stdDev = 1
-		let dist = DistributionLogNormal(mean: mean, variance: variance)
+		// Named for what they are: the parameters of log(X), not of X. The variate's own
+		// mean is exp(2 + 0.5), which is not 2.
+		let logMean = 2.0
+		let logVariance = 1.0  // logStdDev = 1
+		let dist = DistributionLogNormal(logMean: logMean, logVariance: logVariance)
 
 		let sampleCount = 2000
 		var samples: [Double] = []
@@ -389,7 +391,7 @@ struct LogNormalDistributionTests {
 		// Check median: e^μ = e^2 ≈ 7.39
 		let sorted = samples.sorted()
 		let empiricalMedian = sorted[sorted.count / 2]
-		let expectedMedian = exp(mean)
+		let expectedMedian = exp(logMean)
 		let tolerance = expectedMedian * 0.1
 
 		#expect(abs(empiricalMedian - expectedMedian) < tolerance, "Distribution should maintain consistent properties")
@@ -408,7 +410,7 @@ struct LogNormalDistributionTests {
 
 		for i in 0..<sampleCount {
 			normalSamples.append(distributionNormal(mean: mean, stdDev: stdDev, seeds[i].u1, seeds[i].u2))
-			logNormalSamples.append(distributionLogNormal(mean: mean, stdDev: stdDev, seeds[i].u1, seeds[i].u2))
+			logNormalSamples.append(distributionLogNormal(logMean: mean, logStdDev: stdDev, seeds[i].u1, seeds[i].u2))
 		}
 
 		// Normal can have negative values, LogNormal cannot
@@ -435,19 +437,19 @@ struct LogNormalDistributionTests {
 	@Test("LogNormal distribution invalid parameters return NaN")
 	func logNormalInvalidParameters() {
 		// Test negative stdDev
-		let negativeStdDevResult = distributionLogNormal(mean: 0.0, stdDev: -1.0, 0.5, 0.5)
+		let negativeStdDevResult = distributionLogNormal(logMean: 0.0, logStdDev: -1.0, 0.5, 0.5)
 		#expect(negativeStdDevResult.isNaN, "Negative stdDev should return NaN")
 
 		// Test zero stdDev returns exp(mean) (degenerate distribution)
-		let zeroStdDevResult = distributionLogNormal(mean: 2.0, stdDev: 0.0, 0.5, 0.5)
+		let zeroStdDevResult = distributionLogNormal(logMean: 2.0, logStdDev: 0.0, 0.5, 0.5)
 		#expect(abs(zeroStdDevResult - exp(2.0)) < 1e-10, "Zero stdDev should return exp(mean)")
 
 		// Test NaN stdDev
-		let nanStdDevResult = distributionLogNormal(mean: 0.0, stdDev: Double.nan, 0.5, 0.5)
+		let nanStdDevResult = distributionLogNormal(logMean: 0.0, logStdDev: Double.nan, 0.5, 0.5)
 		#expect(nanStdDevResult.isNaN, "NaN stdDev should return NaN")
 
 		// Test infinite stdDev
-		let infStdDevResult = distributionLogNormal(mean: 0.0, stdDev: Double.infinity, 0.5, 0.5)
+		let infStdDevResult = distributionLogNormal(logMean: 0.0, logStdDev: Double.infinity, 0.5, 0.5)
 		#expect(infStdDevResult.isNaN, "Infinite stdDev should return NaN")
 	}
 }

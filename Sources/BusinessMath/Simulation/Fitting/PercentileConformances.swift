@@ -105,18 +105,18 @@ extension DistributionLogNormal: PercentileParameterisable {
 		case .mean:
 			// exp(μ + σ²/2) — not exp(μ), which is the median. Reading one for the
 			// other is the most common way to under-budget a right-skewed quantity.
-			let variance: Double = stdDev * stdDev
-			let exponent: Double = mean + variance / 2
+			let variance: Double = logStdDev * logStdDev
+			let exponent: Double = logMean + variance / 2
 			return Foundation.exp(exponent)
 		case .variance:
-			let variance: Double = stdDev * stdDev
+			let variance: Double = logStdDev * logStdDev
 			let growth: Double = Foundation.expm1(variance)
-			let scale: Double = 2 * mean + variance
+			let scale: Double = 2 * logMean + variance
             return growth * Foundation.exp(scale)
 		case .standardDeviation:
-			let variance: Double = stdDev * stdDev
+			let variance: Double = logStdDev * logStdDev
 			let growth: Double = Foundation.expm1(variance)
-			let scale: Double = 2 * mean + variance
+			let scale: Double = 2 * logMean + variance
 			let total: Double = growth * Foundation.exp(scale)
 			return total.squareRoot()
 		default: return try defaultRealise(constraint, parameters: parameters)

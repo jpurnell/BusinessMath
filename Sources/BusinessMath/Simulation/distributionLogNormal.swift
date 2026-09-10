@@ -10,26 +10,68 @@ import Numerics
 
 // https://en.wikipedia.org/wiki/Log-normal_distribution#Related_distributions
 
-/// Returns a log normal distribution of values with mean µ and standard deviation σ
+/// A log-normal draw, parameterised by the mean and standard deviation of its **logarithm**.
+///
+/// `X = exp(N)` where `N ~ Normal(logMean, logStdDev)`. The parameters describe `N`, not `X`.
+/// `X` itself has mean `exp(logMean + logStdDev²/2)` and median `exp(logMean)`, neither of
+/// which is `logMean`.
+///
+/// The names say so now because they used to say the opposite. These parameters were called
+/// `mean` and `stdDev`, and the documentation read *"Returns a log normal distribution of
+/// values with mean µ and standard deviation σ"* — which is the misreading, printed as the
+/// contract. ``DistributionMVLogNormal`` has always spelled the multivariate version
+/// `logMeans` and `logStandardDeviations`; this is the same distribution answering to the
+/// same names.
+///
 /// - Parameters:
-///   - mean: The mean of the distribution
-///   - stdDev: The standard deviation of the distribution
+///   - logMean: The mean of `log(X)`, not of `X`.
+///   - logStdDev: The standard deviation of `log(X)`, not of `X`.
 ///   - u1Seed: First uniform random seed in [0, 1] (default: newly generated)
 ///   - u2Seed: Second uniform random seed in [0, 1] (default: newly generated)
-/// - Returns: A Log Normal distributed value, x, centered on the mean µ with a standard deviation of σ. Running this function many times will generate an array of values that is distributed log normally around µ with std dev of σ
-public func distributionLogNormal<T: Real>(mean: T = T(0), stdDev: T = T(1), _ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> T where T: BinaryFloatingPoint { // stochastic:exempt — the uniform arguments default to fresh draws; pass them explicitly for reproducibility
-    return T.exp(distributionNormal(mean: mean, stdDev: stdDev, u1Seed, u2Seed))
+/// - Returns: A positive value whose logarithm is `Normal(logMean, logStdDev)`.
+public func distributionLogNormal<T: Real>(logMean: T = T(0), logStdDev: T = T(1), _ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> T where T: BinaryFloatingPoint { // stochastic:exempt — the uniform arguments default to fresh draws; pass them explicitly for reproducibility
+	return T.exp(distributionNormal(mean: logMean, stdDev: logStdDev, u1Seed, u2Seed))
 }
 
-	/// Returns a log normal distribution of values with mean µ and variance σ^2
-	/// - Parameters:
-	///   - mean: The mean of the distribution
-	///   - variance: The variance of the distribution
-	///   - u1Seed: First uniform random seed in [0, 1] (default: newly generated)
-	///   - u2Seed: Second uniform random seed in [0, 1] (default: newly generated)
-	/// - Returns: A Log Normal distributed value, x, centered on the mean µ with a variance of σ^2. Running this function many times will generate an array of values that is distributed log normally around µ with variance of σ^2
+/// A log-normal draw, parameterised by the mean and variance of its **logarithm**.
+///
+/// The variance form of ``distributionLogNormal(logMean:logStdDev:_:_:)``; see there for why
+/// the parameters carry the `log` prefix.
+///
+/// - Parameters:
+///   - logMean: The mean of `log(X)`, not of `X`.
+///   - logVariance: The variance of `log(X)`, not of `X`.
+///   - u1Seed: First uniform random seed in [0, 1] (default: newly generated)
+///   - u2Seed: Second uniform random seed in [0, 1] (default: newly generated)
+/// - Returns: A positive value whose logarithm is `Normal(logMean, logVariance)`.
+public func distributionLogNormal<T: Real>(logMean: T = T(0), logVariance: T = T(1), _ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> T where T: BinaryFloatingPoint { // stochastic:exempt — the uniform arguments default to fresh draws; pass them explicitly for reproducibility
+	return T.exp(distributionNormal(mean: logMean, variance: logVariance, u1Seed, u2Seed))
+}
+
+/// Deprecated spelling of ``distributionLogNormal(logMean:logStdDev:_:_:)``.
+///
+/// - Parameters:
+///   - mean: The mean of `log(X)`, despite the name. Use `logMean:` instead.
+///   - stdDev: The standard deviation of `log(X)`, despite the name. Use `logStdDev:` instead.
+///   - u1Seed: First uniform random seed in [0, 1] (default: newly generated)
+///   - u2Seed: Second uniform random seed in [0, 1] (default: newly generated)
+/// - Returns: A positive value whose logarithm is `Normal(mean, stdDev)`.
+@available(*, deprecated, renamed: "distributionLogNormal(logMean:logStdDev:_:_:)", message: "`mean` and `stdDev` describe log(X), not X. Renamed so the parameter cannot be read as the mean of the variate it returns.")
+public func distributionLogNormal<T: Real>(mean: T = T(0), stdDev: T = T(1), _ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> T where T: BinaryFloatingPoint { // stochastic:exempt — the uniform arguments default to fresh draws; pass them explicitly for reproducibility
+	return distributionLogNormal(logMean: mean, logStdDev: stdDev, u1Seed, u2Seed)
+}
+
+/// Deprecated spelling of ``distributionLogNormal(logMean:logVariance:_:_:)``.
+///
+/// - Parameters:
+///   - mean: The mean of `log(X)`, despite the name. Use `logMean:` instead.
+///   - variance: The variance of `log(X)`, despite the name. Use `logVariance:` instead.
+///   - u1Seed: First uniform random seed in [0, 1] (default: newly generated)
+///   - u2Seed: Second uniform random seed in [0, 1] (default: newly generated)
+/// - Returns: A positive value whose logarithm is `Normal(mean, variance)`.
+@available(*, deprecated, renamed: "distributionLogNormal(logMean:logVariance:_:_:)", message: "`mean` and `variance` describe log(X), not X. Renamed so the parameter cannot be read as the mean of the variate it returns.")
 public func distributionLogNormal<T: Real>(mean: T = T(0), variance: T = T(1), _ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> T where T: BinaryFloatingPoint { // stochastic:exempt — the uniform arguments default to fresh draws; pass them explicitly for reproducibility
-    return T.exp(distributionNormal(mean: mean, variance: variance, u1Seed, u2Seed))
+	return distributionLogNormal(logMean: mean, logVariance: variance, u1Seed, u2Seed)
 }
 
 /// A log-normal distribution generator for producing positive-only random values.
@@ -37,31 +79,53 @@ public func distributionLogNormal<T: Real>(mean: T = T(0), variance: T = T(1), _
 /// The log-normal distribution is useful for modeling quantities that are always positive
 /// and have multiplicative rather than additive variation (e.g., stock prices, incomes).
 public struct DistributionLogNormal: DistributionRandom, Sendable {
-	let mean: Double
-	let stdDev: Double
+	/// The mean of `log(X)`. Not the mean of `X`, which is `exp(logMean + logStdDev²/2)`.
+	let logMean: Double
+	/// The standard deviation of `log(X)`. Not the standard deviation of `X`.
+	let logStdDev: Double
 
-	/// Creates a log-normal distribution generator using mean and standard deviation.
+	/// Creates a log-normal generator from the mean and standard deviation of its logarithm.
 	/// - Parameters:
-	///   - mean: Mean of the underlying normal distribution (default: 0)
-	///   - stdDev: Standard deviation of the underlying normal (default: 1.0)
-	public init(_ mean: Double = 0, _ stdDev: Double = 1.0) {
-		self.mean = mean
-		self.stdDev = stdDev
+	///   - logMean: Mean of the underlying normal (default: 0)
+	///   - logStdDev: Standard deviation of the underlying normal (default: 1.0)
+	public init(_ logMean: Double = 0, _ logStdDev: Double = 1.0) {
+		self.logMean = logMean
+		self.logStdDev = logStdDev
 	}
 
-	/// Creates a log-normal distribution generator using mean and variance.
+	/// Creates a log-normal generator from the mean and standard deviation of its logarithm.
 	/// - Parameters:
-	///   - mean: Mean of the underlying normal distribution (default: 0)
-	///   - variance: Variance of the underlying normal (default: 1.0)
+	///   - logMean: Mean of the underlying normal (default: 0)
+	///   - logStdDev: Standard deviation of the underlying normal (default: 1.0)
+	public init(logMean: Double = 0, logStdDev: Double = 1.0) {
+		self.logMean = logMean
+		self.logStdDev = logStdDev
+	}
+
+	/// Creates a log-normal generator from the mean and variance of its logarithm.
+	/// - Parameters:
+	///   - logMean: Mean of the underlying normal (default: 0)
+	///   - logVariance: Variance of the underlying normal (default: 1.0)
+	public init(logMean: Double = 0, logVariance: Double = 1.0) {
+		self.logMean = logMean
+		self.logStdDev = Double.sqrt(logVariance)
+	}
+
+	/// Deprecated spelling of ``init(logMean:logVariance:)``.
+	///
+	/// - Parameters:
+	///   - mean: Mean of the underlying normal, despite the name. Use `logMean:` instead.
+	///   - variance: Variance of the underlying normal, despite the name. Use `logVariance:` instead.
+	@available(*, deprecated, renamed: "init(logMean:logVariance:)", message: "`mean` and `variance` describe log(X), not X.")
 	public init(mean: Double = 0, variance: Double = 1.0) {
-		self.mean = mean
-		self.stdDev = Double.sqrt(variance)
+		self.logMean = mean
+		self.logStdDev = Double.sqrt(variance)
 	}
 
 	/// Generates a random value from the log-normal distribution.
 	/// - Returns: A random positive Double from the log-normal distribution
 	public func random() -> Double {
-		return distributionLogNormal(mean: mean, stdDev: stdDev)
+		return distributionLogNormal(logMean: logMean, logStdDev: logStdDev)
 	}
 
 	/// Generates the next random value from the log-normal distribution.
@@ -80,7 +144,7 @@ extension DistributionLogNormal: SeedableDistribution {
 	/// - Parameter generator: The random source for the two uniform draws.
 	/// - Returns: A random positive Double from the log-normal distribution
 	public func next<G: RandomNumberGenerator>(using generator: inout G) -> Double {
-		return distributionLogNormal(mean: mean, stdDev: stdDev,
+		return distributionLogNormal(logMean: logMean, logStdDev: logStdDev,
 									 Double.random(in: 0...1, using: &generator),
 									 Double.random(in: 0...1, using: &generator))
 	}
@@ -90,18 +154,19 @@ extension DistributionLogNormal: SeedableDistribution {
 extension DistributionLogNormal: ContinuousDistribution {
 	/// P(X ≤ x) for this log-normal.
 	///
-	/// `mean` and `stdDev` are the parameters of the *underlying normal* — the
-	/// distribution is `exp(Normal(mean, stdDev))`, not a variate whose arithmetic
-	/// mean is `mean`. Frontline's `PsiLogNormal` states its parameters the other
+	/// `logMean` and `logStdDev` are the parameters of the *underlying normal* — the
+	/// distribution is `exp(Normal(logMean, logStdDev))`, not a variate whose arithmetic
+	/// mean is `logMean`. The names used to be `mean` and `stdDev`, and this paragraph
+	/// existed to undo them. Frontline's `PsiLogNormal` states its parameters the other
 	/// way; a binding must convert, and this is the side of that conversion the
 	/// mathematics lives on.
 	public func cdf(_ x: Double) -> Double {
-		logNormalCDF(x, mean: mean, stdDev: stdDev)
+		logNormalCDF(x, mean: logMean, stdDev: logStdDev)
 	}
 
 	/// The value at which the CDF equals `p`: `exp` of the normal quantile.
 	public func quantile(_ p: Double) -> Double {
-		Double.exp(inverseNormalCDF(p: p, mean: mean, stdDev: stdDev))
+		Double.exp(inverseNormalCDF(p: p, mean: logMean, stdDev: logStdDev))
 	}
 
 	// Keeps its own `next(using:)`: `exp` of a Box–Muller draw, two uniforms.

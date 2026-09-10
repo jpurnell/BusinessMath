@@ -99,7 +99,7 @@ import Numerics
 /// ## See Also
 ///
 /// - ``logNormalPDF(_:mean:stdDev:)``
-/// - ``distributionLogNormal(mean:stdDev:_:_:)``
+/// - ``distributionLogNormal(logMean:logStdDev:_:_:)``
 /// - ``normalCDF(x:mean:stdDev:)``
 public func logNormalCDF<T: Real>(_ x: T, mean μ: T = T(0), stdDev σ: T = T(1)) -> T {
 	// Lognormal is only defined for positive x

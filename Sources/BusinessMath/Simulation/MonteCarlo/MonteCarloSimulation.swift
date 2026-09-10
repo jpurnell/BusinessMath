@@ -1042,7 +1042,7 @@ public struct MonteCarloSimulation: Sendable {
 				configs.append((type: 3, params: (Float(exponential.λ), 0.0, 0.0)))
 			} else if let lognormal = dist as? DistributionLogNormal {
 				// Lognormal distribution: type = 4
-				configs.append((type: 4, params: (Float(lognormal.mean), Float(lognormal.stdDev), 0.0)))
+				configs.append((type: 4, params: (Float(lognormal.logMean), Float(lognormal.logStdDev), 0.0)))
 			} else {
 				return nil  // Unsupported distribution
 			}

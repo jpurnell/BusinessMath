@@ -13,6 +13,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`DistributionLogNormal`'s parameters are named for the distribution they describe.**
+  `mean` and `stdDev` are the parameters of `log(X)`, not of `X` — the variate's own mean is
+  `exp(logMean + logStdDev²/2)` and its median is `exp(logMean)`, neither of which is
+  `logMean`. The free function's documentation stated the misreading as the contract:
+  *"Returns a log normal distribution of values with mean µ and standard deviation σ."*
+
+  `distributionLogNormal(logMean:logStdDev:_:_:)` and `(logMean:logVariance:_:_:)` are the
+  spellings now, matching `DistributionMVLogNormal`'s long-standing `logMeans` and
+  `logStandardDeviations`. `DistributionLogNormal` gains `init(logMean:logStdDev:)` and
+  `init(logMean:logVariance:)`. The `mean:`-labelled forms are deprecated, not removed, and
+  forward to the new ones, so no call site breaks.
+
+### Testing
+
+- **Twenty-two more tests that reported passed while asserting nothing.** The sweep in
+  `3.0.0-alpha.3` found 41 by searching for `else { return }` on one line. It missed every
+  guard written across three lines, and every one whose body printed a message before
+  returning:
+
+  ```swift
+  guard let metalDevice = MetalDevice.shared else {
+      return // Skip if Metal unavailable
+  }
+  ```
+
+  A text search encodes an assumption about formatting; `quality-gate`'s new
+  `unasserted-optional-unwrap` rule parses the syntax tree and does not. It found twelve
+  sites in `MonteCarloGPUDeviceTests` alone — a file the first sweep never opened — plus ten
+  more across four others. All now carry `.requiresMetalGPU` at the suite and `try #require`
+  inside.
+
 - **PERT's shape parameters lost four significant digits beside a central mode.** The shapes
   were computed through the mean, `α = (μ−a)(2m−a−b)/((m−μ)(b−a))`, where both factors of the
   denominator vanish when the mode is central — so the expression is `0/0` there and

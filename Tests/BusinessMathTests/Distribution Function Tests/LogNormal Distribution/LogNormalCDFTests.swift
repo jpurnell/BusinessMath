@@ -157,7 +157,7 @@ struct LogNormalCDFTests {
 		let seeds = LogNormalDistributionTests.seedsForLogNormal(count: sampleCount)
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionLogNormal(mean: mean, stdDev: stdDev, seeds[i].u1, seeds[i].u2))
+			samples.append(distributionLogNormal(logMean: mean, logStdDev: stdDev, seeds[i].u1, seeds[i].u2))
 		}
 
 		// Test CDF at various points
@@ -185,7 +185,7 @@ struct LogNormalCDFTests {
 		let seeds = LogNormalDistributionTests.seedsForLogNormal(count: sampleCount)
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionLogNormal(mean: mean, stdDev: stdDev, seeds[i].u1, seeds[i].u2))
+			samples.append(distributionLogNormal(logMean: mean, logStdDev: stdDev, seeds[i].u1, seeds[i].u2))
 		}
 		let sorted = samples.sorted()
 

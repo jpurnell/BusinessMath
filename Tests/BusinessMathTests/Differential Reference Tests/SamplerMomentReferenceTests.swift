@@ -135,7 +135,7 @@ struct SamplerMomentReferenceTests {
 				"exponentialCDF(exponential sample at u = \(u)) = \(exponentialCDF(exponentialDraw, λ: 1.5))"
 			)
 
-			let lognormalDraw: Double = distributionLogNormal(mean: 0.0, stdDev: 1.0, u, 0.25)
+			let lognormalDraw: Double = distributionLogNormal(logMean: 0.0, logStdDev: 1.0, u, 0.25)
 			// Box-Muller consumes two uniforms and does not invert the CDF, so this
 			// is only asserted to be in range — the moment test below is what pins
 			// the distribution.
@@ -210,7 +210,7 @@ struct SamplerMomentReferenceTests {
 		// lognormal's fourth moment is e⁸ ≈ 2981, so the variance estimator is
 		// genuinely that noisy at n = 400000. Stating the band as 5·SE keeps it
 		// honest rather than tightening it until this particular seed passes.
-		let lognormal = Self.moments(pairs.map { distributionLogNormal(mean: 0.0, stdDev: 1.0, $0.0, $0.1) as Double })
+		let lognormal = Self.moments(pairs.map { distributionLogNormal(logMean: 0.0, logStdDev: 1.0, $0.0, $0.1) as Double })
 		#expect(approximatelyEqual(lognormal.mean, 1.6487212707001282, tolerance: 1.71e-2), "lognormal mean \(lognormal.mean)")
 		#expect(approximatelyEqual(lognormal.variance, 4.670774270471605, tolerance: 3.92e-1), "lognormal variance \(lognormal.variance)")
 	}

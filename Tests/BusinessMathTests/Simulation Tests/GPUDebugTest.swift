@@ -7,13 +7,14 @@
 
 import Foundation
 import Testing
+import TestSupport  // .requiresMetalGPU
 @testable import BusinessMath
 
 #if canImport(Metal)
 import Metal
 #endif
 
-@Suite("GPU Debug Tests")
+@Suite("GPU Debug Tests", .requiresMetalGPU)
 struct GPUDebugTests {
 
     @Test("Debug bytecode generation for simple profit model")
@@ -53,10 +54,8 @@ struct GPUDebugTests {
     @Test("Debug GPU device simulation with hardcoded inputs")
     func debugGPUDevice() throws {
         #if canImport(Metal)
-        guard let gpuDevice = MonteCarloGPUDevice() else {
-            print("⊘ Skipping: Metal unavailable")
-            return
-        }
+        let gpuDevice = try #require(MonteCarloGPUDevice(),
+                                     "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         print("\n=== GPU Device Test ===")
 

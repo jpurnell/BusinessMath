@@ -7,22 +7,21 @@
 
 import Foundation
 import Testing
+import TestSupport  // .requiresMetalGPU
 @testable import BusinessMath
 
 #if canImport(Metal)
 import Metal
 #endif
 
-@Suite("RNG Debug Tests")
+@Suite("RNG Debug Tests", .requiresMetalGPU)
 struct RNGDebugTests {
 
     @Test("Test GPU RNG directly with constant output")
     func testGPURNGDirect() throws {
         #if canImport(Metal)
-        guard let gpuDevice = MonteCarloGPUDevice() else {
-            print("⊘ Skipping: Metal unavailable")
-            return
-        }
+        let gpuDevice = try #require(MonteCarloGPUDevice(),
+                                     "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         print("\n=== Testing GPU with Constant Model ===")
 
@@ -66,10 +65,8 @@ struct RNGDebugTests {
     @Test("Test GPU with simple input passthrough")
     func testGPUInputPassthrough() throws {
         #if canImport(Metal)
-        guard let gpuDevice = MonteCarloGPUDevice() else {
-            print("⊘ Skipping: Metal unavailable")
-            return
-        }
+        let gpuDevice = try #require(MonteCarloGPUDevice(),
+                                     "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         print("\n=== Testing GPU Input Passthrough ===")
 
@@ -125,10 +122,8 @@ struct RNGDebugTests {
     @Test("Test GPU with addition")
     func testGPUAddition() throws {
         #if canImport(Metal)
-        guard let gpuDevice = MonteCarloGPUDevice() else {
-            print("⊘ Skipping: Metal unavailable")
-            return
-        }
+        let gpuDevice = try #require(MonteCarloGPUDevice(),
+                                     "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
 
         print("\n=== Testing GPU Addition ===")
 
