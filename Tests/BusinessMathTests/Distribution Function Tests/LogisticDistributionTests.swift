@@ -42,7 +42,7 @@ struct LogisticDistributionTests {
 		let seeds = Self.seedsForLogistic(count: sampleCount)
 
 		for i in 0..<sampleCount {
-			let sample: Double = distributionLogistic(mean, stdDev, seed: seeds[i])
+			let sample: Double = distributionLogistic(mean, stdDev, quantileAt: seeds[i])
 			#expect(sample.isFinite, "Logistic values must be finite")
 			#expect(!sample.isNaN, "Logistic values must not be NaN")
 		}
@@ -57,7 +57,7 @@ struct LogisticDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionLogistic(mean, stdDev, seed: seeds[i])
+			let sample: Double = distributionLogistic(mean, stdDev, quantileAt: seeds[i])
 			samples.append(sample)
 		}
 
@@ -78,7 +78,7 @@ struct LogisticDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionLogistic(mean, stdDev, seed: seeds[i])
+			let sample: Double = distributionLogistic(mean, stdDev, quantileAt: seeds[i])
 			samples.append(sample)
 		}
 
@@ -101,7 +101,7 @@ struct LogisticDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionLogistic(mean, stdDev, seed: seeds[i])
+			let sample: Double = distributionLogistic(mean, stdDev, quantileAt: seeds[i])
 			samples.append(sample)
 		}
 
@@ -123,8 +123,8 @@ struct LogisticDistributionTests {
 		var samples2: [Double] = []
 
 		for i in 0..<sampleCount {
-			samples1.append(distributionLogistic(0.0, 1.0, seed: seeds[i]))
-			samples2.append(distributionLogistic(100.0, 15.0, seed: seeds[i]))
+			samples1.append(distributionLogistic(0.0, 1.0, quantileAt: seeds[i]))
+			samples2.append(distributionLogistic(100.0, 15.0, quantileAt: seeds[i]))
 		}
 
 		let mean1 = samples1.reduce(0, +) / Double(samples1.count)
@@ -143,7 +143,7 @@ struct LogisticDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionLogistic(mean, stdDev, seed: seeds[i]))
+			samples.append(distributionLogistic(mean, stdDev, quantileAt: seeds[i]))
 		}
 
 		let sorted = samples.sorted()
@@ -161,7 +161,7 @@ struct LogisticDistributionTests {
 		// Test that seeded function produces finite values
 		for i in 0..<100 {
 			let seed = Double(i + 1) / 101.0
-			let sample: Double = distributionLogistic(mean, stdDev, seed: seed)
+			let sample: Double = distributionLogistic(mean, stdDev, quantileAt: seed)
 			#expect(sample.isFinite)
 			#expect(!sample.isNaN)
 		}
@@ -178,7 +178,7 @@ struct LogisticDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionLogistic(mean, stdDev, seed: seeds[i]))
+			samples.append(distributionLogistic(mean, stdDev, quantileAt: seeds[i]))
 		}
 
 		let empiricalMean = samples.reduce(0, +) / Double(samples.count)
@@ -234,7 +234,7 @@ struct LogisticDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionLogistic(mean, stdDev, seed: seeds[i]))
+			samples.append(distributionLogistic(mean, stdDev, quantileAt: seeds[i]))
 		}
 
 		// Should see both positive and negative values
@@ -260,7 +260,7 @@ struct LogisticDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionLogistic(mean, stdDev, seed: seeds[i]))
+			samples.append(distributionLogistic(mean, stdDev, quantileAt: seeds[i]))
 		}
 
 		// Count values <= mean
@@ -282,7 +282,7 @@ struct LogisticDistributionTests {
 
 		var adoptionTimes: [Double] = []
 		for i in 0..<sampleCount {
-			adoptionTimes.append(distributionLogistic(mean, stdDev, seed: seeds[i]))
+			adoptionTimes.append(distributionLogistic(mean, stdDev, quantileAt: seeds[i]))
 		}
 
 		// Most adoption should happen around the mean
@@ -309,7 +309,7 @@ struct LogisticDistributionTests {
 
 		var logisticSamples: [Double] = []
 		for i in 0..<sampleCount {
-			logisticSamples.append(distributionLogistic(mean, stdDev, seed: seeds[i]))
+			logisticSamples.append(distributionLogistic(mean, stdDev, quantileAt: seeds[i]))
 		}
 
 		// Logistic should have more extreme values than Normal
@@ -331,8 +331,8 @@ struct LogisticDistributionTests {
 		var samples2: [Double] = []
 
 		for i in 0..<100 {
-			samples1.append(distributionLogistic(mean, stdDev, seed: seeds[i]))
-			samples2.append(distributionLogistic(mean, stdDev, seed: seeds[i]))
+			samples1.append(distributionLogistic(mean, stdDev, quantileAt: seeds[i]))
+			samples2.append(distributionLogistic(mean, stdDev, quantileAt: seeds[i]))
 		}
 
 		// Reproducibility is a bit-for-bit claim, and `==` cannot make it: it reports
@@ -371,7 +371,7 @@ struct LogisticDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionLogistic(mean, stdDev, seed: seeds[i]))
+			samples.append(distributionLogistic(mean, stdDev, quantileAt: seeds[i]))
 		}
 
 		let sorted = samples.sorted()
@@ -395,19 +395,19 @@ struct LogisticDistributionTests {
 	@Test("Logistic distribution invalid parameters return NaN")
 	func logisticInvalidParameters() {
 		// Test negative stdDev
-		let negativeStdDevResult = distributionLogistic(0.0, -1.0, seed: 0.5)
+		let negativeStdDevResult = distributionLogistic(0.0, -1.0, quantileAt: 0.5)
 		#expect(negativeStdDevResult.isNaN, "Negative stdDev should return NaN")
 
 		// Test zero stdDev returns mean (degenerate distribution)
-		let zeroStdDevResult = distributionLogistic(5.0, 0.0, seed: 0.5)
+		let zeroStdDevResult = distributionLogistic(5.0, 0.0, quantileAt: 0.5)
 		#expect(abs(zeroStdDevResult - 5.0) < 1e-6, "Zero stdDev should return mean (degenerate)")
 
 		// Test NaN stdDev
-		let nanStdDevResult = distributionLogistic(0.0, Double.nan, seed: 0.5)
+		let nanStdDevResult = distributionLogistic(0.0, Double.nan, quantileAt: 0.5)
 		#expect(nanStdDevResult.isNaN, "NaN stdDev should return NaN")
 
 		// Test infinite stdDev
-		let infStdDevResult = distributionLogistic(0.0, Double.infinity, seed: 0.5)
+		let infStdDevResult = distributionLogistic(0.0, Double.infinity, quantileAt: 0.5)
 		#expect(infStdDevResult.isNaN, "Infinite stdDev should return NaN")
 	}
 }

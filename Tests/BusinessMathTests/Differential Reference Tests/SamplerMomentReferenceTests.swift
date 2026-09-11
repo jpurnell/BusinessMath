@@ -90,19 +90,19 @@ struct SamplerMomentReferenceTests {
 		// Weibull: λ(-ln(1-u))^(1/k). At u = 1/2, k = 2, λ = 3 this is 3√(ln 2).
 		let weibullMedian = 3.0 * (0.6931471805599453 as Double).squareRoot()
 		#expect(
-			approximatelyEqual(distributionWeibull(shape: 2.0, scale: 3.0, seed: 0.5), weibullMedian, tolerance: 1e-15),
+			approximatelyEqual(distributionWeibull(shape: 2.0, scale: 3.0, quantileAt: 0.5), weibullMedian, tolerance: 1e-15),
 			"Weibull(2, 3) at u = 0.5 should be 3√(ln 2) = \(weibullMedian)"
 		)
 
 		// Exponential: -ln(1-u)/λ. At u = 1/2, λ = 2 this is (ln 2)/2.
 		#expect(
-			approximatelyEqual(distributionExponential(λ: 2.0, seed: 0.5), 0.34657359027997264, tolerance: 1e-15),
+			approximatelyEqual(distributionExponential(λ: 2.0, quantileAt: 0.5), 0.34657359027997264, tolerance: 1e-15),
 			"Exponential(2) at u = 0.5 should be (ln 2)/2"
 		)
 
 		// Pareto: xₘ u^(-1/α). At u = 1/2, α = 3 this is 2^(1/3).
 		#expect(
-			approximatelyEqual(distributionPareto(scale: 1.0, shape: 3.0, seed: 0.5), 1.2599210498948732, tolerance: 1e-15),
+			approximatelyEqual(distributionPareto(scale: 1.0, shape: 3.0, quantileAt: 0.5), 1.2599210498948732, tolerance: 1e-15),
 			"Pareto(1, 3) at u = 0.5 should be 2^(1/3)"
 		)
 
@@ -120,7 +120,7 @@ struct SamplerMomentReferenceTests {
 		)
 
 		// Logistic: the median is the location parameter, exactly.
-		#expect(exactlyEqual(distributionLogistic(0.0, 1.0, seed: 0.5) as Double, 0.0))
+		#expect(exactlyEqual(distributionLogistic(0.0, 1.0, quantileAt: 0.5) as Double, 0.0))
 	}
 
 	@Test("Inverse-transform samplers invert their own CDFs")
@@ -129,7 +129,7 @@ struct SamplerMomentReferenceTests {
 		// inverse transform and the package's CDF. Tolerance 1e-14 on a probability
 		// in [0.05, 0.95], where both are well conditioned.
 		for u in [0.05, 0.25, 0.5, 0.75, 0.95] {
-			let exponentialDraw: Double = distributionExponential(λ: 1.5, seed: u)
+			let exponentialDraw: Double = distributionExponential(λ: 1.5, quantileAt: u)
 			#expect(
 				approximatelyEqual(exponentialCDF(exponentialDraw, λ: 1.5), u, tolerance: 1e-14),
 				"exponentialCDF(exponential sample at u = \(u)) = \(exponentialCDF(exponentialDraw, λ: 1.5))"
@@ -153,7 +153,7 @@ struct SamplerMomentReferenceTests {
 		// Exponential(λ = 2): mean 1/2, variance 1/4, μ₄ = 9/λ⁴ = 9/16.
 		// 5·SE(mean) = 5·√(0.25/400000) = 3.95e-3
 		// 5·SE(var)  = 5·√((0.5625 - 0.0625)/400000) = 5.59e-3
-		let exponentialSample = uniformStream.map { distributionExponential(λ: 2.0, seed: $0) as Double }
+		let exponentialSample = uniformStream.map { distributionExponential(λ: 2.0, quantileAt: $0) as Double }
 		let exponential = Self.moments(exponentialSample)
 		#expect(approximatelyEqual(exponential.mean, 0.5, tolerance: 3.95e-3), "exponential mean \(exponential.mean)")
 		#expect(approximatelyEqual(exponential.variance, 0.25, tolerance: 5.59e-3), "exponential variance \(exponential.variance)")
@@ -173,7 +173,7 @@ struct SamplerMomentReferenceTests {
 		// Weibull(k = 2, λ = 3): mean 3Γ(1.5) = 2.6586807763582740,
 		// variance 9(Γ(2) - Γ(1.5)²) = 1.9314165294229652, μ₄ from the same Γ series.
 		// 5·SE(mean) = 1.10e-2, 5·SE(var) = 2.29e-2
-		let weibull = Self.moments(uniformStream.map { distributionWeibull(shape: 2.0, scale: 3.0, seed: $0) as Double })
+		let weibull = Self.moments(uniformStream.map { distributionWeibull(shape: 2.0, scale: 3.0, quantileAt: $0) as Double })
 		#expect(approximatelyEqual(weibull.mean, 2.658680776358274, tolerance: 1.10e-2), "weibull mean \(weibull.mean)")
 		#expect(approximatelyEqual(weibull.variance, 1.9314165294229652, tolerance: 2.29e-2), "weibull variance \(weibull.variance)")
 
@@ -183,7 +183,7 @@ struct SamplerMomentReferenceTests {
 		// the sample variance has no finite standard error and any band would be a
 		// number with nothing behind it. The mean is enough to catch a wrong
 		// exponent, which is the failure mode that matters.
-		let pareto = Self.moments(uniformStream.map { distributionPareto(scale: 1.0, shape: 3.0, seed: $0) as Double })
+		let pareto = Self.moments(uniformStream.map { distributionPareto(scale: 1.0, shape: 3.0, quantileAt: $0) as Double })
 		#expect(approximatelyEqual(pareto.mean, 1.5, tolerance: 6.85e-3), "pareto mean \(pareto.mean)")
 
 		// Every Pareto draw is at or above the scale parameter, by construction.
@@ -295,10 +295,10 @@ struct SamplerMomentReferenceTests {
 		//
 		// The label is now `scale:`. The numbers below are unchanged — the fix was to
 		// the name and the prose, not to the arithmetic, because the arithmetic was the
-		// part that was right. See the note on ``distributionRayleigh(scale:seed:)`` for
+		// part that was right. See the note on ``distributionRayleigh(scale:quantileAt:)`` for
 		// why renaming beat dividing by √(π/2).
 		let stream = Self.uniforms(seed: 0xBADC0FFEE, count: 400_000)
-		let rayleigh = Self.moments(stream.map { distributionRayleigh(scale: 2.0, seed: $0) as Double })
+		let rayleigh = Self.moments(stream.map { distributionRayleigh(scale: 2.0, quantileAt: $0) as Double })
 
 		// A Rayleigh with scale 2: mean σ√(π/2), variance (4-π)/2·σ².
 		// 5·SE(mean) = 5·√(1.7168/400000) = 1.04e-2, 5·SE(var) = 2.5e-2
@@ -314,7 +314,7 @@ struct SamplerMomentReferenceTests {
 		// And the conversion the documentation now hands to a caller who wanted a mean:
 		// σ = mean / √(π/2). Asking for a mean of 2 means asking for a scale of 1.5958.
 		let forMeanOfTwo = 2.0 / 1.2533141373155003
-		let converted = Self.moments(stream.map { distributionRayleigh(scale: forMeanOfTwo, seed: $0) as Double })
+		let converted = Self.moments(stream.map { distributionRayleigh(scale: forMeanOfTwo, quantileAt: $0) as Double })
 		#expect(
 			approximatelyEqual(converted.mean, 2.0, tolerance: 1.04e-2),
 			"scale \(forMeanOfTwo) gives sample mean \(converted.mean), against a target of 2"
@@ -342,19 +342,19 @@ struct SamplerMomentReferenceTests {
 		// `u = 0` moves and it moves to 1. See `git show d247691`.
 		let scale = 1.0
 		for seed in [0.0, 1e-300, 1e-12, 1e-8] {
-			let value: Double = distributionPareto(scale: scale, shape: 3.0, seed: seed)
-			#expect(value.isFinite, "distributionPareto(scale: 1, shape: 3, seed: \(seed)) = \(value)")
+			let value: Double = distributionPareto(scale: scale, shape: 3.0, quantileAt: seed)
+			#expect(value.isFinite, "distributionPareto(scale: 1, shape: 3, quantileAt: \(seed)) = \(value)")
 			#expect(value >= scale, "Pareto is supported on [scale, ∞); got \(value)")
 		}
 
 		// u = 0 maps to u = 1, the other end of the interval, which is exactly the
 		// minimum of the support.
-		let atZero: Double = distributionPareto(scale: scale, shape: 3.0, seed: 0.0)
+		let atZero: Double = distributionPareto(scale: scale, shape: 3.0, quantileAt: 0.0)
 		#expect(exactlyEqual(atZero, scale), "u = 0 remaps to u = 1, so the variate is the support minimum; got \(atZero)")
 
 		// And the remap must not disturb the interior: 2^(1/3) at u = 1/2, unchanged.
 		#expect(
-			approximatelyEqual(distributionPareto(scale: 1.0, shape: 3.0, seed: 0.5), 1.2599210498948732, tolerance: 1e-15),
+			approximatelyEqual(distributionPareto(scale: 1.0, shape: 3.0, quantileAt: 0.5), 1.2599210498948732, tolerance: 1e-15),
 			"the pole guard must not move the bulk of the distribution"
 		)
 	}

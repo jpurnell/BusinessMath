@@ -40,7 +40,8 @@ import Numerics
 /// - Parameters:
 ///   - shape: The shape parameter k (k > 0)
 ///   - scale: The scale parameter λ (λ > 0) 
-///   - seed: Optional, to select a particular seed for reproducibility
+///   - u: The probability at which to evaluate the quantile, in `[0, 1]`. Not a stream
+///     seed — see ``distributionWeibull(shape:scale:seed:)`` for that.
 /// - Returns: A random value sampled from the Weibull(k, λ) distribution
 ///
 /// ## Example
@@ -53,21 +54,15 @@ import Numerics
 /// // Model exponential failure (constant rate)
 /// let constantRate: Double = distributionWeibull(shape: 1.0, scale: 500.0)
 /// ```
-public func distributionWeibull<T: Real>(shape: T, scale: T, seed: Double? = nil) -> T where T: BinaryFloatingPoint {
+public func distributionWeibull<T: Real>(shape: T, scale: T, quantileAt u: Double) -> T where T: BinaryFloatingPoint {
 	// Validate parameters - return NaN for invalid inputs
 	guard shape > T(0), !shape.isNaN, shape.isFinite else { return T.nan }
 	guard scale > T(0), !scale.isNaN, scale.isFinite else { return T.nan }
 
-	// Generate U ~ Uniform(0, 1)
-	let u: T
-	if let seed = seed {
-		u = distributionUniform(min: T(0), max: T(1), seed)
-	} else {
-		u = distributionUniform(min: T(0), max: T(1))
-	}
+	let scaled: T = distributionUniform(min: T(0), max: T(1), u)
 
 	// Use inverse transform: X = scale × (-ln(1 - U))^(1/shape)
-	let oneMinusU = T(1) - u
+	let oneMinusU = T(1) - scaled
 	let negativeLog = -T.log(oneMinusU)
 	let exponent = T(1) / shape
 	let result = scale * T.pow(negativeLog, exponent)
@@ -181,8 +176,7 @@ extension DistributionWeibull: SeedableDistribution {
 	/// - Parameter generator: The random source for the single uniform draw.
 	/// - Returns: A random value sampled from Weibull(k, λ), a non-negative value
 	public func next<G: RandomNumberGenerator>(using generator: inout G) -> Double {
-		return distributionWeibull(shape: shape, scale: scale,
-								   seed: Double.random(in: 0...1, using: &generator))
+		return distributionWeibull(shape: shape, scale: scale, using: &generator)
 	}
 }
 
@@ -208,4 +202,50 @@ extension DistributionWeibull: ContinuousDistribution {
 		let exponent = 1 / shape
 		return scale * Double.pow(negativeLog, exponent)
 	}
+}
+
+
+// MARK: - Seeded and generator-driven draws
+
+/// A draw from the Weibull distribution, reproducible from `seed`.
+///
+/// The sampler, as distinct from ``distributionWeibull(shape:scale:quantileAt:)``, which is the quantile function and
+/// evaluates it at a point you supply. This one chooses the point.
+///
+/// `seed:` means the same thing here as on every other sampler in this library — a `UInt64`
+/// naming a stream, not a uniform in `(0, 1)`. It used to mean the second, which put the
+/// inverse-transform families in a different seeding regime from the rejection-based ones and
+/// left `seed:` meaning two different things across one API.
+///
+/// - Parameters:
+///   - shape: The shape parameter.
+///   - scale: The scale parameter.
+///   - seed: The stream to draw from, or `nil` to draw unseeded.
+/// - Returns: A value distributed as Weibull.
+public func distributionWeibull<T: Real>(shape: T, scale: T, seed: UInt64? = nil) -> T where T: BinaryFloatingPoint {
+	if let seed {
+		var generator = DeterministicRNG(seed: seed)
+		return distributionWeibull(shape: shape, scale: scale, using: &generator)
+	}
+	var generator = SystemRandomNumberGenerator() // stochastic:exempt — the documented unseeded path; pass `seed:` for reproducibility
+	return distributionWeibull(shape: shape, scale: scale, using: &generator)
+}
+
+/// A draw from the Weibull distribution, taking its uniform from `generator`.
+///
+/// All randomness comes from the caller's generator, so the caller owns reproducibility and can
+/// interleave this draw with others on one stream.
+///
+/// The uniform is drawn on the **open** interval. This family's quantile takes a logarithm or a
+/// reciprocal, so an endpoint would turn a legal uniform into a non-finite variate — rarely
+/// enough to survive testing and often enough to reach production.
+///
+/// - Parameters:
+///   - shape: The shape parameter.
+///   - scale: The scale parameter.
+///   - generator: The random source. Advanced by exactly one draw.
+/// - Returns: A value distributed as Weibull.
+public func distributionWeibull<T: Real, G: RandomNumberGenerator>(shape: T, scale: T, using generator: inout G) -> T where T: BinaryFloatingPoint {
+	let u: Double = openUnitUniform(Double.self, using: &generator)
+	return distributionWeibull(shape: shape, scale: scale, quantileAt: u)
 }

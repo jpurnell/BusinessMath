@@ -23,7 +23,8 @@ import Numerics
 /// - Parameter scale: The scale parameter σ (σ > 0). This is *not* the mean; the mean
 ///   is `σ√(π/2)`. To sample a Rayleigh with a target mean `m`, pass
 ///   `scale: m / (π/2).squareRoot()`, i.e. `m / 1.2533141373155003`.
-/// - Parameter seed: Optional seed for reproducibility, a uniform on `[0, 1]`.
+/// - Parameter u: The probability at which to evaluate the quantile, in `[0, 1]`. Not a
+///   stream seed — see ``distributionRayleigh(scale:seed:)`` for that.
 /// - Returns: A random value sampled from the Rayleigh(σ) distribution.
 ///
 /// - Note: A Rayleigh variate is the *radius* of the Box-Muller transform, so this
@@ -46,7 +47,7 @@ import Numerics
 ///   Rayleigh has no location parameter at all. The package's own Rayleigh tests had
 ///   already reached this conclusion on their own — they name the argument `scale` and
 ///   `σ` and assert `mean ≈ σ√(π/2)` — so only the label and the prose were wrong.
-public func distributionRayleigh<T: Real>(scale: T, seed: Double? = nil) -> T where T: BinaryFloatingPoint {
+public func distributionRayleigh<T: Real>(scale: T, quantileAt u: Double) -> T where T: BinaryFloatingPoint {
     // Validate parameters - return NaN for invalid inputs
     guard scale > T(0), !scale.isNaN, scale.isFinite else { return T.nan }
 
@@ -65,10 +66,23 @@ public func distributionRayleigh<T: Real>(scale: T, seed: Double? = nil) -> T wh
     // which is a set of measure zero mapped onto another. The seeded *values*
     // change because a seed now indexes the distribution the other way round; the
     // distribution itself is identical.
-    if let seed {
-    	return scale * boxMullerRadius(seed)
-    }
-    return scale * boxMullerRadius()
+    // σ·√(−2 ln(1 − u)), which is exactly ``DistributionRayleigh/quantile(_:)``.
+    //
+    // The transform underneath consumes its uniform as the radius driver, so it *decreases*
+    // in that uniform — `boxMullerRadius(u)` is σ·√(−2 ln u). That is the right shape for a
+    // Box–Muller radius and the wrong shape for a parameter named `quantileAt`, where every
+    // other family increases and the type's own `quantile(_:)` increases too. Folding once
+    // here makes one identity true across the whole API:
+    //
+    //     distributionRayleigh(scale: s, quantileAt: p) == DistributionRayleigh(scale: s).quantile(p)
+    //
+    // and the fold costs nothing distributionally, since `u` and `1 − u` are both uniform.
+    //
+    // `log(onePlus:)` rather than `log(1 - u)`: for small `u` the subtraction rounds its
+    // argument to 1 and the logarithm to zero, which is the whole lower tail.
+    let negativeLog: T = -T.log(onePlus: -T(u))
+    let doubled: T = T(2) * negativeLog
+    return scale * T.sqrt(doubled)
 }
 
 /// A type that represents a Rayleigh distribution.
@@ -143,4 +157,48 @@ extension DistributionRayleigh: ContinuousDistribution {
         let negativeLog = -Double.log(onePlus: -p)
         return scale * (2 * negativeLog).squareRoot()
     }
+}
+
+
+// MARK: - Seeded and generator-driven draws
+
+/// A draw from the Rayleigh distribution, reproducible from `seed`.
+///
+/// The sampler, as distinct from ``distributionRayleigh(scale:quantileAt:)``, which is the quantile function and
+/// evaluates it at a point you supply. This one chooses the point.
+///
+/// `seed:` means the same thing here as on every other sampler in this library — a `UInt64`
+/// naming a stream, not a uniform in `(0, 1)`. It used to mean the second, which put the
+/// inverse-transform families in a different seeding regime from the rejection-based ones and
+/// left `seed:` meaning two different things across one API.
+///
+/// - Parameters:
+///   - scale: The scale parameter.
+///   - seed: The stream to draw from, or `nil` to draw unseeded.
+/// - Returns: A value distributed as Rayleigh.
+public func distributionRayleigh<T: Real>(scale: T, seed: UInt64? = nil) -> T where T: BinaryFloatingPoint {
+	if let seed {
+		var generator = DeterministicRNG(seed: seed)
+		return distributionRayleigh(scale: scale, using: &generator)
+	}
+	var generator = SystemRandomNumberGenerator() // stochastic:exempt — the documented unseeded path; pass `seed:` for reproducibility
+	return distributionRayleigh(scale: scale, using: &generator)
+}
+
+/// A draw from the Rayleigh distribution, taking its uniform from `generator`.
+///
+/// All randomness comes from the caller's generator, so the caller owns reproducibility and can
+/// interleave this draw with others on one stream.
+///
+/// The uniform is drawn on the **open** interval. This family's quantile takes a logarithm or a
+/// reciprocal, so an endpoint would turn a legal uniform into a non-finite variate — rarely
+/// enough to survive testing and often enough to reach production.
+///
+/// - Parameters:
+///   - scale: The scale parameter.
+///   - generator: The random source. Advanced by exactly one draw.
+/// - Returns: A value distributed as Rayleigh.
+public func distributionRayleigh<T: Real, G: RandomNumberGenerator>(scale: T, using generator: inout G) -> T where T: BinaryFloatingPoint {
+	let u: Double = openUnitUniform(Double.self, using: &generator)
+	return distributionRayleigh(scale: scale, quantileAt: u)
 }

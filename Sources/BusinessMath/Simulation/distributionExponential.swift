@@ -16,23 +16,18 @@ import Numerics
 ///
 /// - Parameters:
 ///   - λ: The rate parameter of the Exponential distribution.
-///   - seed: Optional uniform random seed in [0, 1] for deterministic generation (default: nil)
+///   - u: The point in `(0, 1)` at which to evaluate the quantile.
 /// - Returns: A random number generated from the Exponential distribution with rate parameter `λ`.
 ///
 /// - Note: The function computes the random number using the inverse transform sampling method:
 ///   \[ X = -\frac{1}{\lambda} \
 ///
-public func distributionExponential<T: Real>(λ: T, seed: Double? = nil) -> T where T: BinaryFloatingPoint {
+public func distributionExponential<T: Real>(λ: T, quantileAt u: Double) -> T where T: BinaryFloatingPoint {
 	// Validate parameters - return NaN for invalid inputs
 	guard λ > T(0), !λ.isNaN, λ.isFinite else { return T.nan }
 
-	let u: T
-	if let seed = seed {
-		u = distributionUniform(min: T(0), max: T(1), seed)
-	} else {
-		u = distributionUniform()
-	}
-	return T(-1) * (T(1) / λ) * T.log(1 - u)
+	let scaled: T = distributionUniform(min: T(0), max: T(1), u)
+	return T(-1) * (T(1) / λ) * T.log(1 - scaled)
 }
 
 /// An exponential distribution generator for modeling time between events.
@@ -70,7 +65,7 @@ extension DistributionExponential: SeedableDistribution {
 	/// - Parameter generator: The random source for the uniform draw.
 	/// - Returns: A random positive Double from the exponential distribution
 	public func next<G: RandomNumberGenerator>(using generator: inout G) -> Double {
-		return distributionExponential(λ: λ, seed: Double.random(in: 0...1, using: &generator))
+		return distributionExponential(λ: λ, using: &generator)
 	}
 }
 
@@ -89,4 +84,48 @@ extension DistributionExponential: ContinuousDistribution {
 		// argument to 1 and the log to zero.
 		return -Double.log(onePlus: -p) / λ
 	}
+}
+
+
+// MARK: - Seeded and generator-driven draws
+
+/// A draw from the exponential distribution, reproducible from `seed`.
+///
+/// The sampler, as distinct from ``distributionExponential(λ:quantileAt:)``, which is the quantile function and
+/// evaluates it at a point you supply. This one chooses the point.
+///
+/// `seed:` means the same thing here as on every other sampler in this library — a `UInt64`
+/// naming a stream, not a uniform in `(0, 1)`. It used to mean the second, which put the
+/// inverse-transform families in a different seeding regime from the rejection-based ones and
+/// left `seed:` meaning two different things across one API.
+///
+/// - Parameters:
+///   - λ: The rate parameter.
+///   - seed: The stream to draw from, or `nil` to draw unseeded.
+/// - Returns: A value distributed as exponential.
+public func distributionExponential<T: Real>(λ: T, seed: UInt64? = nil) -> T where T: BinaryFloatingPoint {
+	if let seed {
+		var generator = DeterministicRNG(seed: seed)
+		return distributionExponential(λ: λ, using: &generator)
+	}
+	var generator = SystemRandomNumberGenerator() // stochastic:exempt — the documented unseeded path; pass `seed:` for reproducibility
+	return distributionExponential(λ: λ, using: &generator)
+}
+
+/// A draw from the exponential distribution, taking its uniform from `generator`.
+///
+/// All randomness comes from the caller's generator, so the caller owns reproducibility and can
+/// interleave this draw with others on one stream.
+///
+/// The uniform is drawn on the **open** interval. This family's quantile takes a logarithm or a
+/// reciprocal, so an endpoint would turn a legal uniform into a non-finite variate — rarely
+/// enough to survive testing and often enough to reach production.
+///
+/// - Parameters:
+///   - λ: The rate parameter.
+///   - generator: The random source. Advanced by exactly one draw.
+/// - Returns: A value distributed as exponential.
+public func distributionExponential<T: Real, G: RandomNumberGenerator>(λ: T, using generator: inout G) -> T where T: BinaryFloatingPoint {
+	let u: Double = openUnitUniform(Double.self, using: &generator)
+	return distributionExponential(λ: λ, quantileAt: u)
 }

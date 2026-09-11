@@ -60,7 +60,7 @@ public func distributionGamma<T: Real, G: RandomNumberGenerator>(r: Int, λ: T, 
 
 	var sum: T = T(0)
 	for _ in 0..<r {
-		sum += distributionExponential(λ: λ, seed: Double.random(in: 0...1, using: &generator))
+		sum += distributionExponential(λ: λ, using: &generator)
 	}
 	return sum
 }

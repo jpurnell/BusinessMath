@@ -171,10 +171,18 @@ struct GammaDistributionTests {
 			// The same stream, drawn by hand. distributionGamma documents that it
 			// consumes exactly r uniforms, one per exponential, in order — so this
 			// also pins that contract, which the old fixed-array form could not.
+			//
+			// Through `distributionExponential(λ:using:)` rather than by feeding it a
+			// uniform from `Double.random(in: 0...1, using:)`. The second version asserted
+			// that Gamma's uniforms match whatever the standard library's generator-to-Double
+			// mapping happens to be — a mapping documented as changeable between Swift
+			// releases, and therefore not something a reproducibility test can rest on. The
+			// claim worth pinning is the mathematical one: Gamma(r, λ) is the sum of r
+			// exponentials off one stream, in order.
 			var rng = DeterministicRNG(seed: seedArrays[i])
 			var sum: Double = 0
 			for _ in 0..<r {
-				sum += distributionExponential(λ: λ, seed: Double.random(in: 0...1, using: &rng))
+				sum += distributionExponential(λ: λ, using: &rng)
 			}
 
 			#expect(abs(gammaSample - sum) < 1e-12, "Gamma should equal sum of exponentials")

@@ -37,7 +37,7 @@ internal func logisticScaleFactor<T: Real>() -> T {
 ///
 /// - Requires: The use of appropriate `Real` compatible number types for accurate results.
 
-public func distributionLogistic<T: Real>(_ mean: T = 0, _ stdDev: T = 1, seed: Double? = nil) -> T where T: BinaryFloatingPoint {
+public func distributionLogistic<T: Real>(_ mean: T = 0, _ stdDev: T = 1, quantileAt u: Double) -> T where T: BinaryFloatingPoint {
 	// Validate parameters - return NaN for invalid inputs
 	guard !stdDev.isNaN, stdDev.isFinite else { return T.nan }
 	guard stdDev >= T(0) else { return T.nan }  // Negative stdDev is invalid
@@ -47,11 +47,7 @@ public func distributionLogistic<T: Real>(_ mean: T = 0, _ stdDev: T = 1, seed: 
 	if stdDev == T(0) { return mean }
 
 	let p: T
-	if let seed = seed {
-		p = distributionUniform(min: T(0), max: T(1), seed)
-	} else {
-		p = distributionUniform()
-	}
+	p = distributionUniform(min: T(0), max: T(1), u)
 	let scaleFactor: T = logisticScaleFactor()
 	let odds: T = p / (1 - p)
 	return mean + scaleFactor * stdDev * T.log(odds)
@@ -105,8 +101,7 @@ extension DistributionLogistic: SeedableDistribution {
 	/// - Parameter generator: The random source for the single uniform draw.
 	/// - Returns: A random Double from the logistic distribution with configured mean and standard deviation
 	public func next<G: RandomNumberGenerator>(using generator: inout G) -> Double {
-		return distributionLogistic(mean, stdDev,
-									seed: Double.random(in: 0...1, using: &generator))
+		return distributionLogistic(mean, stdDev, using: &generator)
 	}
 }
 
@@ -141,4 +136,50 @@ extension DistributionLogistic: ContinuousDistribution {
 		let odds = p / complement
 		return mean + scale * Double.log(odds)
 	}
+}
+
+
+// MARK: - Seeded and generator-driven draws
+
+/// A draw from the logistic distribution, reproducible from `seed`.
+///
+/// The sampler, as distinct from ``distributionLogistic(_:_:quantileAt:)``, which is the quantile function and
+/// evaluates it at a point you supply. This one chooses the point.
+///
+/// `seed:` means the same thing here as on every other sampler in this library — a `UInt64`
+/// naming a stream, not a uniform in `(0, 1)`. It used to mean the second, which put the
+/// inverse-transform families in a different seeding regime from the rejection-based ones and
+/// left `seed:` meaning two different things across one API.
+///
+/// - Parameters:
+///   - mean: The location parameter.
+///   - stdDev: The scale parameter.
+///   - seed: The stream to draw from, or `nil` to draw unseeded.
+/// - Returns: A value distributed as logistic.
+public func distributionLogistic<T: Real>(_ mean: T = 0, _ stdDev: T = 1, seed: UInt64? = nil) -> T where T: BinaryFloatingPoint {
+	if let seed {
+		var generator = DeterministicRNG(seed: seed)
+		return distributionLogistic(mean, stdDev, using: &generator)
+	}
+	var generator = SystemRandomNumberGenerator() // stochastic:exempt — the documented unseeded path; pass `seed:` for reproducibility
+	return distributionLogistic(mean, stdDev, using: &generator)
+}
+
+/// A draw from the logistic distribution, taking its uniform from `generator`.
+///
+/// All randomness comes from the caller's generator, so the caller owns reproducibility and can
+/// interleave this draw with others on one stream.
+///
+/// The uniform is drawn on the **open** interval. This family's quantile takes a logarithm or a
+/// reciprocal, so an endpoint would turn a legal uniform into a non-finite variate — rarely
+/// enough to survive testing and often enough to reach production.
+///
+/// - Parameters:
+///   - mean: The location parameter.
+///   - stdDev: The scale parameter.
+///   - generator: The random source. Advanced by exactly one draw.
+/// - Returns: A value distributed as logistic.
+public func distributionLogistic<T: Real, G: RandomNumberGenerator>(_ mean: T = 0, _ stdDev: T = 1, using generator: inout G) -> T where T: BinaryFloatingPoint {
+	let u: Double = openUnitUniform(Double.self, using: &generator)
+	return distributionLogistic(mean, stdDev, quantileAt: u)
 }

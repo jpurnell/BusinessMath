@@ -238,7 +238,7 @@ struct SimulationStatisticsTests {
 		// tighter still in practice because the skewness estimator is itself right-skewed.
 		var rng = SplitMix64(seed: 0x51_A7_1C_E5)
 		let values: [Double] = (0..<10_000).map { _ in
-			distributionExponential(λ: 0.5, seed: Double.random(in: 0.0..<1.0, using: &rng))
+			distributionExponential(λ: 0.5, quantileAt: Double.random(in: 0.0..<1.0, using: &rng))
 		}
 		let stats = SimulationStatistics(values: values)
 

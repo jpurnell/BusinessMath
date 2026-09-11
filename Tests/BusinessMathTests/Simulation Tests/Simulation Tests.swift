@@ -75,7 +75,7 @@ import Glibc
 		// Rayleigh(5) has mean 6.2666 and stdDev 3.2757, so over 1,000 draws the standard
 		// error is 0.1036 and the ±20% tolerance (±1.253) is 12.1 standard errors.
 		var rng = SplitMix64(seed: 0xAA_1E_16_04)
-		let result: Double = distributionRayleigh(scale: sigma, seed: Double.random(in: 0.0..<1.0, using: &rng))
+		let result: Double = distributionRayleigh(scale: sigma, quantileAt: Double.random(in: 0.0..<1.0, using: &rng))
 
 		// Rayleigh distribution should produce non-negative values
 		#expect(result >= 0.0, "Rayleigh values must be non-negative")
@@ -83,7 +83,7 @@ import Glibc
 		// Test multiple samples to ensure reasonable distribution
 		var samples: [Double] = []
 		for _ in 0..<1000 {
-			let sample: Double = distributionRayleigh(scale: sigma, seed: Double.random(in: 0.0..<1.0, using: &rng))
+			let sample: Double = distributionRayleigh(scale: sigma, quantileAt: Double.random(in: 0.0..<1.0, using: &rng))
 			samples.append(sample)
 			#expect(sample >= 0.0)
 		}
@@ -102,18 +102,18 @@ import Glibc
 		let sigma = 10.0
 
 		// Test with seeded function variant
-		let result1: Double = distributionRayleigh(scale: sigma, seed: 0.42)
+		let result1: Double = distributionRayleigh(scale: sigma, quantileAt: 0.42)
 		#expect(result1 >= 0.0)
 
 		// Test with different seed
-		let result2: Double = distributionRayleigh(scale: sigma, seed: 0.73)
+		let result2: Double = distributionRayleigh(scale: sigma, quantileAt: 0.73)
 		#expect(result2 >= 0.0)
 
 		// Verify multiple samples have reasonable distribution using seeded function
 		var samples: [Double] = []
 		for i in 0..<1000 {
 			let seed = Double(i + 1) / 1001.0
-			samples.append(distributionRayleigh(scale: sigma, seed: seed))
+			samples.append(distributionRayleigh(scale: sigma, quantileAt: seed))
 		}
 
 		let empiricalMean = samples.reduce(0, +) / Double(samples.count)

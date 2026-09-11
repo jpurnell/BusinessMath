@@ -83,7 +83,7 @@ struct MonteCarloTheoryCrossValidationTests {
 		var samples: [Double] = []
 		samples.reserveCapacity(sampleCount)
 		for _ in 0..<sampleCount {
-			let value: Double = distributionExponential(λ: lambda, seed: Double.random(in: 0.0..<1.0, using: &rng))
+			let value: Double = distributionExponential(λ: lambda, quantileAt: Double.random(in: 0.0..<1.0, using: &rng))
 			samples.append(value)
 		}
 

@@ -41,7 +41,7 @@ struct ExponentialDistributionTests {
 		let seeds = Self.seedsForExponential(count: sampleCount)
 
 		for i in 0..<sampleCount {
-			let sample: Double = distributionExponential(λ: λ, seed: seeds[i])
+			let sample: Double = distributionExponential(λ: λ, quantileAt: seeds[i])
 			#expect(sample >= 0, "Exponential values must be non-negative")
 			#expect(sample.isFinite, "Exponential values must be finite")
 			#expect(!sample.isNaN, "Exponential values must not be NaN")
@@ -59,7 +59,7 @@ struct ExponentialDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionExponential(λ: λ, seed: seeds[i])
+			let sample: Double = distributionExponential(λ: λ, quantileAt: seeds[i])
 			samples.append(sample)
 		}
 
@@ -79,7 +79,7 @@ struct ExponentialDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionExponential(λ: λ, seed: seeds[i])
+			let sample: Double = distributionExponential(λ: λ, quantileAt: seeds[i])
 			samples.append(sample)
 		}
 
@@ -98,7 +98,7 @@ struct ExponentialDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionExponential(λ: λ, seed: seeds[i])
+			let sample: Double = distributionExponential(λ: λ, quantileAt: seeds[i])
 			samples.append(sample)
 		}
 
@@ -121,7 +121,7 @@ struct ExponentialDistributionTests {
 
 			var samples: [Double] = []
 			for i in 0..<sampleCount {
-					samples.append(distributionExponential(λ: λ, seed: seeds[i]))
+					samples.append(distributionExponential(λ: λ, quantileAt: seeds[i]))
 			}
 
 			let threshold = 2.0
@@ -144,8 +144,8 @@ struct ExponentialDistributionTests {
 		var samplesλ5: [Double] = []
 
 		for i in 0..<sampleCount {
-			samplesλ1.append(distributionExponential(λ: 1.0, seed: seeds[i]))
-			samplesλ5.append(distributionExponential(λ: 5.0, seed: seeds[i]))
+			samplesλ1.append(distributionExponential(λ: 1.0, quantileAt: seeds[i]))
+			samplesλ5.append(distributionExponential(λ: 5.0, quantileAt: seeds[i]))
 		}
 
 		let meanλ1 = samplesλ1.reduce(0, +) / Double(samplesλ1.count)
@@ -169,7 +169,7 @@ struct ExponentialDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionExponential(λ: λ, seed: seeds[i]))
+			samples.append(distributionExponential(λ: λ, quantileAt: seeds[i]))
 		}
 
 		let countBelowX = samples.filter { $0 <= x }.count
@@ -185,7 +185,7 @@ struct ExponentialDistributionTests {
 		// Test that seeded function produces values in valid range
 		for i in 0..<100 {
 			let seed = Double(i + 1) / 101.0
-			let sample: Double = distributionExponential(λ: λ, seed: seed)
+			let sample: Double = distributionExponential(λ: λ, quantileAt: seed)
 			#expect(sample >= 0)
 			#expect(sample.isFinite)
 		}
@@ -202,7 +202,7 @@ struct ExponentialDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionExponential(λ: λ, seed: seeds[i]))
+			samples.append(distributionExponential(λ: λ, quantileAt: seeds[i]))
 		}
 
 		let empiricalMean = samples.reduce(0, +) / Double(samples.count)
@@ -243,7 +243,7 @@ struct ExponentialDistributionTests {
 		for rate in rates {
 			var samples: [Double] = []
 			for i in 0..<sampleCount {
-				samples.append(distributionExponential(λ: rate, seed: seeds[i]))
+				samples.append(distributionExponential(λ: rate, quantileAt: seeds[i]))
 			}
 			let mean = samples.reduce(0, +) / Double(samples.count)
 			means.append(mean)
@@ -272,7 +272,7 @@ struct ExponentialDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionExponential(λ: λ, seed: seeds[i]))
+			samples.append(distributionExponential(λ: λ, quantileAt: seeds[i]))
 		}
 
 		let sorted = samples.sorted()
@@ -289,7 +289,7 @@ struct ExponentialDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionExponential(λ: λ, seed: seeds[i]))
+			samples.append(distributionExponential(λ: λ, quantileAt: seeds[i]))
 		}
 
 		let sorted = samples.sorted()
@@ -315,7 +315,7 @@ struct ExponentialDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionExponential(λ: λ, seed: seeds[i]))
+			samples.append(distributionExponential(λ: λ, quantileAt: seeds[i]))
 		}
 
 		let mean = samples.reduce(0, +) / Double(samples.count)
@@ -335,8 +335,8 @@ struct ExponentialDistributionTests {
 		var samples2: [Double] = []
 
 		for i in 0..<100 {
-			samples1.append(distributionExponential(λ: λ, seed: seeds[i]))
-			samples2.append(distributionExponential(λ: λ, seed: seeds[i]))
+			samples1.append(distributionExponential(λ: λ, quantileAt: seeds[i]))
+			samples2.append(distributionExponential(λ: λ, quantileAt: seeds[i]))
 		}
 
 		// Reproducibility is a bit-for-bit claim, and `==` cannot make it: it reports
@@ -375,7 +375,7 @@ struct ExponentialDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionExponential(λ: λ, seed: seeds[i]))
+			samples.append(distributionExponential(λ: λ, quantileAt: seeds[i]))
 		}
 
 		// Count values > 5 (should be rare for λ=1)
@@ -396,7 +396,7 @@ struct ExponentialDistributionTests {
 
 		var exponentialSamples: [Double] = []
 		for i in 0..<sampleCount {
-			exponentialSamples.append(distributionExponential(λ: λ, seed: seeds[i]))
+			exponentialSamples.append(distributionExponential(λ: λ, quantileAt: seeds[i]))
 		}
 
 		// Compare with Gamma(1, 1/λ) — the same law, so the two sample means agree.
@@ -429,8 +429,8 @@ struct ExponentialDistributionTests {
 
 		var minSamples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample1 = distributionExponential(λ: λ1, seed: seeds[i])
-			let sample2 = distributionExponential(λ: λ2, seed: seeds[i + sampleCount])
+			let sample1 = distributionExponential(λ: λ1, quantileAt: seeds[i])
+			let sample2 = distributionExponential(λ: λ2, quantileAt: seeds[i + sampleCount])
 			minSamples.append(min(sample1, sample2))
 		}
 
@@ -448,7 +448,7 @@ struct ExponentialDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionExponential(λ: λ, seed: seeds[i]))
+			samples.append(distributionExponential(λ: λ, quantileAt: seeds[i]))
 		}
 
 		// Estimate hazard rate at different time points
@@ -479,7 +479,7 @@ struct ExponentialDistributionTests {
 		]
 
 		for testCase in edgeCases {
-			let sample = distributionExponential(λ: testCase.λ, seed: 0.5)
+			let sample = distributionExponential(λ: testCase.λ, quantileAt: 0.5)
 			#expect(sample >= 0, "Should handle \(testCase.description)")
 			#expect(sample.isFinite, "Should produce finite value for \(testCase.description)")
 		}
@@ -495,7 +495,7 @@ struct ExponentialDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionExponential(λ: λ, seed: seeds[i]))
+			samples.append(distributionExponential(λ: λ, quantileAt: seeds[i]))
 		}
 
 		let mean = samples.reduce(0, +) / Double(samples.count)
@@ -521,7 +521,7 @@ struct ExponentialDistributionTests {
 		for i in 0..<sampleCount {
 			var sample: [Double] = []
 			for j in 0..<n {
-				sample.append(distributionExponential(λ: λ, seed: seeds[i * n + j]))
+				sample.append(distributionExponential(λ: λ, quantileAt: seeds[i * n + j]))
 			}
 			minValues.append(try #require(sample.min()))
 		}
@@ -543,7 +543,7 @@ struct ExponentialDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<veryLargeSampleCount {
-			samples.append(distributionExponential(λ: λ, seed: seeds[i]))
+			samples.append(distributionExponential(λ: λ, quantileAt: seeds[i]))
 		}
 
 		// With large samples, statistics should be very accurate
@@ -563,19 +563,19 @@ struct ExponentialDistributionTests {
 	@Test("Exponential distribution invalid parameters return NaN")
 	func exponentialInvalidParameters() {
 		// Test negative rate
-		let negativeResult = distributionExponential(λ: -1.0, seed: 0.5)
+		let negativeResult = distributionExponential(λ: -1.0, quantileAt: 0.5)
 		#expect(negativeResult.isNaN, "Negative λ should return NaN")
 
 		// Test zero rate
-		let zeroResult = distributionExponential(λ: 0.0, seed: 0.5)
+		let zeroResult = distributionExponential(λ: 0.0, quantileAt: 0.5)
 		#expect(zeroResult.isNaN, "Zero λ should return NaN")
 
 		// Test NaN rate
-		let nanResult = distributionExponential(λ: Double.nan, seed: 0.5)
+		let nanResult = distributionExponential(λ: Double.nan, quantileAt: 0.5)
 		#expect(nanResult.isNaN, "NaN λ should return NaN")
 
 		// Test infinite rate
-		let infResult = distributionExponential(λ: Double.infinity, seed: 0.5)
+		let infResult = distributionExponential(λ: Double.infinity, quantileAt: 0.5)
 		#expect(infResult.isNaN, "Infinite λ should return NaN")
 	}
 }

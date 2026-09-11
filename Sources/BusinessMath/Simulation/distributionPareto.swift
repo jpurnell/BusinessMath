@@ -53,7 +53,8 @@ import Numerics
 /// - Parameters:
 ///   - scale: The scale parameter xₘ (minimum value, xₘ > 0)
 ///   - shape: The shape parameter α (α > 0, controls inequality)
-///   - seed: Optional seed for reproducibility, a uniform on `[0, 1]`
+///   - u: The probability at which to evaluate the quantile, in `[0, 1]`. Not a stream
+///     seed — see ``distributionPareto(scale:shape:seed:)`` for that.
 /// - Returns: A random value sampled from the Pareto(xₘ, α) distribution, always
 ///   finite and always `>= scale`
 ///
@@ -68,36 +69,36 @@ import Numerics
 /// let sales: Double = distributionPareto(scale: 1000, shape: 2.0)
 /// print("Customer value: $\(sales)")
 /// ```
-public func distributionPareto<T: Real>(scale: T, shape: T, seed: Double? = nil) -> T where T: BinaryFloatingPoint {
+public func distributionPareto<T: Real>(scale: T, shape: T, quantileAt u: Double) -> T where T: BinaryFloatingPoint {
 	// Validate parameters - return NaN for invalid inputs
 	guard scale > T(0), !scale.isNaN, scale.isFinite else { return T.nan }
 	guard shape > T(0), !shape.isNaN, shape.isFinite else { return T.nan }
 
-	// Use inverse transform method: X = xₘ / U^(1/α)
-	// where U ~ Uniform(0, 1]
-	let drawn: T
-	if let seed = seed {
-		drawn = distributionUniform(min: T(0), max: T(1), seed)
-	} else {
-		drawn = distributionUniform(min: T(0), max: T(1))
-	}
-
-	// `u = 0` is the pole of this transform: `0^(1/α)` is zero and the variate is
-	// `+infinity`, which poisons the mean, the variance and every percentile above it
-	// in whatever Monte Carlo run the draw lands in. It is not a rare accident —
-	// `distributionUniform` quantizes to multiples of 1e-7, so every seed below the
-	// quantum arrives here as exactly zero.
+	// The quantile: xₘ/(1 − u)^(1/α), which is exactly ``DistributionPareto/quantile(_:)``.
 	//
-	// This used to try to clamp, with `let epsilon: T = T(Int(1e-10))`. `Int(1e-10)` is
-	// **0**, so the guard read `u > 0` and did nothing whatsoever. Repairing the
-	// constant would have been the wrong fix anyway: a clamp maps a whole interval of
-	// draws onto one value and leaves a point mass at `scale·ε^(-1/α)` — at α = 3 and
-	// ε = 1e-10, an atom sitting alone at 2154·xₘ. Drawing on (0, 1] instead moves only
-	// the single point `u = 0`, to 1, which is a set of measure zero mapped onto
-	// another. The same rule the Box-Muller sites settled on; see `git show d247691`.
-	let u = openUnitUniform(seed: drawn)
-
-	return scale / T.pow(u, T(1) / shape)
+	// It used to be xₘ/u^(1/α), which is the same distribution read from the other end —
+	// *decreasing* in its argument, where the type's `quantile(_:)` increases. Two
+	// implementations of one function disagreeing about direction, and nothing compared them:
+	// the only point both were ever tested at was u = 0.5, where `u` and `1 − u` are the same
+	// number. Folding once here makes the identity true, and costs nothing distributionally.
+	//
+	// The pole moves with the fold, from u = 0 to u = 1, and stops being a hazard on the way.
+	// At u = 1 the quantile of a Pareto genuinely is `+infinity`, which is what the type
+	// returns, so the answer is right rather than merely finite.
+	//
+	// Worth keeping the history of the old pole, because the lesson outlived it. `u = 0` sent
+	// `0^(1/α)` to zero and the variate to `+infinity`, poisoning the mean, the variance and
+	// every percentile above it in whatever Monte Carlo run the draw landed in — and not
+	// rarely, since `distributionUniform` quantizes to multiples of 1e-7 and every seed below
+	// the quantum arrived as exactly zero. The attempted clamp was
+	// `let epsilon: T = T(Int(1e-10))`, and `Int(1e-10)` is **0**, so the guard read `u > 0`
+	// and did nothing at all. Repairing the constant would have been the wrong fix regardless:
+	// a clamp maps an interval of draws onto one value and leaves a point mass — at α = 3 and
+	// ε = 1e-10, an atom sitting alone at 2154·xₘ. See `git show d247691`.
+	guard u < 1 else { return T.infinity }
+	let logComplement: T = T.log(onePlus: -T(u))
+	let exponent: T = -logComplement / shape
+	return scale * T.exp(exponent)
 }
 
 /// A type that represents a Pareto distribution.
@@ -180,8 +181,7 @@ extension DistributionPareto: SeedableDistribution {
 	/// - Parameter generator: The random source for the single uniform draw.
 	/// - Returns: A random value sampled from Pareto(xₘ, α), always >= scale
 	public func next<G: RandomNumberGenerator>(using generator: inout G) -> Double {
-		return distributionPareto(scale: scale, shape: shape,
-								  seed: Double.random(in: 0...1, using: &generator))
+		return distributionPareto(scale: scale, shape: shape, using: &generator)
 	}
 }
 
@@ -211,4 +211,50 @@ extension DistributionPareto: ContinuousDistribution {
 		let logComplement = Double.log(onePlus: -p)
 		return scale * Double.exp(-logComplement / shape)
 	}
+}
+
+
+// MARK: - Seeded and generator-driven draws
+
+/// A draw from the Pareto distribution, reproducible from `seed`.
+///
+/// The sampler, as distinct from ``distributionPareto(scale:shape:quantileAt:)``, which is the quantile function and
+/// evaluates it at a point you supply. This one chooses the point.
+///
+/// `seed:` means the same thing here as on every other sampler in this library — a `UInt64`
+/// naming a stream, not a uniform in `(0, 1)`. It used to mean the second, which put the
+/// inverse-transform families in a different seeding regime from the rejection-based ones and
+/// left `seed:` meaning two different things across one API.
+///
+/// - Parameters:
+///   - scale: The scale parameter (xₘ).
+///   - shape: The shape parameter (α).
+///   - seed: The stream to draw from, or `nil` to draw unseeded.
+/// - Returns: A value distributed as Pareto.
+public func distributionPareto<T: Real>(scale: T, shape: T, seed: UInt64? = nil) -> T where T: BinaryFloatingPoint {
+	if let seed {
+		var generator = DeterministicRNG(seed: seed)
+		return distributionPareto(scale: scale, shape: shape, using: &generator)
+	}
+	var generator = SystemRandomNumberGenerator() // stochastic:exempt — the documented unseeded path; pass `seed:` for reproducibility
+	return distributionPareto(scale: scale, shape: shape, using: &generator)
+}
+
+/// A draw from the Pareto distribution, taking its uniform from `generator`.
+///
+/// All randomness comes from the caller's generator, so the caller owns reproducibility and can
+/// interleave this draw with others on one stream.
+///
+/// The uniform is drawn on the **open** interval. This family's quantile takes a logarithm or a
+/// reciprocal, so an endpoint would turn a legal uniform into a non-finite variate — rarely
+/// enough to survive testing and often enough to reach production.
+///
+/// - Parameters:
+///   - scale: The scale parameter (xₘ).
+///   - shape: The shape parameter (α).
+///   - generator: The random source. Advanced by exactly one draw.
+/// - Returns: A value distributed as Pareto.
+public func distributionPareto<T: Real, G: RandomNumberGenerator>(scale: T, shape: T, using generator: inout G) -> T where T: BinaryFloatingPoint {
+	let u: Double = openUnitUniform(Double.self, using: &generator)
+	return distributionPareto(scale: scale, shape: shape, quantileAt: u)
 }

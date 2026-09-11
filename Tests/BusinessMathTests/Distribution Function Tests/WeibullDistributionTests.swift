@@ -44,7 +44,7 @@ struct WeibullDistributionTests {
 
 		// Generate deterministic samples and verify all are >= 0
 		for i in 0..<sampleCount {
-			let sample: Double = distributionWeibull(shape: shape, scale: scale, seed: seeds[i])
+			let sample: Double = distributionWeibull(shape: shape, scale: scale, quantileAt: seeds[i])
 			#expect(sample >= 0.0, "Weibull values must be non-negative")
 		}
 	}
@@ -65,7 +65,7 @@ struct WeibullDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionWeibull(shape: shape, scale: scale, seed: seeds[i])
+			let sample: Double = distributionWeibull(shape: shape, scale: scale, quantileAt: seeds[i])
 			samples.append(sample)
 		}
 
@@ -84,7 +84,7 @@ struct WeibullDistributionTests {
 		// Test that seeded function produces values in valid range
 		for i in 0..<100 {
 			let seed = Double(i + 1) / 101.0
-			let sample: Double = distributionWeibull(shape: shape, scale: scale, seed: seed)
+			let sample: Double = distributionWeibull(shape: shape, scale: scale, quantileAt: seed)
 			#expect(sample >= 0.0)
 		}
 	}
@@ -100,7 +100,7 @@ struct WeibullDistributionTests {
 		// Test that function produces values in valid range
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionWeibull(shape: shape, scale: scale, seed: seeds[i])
+			let sample: Double = distributionWeibull(shape: shape, scale: scale, quantileAt: seeds[i])
 			samples.append(sample)
 			#expect(sample >= 0.0)
 		}
@@ -122,7 +122,7 @@ struct WeibullDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionWeibull(shape: shape, scale: scale, seed: seeds[i])
+			let sample: Double = distributionWeibull(shape: shape, scale: scale, quantileAt: seeds[i])
 			samples.append(sample)
 		}
 
@@ -144,7 +144,7 @@ struct WeibullDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionWeibull(shape: shape, scale: scale, seed: seeds[i])
+			let sample: Double = distributionWeibull(shape: shape, scale: scale, quantileAt: seeds[i])
 			samples.append(sample)
 			#expect(sample >= 0.0)
 		}
@@ -165,7 +165,7 @@ struct WeibullDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionWeibull(shape: shape, scale: scale, seed: seeds[i])
+			let sample: Double = distributionWeibull(shape: shape, scale: scale, quantileAt: seeds[i])
 			samples.append(sample)
 			#expect(sample >= 0.0)
 		}
@@ -185,7 +185,7 @@ struct WeibullDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionWeibull(shape: shape, scale: scale, seed: seeds[i])
+			let sample: Double = distributionWeibull(shape: shape, scale: scale, quantileAt: seeds[i])
 			samples.append(sample)
 			#expect(sample >= 0.0)
 		}
@@ -206,7 +206,7 @@ struct WeibullDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionWeibull(shape: shape, scale: scale, seed: seeds[i])
+			let sample: Double = distributionWeibull(shape: shape, scale: scale, quantileAt: seeds[i])
 			samples.append(sample)
 			#expect(sample >= 0.0)
 		}
@@ -226,7 +226,7 @@ struct WeibullDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionWeibull(shape: shape, scale: scale, seed: seeds[i])
+			let sample: Double = distributionWeibull(shape: shape, scale: scale, quantileAt: seeds[i])
 			samples.append(sample)
 			#expect(sample >= 0.0)
 		}
@@ -247,7 +247,7 @@ struct WeibullDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionWeibull(shape: shape, scale: scale, seed: seeds[i])
+			let sample: Double = distributionWeibull(shape: shape, scale: scale, quantileAt: seeds[i])
 			samples.append(sample)
 			#expect(sample >= 0.0)
 		}
@@ -260,23 +260,23 @@ struct WeibullDistributionTests {
 	@Test("Weibull distribution invalid parameters return NaN")
 	func weibullInvalidParameters() {
 		// Test negative shape
-		let negativeShapeResult = distributionWeibull(shape: -1.0, scale: 1.0, seed: 0.5)
+		let negativeShapeResult = distributionWeibull(shape: -1.0, scale: 1.0, quantileAt: 0.5)
 		#expect(negativeShapeResult.isNaN, "Negative shape should return NaN")
 
 		// Test zero shape
-		let zeroShapeResult = distributionWeibull(shape: 0.0, scale: 1.0, seed: 0.5)
+		let zeroShapeResult = distributionWeibull(shape: 0.0, scale: 1.0, quantileAt: 0.5)
 		#expect(zeroShapeResult.isNaN, "Zero shape should return NaN")
 
 		// Test negative scale
-		let negativeScaleResult = distributionWeibull(shape: 2.0, scale: -1.0, seed: 0.5)
+		let negativeScaleResult = distributionWeibull(shape: 2.0, scale: -1.0, quantileAt: 0.5)
 		#expect(negativeScaleResult.isNaN, "Negative scale should return NaN")
 
 		// Test zero scale
-		let zeroScaleResult = distributionWeibull(shape: 2.0, scale: 0.0, seed: 0.5)
+		let zeroScaleResult = distributionWeibull(shape: 2.0, scale: 0.0, quantileAt: 0.5)
 		#expect(zeroScaleResult.isNaN, "Zero scale should return NaN")
 
 		// Test NaN parameters
-		let nanShapeResult = distributionWeibull(shape: Double.nan, scale: 1.0, seed: 0.5)
+		let nanShapeResult = distributionWeibull(shape: Double.nan, scale: 1.0, quantileAt: 0.5)
 		#expect(nanShapeResult.isNaN, "NaN shape should return NaN")
 	}
 }

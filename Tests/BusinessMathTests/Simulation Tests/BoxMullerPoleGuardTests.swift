@@ -52,12 +52,31 @@ struct BoxMullerPoleGuardTests {
 	/// 1e-7 — not just zero — became `u = 0` and the function returned `+∞`.
 	/// That is one draw in ten million from the unseeded path, and it returns a
 	/// number no downstream mean, variance or percentile can survive.
-	@Test("Rayleigh is finite for every seed, including the ones that quantize to zero",
-		  arguments: [0.0, 1e-12, 1e-9, 1e-8, 5e-8, 9.99e-8, 1e-7, 0.25, 0.5, 1.0])
+	/// Probabilities below 1, where the quantile is a number.
+	///
+	/// `1.0` used to be in this list, and belonged there: the parameter was the Box–Muller
+	/// radius driver on `(0, 1]`, so `u = 1` gave `√(−2 ln 1)` — a radius of exactly zero, and
+	/// finite. It is now a probability, and the quantile of a Rayleigh at `p = 1` is its
+	/// supremum, which is infinite. Asserted separately below, because "finite" and "correct"
+	/// stopped being the same claim when the argument changed meaning.
+	@Test("Rayleigh is finite at every probability below 1, the old quantization points included",
+		  arguments: [0.0, 1e-12, 1e-9, 1e-8, 5e-8, 9.99e-8, 1e-7, 0.25, 0.5, 0.999_999])
 	func rayleighIsFiniteAtThePole(seed: Double) {
-		let value: Double = distributionRayleigh(scale: 1.0, seed: seed)
-		#expect(value.isFinite, "distributionRayleigh(scale: 1, seed: \(seed)) = \(value)")
+		let value: Double = distributionRayleigh(scale: 1.0, quantileAt: seed)
+		#expect(value.isFinite, "distributionRayleigh(scale: 1, quantileAt: \(seed)) = \(value)")
 		#expect(value >= 0.0, "Rayleigh is non-negative by definition; got \(value)")
+	}
+
+	@Test("Rayleigh at p = 1 is its supremum, and agrees with the type about that")
+	func rayleighAtOneIsUnbounded() {
+		// Not a regression from the finiteness above but its complement: the support is
+		// unbounded, so an infinite answer at the top is the right one rather than a lapse.
+		// Pinned against the type so the two cannot drift apart again -- they already did
+		// once, in the direction the argument increases.
+		let free: Double = distributionRayleigh(scale: 1.0, quantileAt: 1.0)
+		let type: Double = DistributionRayleigh(scale: 1.0).quantile(1.0)
+		#expect(free.isInfinite, "quantileAt: 1.0 gave \(free); a Rayleigh has no upper bound")
+		#expect(identical(free, type), "free gave \(free), the type gave \(type)")
 	}
 
 	@Test("Rayleigh keeps its scale after the guard")
@@ -68,7 +87,7 @@ struct BoxMullerPoleGuardTests {
 		var total = 0.0
 		let n = 200_000
 		for _ in 0..<n {
-			total += distributionRayleigh(scale: 1.0, seed: rng.next()) as Double
+			total += distributionRayleigh(scale: 1.0, quantileAt: rng.next()) as Double
 		}
 		let mean = total / Double(n)
 		let expected = (Double.pi / 2).squareRoot()

@@ -13,6 +13,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Every sampler now takes `seed:` and `using:`, and `seed:` means one thing.** The
+  rejection-based families (Gamma, Beta, t, χ², F, geometric) took `seed: UInt64` naming a
+  stream. The inverse-transform families — exponential, logistic, Rayleigh, Weibull, Pareto —
+  took `seed: Double`, a uniform in `(0, 1)`. One label, two meanings, in one API.
+
+  Each of the five now has three entry points:
+
+  - **`quantileAt u:`** — the quantile function at `u`. Deterministic, no generator, testable
+    against a closed form at full precision instead of through a sample mean.
+  - **`seed: UInt64?`** — a draw from a named stream, matching every other sampler.
+  - **`using: inout G`** — a draw from the caller's generator, so one stream can feed several
+    families in a known order.
+
+  The uniform for the latter two comes from the library's own open-interval mapping, since
+  every quantile here takes a logarithm or a reciprocal and an endpoint would turn a legal
+  uniform into a non-finite variate.
+
+- **Rayleigh and Pareto disagreed with their own types about which way a quantile runs.**
+  `distributionRayleigh` computed `σ√(−2 ln u)` and `distributionPareto` computed
+  `xₘ/u^(1/α)` — both *decreasing* in their argument, while `DistributionRayleigh.quantile`
+  and `DistributionPareto.quantile` both increase. Two implementations of one function,
+  pointing opposite ways.
+
+  Nothing caught it because the only argument both forms were ever tested at was `u = 0.5`,
+  where `u` and `1 − u` are the same number. Both free functions now match their types, and
+  the identity `distributionX(…, quantileAt: p) == DistributionX(…).quantile(p)` is asserted
+  across all five families over a grid, so they cannot drift apart again.
+
 - **`DistributionLogNormal`'s parameters are named for the distribution they describe.**
   `mean` and `stdDev` are the parameters of `log(X)`, not of `X` — the variate's own mean is
   `exp(logMean + logStdDev²/2)` and its median is `exp(logMean)`, neither of which is

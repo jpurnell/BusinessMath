@@ -51,7 +51,7 @@ struct ParetoDistributionTests {
 
 
 		for i in 0..<sampleCount {
-			let sample: Double = distributionPareto(scale: scale, shape: shape, seed: seeds[i])
+			let sample: Double = distributionPareto(scale: scale, shape: shape, quantileAt: seeds[i])
 			#expect(sample >= scale, "Pareto values must be >= scale parameter")
 			#expect(sample.isFinite, "Pareto values must be finite")
 			#expect(!sample.isNaN, "Pareto values must not be NaN")
@@ -72,7 +72,7 @@ struct ParetoDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionPareto(scale: scale, shape: shape, seed: seeds[i])
+			let sample: Double = distributionPareto(scale: scale, shape: shape, quantileAt: seeds[i])
 			samples.append(sample)
 		}
 
@@ -91,7 +91,7 @@ struct ParetoDistributionTests {
 
 		// Test that random() produces values >= scale
 		for i in 0..<sampleCount {
-			let sample: Double = distributionPareto(scale: scale, shape: shape, seed: seeds[i])
+			let sample: Double = distributionPareto(scale: scale, shape: shape, quantileAt: seeds[i])
 			#expect(sample >= 1.0)
 			#expect(sample.isFinite)
 			#expect(!sample.isNaN)
@@ -108,7 +108,7 @@ struct ParetoDistributionTests {
 		// Test that next() produces values >= scale
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample = distributionPareto(scale: scale, shape: shape, seed: seeds[i])
+			let sample = distributionPareto(scale: scale, shape: shape, quantileAt: seeds[i])
 			samples.append(sample)
 			#expect(sample >= 10.0)
 			#expect(sample.isFinite)
@@ -132,7 +132,7 @@ struct ParetoDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionPareto(scale: scale, shape: shape, seed: seeds[i])
+			let sample: Double = distributionPareto(scale: scale, shape: shape, quantileAt: seeds[i])
 			samples.append(sample)
 		}
 
@@ -162,8 +162,8 @@ struct ParetoDistributionTests {
 		var samplesScale10: [Double] = []
 
 		for i in 0..<sampleCount {
-			samplesScale1.append(distributionPareto(scale: 1.0, shape: shape, seed: seeds[i]))
-			samplesScale10.append(distributionPareto(scale: 10.0, shape: shape, seed: seeds[i]))
+			samplesScale1.append(distributionPareto(scale: 1.0, shape: shape, quantileAt: seeds[i]))
+			samplesScale10.append(distributionPareto(scale: 10.0, shape: shape, quantileAt: seeds[i]))
 		}
 
 		// All scale=1 samples should be >= 1
@@ -192,7 +192,7 @@ struct ParetoDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionPareto(scale: scale, shape: shape, seed: seeds[i])
+			let sample: Double = distributionPareto(scale: scale, shape: shape, quantileAt: seeds[i])
 			samples.append(sample)
 		}
 
@@ -215,7 +215,7 @@ struct ParetoDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionPareto(scale: scale, shape: shape, seed: seeds[i])
+			let sample: Double = distributionPareto(scale: scale, shape: shape, quantileAt: seeds[i])
 			samples.append(sample)
 		}
 
@@ -238,7 +238,7 @@ struct ParetoDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionPareto(scale: scale, shape: shape, seed: seeds[i])
+			let sample: Double = distributionPareto(scale: scale, shape: shape, quantileAt: seeds[i])
 			samples.append(sample)
 		}
 
@@ -265,7 +265,7 @@ struct ParetoDistributionTests {
 		for testCase in testCases {
 			var samples: [Double] = []
 			for i in 0..<sampleCount {
-				samples.append(distributionPareto(scale: testCase.scale, shape: testCase.shape, seed: seeds[i]))
+				samples.append(distributionPareto(scale: testCase.scale, shape: testCase.shape, quantileAt: seeds[i]))
 			}
 
 			let empiricalMean = samples.reduce(0, +) / Double(samples.count)
@@ -289,7 +289,7 @@ struct ParetoDistributionTests {
 
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			let sample: Double = distributionPareto(scale: scale, shape: shape, seed: seeds[i])
+			let sample: Double = distributionPareto(scale: scale, shape: shape, quantileAt: seeds[i])
 			samples.append(sample)
 		}
 
@@ -311,7 +311,7 @@ struct ParetoDistributionTests {
 		// Generate samples and verify consistency
 		var samples: [Double] = []
 		for i in 0..<sampleCount {
-			samples.append(distributionPareto(scale: scale, shape: shape, seed: seeds[i]))
+			samples.append(distributionPareto(scale: scale, shape: shape, quantileAt: seeds[i]))
 		}
 
 		// All values should be >= scale
@@ -326,23 +326,23 @@ struct ParetoDistributionTests {
 	@Test("Pareto distribution invalid parameters return NaN")
 	func paretoInvalidParameters() {
 		// Test negative shape
-		let negativeShapeResult = distributionPareto(scale: 1.0, shape: -1.0, seed: 0.5)
+		let negativeShapeResult = distributionPareto(scale: 1.0, shape: -1.0, quantileAt: 0.5)
 		#expect(negativeShapeResult.isNaN, "Negative shape should return NaN")
 
 		// Test zero shape
-		let zeroShapeResult = distributionPareto(scale: 1.0, shape: 0.0, seed: 0.5)
+		let zeroShapeResult = distributionPareto(scale: 1.0, shape: 0.0, quantileAt: 0.5)
 		#expect(zeroShapeResult.isNaN, "Zero shape should return NaN")
 
 		// Test negative scale
-		let negativeScaleResult = distributionPareto(scale: -1.0, shape: 2.0, seed: 0.5)
+		let negativeScaleResult = distributionPareto(scale: -1.0, shape: 2.0, quantileAt: 0.5)
 		#expect(negativeScaleResult.isNaN, "Negative scale should return NaN")
 
 		// Test zero scale
-		let zeroScaleResult = distributionPareto(scale: 0.0, shape: 2.0, seed: 0.5)
+		let zeroScaleResult = distributionPareto(scale: 0.0, shape: 2.0, quantileAt: 0.5)
 		#expect(zeroScaleResult.isNaN, "Zero scale should return NaN")
 
 		// Test NaN parameters
-		let nanShapeResult = distributionPareto(scale: 1.0, shape: Double.nan, seed: 0.5)
+		let nanShapeResult = distributionPareto(scale: 1.0, shape: Double.nan, quantileAt: 0.5)
 		#expect(nanShapeResult.isNaN, "NaN shape should return NaN")
 	}
 }
