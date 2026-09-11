@@ -1,6 +1,6 @@
 # Plans — what is complete, what is open, what is in progress
 
-**Last reconciled:** 2026-09-10, at `v3.0.0-alpha.3`.
+**Last reconciled:** 2026-09-11, at `70d29b1e` (post `v3.0.0-alpha.3`).
 
 Every "complete" line below was checked against `Sources/` rather than taken from the plan's
 own status line, because several status lines were months stale. Where a claim rests on
@@ -21,20 +21,47 @@ have gone looking for a branch that was already gone.
 
 ### Open, and new since this file was last reconciled
 
-**Distribution test suite review** — `proposals/REVIEW_distribution_tests.md`, September
-2026, covering 40 distribution/statistics test files and the 7 TestSupport files under them.
-It names 11 library defects, a TestSupport consolidation, and a per-file disposition for all
-40. Its own order of work is: library defects, then TestSupport, then the tests that are
-wrong, then rebuilding the statistical generation on the shared helpers. Not started.
+**Distribution test suite review** — `proposals/REVIEW_distribution_tests.md`, September 2026,
+covering 40 distribution/statistics test files and the 7 TestSupport files under them. It names
+11 library defects, a TestSupport consolidation, and a per-file disposition for all 40.
 
-**Test-integrity sweep** — landed in `v3.0.0-alpha.3`: 41 tests that reported passed without
-asserting anything, and 8 of 18 disabled tests. **Ten disabled tests remain**, three of them
-blocked on product defects in `Sources/`:
+**Its §2 library defects: 10 of 11 fixed**, in `a38f1c18`, `0ab3be8f`, `8933e6a5`, `c3134e5c`,
+`e2fc963c` and `70d29b1e`. Two of its findings did not survive contact and the record should say
+so: **#1** (the erfc `normalCDF`) was already fixed at `91ca7f03`, a month before the review —
+only the test-side workaround was real; and **#9**'s conditional (combinatorics computed from
+factorials) is false, since `maxFactorialInt` is 20 and both functions switch to the
+multiplicative form above it.
+
+| Still open | Status |
+|---|---|
+| **#11 Metalog feasibility** | Probed and confirmed: rejects ε = 1e-3 and 1e-6, **accepts ε = 1e-9 and 1e-12**. Any finite grid loses to a small enough ε; needs the analytic tail-slope check. The only research-shaped item left. |
+| **§3.2 helper promotion** | Not started. Everything in phases 4–5 sits on it. |
+| **§5 per-file dispositions / §6 phases 4–5** | Not started. A rewrite of ~20 test files onto the shared helpers — the bulk of the remaining work. |
+| ~~§3.4 TestSupport module split~~ | **Deferred deliberately.** Speculative generality: the stated payoff is serving BioFeedbackKit and YahooFinanceKit, neither of which consumes it, and real sharing needs a published package rather than a target split. Revisit when a second consumer exists. |
+| §4.9 checker changes | **Not ours.** The SwiftExcelFunctions session is doing these in `quality-gate` directly. It has already shipped `unasserted-optional-unwrap` and `skipped-test-inventory`. |
+
+**Test-integrity sweep** — **63 guard sites** that reported passed while asserting nothing, in two
+passes. The first found 41 by grepping `else { return }`; the second found 22 more via the new
+AST-based checker, because they were written across three lines. A grep encodes an assumption
+about formatting; a parser does not.
+
+**Ten disabled tests remain**, three blocked on product defects in `Sources/`:
 
 | Test | Blocked on |
 |---|---|
 | `AdditionalModelTests` ×2 — "Enable after adding validation" | Rate and capacity validation is absent |
-| `MonteCarloGPUIntegrationTests:723` | GPU device returns wrong results on initial runs; production path via `MonteCarloSimulation` is correct |
+| `MonteCarloGPUIntegrationTests:723` | GPU device returns wrong results on initial runs; the production path via `MonteCarloSimulation` is correct |
+
+**Bessel — the next body of work, and blocked.**
+`proposals/excel-coverage/PROPOSAL_bessel_functions.md`, with a negative-`X` measurement at
+`fc49aa1b`. Four functions for `Statistics/SpecialFunctions/`; the proposal argues **3.1.0, not
+3.0.0** (§8). Steps 1 and 3 (`besselJ`, `besselI`) are blocked on two Excel-for-Mac cells that
+settle the negative-`X` sign convention at **odd** order — `=BESSELJ(-1.5,1)` and
+`=BESSELI(-1.5,1)`. Even order cannot discriminate, which is why the first measurement settled
+less than it appeared to. Steps 2 and 4 (`besselY`, `besselK`) are unblocked: both are defined
+only for `x > 0` and never meet the question.
+
+**3.0.0 final** — docs-only, no technical blocker, whenever wanted.
 
 ---
 
