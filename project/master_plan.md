@@ -38,6 +38,18 @@ suite depends on it.
 
 ## Current Status
 
+**The four Bessel functions landed 2026-09-11**, unreleased. `besselJ`, `besselY`, `besselI`
+and `besselK` in `Statistics/SpecialFunctions/`. With them, Excel's engineering block holds no
+mathematics this package lacks. Additive, so `PROPOSAL_bessel_functions.md` §8 places them in
+**3.1.0**, and nothing about them blocks 3.0.0 final.
+
+The design proposal's §5.3 method — ascending series below a crossover, Hankel asymptotic above
+— was **not** used, and the reason is worth keeping: the two carry `ε·e^x` and `e^(−2x)`, which
+move in opposite directions, leaving a band where neither reaches the §6.4 bar of 1e-12. For K
+that band is most of a decade of argument. Temme's series and Steed's continued fraction, which
+converge rather than being asymptotic, close it. Measured at better than 1.8e-13 across 59,928
+argument-order pairs against mpmath.
+
 **3.0.0-alpha.2 shipped 2026-09-09** — the breaking set complete.
 
 **3.0.0-alpha.1 shipped 2026-09-09** — the breaking set, and only the breaking set. Both
@@ -514,12 +526,21 @@ not currently firing.
    stage 6 is written and parked on `feature/stage-6-template-delegation`, breaking by design.
    **The marketing leg is complete.** What is left of it is a merge, not development.
 
-2. **The three items that actually force 3.0.0**, none of them started: `optimizeDetailed`
+2. ~~**The three items that actually force 3.0.0**, none of them started: `optimizeDetailed`
    gaining `throws` so DE and PSO can refuse a seeded CPU fallback; deleting `sampleSize`,
-   deprecated since 2.7.0; and the stage 6 delegation. Everything else in the shadow-3.0.0
-   programme ships additively, which is the point of shipping it that way.
+   deprecated since 2.7.0; and the stage 6 delegation.~~ **All shipped**, in `3.0.0-alpha.1`
+   and `3.0.0-alpha.2`; Current Status above has carried that since 2026-09-09 while this
+   entry still read "none of them started". Everything else in the shadow-3.0.0 programme
+   shipped additively, which was the point of shipping it that way. **What remains is dropping
+   the pre-release suffix, which is docs-only.**
 
-3. **The six absent optimization algorithms** in
+3. **Bessel is done; the Excel engineering block needs nothing further from this package.**
+   `PROPOSAL_bessel_functions.md` steps 1-5 are complete. Step 6, the SwiftExcelFunctions
+   binding, belongs to that session and is mechanical. §2.3's framing still holds — all four
+   measure zero calls across the 79-workbook corpus, so this was completeness work and was
+   sized as such.
+
+4. **The six absent optimization algorithms** in
    `project/plans/proposals/PROPOSAL_advanced_optimization_gap.md` — SQP, Interior Point,
    GRG, Network Flow, Convexity and ADMM. Verified as real gaps 2026-09-08, with one
    correction: Interior Point was written and removed, not never written. Network Flow can
@@ -678,7 +699,9 @@ The earlier table was about *scope*; this one is about *what is being measured*.
 
 ---
 
-**Last Updated:** 2026-09-09 (evening) — reconciled for 3.0.0-alpha.1. Current Status leads
+**Last Updated:** 2026-09-11 — added the Bessel family to Current Status and recorded why its method departs from the proposal's §5.3. Struck Priority 2, which still read "none of them started" for three items Current Status has listed as shipped since 2026-09-09.
+
+**Previously:** 2026-09-09 (evening) — reconciled for 3.0.0-alpha.1. Current Status leads
 with both branches merged and the reason the release is a pre-release rather than a minor:
 `from:` ranges exclude pre-releases, so this reaches only callers who name it. Records that
 deleting `sampleSize` is the one breaking item left and belongs in 3.0.0 final rather than

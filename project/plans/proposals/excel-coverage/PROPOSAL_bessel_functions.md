@@ -1,7 +1,12 @@
 # Design Proposal — the four Bessel functions
 
-**Status:** proposal, 2026-09-10. Phase 0 (Design). **Unblocked 2026-09-11** — §3.1's
-negative-`X` convention is measured and settled; all of §7 can proceed.
+**Status:** **IMPLEMENTED 2026-09-11.** Steps 1-5 of §7 are done and on `main`; step 6, the
+SwiftExcelFunctions binding, belongs to the other session. §5.3's recommended method was
+**superseded** — see the note added there, and §11 below for the measurements. Two entries in
+§10's reference table were wrong and are corrected in place.
+
+Originally: proposal, 2026-09-10. Phase 0 (Design). Unblocked 2026-09-11 — §3.1's
+negative-`X` convention is measured and settled.
 **Scope:** `BESSELJ`, `BESSELY`, `BESSELI`, `BESSELK` — four functions in
 `Sources/BusinessMath/Statistics/SpecialFunctions/`, for BusinessMath.
 **Motivated by:** the Excel engineering block, which after this proposal contains no
@@ -304,6 +309,40 @@ ways, and the choice matters more than it looks:
 | **Rational minimax coefficients** (A&S 9.4, the `bessj0`-family polynomials) | fast, well-tested, everywhere in the literature | tuned for `Double`, ~1e-8 relative, and **silently no better** if `T` is wider. Bakes magic constants into a generic function. |
 | **Ascending series for small `x`, asymptotic (Hankel) expansion for large `x`** | genuinely generic — both converge to whatever `T` can represent, and the crossover can be chosen from `T.ulpOfOne` | more code, and the crossover needs care |
 
+> **Superseded 2026-09-11 — the recommendation below has a hole, and it is measurable.**
+>
+> Both representations have an error floor, and the floors move in *opposite* directions:
+> the ascending series loses digits to cancellation at about `ε·e^x` (its largest term is
+> `e^x/(πx)` while the answer is `O(x^(−1/2))`), and the Hankel asymptotic is divergent with
+> an optimal-truncation error of about `e^(−2x)`. Setting them equal gives the best a single
+> crossover can do:
+>
+> | Family | Best crossover | Best achievable there |
+> |---|---|---|
+> | J | x ≈ 13 | ~1e-11 |
+> | Y | x ≈ 13 | ~1e-11 |
+> | K | — | **no crossover works**: the series cancels against a quantity `e^(2x)` larger than the answer and is spent by x ≈ 4, while the asymptotic is not machine-accurate until x ≈ 20 |
+>
+> §6.4 asks for 1e-12. The sketch below cannot deliver it for Y, and misses by orders of
+> magnitude for K. What shipped instead:
+>
+> | Function | Method |
+> |---|---|
+> | J | ascending series (x ≤ 4), **Miller's downward recurrence** (middle), Hankel asymptotic + upward recurrence (x ≥ ~18, n < x) |
+> | Y | **Temme's series** (x < 2), **Steed's continued fraction** (2 ≤ x < ~18), Hankel asymptotic (x ≥ ~18) |
+> | I | ascending series, at every argument and order — its terms are all positive, so there is no cancellation to escape and no second method is needed |
+> | K | **Temme's series** (x < 2), **Steed's continued fraction** (x ≥ 2) |
+>
+> Temme and Steed *converge*; they are not asymptotic, so there is no band between them.
+> Two things make this affordable and both come from the order being an integer: Temme's
+> μ-dependent factors — `πμ/sin πμ`, `sinh(μd)/μd`, and the Chebyshev fit for `1/Γ(1±μ)` that
+> the method normally drags along — are all exactly 1 at μ = 0, leaving only γ.
+>
+> §5.3's stated *principle* was right and is what the implementation follows: no coefficient
+> table, every threshold derived from `T.ulpOfOne`, so accuracy is not pinned at `Double`'s by
+> constants the function cannot see past. The asymptotic crossover is literally
+> `−log(ulpOfOne)/2`.
+
 **Recommend the second**, because it is what this directory already does.
 `regularizedLowerIncompleteGamma` splits series against continued fraction at `x = a + 1`, caps
 both at 200 iterations, and exits on convergence — the same shape, and its accuracy note claims
@@ -383,11 +422,11 @@ later by someone who does not know why it was tight.
 | Step | Content |
 |---|---|
 | ~~0~~ | ~~**Measure Excel's negative-`X` behaviour at an *odd* order** (§3.1).~~ **Done 2026-09-11: parity, not absolute value.** `BESSELJ(-1.5,1) = -0.557936508` and `BESSELI(-1.5,1) = -0.981666428`, both negative. Steps 1 and 3 are unblocked; all four steps can now proceed. |
-| 1 | `besselJ` — series/asymptotic J₀ and J₁, then the two-direction recurrence of §5.2. The hardest of the four; everything after reuses its structure. |
-| 2 | `besselY` — Y₀ and Y₁ (series-with-log, asymptotic), then upward recurrence. |
-| 3 | `besselI` — mirrors step 1, modified. |
-| 4 | `besselK` — mirrors step 2, modified. |
-| 5 | `BesselFunctionsTests` — the three layers of §6. |
+| ~~1~~ | **DONE 2026-09-11.** `besselJ` — series/asymptotic J₀ and J₁, then the two-direction recurrence of §5.2. The hardest of the four; everything after reuses its structure. |
+| ~~2~~ | **DONE 2026-09-11.** `besselY` — Y₀ and Y₁ (series-with-log, asymptotic), then upward recurrence. |
+| ~~3~~ | **DONE 2026-09-11.** `besselI` — mirrors step 1, modified. |
+| ~~4~~ | **DONE 2026-09-11.** `besselK` — mirrors step 2, modified. |
+| ~~5~~ | **DONE 2026-09-11.** `BesselFunctionsTests` — the three layers of §6. |
 | 6 | Bind the four in SwiftExcelFunctions: order truncation, `n < 0` → `#NUM!`, `x ≤ 0` → `#NUM!` for K and Y, overflow → `#NUM!`. Mechanical once the above exists. |
 
 Steps 1–4 are each one file. Step 5 is one file and is the majority of the value.
@@ -428,9 +467,11 @@ already available.* That sentence is fine to publish.
    future oracle run should use, and it is two `TEXT()` calls.
 3. **Scaled variants** (§5.4). Deliberately deferred. Worth revisiting if anything ever
    needs Iₙ or Kₙ outside the range where the unscaled forms survive.
-4. **Should the order be `Int` everywhere?** (§4). Proposed yes. The alternative — a `T`
-   order with Excel's truncation baked in — makes the spreadsheet convention the library's
-   convention, which is backwards. Worth one look before four signatures are committed to.
+4. ~~**Should the order be `Int` everywhere?** (§4). Proposed yes.~~ **Resolved yes,
+   2026-09-11**, and a second reason turned up while implementing: `T: Real` refines
+   `FloatingPoint`, not `BinaryFloatingPoint`, so a generic function here cannot convert a `T`
+   to an `Int` at all. A `T` order would have had no way to truncate itself even if the
+   convention were wanted.
 
 ---
 
@@ -454,4 +495,97 @@ recurrences:
 |---|---|---|---|---|
 | n=0 | 0.5118276717 | 0.3824489237 | 1.6467231898 | 0.2138055626 |
 | n=1 | 0.5579365079 | −0.4123086269 | 0.9816664286 | 0.2773878004 |
-| n=2 | 0.2320876721 | −0.9321937507 | 0.3378346183 | 0.5836559627 |
+| n=2 | 0.2320876721 | **−0.9321937598** | 0.3378346183 | **0.5836559633** |
+
+**Two of the n=2 entries above were wrong and are corrected in place** (2026-09-11). The row
+originally read `−0.9321937507` for Y and `0.5836559627` for K. Both are confirmed two ways:
+mpmath at 40 digits evaluates them directly, and the three-term recurrence reaches them from
+n=0 and n=1, which shares no code path with a direct evaluation —
+`Y₂ = (2/1.5)·Y₁ − Y₀ = −0.932193759763` and `K₂ = (2/1.5)·K₁ + K₀ = 0.583655963257`.
+
+§1 of this document gives `besselY(x: 1.5, order: 2)` as `-1.1194180169`, which agrees with
+neither. That value is wrong and should be read as `-0.9321937598`. The header note claims the
+table is "cross-checked against each other through the three-term recurrences"; it was not, and
+the recurrence is what exposes it.
+
+---
+
+## 11. Implementation record — 2026-09-11
+
+Kept because §8's third argument was that this is "fiddly mathematics, of the kind where the
+implementation looks finished two days before it is correct — and where the failure mode is a
+plausible number rather than a crash." That was accurate. Every defect below returned a number
+of the right magnitude in the right place.
+
+### 11.1 The oracle is mpmath, not SciPy — and this is the one fixture in the repo that is
+
+§6.1 says reference values must never come from the implementation. It did not anticipate that
+they could not come from SciPy either. Measured against mpmath at 50 digits:
+
+| Point | SciPy's error | Ours |
+|---|---|---|
+| J₂₀₀(3000) | 1.781e-12 | 4.9e-17 |
+| J₅₀(1000) | 3.481e-12 | 2.7e-16 |
+| J₂₀₀(2000) | 3.636e-12 | 2.0e-15 |
+
+A fixture generated from SciPy and asserted at §6.4's 1e-12 would fail a **correct**
+implementation, and the only way to make it pass would be to loosen the tolerance until it
+said nothing. This is exactly §3.3's argument about Excel, arriving from an unexpected
+direction: SciPy is a tuned approximation too, just four orders of magnitude better than
+Excel's `3e-8`. `Scripts/reference-fixtures/generate_bessel.py` records this at the top, and
+`BesselFunctionsTests` carries a regression at J₂₀₀(3000) so the next person to reach for
+`spec.py` finds out here rather than in a tolerance argument.
+
+**This nearly went the other way.** The first SciPy sweep reported J at 1.45e-12 — over the
+bar — and it was about to be chased as our defect. It was the oracle's.
+
+### 11.2 Four defects, each a plausible number
+
+1. **Miller's seed order sized from the wrong estimate.** The natural criterion is
+   `J_{m+1}(x) < ε·|J_n(x)|`, and the natural way to estimate both sides is the bound
+   `(x/2)ⁿ/n!`. That bound is *catastrophically* loose at the turning point: at x = n = 1000 it
+   overstates |Jₙ(x)| by a factor of **e³¹²**, because `Jₙ(n) ≈ 0.4473·n^(−1/3)` while
+   `(n/2)ⁿ/n!` is astronomical. J₁₀₀₀(1000) came back wrong by 1.7e-6. The fix is to estimate
+   |Jₙ(x)| properly — the envelope √(2/πx) below the turning point, Debye's uniform asymptotic
+   above it. The error model was confirmed against mpmath before the fix was chosen, not after.
+
+2. **Yₙ overflowing in order returned NaN.** The recurrence forms `(2n/x)·Yₙ − Yₙ₋₁`; once both
+   are −∞ that is `(−∞) − (−∞)`. A NaN here reads as *invalid input*, which it is not.
+
+3. **Kₙ returned zero where it should not.** K₀(800) and K₁(800) both underflow, and an upward
+   recurrence seeded with two zeroes returns zero forever — but K₁₂₀₀(800) is about 6.7e-6, an
+   ordinary number. The recurrence now runs on `e^(+x)·K` and exponentiates once at the end.
+   §5.4 anticipated the *range ends* but not this: the function leaves the range and comes back.
+
+4. **Two extremes produced NaN.** Halving `x` before taking its logarithm flushes a subnormal
+   argument to zero; forming `πx` overflows before `x` does. Both now avoided —
+   `log(x) − log 2`, and `√(1/π)/√x`.
+
+Defects 2, 3 and 4 were found by **evaluating at the edges of the type**, not by reading the
+algorithms. Defect 1 was found by a dense sweep at the turning point, which is the only place
+it exists.
+
+### 11.3 Validation actually performed
+
+- **59,928 argument-order pairs** against mpmath at 30 digits: 681 arguments from `1e-6` to
+  3000 (including both sides of every method boundary) crossed with 22 orders from 0 to 200,
+  for all four functions plus both parity paths. **Zero exceedances of 1e-12**; worst 1.8e-13.
+- Run **twice**: once against the `Double` prototype, then again against the shipped generic
+  code, which is not the same program. The two differ in 784 of 89,892 values, all by one or
+  two ulp, from the rescale factor being derived from `T`'s exponent range rather than written
+  down. Both pass.
+- **Negative control on all four regression tests.** Each defect above was reintroduced and the
+  test that claims to catch it was confirmed to fail. Two identity tests — the ordinary
+  Wronskian and the sum of squares — caught defect 1 independently without being written for it.
+
+### 11.4 A constraint §4 did not anticipate
+
+`T: Real` refines `FloatingPoint`, not `BinaryFloatingPoint`. A generic function here therefore
+has **no float literal at all**: `T(0.5)` does not compile, and neither does converting a `T` to
+an `Int`. Every constant is derived — γ as a ratio of two integer literals, the rescale factor
+as `2^(maxExponent/2)`.
+
+That last one turned out to matter for accuracy rather than style. A rescale factor that is a
+power of two divides **exactly**, so rescaling a recurrence introduces no rounding; the tuned
+decimal `1e10` this started with spent an ulp on every rescale, and at x = 3000 there are enough
+rescales for that to show.

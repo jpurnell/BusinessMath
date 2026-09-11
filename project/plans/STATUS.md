@@ -1,6 +1,8 @@
 # Plans — what is complete, what is open, what is in progress
 
-**Last reconciled:** 2026-09-11, at `70d29b1e` (post `v3.0.0-alpha.3`).
+**Last reconciled:** 2026-09-11 (later), after the Bessel family landed.
+
+**Previously:** 2026-09-11, at `70d29b1e` (post `v3.0.0-alpha.3`).
 
 Every "complete" line below was checked against `Sources/` rather than taken from the plan's
 own status line, because several status lines were months stale. Where a claim rests on
@@ -52,15 +54,30 @@ about formatting; a parser does not.
 | `AdditionalModelTests` ×2 — "Enable after adding validation" | Rate and capacity validation is absent |
 | `MonteCarloGPUIntegrationTests:723` | GPU device returns wrong results on initial runs; the production path via `MonteCarloSimulation` is correct |
 
-**Bessel — the next body of work, and unblocked.**
-`proposals/excel-coverage/PROPOSAL_bessel_functions.md`. Four functions for
-`Statistics/SpecialFunctions/`; the proposal argues **3.1.0, not 3.0.0** (§8).
+~~**Bessel — the next body of work, and unblocked.**~~ **COMPLETE 2026-09-11.** Steps 1–5 of
+`proposals/excel-coverage/PROPOSAL_bessel_functions.md` §7 are on `main`; step 6, the
+SwiftExcelFunctions binding, belongs to that session. Excel's engineering block now contains no
+mathematics this package lacks. Still **3.1.0, not 3.0.0** (§8) — purely additive, blocks nothing.
 
-§3.1's negative-`X` convention was **settled 2026-09-11: parity, not absolute value.**
-`=BESSELJ(-1.5,1)` returned `-0.557936508` and `=BESSELI(-1.5,1)` returned `-0.981666428`,
-both negative where the absolute-value rule predicts positive — decided by sign, not tolerance.
-For `x < 0`, evaluate at `|x|` and multiply by `(−1)ⁿ`. All of §7 can now proceed; start at
-step 1, `besselJ`.
+§3.1's negative-`X` convention was settled 2026-09-11: parity, not absolute value, decided by
+sign rather than tolerance.
+
+Three things from the implementation that the plan did not anticipate, all recorded in the
+proposal's new §11:
+
+- **§5.3's recommended method has a hole.** Ascending series and Hankel asymptotic carry `ε·e^x`
+  and `e^(−2x)`, which move in opposite directions; the best a single crossover achieves is
+  ~1e-11 for Y, against §6.4's 1e-12, and for K there is no workable crossover at all. Y and K
+  use Temme's series and Steed's continued fraction, which converge. §5.3's *principle* — no
+  coefficient tables, thresholds from `T.ulpOfOne` — is what shipped.
+- **SciPy cannot be the oracle for this family**, and every other fixture here comes from SciPy.
+  Its own error reaches 3.6e-12 at large argument, so a SciPy fixture asserted at 1e-12 fails a
+  correct implementation. The fixture is generated from mpmath — the only one that is.
+- **Two entries in the proposal's own §10 reference table were wrong** (Y₂ and K₂ at x = 1.5),
+  and §1 contradicted §10 on Y₂. Corrected in place; the three-term recurrence is what exposed it.
+
+Validated at better than 1.8e-13 across 59,928 argument-order pairs, with a negative control on
+every regression test.
 
 **3.0.0 final** — docs-only, no technical blocker, whenever wanted.
 

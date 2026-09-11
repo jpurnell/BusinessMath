@@ -11,6 +11,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+### Added
+
+- **The four Bessel functions.** `besselJ(x:order:)`, `besselY(x:order:)`,
+  `besselI(x:order:)` and `besselK(x:order:)` in `Statistics/SpecialFunctions/`, generic over
+  `T: Real` and matching the rest of that directory: integer order, `T.nan` for invalid input,
+  `T.infinity` and `T.zero` for the range ends. With these, Excel's engineering block contains
+  no mathematics BusinessMath does not have — the remaining 26 entries are complex-number
+  notation and a unit table, both of which are spreadsheet concerns.
+
+  Negative arguments follow the parity relation `f(−x) = (−1)ⁿf(x)`, which was measured rather
+  than assumed: `=BESSELJ(-1.5,1)` returns `-0.557936508` and `=BESSELI(-1.5,1)` returns
+  `-0.981666428`, where reading the argument as an absolute value predicts positive in both
+  cases. An even order cannot tell the two rules apart, which is why the first measurement —
+  taken at order 2 — could not settle it.
+
+  **The method is not the one the design proposal recommended, and the reason is measurable.**
+  §5.3 proposed an ascending series below a crossover and a Hankel asymptotic above it. Those
+  two carry about `ε·e^x` and `e^(−2x)` respectively, which move in opposite directions, so
+  there is a band where neither is accurate: about `1e-11` at best for Y near x ≈ 13, and far
+  worse for K, whose series cancels against a quantity `e^(2x)` larger than the answer and is
+  spent by x ≈ 4 while its asymptotic is not machine-accurate until x ≈ 20. Y and K therefore
+  use Temme's series and Steed's continued fraction, both of which *converge*; J uses Miller's
+  downward recurrence through the middle; I needs one method at all arguments, because its
+  series has no cancellation to escape. Integer order collapses Temme's Chebyshev fit for
+  1/Γ(1±μ) to two constants, which is what makes this affordable.
+
+  Accuracy is better than `1.8e-13` relative across 59,928 argument–order pairs spanning
+  `1e-6` to 3000 and orders 0 to 200, measured against mpmath at 30 digits.
+
+  The reference fixture is generated from **mpmath, not SciPy** — the only fixture in this
+  repository that is. SciPy's own error on this family reaches `3.6e-12` at large argument
+  (`jv(200, 3000)` is out by `1.8e-12`; ours is out by `4.9e-17`), so a SciPy fixture asserted
+  at `1e-12` would fail a correct implementation. This is the trap the design proposal §3.3
+  identifies for Excel, whose `BESSELJ` is out by about `3e-8`; SciPy falls into the same one
+  four orders of magnitude later.
+
 ### Fixed
 
 - **The library owns its unit-interval mapping.** Every place BusinessMath turned generator
