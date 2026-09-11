@@ -80,6 +80,41 @@ twice a day.
 **Note for whoever runs this next:** `swift.yml` does not run the suite in release, so this
 class of defect is invisible to per-push CI. `Release Tests` is scheduled, not on-push.
 
+### And the same workflow's Thread Sanitizer job turned up a second, larger thing
+
+TSan went red immediately after the above. **It was not the Bessel work and not the
+precondition — it was the stderr assertion, which found something true of the whole package.**
+
+`#expect(processExitsWith:)` re-launches the test executable as a child. Under a sanitizer that
+child does not inherit the `DYLD_INSERT_LIBRARIES` entry that installs the interceptors, so it
+aborts in sanitizer start-up — *"Interceptors are not working … ThreadSanitizer is loaded too
+late"* — **before reaching the closure**. The abort is a non-zero exit, so
+`processExitsWith: .failure` was satisfied **by the sanitizer killing the child**.
+
+All three exit tests in the package were green under TSan having executed none of the code they
+name: `factorialBeyondIntTraps` and both `PeriodTests` exit tests. The `PeriodTests` pair is the
+sharper case — they were re-enabled a session earlier *because* they had been standing in with
+`withKnownIssue` + `#expect(true)`, "an assertion that holds whatever the code does". Under TSan
+they still did.
+
+`.requiresUnsanitizedRuntime` (in `Tests/TestSupport/ConditionTraits.swift`) now skips them
+there, on the same principle as `.requiresMetalGPU`. Verified: runs in debug, **skips with a
+reason** under `--sanitize thread`.
+
+**Reading CI logs: `gh run view --job --log` truncates at ~9.5 MB and these jobs use `-v`.**
+Every compiler invocation is a ~6 KB line, so the log ends about 100 seconds in, mid-build, on
+**passing runs too**. That truncation cost this investigation two wrong conclusions — first that
+the build had hung, then that the absence of an error message was meaningful. The fix is to pull
+the archive instead, which contains the complete per-step logs:
+
+```
+gh api repos/<owner>/<repo>/actions/runs/<id>/logs > run.zip && unzip run.zip
+```
+
+The real message — all 7,700 tests ran, one issue, with the ThreadSanitizer diagnostic quoted in
+full — was 25 MB into that step's log, well past where the truncated view stopped. **Compare
+against a passing run's log before reading anything into the shape of a failing one.**
+
 ---
 
 ## What shipped this session

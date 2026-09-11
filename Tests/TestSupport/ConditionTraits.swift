@@ -118,6 +118,51 @@ extension Trait where Self == ConditionTrait {
 			"No Metal device that compiles MSL on this machine: the GPU path cannot be exercised here"
 		)
 	}
+
+	/// Runs the test only where an exit test can actually execute its closure.
+	///
+	/// `#expect(processExitsWith:)` re-launches the test executable as a child process. Under
+	/// a sanitizer that child does **not** inherit the `DYLD_INSERT_LIBRARIES` entry that
+	/// installs the runtime's interceptors, so it aborts during sanitizer start-up with
+	/// *"Interceptors are not working. This may be because ThreadSanitizer is loaded too late"*
+	/// — before reaching the closure body at all.
+	///
+	/// The reason this needs a trait rather than a tolerance is that the abort is still a
+	/// non-zero exit, so `processExitsWith: .failure` is **satisfied by the sanitizer killing
+	/// the child**. Every exit test in this package passed under `--sanitize thread` for that
+	/// reason, having executed none of the code it names. That was only visible once
+	/// ``CombinatoricsContractTests/factorialBeyondIntTraps()`` began reading the child's
+	/// standard error and found a ThreadSanitizer diagnostic where a precondition message
+	/// should have been.
+	///
+	/// Skipping is the honest outcome and passing is not, for the same reason
+	/// ``Trait/requiresMetalGPU`` exists: a test that reports green without running is worse
+	/// than no test, because it also discourages anyone from writing the real one.
+	public static var requiresUnsanitizedRuntime: Self {
+		.enabled(
+			if: !SanitizerPresence.isThreadSanitizerLoaded,
+			"Exit tests cannot run under ThreadSanitizer: the re-launched child aborts in sanitizer start-up before the closure runs"
+		)
+	}
+}
+
+/// Whether a sanitizer runtime is linked into this test binary.
+///
+/// Separated from the trait and cached in a `static let` so the probe runs once per process,
+/// matching ``MetalAvailability``.
+public enum SanitizerPresence {
+
+	/// `true` when the ThreadSanitizer runtime is present.
+	///
+	/// Detected by looking for `__tsan_init` in the running image rather than by a compilation
+	/// condition, because SwiftPM's `--sanitize thread` passes `-sanitize=thread` to the
+	/// compiler and defines no Swift flag a test could read. Verified both ways: the symbol is
+	/// absent from an ordinary build and present under `-sanitize=thread`.
+	public static let isThreadSanitizerLoaded: Bool = {
+		guard let handle = dlopen(nil, RTLD_NOW) else { return false }
+		defer { dlclose(handle) }
+		return dlsym(handle, "__tsan_init") != nil
+	}()
 }
 
 /// Whether this machine can compile and run Metal kernels.

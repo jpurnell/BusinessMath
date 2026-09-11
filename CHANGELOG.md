@@ -57,6 +57,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Every exit test in the package was passing under ThreadSanitizer without running.**
+  `#expect(processExitsWith:)` re-launches the test executable as a child process. Under a
+  sanitizer that child does not inherit the `DYLD_INSERT_LIBRARIES` entry installing the
+  runtime's interceptors, so it aborts during sanitizer start-up — *"Interceptors are not
+  working. This may be because ThreadSanitizer is loaded too late"* — **before reaching the
+  closure body**. That abort is a non-zero exit, so `processExitsWith: .failure` was satisfied
+  by the sanitizer killing the child.
+
+  Three tests were affected: `factorialBeyondIntTraps`, and the two `PeriodTests` exit tests
+  re-enabled shortly before. The `PeriodTests` pair is the sharper case — they were re-enabled
+  precisely because they had been standing in with `withKnownIssue` plus `#expect(true)`, "an
+  assertion that holds whatever the code does". Under TSan they still held whatever the code
+  did, by a different mechanism.
+
+  A new `.requiresUnsanitizedRuntime` condition trait skips them there instead, on the same
+  principle as `.requiresMetalGPU`: a test that cannot run should report *skipped*, never
+  green. The probe looks for `__tsan_init` in the running image, because SwiftPM's
+  `--sanitize thread` passes `-sanitize=thread` to the compiler and defines no Swift flag a
+  test could read; verified absent in an ordinary build and present under the sanitizer.
+
+  Found by accident. The stderr assertion added alongside the `factorial` precondition below
+  was the first thing in this package to read what an exit-test child actually says, and it
+  came back holding a ThreadSanitizer diagnostic where a precondition message should have been.
+
 - **`factorial` states its ceiling as a precondition instead of relying on `Int` overflow.**
   Asking for `factorial(21)` has always been a programmer error, and the intent was always that
   it trap rather than return 21! reduced modulo 2⁶⁴ — a plausible-looking `Int` that is the

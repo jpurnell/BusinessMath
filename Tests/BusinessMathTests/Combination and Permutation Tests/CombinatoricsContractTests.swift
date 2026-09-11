@@ -134,13 +134,23 @@ struct CombinatoricsContractTests {
 	/// test passes there, and it goes red only in the release workflow — which runs on a
 	/// schedule, so the signal arrives hours late and attached to whatever landed since.
 	///
+	/// **And reading stderr found a second thing, which is why the trait is here.** Under
+	/// `--sanitize thread` the child aborts in sanitizer start-up — *"Interceptors are not
+	/// working … ThreadSanitizer is loaded too late"* — because a re-launched child does not
+	/// inherit the `DYLD_INSERT_LIBRARIES` that installs the interceptors. That abort is a
+	/// non-zero exit, so `processExitsWith: .failure` was satisfied **by the sanitizer killing
+	/// the child**, and this test passed under TSan for months having run none of the code it
+	/// names. The stderr assertion is what surfaced it; ``Trait/requiresUnsanitizedRuntime``
+	/// now skips rather than passes there.
+	///
 	/// It is gated to debug because the message does not exist anywhere else.
 	/// `precondition(_:_:)` takes its message as `@autoclosure () -> String`; in `-Onone` that
 	/// reaches `_assertionFailure`, which prints it, and in `-O` the whole call becomes
 	/// `Builtin.condfail_message(error, "precondition failure")` — a fixed `StaticString` — so
 	/// the caller's message is never evaluated. Measured: stderr is empty in a release run. The
 	/// exit status is the assertion that carries release, and it is the one that regressed.
-	@Test("factorial(21) traps rather than returning a wrapped value")
+	@Test("factorial(21) traps rather than returning a wrapped value",
+		  .requiresUnsanitizedRuntime)
 	func factorialBeyondIntTraps() async {
 		let result = await #expect(processExitsWith: .failure,
 								   observing: [\.standardErrorContent]) {

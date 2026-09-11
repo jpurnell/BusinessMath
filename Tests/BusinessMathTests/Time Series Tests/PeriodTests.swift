@@ -7,6 +7,7 @@
 
 import Testing
 import Foundation
+import TestSupport
 @testable import BusinessMath
 
 @Suite("Period Tests")
@@ -143,7 +144,8 @@ struct PeriodTests {
 
 	// An exit test spawns a child process, which iOS, tvOS and watchOS do not permit.
 	#if os(macOS) || os(Linux)
-	@Test("A month outside 1...12 traps rather than returning a Period")
+	@Test("A month outside 1...12 traps rather than returning a Period",
+		  .requiresUnsanitizedRuntime)
 	func monthlyPeriodInvalidMonth() async {
 		// `Period.month` validates with `precondition`, which is the right call for a
 		// programmer error: an out-of-range month is a bug at the call site, not a
@@ -155,6 +157,13 @@ struct PeriodTests {
 		// framework gained exit tests. What stood in for it was two `withKnownIssue` blocks
 		// around calls that never ran, closed by `#expect(true)`: an assertion that holds
 		// whatever the code does.
+		//
+		// `.requiresUnsanitizedRuntime` guards the same failure arriving a second way. Under
+		// `--sanitize thread` the re-launched child aborts in sanitizer start-up before the
+		// closure runs, and that abort is a non-zero exit -- so `.failure` was satisfied by
+		// the sanitizer killing the child, and this test passed there having run nothing.
+		// The stand-in was replaced; the property of holding whatever the code does was not,
+		// until the trait.
 		await #expect(processExitsWith: .failure) {
 			_ = Period.month(year: 2025, month: 0)
 		}
@@ -182,7 +191,8 @@ struct PeriodTests {
 
 	// An exit test spawns a child process, which iOS, tvOS and watchOS do not permit.
 	#if os(macOS) || os(Linux)
-	@Test("A quarter outside 1...4 traps rather than returning a Period")
+	@Test("A quarter outside 1...4 traps rather than returning a Period",
+		  .requiresUnsanitizedRuntime)
 	func quarterlyPeriodInvalidQuarter() async {
 		// The month case above carries the reasoning; this is the same contract on the
 		// other factory, and it is tested separately because a shared guard is exactly
