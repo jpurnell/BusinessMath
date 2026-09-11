@@ -191,7 +191,7 @@ private func besselLogMagnitudeJ<T: Real>(x: T, order n: Int) -> T {
 }
 
 /// The lowest even order at which seeding the downward recurrence contaminates the
-/// answer by less than one ulp.
+/// answer by less than one ulp, or `nil` if no such order was found.
 ///
 /// Seeding f₍ₘ₊₁₎ = 0 means the computed solution is αJ + βY with β/α = −J₍ₘ₊₁₎/Y₍ₘ₊₁₎,
 /// so the relative error carried down to order `n` goes as J₍ₘ₊₁₎ measured against
@@ -199,18 +199,33 @@ private func besselLogMagnitudeJ<T: Real>(x: T, order n: Int) -> T {
 /// turning point the estimate is flat and the test cannot pass, so `m` necessarily
 /// finishes above `x` without ever converting `x` to an `Int` — which `T: Real`
 /// could not do anyway.
-private func besselMillerStartingOrder<T: Real>(x: T, order n: Int) -> Int {
+///
+/// **The ceiling is relative to `n`, and must be.** It was briefly the shared
+/// `besselIterationLimit` of 1,000,000, which is a runaway-loop backstop rather than
+/// a bound on this quantity — and at order 1,000,000 the search begins *past* it, so
+/// the loop never ran and the seed came back as the turning point itself with no
+/// margin. J₁₀₀₀₀₀₀(1000000) was 0.00035973 against a true 0.0044731: the right order
+/// of magnitude, in the right place, and wrong by a factor of twelve. Measured need
+/// is under 1.6n; twice that, with a floor for small orders, is generous.
+///
+/// Returning `nil` rather than the ceiling is the other half of the repair. There is
+/// no seed order that is "close enough" — a short one produces a plausible number,
+/// not a visibly degraded one — so a search that does not converge must say so.
+private func besselMillerStartingOrder<T: Real>(x: T, order n: Int) -> Int? {
+	guard n < Int.max - 2 else { return nil }
 	let logEpsilon: T = T.log(T.ulpOfOne)
 	let logAnswer: T = besselLogMagnitudeJ(x: x, order: n)
 	let target: T = logEpsilon + logAnswer
 
+	let headroom: Int = Swift.max(n, 1000)
+	let ceiling: Int = n > Int.max - headroom ? Int.max : n + headroom
 	var m: Int = n + 2
-	while m < besselIterationLimit {
+	while m < ceiling {
 		let logSeed: T = besselLogMagnitudeJ(x: x, order: m + 1)
-		if logSeed < target { break }
+		if logSeed < target { return m + (m % 2) }
 		m += 1
 	}
-	return m + (m % 2)
+	return nil
 }
 
 /// Miller's downward recurrence, normalised by J₀(x) + 2·Σ J₂ₖ(x) = 1.
@@ -220,7 +235,7 @@ private func besselMillerStartingOrder<T: Real>(x: T, order n: Int) -> Int {
 /// power of two whenever they grow large, which is exact and so leaves the ratio
 /// this function actually returns untouched.
 private func besselJMiller<T: Real>(x: T, order n: Int) -> T {
-	let m: Int = besselMillerStartingOrder(x: x, order: n)
+	guard let m: Int = besselMillerStartingOrder(x: x, order: n) else { return T.nan }
 	let two: T = T(2)
 	let twoOverX: T = two / x
 	let big: T = besselRescaleFactor()

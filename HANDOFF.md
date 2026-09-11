@@ -1,6 +1,6 @@
 # Handoff — 2026-09-11 (later)
 
-**The four Bessel functions are implemented, tested and gate-clean.** Steps 1–5 of the design
+**The four Bessel functions are implemented, tested and gate-clean.** CI is green on `e45eeb1c` — all four jobs, including the Linux release compile check that catches Swift 6.2.x generic type-check timeouts. Steps 1–5 of the design
 proposal are done; step 6 is the SwiftExcelFunctions binding and belongs to the other session.
 With this, **Excel's engineering block contains no mathematics BusinessMath does not have.**
 
@@ -15,13 +15,39 @@ mechanics.
 | branch | `main` |
 | latest stable | `v2.18.0` — what `from:` consumers resolve to |
 | latest pre-release | `v3.0.0-alpha.3` |
-| tests | **7,699 in 689 suites**, exit 0 (was 7,679 in 688) |
+| tests | **7,700 in 689 suites**, exit 0 (was 7,679 in 688) |
 | gate | `quality-gate --no-cache --check all --continue-on-failure` → 45/45, **0 errors**, 10 warnings, exit 0 |
 | the 10 warnings | pre-existing `non-strict-improvement` notices in other suites (`DEACertificateTests`, risk, forecasting). **Not** the skipped-test inventory, as the previous handoff said — same count, different checker. Unchanged by this work |
 | working tree | clean except `project/plans/proposals/excel_function_coverage_matrix_bak.tsv` — **your backup, deliberately untracked, leave it alone** |
 
 Always `--check all`. Plain `--no-cache` runs 40 of 45 and prints an identical PASSED line.
 A real run reports **1,258 files**; a run from inside `.claude/worktrees/` reports 0 and passes.
+
+---
+
+## Inherited red: `Release Tests` was already failing before this work
+
+**Not caused by this session, and not fixed by it** — flagged because `main` is red on a
+scheduled workflow and the previous handoff said "clean and pushed" without mentioning it.
+
+| | |
+|---|---|
+| workflow | `Release Tests` (scheduled ~twice daily, **not** per-push — so a push looks green while this stays red) |
+| last green | `b0dcaf1b` (2026-09-10 20:29) |
+| first red | `70d29b1e` (2026-09-11 10:43) — the previous session's last code commit |
+| failing test | `factorialBeyondIntTraps` — *"factorial(21) traps rather than returning a wrapped value"* |
+| the failure | `.failure: Testing.ExitStatus → .exitCode(0)` — the child process **exited cleanly** where the test demands a trap |
+| platforms | both `ubuntu-24.04` and `macos-26`, so it is configuration, not platform |
+
+Introduced by `c3134e5c`, which pinned the combinatorics edges and added an exit test asserting
+that `factorial(21)` traps on `Int` overflow. It does trap in debug — the full suite is green
+locally, 7,699/7,699 — and does not in the release configuration this workflow builds.
+
+**Left alone deliberately, because the fix depends on an intent only you can supply.** Either
+the release flags remove the overflow check (`-Ounchecked`) and the test should carry a
+debug-only trait, or they are not meant to and the workflow's flags are what is wrong. Those are
+different repairs and picking the wrong one hides a real hole in the arithmetic. Nothing in the
+Bessel work touches combinatorics.
 
 ---
 
@@ -82,6 +108,33 @@ J₂₀₀(3000) so the next person to reach for `spec.py` finds out here.
 
 ---
 
+## A fifth defect, found after the first commit
+
+`e45eeb1c` shipped with Miller's seed-order search bounded by `besselIterationLimit` — a shared
+runaway-loop backstop of 1,000,000, not a bound on this quantity. At order 1,000,000 the search
+*begins* past that ceiling, so the loop never ran and the seed came back as the turning point
+itself: **J₁₀₀₀₀₀₀(1000000) = 0.00035973 against a true 0.00447307**, wrong by a factor of twelve
+at exactly the right magnitude. Fixed in the follow-up commit; the ceiling is now relative to
+`n`, and a non-converging search returns `nil`, which surfaces as `T.nan` rather than a
+plausible number.
+
+**Behaviour below order ~950,000 is byte-identical** — the ceiling was never reached there — so
+the 59,928-point sweep, which stopped at order 200, is unaffected and was not re-run.
+
+Worth keeping for how it was found, because none of the existing checks would have: not by a
+tolerance at scattered points, but by plotting Jₙ(n)·n^(1/3) against its Airy limit of
+0.4473085 and watching a ratio that held at 0.9999974 for every order to 300,000 collapse to
+0.080 at 1,000,000. **Asking whether a family follows the curve it should is a different
+question from asking whether a value is right, and it is the one that caught this.**
+
+The regression test asserts identities rather than a stored value. Note which ones have teeth:
+the three-term recurrence looks obvious and is nearly worthless here, because Miller's output is
+*a* solution of that recurrence and a truncated seed can satisfy it. The Wronskian against Y is
+sound — Y at that argument comes from the Hankel asymptotic and an upward recurrence and shares
+no code with Miller.
+
+---
+
 ## Validation actually performed
 
 - **59,928 argument-order pairs** against mpmath at 30 digits — 681 arguments from 1e-6 to 3000,
@@ -117,16 +170,20 @@ recurrences"; it was not — the recurrence is what exposes it, giving
 
 ## Next, in order
 
-1. **Defect #11, the Metalog feasibility check.** The last open library defect. Probed and
+1. **Decide what `factorialBeyondIntTraps` should do in release** — see the section above.
+   It is the only thing keeping `main` red, and it is a one-line repair once the intent is
+   settled.
+
+2. **Defect #11, the Metalog feasibility check.** The last open library defect. Probed and
    confirmed: it rejects ε = 1e-3 and 1e-6 but **accepts ε = 1e-9 and 1e-12**. Any finite grid
    loses to a small enough ε; it needs the analytic tail-slope check the review describes.
-2. **The test audit continues.** The review's §5 has a per-file disposition for all 40
+3. **The test audit continues.** The review's §5 has a per-file disposition for all 40
    distribution test files; §6 phases 4–5 rewrite about 20 of them onto shared helpers, and that
    is the bulk of the remaining work. §3.2's helper promotion comes first because the rest sits
    on it.
-3. **3.0.0 final** whenever you want it — docs-only, no technical blocker. Bessel does **not**
+4. **3.0.0 final** whenever you want it — docs-only, no technical blocker. Bessel does **not**
    block it: the proposal's §8 places it in 3.1.0, and it is purely additive.
-4. **§3.4's TestSupport module split stays deferred** — speculative generality, no second
+5. **§3.4's TestSupport module split stays deferred** — speculative generality, no second
    consumer.
 
 `master_plan.md` Priority 2 still read *"none of them started"* for three items Current Status
@@ -148,6 +205,11 @@ gets away with `T(0.375)` only because it adds `where T: BinaryFloatingPoint`. E
 **A rescale factor should be a power of two.** Dividing by `2^k` is exact, so rescaling a
 recurrence costs nothing; the `1e10` this started with spent an ulp per rescale, and at x = 3000
 there are enough rescales for that to show.
+
+**A runaway-loop backstop is not a correctness bound.** `besselIterationLimit` is 1,000,000 and
+was used to cap a search whose answer *starts* near `n`. Any cap that a legitimate input can
+reach has to be relative to the input, and a search that does not converge must report that
+rather than return its ceiling.
 
 **Evaluate at the ends of the type, not just at plausible arguments.** Three of the four defects
 were at `leastNonzeroMagnitude` or `greatestFiniteMagnitude`, where halving flushes to zero and

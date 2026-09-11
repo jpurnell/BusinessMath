@@ -79,6 +79,13 @@ proposal's new §11:
 Validated at better than 1.8e-13 across 59,928 argument-order pairs, with a negative control on
 every regression test.
 
+**A fifth defect surfaced after the first commit and is fixed in the follow-up.** Miller's
+seed-order search was bounded by the shared `besselIterationLimit` of 1,000,000 rather than by
+anything relative to the order, so at order 1,000,000 the search began past its own ceiling:
+J₁₀₀₀₀₀₀(1000000) came back 0.00035973 against a true 0.00447307. Behaviour below order ~950,000
+is unchanged. Found by plotting Jₙ(n)·n^(1/3) against its Airy limit rather than by checking
+values — the sweep stopped at order 200 and would never have reached it.
+
 **3.0.0 final** — docs-only, no technical blocker, whenever wanted.
 
 ---

@@ -561,9 +561,29 @@ bar — and it was about to be chased as our defect. It was the oracle's.
    argument to zero; forming `πx` overflows before `x` does. Both now avoided —
    `log(x) − log 2`, and `√(1/π)/√x`.
 
+5. **A runaway-loop backstop had become a correctness bound.** `besselMillerStartingOrder`
+   searched with `while m < besselIterationLimit`, and that shared constant is 1,000,000. At
+   order 1,000,000 the search *begins* past the ceiling, so the loop never ran and the seed
+   order was returned as the turning point itself. J₁₀₀₀₀₀₀(1000000) came back `0.00035973`
+   against a true `0.00447307` — wrong by a factor of twelve, at the right magnitude. Found
+   after the first commit, by plotting Jₙ(n)·n^(1/3) against its Airy limit of 0.4473085: the
+   ratio held at 0.9999974 for every order up to 300,000 and collapsed to 0.080 at 1,000,000.
+   The ceiling is now relative to `n`, and a search that does not converge returns `nil` rather
+   than the ceiling — there is no seed order that is "close enough", so it must say so.
+
 Defects 2, 3 and 4 were found by **evaluating at the edges of the type**, not by reading the
 algorithms. Defect 1 was found by a dense sweep at the turning point, which is the only place
-it exists.
+it exists. Defect 5 was found by asking a different question — not "is this value right?" but
+"does this family follow the curve it should?" — which is the only one of the five that a
+tolerance check at scattered points would never have raised, because the 59,928-point sweep
+stopped at order 200 and the defect begins near order 950,000.
+
+**A note on which oracles have teeth here.** The three-term recurrence looks like the obvious
+check and was nearly used: Miller's output is *a* solution of that recurrence, so a truncated
+seed might have satisfied it identically. It does not, because each order gets its own
+truncated seed — but that was luck, not design. The Wronskian against Y is the sound check,
+since Y at that argument comes from the Hankel asymptotic and an upward recurrence and shares
+no code with Miller.
 
 ### 11.3 Validation actually performed
 

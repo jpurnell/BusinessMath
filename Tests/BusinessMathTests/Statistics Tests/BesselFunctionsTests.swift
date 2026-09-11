@@ -509,6 +509,52 @@ struct BesselFunctionsTests {
 		#expect(abs(k1200 - 6.683863362209216e-06) <= 6.7e-18, "K1200(800) = \(k1200)")
 	}
 
+	/// Miller's seed-order search must be bounded **relative to the order**.
+	///
+	/// It was briefly bounded by `besselIterationLimit`, the shared runaway-loop
+	/// backstop of 1,000,000. At order 1,000,000 the search begins *past* that
+	/// ceiling, so the loop never ran and the seed order came back as the turning
+	/// point itself, with no margin: J₁₀₀₀₀₀₀(1000000) was `0.00035973` where
+	/// `0.00447307` is right. The correct order of magnitude, in the correct place,
+	/// and wrong by a factor of twelve — a backstop had quietly become a correctness
+	/// bound.
+	///
+	/// Asserted through identities rather than against a stored value, per §6.1. The
+	/// Wronskian reaches Yₙ, which at this argument comes from the Hankel asymptotic
+	/// and an upward recurrence and so shares no code with Miller at all. Both
+	/// assertions were confirmed to fail against the defect: the Wronskian came back
+	/// off by 2.3 relative *with the wrong sign*, and the ratio below came back 0.080.
+	@Test("Miller's seed order is bounded by the order, not by a shared constant")
+	func millerSeedOrderScalesWithOrder() {
+		let n = 1_000_000
+		let x = 1_000_000.0
+		let jn: Double = besselJ(x: x, order: n)
+		let jNext: Double = besselJ(x: x, order: n + 1)
+		let yn: Double = besselY(x: x, order: n)
+		let yNext: Double = besselY(x: x, order: n + 1)
+
+		let first: Double = jn * yNext
+		let second: Double = jNext * yn
+		let wronskian: Double = first - second
+		let piX: Double = Double.pi * x
+		let expected: Double = -2.0 / piX
+		let error: Double = abs(wronskian - expected)
+		// Looser than the 1e-13 the other identity tests use: this one walks a
+		// million recurrence steps on each of the four values it combines.
+		let bound: Double = abs(expected) * 1e-11
+		#expect(error <= bound,
+				"Wronskian at n = x = 1e6 is \(wronskian), expected \(expected)")
+
+		// Jₙ(n) approaches 0.4473085…·n^(−1/3) at the turning point, from below. The
+		// ratio measured 0.9999973583 here and 0.9999973578 at n = 300,000, so 1e-5
+		// is loose against the approach and decisive against the defect.
+		let cubeRoot: Double = Foundation.cbrt(x)
+		let turningPointValue: Double = 0.4473085 / cubeRoot
+		let ratio: Double = jn / turningPointValue
+		#expect(abs(ratio - 1.0) <= 1e-5,
+				"J(1e6, order 1e6) is \(jn); ratio to the turning-point value is \(ratio)")
+	}
+
 	/// Large argument, where SciPy is the one that is wrong.
 	///
 	/// `scipy.special.jv(200, 3000)` is out by 1.8e-12 relative; the value asserted

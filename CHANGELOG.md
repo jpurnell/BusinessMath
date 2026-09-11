@@ -40,6 +40,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Accuracy is better than `1.8e-13` relative across 59,928 argument–order pairs spanning
   `1e-6` to 3000 and orders 0 to 200, measured against mpmath at 30 digits.
 
+  **Orders near 1,000,000 needed a follow-up fix.** Miller's seed-order search was bounded by
+  a shared runaway-loop backstop of 1,000,000 rather than by anything relative to the order, so
+  at that order the search began past its own ceiling and the seed came back as the turning
+  point itself. J₁₀₀₀₀₀₀(1000000) was `0.00035973` against a true `0.00447307`. The bound is now
+  relative to `n`, and a search that does not converge returns `nil` — which becomes `T.nan`
+  rather than a plausible number. Behaviour below order ~950,000 is unchanged, the ceiling
+  having never been reached there.
+
   The reference fixture is generated from **mpmath, not SciPy** — the only fixture in this
   repository that is. SciPy's own error on this family reaches `3.6e-12` at large argument
   (`jv(200, 3000)` is out by `1.8e-12`; ours is out by `4.9e-17`), so a SciPy fixture asserted
