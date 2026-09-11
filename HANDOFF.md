@@ -25,29 +25,60 @@ A real run reports **1,258 files**; a run from inside `.claude/worktrees/` repor
 
 ---
 
-## Inherited red: `Release Tests` was already failing before this work
+## `Release Tests` is green again — root cause found and fixed
 
-**Not caused by this session, and not fixed by it** — flagged because `main` is red on a
-scheduled workflow and the previous handoff said "clean and pushed" without mentioning it.
+**Was red on both `ubuntu-24.04` and `macos-26` since `70d29b1e`** (2026-09-11 10:43), on
+`factorialBeyondIntTraps`, reporting `.failure: Testing.ExitStatus → .exitCode(0)`.
 
-| | |
-|---|---|
-| workflow | `Release Tests` (scheduled ~twice daily, **not** per-push — so a push looks green while this stays red) |
-| last green | `b0dcaf1b` (2026-09-10 20:29) |
-| first red | `70d29b1e` (2026-09-11 10:43) — the previous session's last code commit |
-| failing test | `factorialBeyondIntTraps` — *"factorial(21) traps rather than returning a wrapped value"* |
-| the failure | `.failure: Testing.ExitStatus → .exitCode(0)` — the child process **exited cleanly** where the test demands a trap |
-| platforms | both `ubuntu-24.04` and `macos-26`, so it is configuration, not platform |
+**It was never about the workflow flags.** `release-tests.yml` runs a plain `swift test -c
+release` — no `-Ounchecked`. The cause was that `factorial`'s trap was *incidental*:
 
-Introduced by `c3134e5c`, which pinned the combinatorics edges and added an exit test asserting
-that `factorial(21)` traps on `Int` overflow. It does trap in debug — the full suite is green
-locally, 7,699/7,699 — and does not in the release configuration this workflow builds.
+```swift
+public func factorial(_ n: Int) -> Int { ... (2...n).reduce(1, *) }
+```
 
-**Left alone deliberately, because the fix depends on an intent only you can supply.** Either
-the release flags remove the overflow check (`-Ounchecked`) and the test should carry a
-debug-only trait, or they are not meant to and the workflow's flags are what is wrong. Those are
-different repairs and picking the wrong one hides a real hole in the arithmetic. Nothing in the
-Bessel work touches combinatorics.
+An overflow check guards an arithmetic **result**. Once `factorial` is inlined and the caller
+discards that result, the optimiser may delete the multiply and its check together. Measured:
+
+| | result discarded | result used |
+|---|---|---|
+| optimiser cannot inline (`-Onone`, separate module, no `-wmo`) | traps | traps |
+| inlined (same file, or `-O -wmo`) | **exits 0** | traps |
+
+`_ = factorial(21)` is the discarded case, and SwiftPM's release build inlines. Debug does not,
+which is why the suite was green locally and red in one scheduled workflow.
+
+**The contract was never written down.** Two places in the repo stated it and disagreed, and
+neither was right:
+
+- the API doc: *"For n > 20, this function will overflow … and **return incorrect results**"* —
+  C semantics, not Swift's. It never returned anything for `n > 20`.
+- the test: *"factorial(21) **traps** rather than returning a wrapped value"* — true only when
+  the result is consumed.
+
+**Fix:** `factorial` states the bound as a `precondition`. That is an effect in its own right,
+survives inlining with a discarded result, traps at the boundary rather than part-way through
+the reduction, and names `factorialChecked(_:)` / `factorialDouble(_:)` in the message. Both
+docs corrected. `n ≤ 20` is unchanged, as is `factorial(-5) == 0`; every in-package caller
+(`combination`, `permutation`, `factorialChecked`, `Int.factorial()`) guards on
+`maxFactorialInt` or forwards, so none reaches it.
+
+**Verified all four ways, locally, in the real package:**
+
+| | debug | release |
+|---|---|---|
+| without precondition | passes¹ | **`.exitCode(EXIT_SUCCESS)`** — the CI failure, reproduced |
+| with precondition | passes | passes |
+
+¹ …and *now* fails, because the test also asserts the trap message. That assertion is gated
+`#if DEBUG`: `precondition(_:_:)` takes its message as `@autoclosure () -> String`, and in `-O`
+the whole call becomes `Builtin.condfail_message(error, "precondition failure")`, so the
+caller's message is never evaluated — stderr is empty in release, measured. Without the gate,
+removing the precondition goes unnoticed in debug and surfaces only in a workflow that runs
+twice a day.
+
+**Note for whoever runs this next:** `swift.yml` does not run the suite in release, so this
+class of defect is invisible to per-push CI. `Release Tests` is scheduled, not on-push.
 
 ---
 

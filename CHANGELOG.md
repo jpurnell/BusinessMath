@@ -57,6 +57,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`factorial` states its ceiling as a precondition instead of relying on `Int` overflow.**
+  Asking for `factorial(21)` has always been a programmer error, and the intent was always that
+  it trap rather than return 21! reduced modulo 2⁶⁴ — a plausible-looking `Int` that is the
+  factorial of nothing. But the trap was never written down: it was a side effect of the `*` in
+  `(2...n).reduce(1, *)`.
+
+  An overflow check guards an arithmetic *result*. Once `factorial` is inlined and the caller
+  discards that result, the optimiser may delete the multiply and the check together — so
+  `_ = factorial(21)` **exited 0 in a release build**, while `let x = factorial(21)` trapped.
+  Measured across the grid:
+
+  | | result discarded | result used |
+  |---|---|---|
+  | optimiser cannot inline (`-Onone`, separate module) | traps | traps |
+  | inlined (same file, or `-O -wmo`) | **exits 0** | traps |
+
+  A `precondition` is an effect in its own right and survives all of it, short of
+  `-Ounchecked`. It also traps at the boundary rather than part-way through the reduction, and
+  the message names `factorialChecked(_:)` and `factorialDouble(_:)`.
+
+  **Two docs said different things and neither was right.** The API doc warned that `n > 20`
+  would "return incorrect results" — describing C semantics, not Swift's; it never returned
+  anything for `n > 20`. `CombinatoricsContractTests` asserted it traps, which was true only
+  when the result was consumed. Both now say what the code does.
+
+  Behaviour for `n ≤ 20` is unchanged, as is `factorial(-5) == 0`. `combination`,
+  `permutation`, `factorialChecked` and `Int.factorial()` all guard on `maxFactorialInt` or
+  forward, so no caller in the package reaches the new precondition.
+
+  This is what had `Release Tests` red on both `ubuntu-24.04` and `macos-26` since 2026-09-11;
+  `swift.yml` never caught it because it does not run the suite in release.
+
+
 - **The library owns its unit-interval mapping.** Every place BusinessMath turned generator
   output into a uniform went through `Double.random(in: 0...1, using:)`. That is wrong for the
   job twice over: the interval is **closed**, so a legal draw of exactly zero makes `log(0)`

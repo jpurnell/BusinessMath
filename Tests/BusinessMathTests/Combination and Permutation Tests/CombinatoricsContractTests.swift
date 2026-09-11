@@ -116,15 +116,50 @@ struct CombinatoricsContractTests {
 
 	// An exit test spawns a child process, which iOS, tvOS and watchOS do not permit.
 	#if os(macOS) || os(Linux)
+	/// The alternative to trapping is silently returning 21! reduced modulo 2⁶⁴, which is a
+	/// plausible-looking `Int` that is the factorial of nothing. Trapping is the right call
+	/// for a programmer error, and `factorialChecked` is the way out — asserted above.
+	///
+	/// **The discarded result is the point, not an accident.** This test failed in release
+	/// from 2026-09-11 while passing in debug, because `factorial` relied on `Int` overflow
+	/// to trap and an overflow check guards an arithmetic *result*: once the function is
+	/// inlined and the result is unused, the optimiser may delete the multiply and the check
+	/// together. Measured at the time — `_ = factorial(21)` exited 0 under `-O` with
+	/// whole-module optimisation, while `let x = factorial(21)` trapped. `factorial` now
+	/// states the bound as a `precondition`, which is an effect in its own right and survives
+	/// that. Keep the result discarded here: it is the configuration that regressed.
+	///
+	/// The stderr assertion is what makes this catch a *removed* precondition in **debug** as
+	/// well. Without it, deleting the precondition leaves `Int` overflow trapping in debug, the
+	/// test passes there, and it goes red only in the release workflow — which runs on a
+	/// schedule, so the signal arrives hours late and attached to whatever landed since.
+	///
+	/// It is gated to debug because the message does not exist anywhere else.
+	/// `precondition(_:_:)` takes its message as `@autoclosure () -> String`; in `-Onone` that
+	/// reaches `_assertionFailure`, which prints it, and in `-O` the whole call becomes
+	/// `Builtin.condfail_message(error, "precondition failure")` — a fixed `StaticString` — so
+	/// the caller's message is never evaluated. Measured: stderr is empty in a release run. The
+	/// exit status is the assertion that carries release, and it is the one that regressed.
 	@Test("factorial(21) traps rather than returning a wrapped value")
 	func factorialBeyondIntTraps() async {
-		// The alternative to trapping is silently returning `21!` reduced modulo 2⁶⁴, which
-		// is a plausible-looking Int that is not the factorial of anything. Trapping is the
-		// right call for a programmer error, and `factorialChecked` is the way out --
-		// asserted above. This pins the trap so nobody "fixes" it into a wraparound.
-		await #expect(processExitsWith: .failure) {
+		let result = await #expect(processExitsWith: .failure,
+								   observing: [\.standardErrorContent]) {
 			_ = factorial(21)
 		}
+		#if DEBUG
+		let errorBytes = result?.standardErrorContent ?? []
+		let message = String(decoding: errorBytes, as: UTF8.self)
+		#expect(message.contains("factorialChecked"),
+				"""
+				The trap fired, but not from factorial's precondition — stderr never named \
+				factorialChecked. Standard error was: \(message)
+				""")
+		#else
+		// Nothing further to assert here: the exit status checked above is the whole of the
+		// contract that release can observe, and a stand-in like `result != nil` would look
+		// like an assertion while proving nothing. Discarded explicitly instead.
+		_ = result
+		#endif
 	}
 	#endif
 }

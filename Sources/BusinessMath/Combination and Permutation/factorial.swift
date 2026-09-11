@@ -21,8 +21,20 @@ public let maxFactorialInt = 20
 /// - Parameter n: The number for which to compute the factorial. Must be a non-negative integer.
 /// - Returns: The factorial of `n`, denoted as \( n! \).
 ///
-/// - Warning: For n > 20, this function will overflow on 64-bit systems and return incorrect results.
-///   Use ``factorialChecked(_:)`` or ``factorialDouble(_:)`` for larger values.
+/// - Precondition: `n <= maxFactorialInt` (20). 21! exceeds `Int.max`, and asking for it is a
+///   programmer error rather than a runtime condition, so it traps. ``factorialChecked(_:)``
+///   throws instead, and ``factorialDouble(_:)`` answers approximately for any `n`.
+///
+/// - Warning: The trap is written as a `precondition` rather than left to `Int` overflow, and
+///   that is load-bearing. An overflow check guards an arithmetic *result*; when the caller
+///   discards that result the optimiser may delete the arithmetic and the check with it. In a
+///   release build `_ = factorial(21)` did nothing at all — no trap, exit 0 — while
+///   `let x = factorial(21)` trapped, because only the second keeps the multiply alive. A
+///   precondition is an effect in its own right and holds at every optimisation level short of
+///   `-Ounchecked`.
+///
+///   This warning previously said the function would "return incorrect results". It does not,
+///   and never did: it traps, or — in that one optimised configuration — did nothing.
 ///
 /// ## Example
 /// ```swift
@@ -38,6 +50,13 @@ public let maxFactorialInt = 20
 ///   - ``permutation(_:p:)``
 public func factorial(_ n: Int) -> Int {
     guard n >= 0 else { return 0 }
+    precondition(
+        n <= maxFactorialInt,
+        """
+        factorial(\(n)) overflows Int. \(maxFactorialInt)! is the largest exact value; \
+        use factorialChecked(_:) to throw instead, or factorialDouble(_:) to approximate.
+        """
+    )
     guard n <= 1 else {
         return (2...n).reduce(1, *)
     }
@@ -135,8 +154,9 @@ extension Int {
     /// Provides a convenient instance method alternative to the global ``factorial(_:)`` function.
     /// Returns 0 for negative integers as factorials are undefined for negative numbers.
     ///
-    /// - Warning: For values > 20, this will overflow on 64-bit systems.
-    ///   Use ``factorialChecked()`` for safe computation.
+    /// - Precondition: `self <= 20`. A larger value traps — see ``factorial(_:)`` for why the
+    ///   trap is a precondition rather than an overflow check. Use ``factorialChecked()`` to
+    ///   throw instead.
     ///
     /// - Returns: The factorial of this integer, or 0 if negative.
     ///
