@@ -6,7 +6,8 @@ Build DCF models, optimize portfolios, run Monte Carlo simulations, and value se
 
 [![Swift](https://img.shields.io/badge/Swift-6.2-orange.svg)](https://swift.org)
 [![Platform](https://img.shields.io/badge/Platform-iOS%20|%20macOS%20|%20Linux-lightgrey.svg)](https://swift.org)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
+[![Commercial](https://img.shields.io/badge/Commercial-available-green.svg)](LICENSING.md)
 
 ---
 
@@ -449,9 +450,18 @@ Contributions welcome! Please:
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+**AGPLv3, with a commercial licence available** — see [LICENSE](LICENSE) and
+[LICENSING.md](LICENSING.md).
 
----
+Free to use, modify and distribute if you publish your source. If you want to
+embed this in a proprietary product or offer it as a hosted service without that
+obligation, a commercial licence removes the copyleft terms.
+
+The network clause (AGPLv3 §13) is deliberate: running this as a service is a
+form of use the copyleft is meant to reach.
+
+The permissive layers of the family — SwiftExcelCore, SwiftXLSX, SwiftZIP — are
+Apache 2.0 and carry no copyleft.
 
 ## Support
 

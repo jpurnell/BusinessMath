@@ -87,11 +87,40 @@ What is genuinely absent is small, and named in §7.
 Signatures confirmed against Frontline's reference:
 
 ```
-PsiCorrMatrix(matrix_cell_range, position, instance)    property function on each input
-PsiCorrIndep(corrname)                                  property function
-PsiCorrDepen(corrname, coefficient)                     property function
-PsiCorrelation(cell1, cell2, simulation)                a STATISTIC, not a declaration
+PsiCorrMatrix(matrix_cell_range, position, instance)       rank-order correlation
+PsiCopulaGauss(number_range, position, instance)           Gaussian copula
+PsiCopulaStudent(number_range, position, df, instance)     t copula
+PsiCopula(type, param, reflection, instance)               generic: Clayton / Frank / Gumbel, rotatable
+PsiCorrIndep(corrname)                                     property function
+PsiCorrDepen(corrname, coefficient)                        property function
+PsiCorrelation(cell1, cell2, simulation)                   a STATISTIC, not a declaration
 ```
+
+### 4.0 Two mechanisms, one shape — measured 2026-09-11
+
+Frontline's documentation settles the two questions this section originally left open.
+
+**`PsiCorrMatrix` is rank-order.** Verbatim: *"specify that an uncertain variable is correlated
+with a group of other uncertain variables, through a matrix of **rank-order** correlation
+coefficients."* So §6.1's Spearman→Pearson adjustment is **required, not conditional**. Skipping
+it makes every declared correlation come out systematically weaker than asked for.
+
+**The copula is a separate property function, not an argument.** `PsiCorrMatrix`'s third argument
+really is `instance`, the matrix's name. Copula choice arrives as its own property function
+attached to the same distribution call:
+
+```
+=PsiBeta(3, 4, PsiCopulaGauss(N2:P4, 2, "mycop"))
+```
+
+That is good news architecturally. **All four declaration functions carry the same
+(range, position, instance) shape**, so one grouping mechanism serves all of them — the group key
+is (range, instance) and the member index is `position`, exactly as §4.1 describes. Implementing
+`PsiCorrMatrix` gets `PsiCopulaGauss` almost free; `PsiCopulaStudent` adds a degrees-of-freedom
+parameter and a t-copula sampler; `PsiCopula` adds the Archimedean family.
+
+The property-function machinery already handles several attached to one call — `PsiBaseCase` and
+`PsiName` coexist today — so nothing new is needed to read them.
 
 ### 4.1 The shape is already the shape we handle
 
@@ -284,16 +313,17 @@ loose tolerance would wave through. **Set the tolerance tight enough to fail tha
 
 ## 11. Open questions
 
-1. **Is the declared matrix Spearman or Pearson?** Determines whether §6.1 applies at all.
-   Frontline's documentation should say; if it does not, it is measurable — declare a strong
-   correlation between two `PsiUniform(0,1)` inputs in a Risk Solver workbook, run it, and
-   compare the sample Pearson and Spearman coefficients of the draws against the declared value.
-   **Assume nothing here.** The Bessel proposal chose a probe that could not answer its own
-   question, and the lesson was recent enough to apply.
-2. **Which copulas?** `PsiCorrMatrix`'s third argument is documented as `instance`, but Frontline
-   advertise Gaussian, Student-t, Clayton, Frank and Gumbel copulas somewhere in the product.
-   If a copula selector exists, find where it lives before the API shape is fixed — a t-copula is
-   a small extension of item 3 if it is designed for, and a rewrite if it is not.
+1. **~~Is the declared matrix Spearman or Pearson?~~** **Resolved 2026-09-11: rank-order.** See
+   §4.0. The §6.1 adjustment is required.
+2. **~~Which copulas?~~** **Resolved 2026-09-11: separate property functions**, not an argument —
+   `PsiCopulaGauss`, `PsiCopulaStudent`, and a generic `PsiCopula(type, param, reflection,
+   instance)` for the Archimedean family. All share `PsiCorrMatrix`'s grouping shape. See §4.0.
+2a. **Is `PsiCopulaGauss`'s matrix rank or linear?** The question survives in sharper form. When
+   the modeller names the copula explicitly, its matrix is most likely the copula's own
+   correlation parameter — i.e. **linear on the latent normals, needing no adjustment** — whereas
+   `PsiCorrMatrix` is documented as rank and does need one. Applying the adjustment to both, or
+   neither, is wrong in one case. Frontline's `PsiCopulaGauss` page does not say. **This blocks
+   only `PsiCopulaGauss`, not `PsiCorrMatrix`**, so it need not hold up the primary path.
 3. **What does a group containing a discrete distribution do?** A discrete quantile is a step
    function, so the achievable rank correlation is bounded below the declared one and no sampler
    can do better. Proposed: allow it, and report the achieved correlation rather than pretending.
