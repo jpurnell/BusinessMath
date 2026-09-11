@@ -91,8 +91,8 @@ public func distributionT<T: Real, G: RandomNumberGenerator>(degreesOfFreedom: I
 	}
 
 	// Generate Z ~ N(0,1) - consumes 2 uniforms
-	let u1Seed = Double.random(in: 0...1, using: &generator)
-	let u2Seed = Double.random(in: 0...1, using: &generator)
+	let u1Seed = openUnitUniform(Double.self, using: &generator)
+	let u2Seed = openUnitUniform(Double.self, using: &generator)
 	let z: T = distributionNormal(mean: T(0), stdDev: T(1), u1Seed, u2Seed)
 
 	// Generate V ~ χ²(df) using the relationship χ²(df) = Gamma(df/2, 2)

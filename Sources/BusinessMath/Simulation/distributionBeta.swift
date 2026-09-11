@@ -81,7 +81,7 @@ public func distributionBeta<T: Real>(alpha: T, beta: T, seed: UInt64? = nil) ->
 public func distributionBeta<T: Real, G: RandomNumberGenerator>(alpha: T, beta: T, using generator: inout G) -> T where T: BinaryFloatingPoint {
 	// Special case: Beta(1, 1) is Uniform(0, 1)
 	if alpha == T(1) && beta == T(1) {
-		return distributionUniform(min: T(0), max: T(1), Double.random(in: 0...1, using: &generator))
+		return distributionUniform(min: T(0), max: T(1), openUnitUniform(Double.self, using: &generator))
 	}
 
 	// Below 1, the gamma boost underflows and the ratio becomes 0/0. See the log-space

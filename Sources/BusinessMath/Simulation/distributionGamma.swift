@@ -118,7 +118,7 @@ public func gammaVariate<T: Real, G: RandomNumberGenerator>(shape: T, scale: T, 
 
 	// For shape < 1, use the transformation property
 	if shape < T(1) {
-		let u: T = distributionUniform(min: T(0), max: T(1), Double.random(in: 0...1, using: &generator))
+		let u: T = distributionUniform(min: T(0), max: T(1), openUnitUniform(Double.self, using: &generator))
 		let x = gammaVariate(shape: shape + T(1), scale: scale, using: &generator)
 		return x * T.pow(u, T(1) / shape) // fp-safety:disable — shape > 0 guarded at function entry
 	}
@@ -139,8 +139,8 @@ public func gammaVariate<T: Real, G: RandomNumberGenerator>(shape: T, scale: T, 
 		// Generate v = (1 + c×Z)³ where Z ~ N(0,1)
 		var innerIterations = 0
 		repeat {
-			let u1Seed = Double.random(in: 0...1, using: &generator)
-			let u2Seed = Double.random(in: 0...1, using: &generator)
+			let u1Seed = openUnitUniform(Double.self, using: &generator)
+			let u2Seed = openUnitUniform(Double.self, using: &generator)
 			x = distributionNormal(mean: T(0), stdDev: T(1), u1Seed, u2Seed)
 			v = T(1) + c * x
 			innerIterations += 1
@@ -156,7 +156,7 @@ public func gammaVariate<T: Real, G: RandomNumberGenerator>(shape: T, scale: T, 
 		v = v * v * v
 
 		// Generate U ~ Uniform(0,1)
-		let u: T = distributionUniform(min: T(0), max: T(1), Double.random(in: 0...1, using: &generator))
+		let u: T = distributionUniform(min: T(0), max: T(1), openUnitUniform(Double.self, using: &generator))
 
 		// Acceptance test
 		let x2 = x * x

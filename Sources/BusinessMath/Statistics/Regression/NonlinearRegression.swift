@@ -229,7 +229,7 @@ public struct ReciprocalRegressionSimulator<T: Real & Sendable & Codable> where 
 
 		for _ in 0..<n {
 			// Generate x uniformly
-			let u = T(Double.random(in: 0...1, using: &generator))
+			let u = T(openUnitUniform(Double.self, using: &generator))
 			let x = xRange.lowerBound + u * (xRange.upperBound - xRange.lowerBound)
 
 			// Compute mean response
@@ -237,8 +237,8 @@ public struct ReciprocalRegressionSimulator<T: Real & Sendable & Codable> where 
 
 			// The Box-Muller pair, drawn from the caller's stream rather than left to
 			// the defaults.
-			let u1 = Double.random(in: 0...1, using: &generator)
-			let u2 = Double.random(in: 0...1, using: &generator)
+			let u1 = openUnitUniform(Double.self, using: &generator)
+			let u2 = openUnitUniform(Double.self, using: &generator)
 
 			// Generate y from Normal(mu, sigma)
 			let y: T
@@ -290,8 +290,8 @@ public struct ReciprocalRegressionSimulator<T: Real & Sendable & Codable> where 
 
 		for x in xValues {
 			let mu = ReciprocalRegressionModel.predictedMean(x: x, params: parameters)
-			let u1 = Double.random(in: 0...1, using: &generator)
-			let u2 = Double.random(in: 0...1, using: &generator)
+			let u1 = openUnitUniform(Double.self, using: &generator)
+			let u2 = openUnitUniform(Double.self, using: &generator)
 			let y = T(distributionNormal(mean: Double(mu), stdDev: Double(parameters.sigma), u1, u2))
 			data.append(DataPoint(x: x, y: y))
 		}

@@ -183,8 +183,8 @@ public struct CorrelatedNormals: Sendable {
 		// Generate n independent standard normals via Box-Muller
 		var standardNormals: [Double] = []
 		for _ in 0..<n {
-			let u1 = Double.random(in: Double.ulpOfOne ..< 1.0, using: &generator)
-			let u2 = Double.random(in: Double.ulpOfOne ..< 1.0, using: &generator)
+			let u1 = openUnitUniform(Double.self, using: &generator)
+			let u2 = openUnitUniform(Double.self, using: &generator)
 			let z: Double = distributionNormal(mean: 0.0, stdDev: 1.0, u1, u2)
 			standardNormals.append(z)
 		}

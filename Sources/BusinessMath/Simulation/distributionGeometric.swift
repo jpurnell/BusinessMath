@@ -62,7 +62,7 @@ public func distributionGeometric<T: Real, G: RandomNumberGenerator>(_ p: T, usi
 
 	// Use inverse transform method (O(1), no iteration needed)
 	// X = ceil(ln(U) / ln(1-p)) where U ~ Uniform(0,1)
-	let u: T = distributionUniform(min: T(0), max: T(1), Double.random(in: 0...1, using: &generator))
+	let u: T = distributionUniform(min: T(0), max: T(1), openUnitUniform(Double.self, using: &generator))
 
 	// Avoid log(0) by using 1-U which has same distribution as U
 	let oneMinusP = T(1) - p

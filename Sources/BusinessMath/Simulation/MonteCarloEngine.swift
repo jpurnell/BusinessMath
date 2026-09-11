@@ -257,8 +257,8 @@ public struct MonteCarloEngine: Sendable {
         // What changes is the guard: `max(u1, 1e-15)` was a clamp with an atom at
         // radius 8.31, reachable for u₁ below 1e-15 — about one draw in 10¹⁵ — and the
         // shared rule moves only the exact zero, one draw in 2⁵³.
-        let u1 = Double.random(in: 0.0..<1.0, using: &rng)
-        let u2 = Double.random(in: 0.0..<1.0, using: &rng)
+        let u1 = openUnitUniform(Double.self, using: &rng)
+        let u2 = openUnitUniform(Double.self, using: &rng)
         let (_, z): (Double, Double) = boxMullerSeed(u1, u2)
         return z
     }

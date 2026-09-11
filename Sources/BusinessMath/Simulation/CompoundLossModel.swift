@@ -244,7 +244,7 @@ where Frequency.T == Double, Severity.T == Double {
 		// The standard library's own uniform, rather than scaling a raw word by
 		// `UInt64.max`: it is the same draw with none of the arithmetic, and dividing
 		// by a constant no reader can see a guard for is not worth reintroducing here.
-		let u: Double = Double.random(in: 0..<1, using: &generator)
+		let u: Double = openUnitUniform(Double.self, using: &generator)
 		let smallest: Double = Double.ulpOfOne
 		let largest: Double = 1 - smallest
 		return Swift.min(Swift.max(u, smallest), largest)

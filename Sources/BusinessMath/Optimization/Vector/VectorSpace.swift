@@ -1193,7 +1193,7 @@ extension VectorN {
         // exactly when `T` is `Double` and is correctly rounded otherwise.
         let span = range.upperBound - range.lowerBound
         let values: [T] = (0..<dimension).map { _ in
-            let fraction = T(Double.random(in: 0...1, using: &generator))
+            let fraction = T(openUnitUniform(Double.self, using: &generator))
             return range.lowerBound + fraction * span
         }
         return VectorN<T>(values)

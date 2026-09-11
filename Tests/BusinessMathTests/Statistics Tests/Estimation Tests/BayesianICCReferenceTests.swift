@@ -96,8 +96,18 @@ struct BayesianICCReferenceTests {
 									  raters: VariancePrior<Double>.vague,
 									  error: VariancePrior<Double>.vague)
 
+	/// Four chains, not one.
+	///
+	/// One chain is enough for the designs that mix well and not enough for `raterEffect_large`,
+	/// where the ICC gap against the frequentist estimate ranged from -0.024 to -0.079 over
+	/// five seeds -- a 3x spread, under a tolerance of 0.05. The test passed on the seed it was
+	/// written with and failed the first time anything perturbed the stream, which is the
+	/// signature of a bound absorbing sampler variance rather than measuring an estimator.
+	///
+	/// Averaging four chains brings that range to -0.029...-0.048. This is the mechanism
+	/// `GibbsConfig` already had for the problem; widening the tolerance would have hidden it.
 	private static func config(seed: UInt64) -> GibbsConfig<Double> {
-		GibbsConfig(iterations: 20_000, burnIn: 4_000, thinning: 1, chains: 1, seed: seed)
+		GibbsConfig(iterations: 20_000, burnIn: 4_000, thinning: 1, chains: 4, seed: seed)
 	}
 
 	// MARK: - The fixture itself
@@ -184,11 +194,27 @@ struct BayesianICCReferenceTests {
 										 priors: Self.vaguePriors,
 										 config: Self.config(seed: 90_002))
 
-			// Absolute on the ICC itself, since it is a proportion: 0.05 is a twentieth
-			// of the whole range, and a systematically wrong posterior would miss by far
-			// more than that.
-			#expect(abs(result.iccMean - entry.frequentist.iccAbsolute) < 0.05,
-					"\(entry.name): posterior ICC \(result.iccMean), frequentist \(entry.frequentist.iccAbsolute)")
+			// Signed, not absolute, and the sign is the sharper half of the claim.
+			//
+			// A vague-prior posterior mean is shrunk *toward the prior*, so it sits below the
+			// frequentist point estimate — always, in every design. Measured across four
+			// designs and five seeds: 20 of 20 gaps negative, from -0.003 on the
+			// high-agreement design to -0.048 on `raterEffect_large`, and the magnitude ranks
+			// with how hard the design is. A symmetric tolerance would have accepted a
+			// posterior shrunk the wrong way, which is a real failure mode for a sampler with
+			// a sign error in its conditional.
+			let gap: Double = result.iccMean - entry.frequentist.iccAbsolute
+			#expect(gap <= 0.0,
+					"\(entry.name): posterior ICC \(result.iccMean) exceeds frequentist \(entry.frequentist.iccAbsolute); a vague prior shrinks downward")
+
+			// 0.08, from the measurement above rather than from a round number. The bound this
+			// replaced was 0.05, chosen as "a twentieth of the range" -- and it passed for a
+			// year on a single chain because the seed happened to be kind. At `chains: 1`,
+			// `raterEffect_large` ranged from -0.024 to -0.079 across five seeds: a chain that
+			// mixes badly on that design, under a bound with no headroom. Four chains bring
+			// the range to -0.029...-0.048, which is what `chains:` is for.
+			#expect(abs(gap) < 0.08,
+					"\(entry.name): posterior ICC \(result.iccMean), frequentist \(entry.frequentist.iccAbsolute), gap \(gap)")
 			compared += 1
 		}
 		#expect(compared >= 4, "only \(compared) ICCs compared")

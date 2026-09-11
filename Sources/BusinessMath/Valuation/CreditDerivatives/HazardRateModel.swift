@@ -501,7 +501,7 @@ extension CoxProcess where T: BinaryFloatingPoint {
     /// - Parameter generator: The random source. Advanced once.
     /// - Returns: A draw from Exponential(1), in `[0, ∞)`.
     private static func exponentialUnitDraw<G: RandomNumberGenerator>(using generator: inout G) -> T {
-        let u = 1.0 - Double.random(in: 0..<1, using: &generator)   // (0, 1]
+        let u = openUnitUniform(Double.self, using: &generator)
         return T(-Double.log(u))
     }
 

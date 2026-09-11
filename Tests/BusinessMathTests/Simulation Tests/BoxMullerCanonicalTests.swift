@@ -49,12 +49,19 @@ struct BoxMullerCanonicalTests {
 
 	// MARK: - Full precision
 
-	/// `1 - Double.random(in: 0..<1)` with an all-ones word gives u₁ = 2⁻⁵³,
-	/// whose radius is `sqrt(2 · 53 · ln 2)` = 8.5716 — well past the 5.6777
-	/// ceiling the quantized path could reach.
+	/// The smallest uniform the library's mapping can produce is `2⁻⁵³`, whose radius is
+	/// `sqrt(2 · 53 · ln 2)` = 8.5716 — well past the 5.6777 ceiling the quantized path could
+	/// reach.
+	///
+	/// The word that produces it changed when the draw moved to ``openUnitUniform(_:using:)``.
+	/// It used to be `1 - Double.random(in: 0..<1)`, so an **all-ones** word gave `u₁ = 2⁻⁵³`;
+	/// the mapping no longer folds, so the **all-zero** word does. Same extremum, same radius,
+	/// opposite end of the generator's range — which is worth spelling out, because a test that
+	/// kept the old word pattern would have quietly started asserting the *shallowest* draw
+	/// while still claiming the deepest.
 	@Test("The generator path reaches radii the 1e-7 lattice cannot")
 	func fullPrecisionReachesDeepTail() {
-		var rng = WordRNG([.max, 0])
+		var rng = WordRNG([0, 0])
 		let (z1, z2): (Double, Double) = boxMullerSeed(using: &rng)
 		let radius = (z1 * z1 + z2 * z2).squareRoot()
 
@@ -185,31 +192,43 @@ struct BoxMullerCanonicalTests {
 	/// returns 0.0 every time, so an implementation that fed `u₁` straight to `log`
 	/// would return -∞. `1 - u` sends it to 1, whose radius is 0 — the correct
 	/// value for that draw, and no atom anywhere.
-	@Test("A generator that only returns zero words stays finite")
+	@Test("A generator that only returns zero words stays finite, at the deepest radius")
 	func zeroWordGeneratorIsFinite() {
+		// This used to assert the radius was *exactly zero*, and that was right at the time:
+		// the draw was `1 - Double.random(in: 0..<1)`, so an all-zero word gave `u₁ = 1` and
+		// `sqrt(-2 · log 1)` is zero. The mapping no longer folds, so an all-zero word now
+		// gives the *smallest* uniform, `2⁻⁵³`, and therefore the largest radius the mapping
+		// can reach.
+		//
+		// Both are finite, which is this test's actual subject, and finiteness is the claim
+		// worth keeping: a degenerate generator must not produce a non-finite variate. The
+		// exact-zero assertion was pinning a consequence of the fold rather than a property of
+		// the transform, and keeping it would have meant re-introducing the fold to satisfy a
+		// test rather than to serve a caller.
+		let deepest: Double = (2.0 * 53.0 * Foundation.log(2.0)).squareRoot()
 		var rng = WordRNG([0])
 		for _ in 0..<100 {
 			let (z1, z2): (Double, Double) = boxMullerSeed(using: &rng)
 			#expect(z1.isFinite && z2.isFinite, "(\(z1), \(z2))")
-			// Exactly zero, not near zero: a tolerance would also pass for a radius that
-			// was merely tiny, which is what the *almost*-correct guard produces —
-			// `log(u + 1e-10)` instead of `1 - u` — and is the failure this excludes.
-			//
-			// IEEE equality rather than a bit comparison, because the sign of this zero
-			// is not part of the claim and is not positive: `log 1` is `+0.0`, so the
-			// radius is `sqrt(-2 · +0.0)` = `sqrt(-0.0)` = `-0.0`, and both products
-			// inherit that sign. `-0.0` is the mean just as much as `+0.0` is.
-			#expect(exactlyEqual(z1, 0.0), "u₁ = 1 has radius 0; got z₁ = \(z1)")
-			#expect(exactlyEqual(z2, 0.0), "u₁ = 1 has radius 0; got z₂ = \(z2)")
+			let radius: Double = (z1 * z1 + z2 * z2).squareRoot()
+			#expect(abs(radius - deepest) < 1e-9,
+					"radius \(radius); the smallest uniform 2⁻⁵³ gives \(deepest)")
 		}
 	}
 
-	@Test("A generator stuck on all-ones words stays finite")
-	func maxWordGeneratorIsFinite() {
+	@Test("A generator stuck on all-ones words gives the shallowest radius, not the deepest")
+	func maxWordGeneratorIsShallow() {
+		// The other end, asserted so the two cannot be confused again. An all-ones word is the
+		// *largest* uniform, `1 - 2⁻⁵³`, whose radius is `sqrt(-2 · log(1 - 2⁻⁵³))` ≈ 1.49e-8:
+		// nearly the mean, and pointedly not zero — `u = 1` exactly would give zero, and the
+		// mapping's whole purpose is that it cannot return 1.
 		var rng = WordRNG([.max])
 		for _ in 0..<100 {
 			let (z1, z2): (Double, Double) = boxMullerSeed(using: &rng)
 			#expect(z1.isFinite && z2.isFinite, "(\(z1), \(z2))")
+			let radius: Double = (z1 * z1 + z2 * z2).squareRoot()
+			#expect(radius > 0.0, "radius \(radius) — a uniform strictly below 1 has a positive radius")
+			#expect(radius < 1e-7, "radius \(radius) — the largest uniform is nearly the mean")
 		}
 	}
 

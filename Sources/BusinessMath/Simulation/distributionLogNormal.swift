@@ -29,7 +29,7 @@ import Numerics
 ///   - u1Seed: First uniform random seed in [0, 1] (default: newly generated)
 ///   - u2Seed: Second uniform random seed in [0, 1] (default: newly generated)
 /// - Returns: A positive value whose logarithm is `Normal(logMean, logStdDev)`.
-public func distributionLogNormal<T: Real>(logMean: T = T(0), logStdDev: T = T(1), _ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> T where T: BinaryFloatingPoint { // stochastic:exempt — the uniform arguments default to fresh draws; pass them explicitly for reproducibility
+public func distributionLogNormal<T: Real>(logMean: T = T(0), logStdDev: T = T(1), _ u1Seed: Double = openUnitUniform(), _ u2Seed: Double = openUnitUniform()) -> T where T: BinaryFloatingPoint { // stochastic:exempt — the uniform arguments default to fresh draws; pass them explicitly for reproducibility
 	return T.exp(distributionNormal(mean: logMean, stdDev: logStdDev, u1Seed, u2Seed))
 }
 
@@ -44,7 +44,7 @@ public func distributionLogNormal<T: Real>(logMean: T = T(0), logStdDev: T = T(1
 ///   - u1Seed: First uniform random seed in [0, 1] (default: newly generated)
 ///   - u2Seed: Second uniform random seed in [0, 1] (default: newly generated)
 /// - Returns: A positive value whose logarithm is `Normal(logMean, logVariance)`.
-public func distributionLogNormal<T: Real>(logMean: T = T(0), logVariance: T = T(1), _ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> T where T: BinaryFloatingPoint { // stochastic:exempt — the uniform arguments default to fresh draws; pass them explicitly for reproducibility
+public func distributionLogNormal<T: Real>(logMean: T = T(0), logVariance: T = T(1), _ u1Seed: Double = openUnitUniform(), _ u2Seed: Double = openUnitUniform()) -> T where T: BinaryFloatingPoint { // stochastic:exempt — the uniform arguments default to fresh draws; pass them explicitly for reproducibility
 	return T.exp(distributionNormal(mean: logMean, variance: logVariance, u1Seed, u2Seed))
 }
 
@@ -57,7 +57,7 @@ public func distributionLogNormal<T: Real>(logMean: T = T(0), logVariance: T = T
 ///   - u2Seed: Second uniform random seed in [0, 1] (default: newly generated)
 /// - Returns: A positive value whose logarithm is `Normal(mean, stdDev)`.
 @available(*, deprecated, renamed: "distributionLogNormal(logMean:logStdDev:_:_:)", message: "`mean` and `stdDev` describe log(X), not X. Renamed so the parameter cannot be read as the mean of the variate it returns.")
-public func distributionLogNormal<T: Real>(mean: T = T(0), stdDev: T = T(1), _ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> T where T: BinaryFloatingPoint { // stochastic:exempt — the uniform arguments default to fresh draws; pass them explicitly for reproducibility
+public func distributionLogNormal<T: Real>(mean: T = T(0), stdDev: T = T(1), _ u1Seed: Double = openUnitUniform(), _ u2Seed: Double = openUnitUniform()) -> T where T: BinaryFloatingPoint { // stochastic:exempt — the uniform arguments default to fresh draws; pass them explicitly for reproducibility
 	return distributionLogNormal(logMean: mean, logStdDev: stdDev, u1Seed, u2Seed)
 }
 
@@ -70,7 +70,7 @@ public func distributionLogNormal<T: Real>(mean: T = T(0), stdDev: T = T(1), _ u
 ///   - u2Seed: Second uniform random seed in [0, 1] (default: newly generated)
 /// - Returns: A positive value whose logarithm is `Normal(mean, variance)`.
 @available(*, deprecated, renamed: "distributionLogNormal(logMean:logVariance:_:_:)", message: "`mean` and `variance` describe log(X), not X. Renamed so the parameter cannot be read as the mean of the variate it returns.")
-public func distributionLogNormal<T: Real>(mean: T = T(0), variance: T = T(1), _ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> T where T: BinaryFloatingPoint { // stochastic:exempt — the uniform arguments default to fresh draws; pass them explicitly for reproducibility
+public func distributionLogNormal<T: Real>(mean: T = T(0), variance: T = T(1), _ u1Seed: Double = openUnitUniform(), _ u2Seed: Double = openUnitUniform()) -> T where T: BinaryFloatingPoint { // stochastic:exempt — the uniform arguments default to fresh draws; pass them explicitly for reproducibility
 	return distributionLogNormal(logMean: mean, logVariance: variance, u1Seed, u2Seed)
 }
 
@@ -145,8 +145,8 @@ extension DistributionLogNormal: SeedableDistribution {
 	/// - Returns: A random positive Double from the log-normal distribution
 	public func next<G: RandomNumberGenerator>(using generator: inout G) -> Double {
 		return distributionLogNormal(logMean: logMean, logStdDev: logStdDev,
-									 Double.random(in: 0...1, using: &generator),
-									 Double.random(in: 0...1, using: &generator))
+									 openUnitUniform(Double.self, using: &generator),
+									 openUnitUniform(Double.self, using: &generator))
 	}
 }
 

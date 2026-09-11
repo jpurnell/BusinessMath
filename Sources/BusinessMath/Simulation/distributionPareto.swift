@@ -47,7 +47,7 @@ import Numerics
 /// and returns `+infinity`; a seed of zero, and every seed below the 1e-7 quantum of
 /// ``distributionUniform(min:max:_:)``, reaches it. Only that single point is remapped,
 /// to `u = 1`, so the result is always finite and always at least `scale`. See
-/// `openUnitUniform(seed:)` in `boxMuellerSeed.swift` for why this is a remap and not
+/// `openedUnitSeed(seed:)` in `boxMuellerSeed.swift` for why this is a remap and not
 /// a clamp.
 ///
 /// - Parameters:

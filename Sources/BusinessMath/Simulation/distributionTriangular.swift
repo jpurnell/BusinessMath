@@ -38,7 +38,7 @@ import OSLog
 ///   let randomValue: Double = triangularDistribution(low: lowerBound, high: upperBound, base: mode)
 ///   // randomValue will be a random number generated from the triangular distribution with parameters a = 0.0, b = 10.0, and c = 5.0
 
-public func triangularDistribution<T: Real>(low a: T, high b: T, base c: T, _ uSeed: Double = Double.random(in: 0...1)) -> T { // stochastic:exempt — the uniform arguments default to fresh draws; pass them explicitly for reproducibility
+public func triangularDistribution<T: Real>(low a: T, high b: T, base c: T, _ uSeed: Double = openUnitUniform()) -> T { // stochastic:exempt — the uniform arguments default to fresh draws; pass them explicitly for reproducibility
 	// Validate parameters - return NaN for invalid inputs
 	guard !a.isNaN, !b.isNaN, !c.isNaN else { return T.nan }
 	guard a.isFinite, b.isFinite, c.isFinite else { return T.nan }
@@ -101,7 +101,7 @@ extension DistributionTriangular: SeedableDistribution {
 	/// - Parameter generator: The random source for the uniform draw.
 	/// - Returns: A random Double from the triangular distribution
 	public func next<G: RandomNumberGenerator>(using generator: inout G) -> Double {
-		return triangularDistribution(low: low, high: high, base: base, Double.random(in: 0...1, using: &generator))
+		return triangularDistribution(low: low, high: high, base: base, openUnitUniform(Double.self, using: &generator))
 	}
 }
 

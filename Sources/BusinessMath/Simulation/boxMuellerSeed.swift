@@ -95,8 +95,13 @@ import Numerics
 /// the same half-open interval and should ask for it here rather than invent its
 /// own guard. The guards those sites used to write for themselves did not agree
 /// with each other, and one of them (`T(Int(1e-10))`, which is zero) did nothing at all.
+///
+/// - Note: Not to be confused with ``openUnitUniform(_:using:)``, which *draws* a uniform on
+///   the open interval from a generator. This one **repairs** a uniform the caller already
+///   holds, and is only needed on the entry points that accept one. A caller with a generator
+///   wants the other function, which cannot produce an endpoint in the first place.
 @usableFromInline
-internal func openUnitUniform<T>(seed: T) -> T where T: BinaryFloatingPoint {
+internal func openedUnitSeed<T>(seed: T) -> T where T: BinaryFloatingPoint {
 	guard seed > 0 else { return T(1) }
 	return seed <= T(1) ? seed : T(1)
 }
@@ -104,7 +109,7 @@ internal func openUnitUniform<T>(seed: T) -> T where T: BinaryFloatingPoint {
 /// The shared radius, `sqrt(-2 · ln u)`.
 ///
 /// - Parameter uniform: A uniform on `(0, 1]`. Callers holding a seed on the closed
-///   `[0, 1]` should pass it through ``openUnitUniform(seed:)`` first.
+///   `[0, 1]` should pass it through ``openedUnitSeed(seed:)`` first.
 @usableFromInline
 internal func boxMullerRadius<T: Real>(uniform: T) -> T where T: BinaryFloatingPoint {
 	T.sqrt(T(-2) * T.log(uniform))
@@ -153,10 +158,11 @@ internal func boxMullerPair<T: Real>(uniform: T, angleUniform: T) -> (z1: T, z2:
 /// let (z1, z2): (Double, Double) = boxMullerSeed(using: &rng)
 /// ```
 public func boxMullerSeed<T: Real, G: RandomNumberGenerator>(using generator: inout G) -> (z1: T, z2: T) where T: BinaryFloatingPoint {
-	// `1 - u` rather than a clamp: exact for every representable u < 1, and
-	// measure-preserving, so the draw stays exactly uniform on (0, 1].
-	let u1 = 1.0 - Double.random(in: 0.0..<1.0, using: &generator)
-	let u2 = Double.random(in: 0.0..<1.0, using: &generator)
+	// Neither a clamp nor a `1 - u` fold, both of which this used to need. The library's own
+	// mapping cannot return an endpoint, so there is no pole to steer around and nothing to
+	// preserve measure against — see ``openUnitUniform(_:using:)``.
+	let u1 = openUnitUniform(Double.self, using: &generator)
+	let u2 = openUnitUniform(Double.self, using: &generator)
 	return boxMullerPair(uniform: T(u1), angleUniform: T(u2))
 }
 
@@ -169,7 +175,7 @@ public func boxMullerSeed<T: Real, G: RandomNumberGenerator>(using generator: in
 ///
 /// - Parameters:
 ///   - u1Seed: A uniform on `[0, 1]`, setting the radius. Zero is the `log(0)` pole
-///     and is remapped to 1 (radius 0); see `openUnitUniform(seed:)` for why that
+///     and is remapped to 1 (radius 0); see `openedUnitSeed(seed:)` for why that
 ///     is not a clamp.
 ///   - u2Seed: A uniform on `[0, 1]`, setting the angle.
 /// - Returns: A tuple of two independent standard normal values `(z1, z2)`.
@@ -177,8 +183,8 @@ public func boxMullerSeed<T: Real, G: RandomNumberGenerator>(using generator: in
 /// - Note: Seeds are used at full precision. Before this they were routed through
 ///   ``distributionUniform(_:)`` and quantized to multiples of 1e-7, so two seeds
 ///   closer together than that produced identical output.
-public func boxMullerSeed<T: Real>(_ u1Seed: Double = Double.random(in: 0...1), _ u2Seed: Double = Double.random(in: 0...1)) -> (z1: T, z2: T) where T: BinaryFloatingPoint { // stochastic:exempt — the uniform arguments default to fresh draws; pass them explicitly for reproducibility
-	boxMullerPair(uniform: openUnitUniform(seed: T(u1Seed)), angleUniform: T(u2Seed))
+public func boxMullerSeed<T: Real>(_ u1Seed: Double = openUnitUniform(), _ u2Seed: Double = openUnitUniform()) -> (z1: T, z2: T) where T: BinaryFloatingPoint { // stochastic:exempt — the uniform arguments default to fresh draws; pass them explicitly for reproducibility
+	boxMullerPair(uniform: openedUnitSeed(seed: T(u1Seed)), angleUniform: T(u2Seed))
 }
 
 // MARK: - Radius only
@@ -193,7 +199,7 @@ public func boxMullerSeed<T: Real>(_ u1Seed: Double = Double.random(in: 0...1), 
 /// - Parameter generator: The random source, taken `inout`.
 /// - Returns: A non-negative Rayleigh(1) variate.
 public func boxMullerRadius<T: Real, G: RandomNumberGenerator>(using generator: inout G) -> T where T: BinaryFloatingPoint {
-	let u = 1.0 - Double.random(in: 0.0..<1.0, using: &generator)
+	let u = openUnitUniform(Double.self, using: &generator)
 	return boxMullerRadius(uniform: T(u))
 }
 
@@ -202,6 +208,6 @@ public func boxMullerRadius<T: Real, G: RandomNumberGenerator>(using generator: 
 /// - Parameter uSeed: A uniform on `[0, 1]`. Zero is the `log(0)` pole and is remapped
 ///   to 1 (radius 0).
 /// - Returns: A non-negative Rayleigh(1) variate.
-public func boxMullerRadius<T: Real>(_ uSeed: Double = Double.random(in: 0...1)) -> T where T: BinaryFloatingPoint { // stochastic:exempt — the uniform arguments default to fresh draws; pass them explicitly for reproducibility
-	boxMullerRadius(uniform: openUnitUniform(seed: T(uSeed)))
+public func boxMullerRadius<T: Real>(_ uSeed: Double = openUnitUniform()) -> T where T: BinaryFloatingPoint { // stochastic:exempt — the uniform arguments default to fresh draws; pass them explicitly for reproducibility
+	boxMullerRadius(uniform: openedUnitSeed(seed: T(uSeed)))
 }

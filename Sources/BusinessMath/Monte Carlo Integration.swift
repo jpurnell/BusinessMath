@@ -71,7 +71,7 @@ public func integrate<T: Real, G: RandomNumberGenerator>(_ f: (T) -> T, iteratio
 	// that value divided by n.
 	var m = T(0)
 	for i in 0..<n {
-		let sample: T = distributionUniform(Double.random(in: 0..<1, using: &generator))
+		let sample: T = distributionUniform(openUnitUniform(Double.self, using: &generator))
 		m += (f(sample) - m) / T(i + 1) // fp-safety:disable — i + 1 >= 1
 	}
 	return m

@@ -192,7 +192,7 @@ extension DistributionStudentT: SeedableDistribution {
 	/// - Parameter generator: The random source.
 	/// - Returns: A draw from `t(ν)`.
 	public func next<G: RandomNumberGenerator>(using generator: inout G) -> Double {
-		return drawn { Double.random(in: 0..<1, using: &generator) }
+		return drawn { openUnitUniform(Double.self, using: &generator) }
 	}
 
 	/// A draw from system entropy, not reproducible by contract.

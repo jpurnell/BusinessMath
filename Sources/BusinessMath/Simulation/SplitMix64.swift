@@ -27,7 +27,7 @@
 ///
 /// ```swift
 /// var rng = SplitMix64(seed: 42)
-/// let u = Double.random(in: 0...1, using: &rng)   // identical on every run
+/// let u: Double = openUnitUniform(using: &rng)   // identical on every run
 /// ```
 ///
 /// It is **not** cryptographically secure — the mixing function is invertible, so two

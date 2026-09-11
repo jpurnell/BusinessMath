@@ -31,11 +31,11 @@ import Foundation
 /// interpolated into every kernel source that needs it. The ahead-of-time copy in
 /// `MonteCarloCommon.h` is a hand-maintained mirror and says so at the top.
 ///
-/// ## The pole guard, and why it is not `1 - u`
+/// ## The pole guard, and why the GPU needs one when Swift does not
 ///
-/// The Swift transform draws `u₁` as `1 - Double.random(in: 0..<1)`, which is exact,
-/// measure-preserving, and never reaches zero. That reasoning does not survive the
-/// crossing into Float32.
+/// On the Swift side `u₁` comes from ``openUnitUniform(_:using:)``, which cannot return an
+/// endpoint: the interval is open by construction, so `log u₁` is always finite and there is
+/// no pole to guard. That guarantee does not cross into Float32.
 ///
 /// `nextUniform` returns `float(s0 + s1) * 2⁻⁶⁴`. Converting a `ulong` to `float` keeps
 /// 24 bits, so every state within 2048 of `ULONG_MAX` rounds *up* to exactly 2⁶⁴ and the

@@ -155,8 +155,8 @@ public struct InventorySimulator: Sendable {
     private static func normalSample<G: RandomNumberGenerator>(
         mean: Double = 0.0, stdDev: Double = 1.0, using rng: inout G
     ) -> Double {
-        let u1 = Double.random(in: Double.leastNonzeroMagnitude..<1.0, using: &rng)
-        let u2 = Double.random(in: 0.0..<1.0, using: &rng)
+        let u1 = openUnitUniform(Double.self, using: &rng)
+        let u2 = openUnitUniform(Double.self, using: &rng)
         return distributionNormal(mean: mean, stdDev: stdDev, u1, u2)
     }
 

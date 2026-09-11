@@ -30,8 +30,8 @@
 /// let simulation = try FinancialSimulation.documentationFixture
 /// var rng = DeterministicRNG(seed: 42)
 ///
-/// // Use with Swift standard library random APIs
-/// let uniform = Double.random(in: 0..<1, using: &rng)
+/// // Use with the library's own unit-interval mapping, and with the standard library's
+/// let uniform: Double = openUnitUniform(using: &rng)
 /// let integer = Int.random(in: 1...100, using: &rng)
 ///
 /// // Use with CorrelatedNormals for reproducible simulation

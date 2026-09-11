@@ -238,7 +238,7 @@ public struct ParallelOptimizer<V: VectorSpace>: Sendable where V.Scalar == Doub
 			for d in 0..<dimension {
 				let lower = lowerArray[d]
 				let upper = upperArray[d]
-				let random = Double.random(in: 0...1, using: &generator)
+				let random = openUnitUniform(Double.self, using: &generator)
 				let value = lower + random * (upper - lower)
 				coordinates.append(value)
 			}

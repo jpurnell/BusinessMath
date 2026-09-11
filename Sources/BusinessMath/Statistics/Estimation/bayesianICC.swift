@@ -37,8 +37,8 @@ private struct GibbsRNG: RandomNumberGenerator {
 
     /// Two uniforms in (0, 1), in stream order — the pair Box-Muller wants.
     mutating func nextPair() -> (Double, Double) {
-        let u1 = Double.random(in: 0...1, using: &self)
-        let u2 = Double.random(in: 0...1, using: &self)
+        let u1 = openUnitUniform(Double.self, using: &self)
+        let u2 = openUnitUniform(Double.self, using: &self)
         return (u1, u2)
     }
 }

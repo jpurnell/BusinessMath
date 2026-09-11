@@ -70,7 +70,11 @@ struct MonteCarloIntegrationSeedTests {
 		var g1 = SplitMix64(seed: 11)
 		var g2 = SplitMix64(seed: 11)
 		let estimate: Double = integrate(square, iterations: 1, using: &g1)
-		let sample: Double = distributionUniform(Double.random(in: 0..<1, using: &g2))
+		// Through the library's own mapping, not `Double.random(in: 0..<1, using:)`. The
+		// second reproduced a standard-library implementation detail, which is documented as
+		// changeable between Swift releases and therefore cannot be what a reproducibility
+		// test rests on -- see ``openUnitUniform(_:using:)``.
+		let sample: Double = distributionUniform(openUnitUniform(Double.self, using: &g2))
 		#expect(identical(estimate, square(sample)))
 	}
 

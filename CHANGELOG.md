@@ -13,6 +13,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The library owns its unit-interval mapping.** Every place BusinessMath turned generator
+  output into a uniform went through `Double.random(in: 0...1, using:)`. That is wrong for the
+  job twice over: the interval is **closed**, so a legal draw of exactly zero makes `log(0)`
+  produce a non-finite variate from every quantile that takes a logarithm or a reciprocal; and
+  the standard library documents that the generator-to-`Double` algorithm **may change between
+  Swift releases**, so a seeded stream was never reproducible across toolchains.
+
+  `openUnitUniform(_:using:)` is now public and is the single place that conversion happens —
+  41 call sites across `Simulation/`, `Statistics/`, `Optimization/`, `Operations/`,
+  `Valuation/` and `BusinessMathDSL`, plus 23 default arguments. Three hand-written
+  workarounds go with it: Box-Muller's `1 - u` fold, `CorrelatedNormals`'s `Double.ulpOfOne`
+  clamp and `InventorySimulator`'s `leastNonzeroMagnitude` clamp all existed to dodge an
+  endpoint that can no longer occur.
+
+  **Seeded streams change.** Any recorded result against a seed will differ. The distributions
+  are identical; the variate at a given seed is not.
+
+  The mapping uses **52** bits, not 53. The form most references give,
+  `(Double(x >> 11) + 0.5) * 0x1p-53`, returns exactly `1.0` on an all-ones word: the largest
+  shifted word is `2⁵³ - 1`, adding `0.5` needs a 54th significant bit, and the sum rounds
+  ties-to-even up to `2⁵³`. The offset that opens the bottom of the interval closes the top,
+  and `boxMullerSeed` through it produced a radius of `-0.0` — the pole the function exists to
+  make unreachable, reached on the first draw. At 52 bits the arithmetic is exact and the
+  endpoints are `2⁻⁵³` and `1 - 2⁻⁵³`. `OpenUnitUniformTests` pins both.
+
+- **A Cox process test asserted something false.** `coxProcessVolatility` claimed that higher
+  intensity volatility widens the *relative* spread of default times. That holds for an
+  intensity drawn once per path; this one steps an intensity along a grid, and integrating a
+  volatile intensity over the time to default averages the volatility out. Measured over 5,000
+  paths with no censoring, the coefficient of variation is 1.02, 1.00, 1.00, 1.00 and 1.01 at
+  σ = 0.05 … 3.00 — no trend — while the **mean** falls from 49.7 to 2.2, a 22× effect. The
+  test compared two CVs a fifth of a percent apart and passed on whichever side of the noise
+  the stream fell. It now asserts the monotone fall in the mean and the invariance of the CV.
+
+- **A Bayesian ICC comparison was absorbing sampler variance.** `posteriorICCMatchesFrequentist`
+  bounded the gap at 0.05, chosen as "a twentieth of the range". On one chain,
+  `raterEffect_large` ranged from −0.024 to −0.079 across five seeds — a poorly mixing chain
+  under a bound with no headroom. It now runs `chains: 4` (range −0.029…−0.048, the mechanism
+  `GibbsConfig` already had), asserts the **sign** — a vague prior shrinks downward, 20 of 20
+  measurements negative — and bounds the magnitude at 0.08 from the measurement.
+
 - **Every sampler now takes `seed:` and `using:`, and `seed:` means one thing.** The
   rejection-based families (Gamma, Beta, t, χ², F, geometric) took `seed: UInt64` naming a
   stream. The inverse-transform families — exponential, logistic, Rayleigh, Weibull, Pareto —

@@ -414,7 +414,7 @@ public struct ScenarioGenerator {
 				// when a caller passes bounds the wrong way round. Inverted bounds still
 				// produce values between them here, which is the behaviour this has always
 				// had, and a library should not kill the process over an argument order.
-				let u = Double.random(in: 0..<1, using: &generator)
+				let u = openUnitUniform(Double.self, using: &generator)
 				parameters["param_\(i)"] = lowerBounds[i] + u * (upperBounds[i] - lowerBounds[i])
 			}
 

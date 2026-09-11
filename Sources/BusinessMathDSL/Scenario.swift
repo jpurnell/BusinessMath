@@ -408,7 +408,7 @@ public enum Distribution {
             return Double.random(in: min...max, using: &generator)
 
         case .triangular(let min, let mode, let max):
-            let u = Double.random(in: 0..<1, using: &generator)
+            let u = openUnitUniform(Double.self, using: &generator)
             let fc = (mode - min) / (max - min) // fp-safety:disable — triangular requires max > min
             if u < fc {
                 return min + sqrt(u * (max - min) * (mode - min))
