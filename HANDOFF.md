@@ -1,15 +1,14 @@
 # Handoff — 2026-09-11
 
-**`3.0.0-alpha.3` is released and ten of the eleven library defects in the distribution test
-review are fixed.** `main` is clean and pushed at `70d29b1e`. The next piece of work is
-**Bessel**, and it is blocked on two spreadsheet cells only you can run — see "The two cells"
-below.
+**`3.0.0-alpha.3` is released, ten of the eleven library defects in the distribution test
+review are fixed, and Bessel is unblocked.** `main` is clean and pushed. The next piece of work
+is **`besselJ`**, and everything it needs is settled — start at §7 step 1 of the proposal.
 
 ## State
 
 | | |
 |---|---|
-| branch | `main` at `70d29b1e`, pushed, verified by `ls-remote` |
+| branch | `main`, pushed, verified by `ls-remote` |
 | latest stable | `v2.18.0` — what `from:` consumers resolve to |
 | latest pre-release | `v3.0.0-alpha.3` |
 | tests | **7,679 in 688 suites**, exit 0 |
@@ -174,39 +173,52 @@ Anything recorded against a seed will differ.
 
 ---
 
-## Next: Bessel
+## Next: Bessel — unblocked, start at step 1
 
 `project/plans/proposals/excel-coverage/PROPOSAL_bessel_functions.md` — a full design proposal
-from the other session, plus `fc49aa1b` recording a negative-`X` measurement.
+from the other session. **Read §5 (numerical design) and §6 (test strategy) before writing
+anything**; §7 is the work breakdown.
 
 Four functions — `besselJ`, `besselY`, `besselI`, `besselK` — in
-`Sources/BusinessMath/Statistics/SpecialFunctions/`, generic over `T: Real`, `T.nan` for invalid
-input. §7 has the work breakdown: J first (hardest, everything reuses its structure), then Y, I,
-K, then the tests, then the SwiftExcelFunctions binding.
+`Sources/BusinessMath/Statistics/SpecialFunctions/`, one file each, generic over `T: Real`,
+returning `T.nan` for invalid input, matching every other file in that directory.
 
 **The proposal argues this is 3.1.0, not 3.0.0** (§8). Nothing here blocks the release.
 
-### The two cells — this blocks steps 1 and 3
+### The negative-`X` question is settled: parity
 
-Excel's negative-`X` convention is **half measured**. `fc49aa1b` settled that Excel *accepts* a
-negative `X` rather than returning `#NUM!`, at even order. The **sign** is still open, and needs
-two cells run in Excel for Mac:
+Measured 2026-09-11 at **odd** order, which is the only order that can discriminate:
 
-```
-=BESSELJ(-1.5,1)
-=BESSELI(-1.5,1)
-```
+| Cell | Excel returned | parity `(−1)ⁿfₙ(\|x\|)` | absolute value `fₙ(\|x\|)` |
+|---|---|---|---|
+| `=BESSELJ(-1.5,1)` | **`-0.557936508`** | `-0.5579365079` ✓ | `+0.5579365079` ✗ |
+| `=BESSELI(-1.5,1)` | **`-0.981666428`** | `-0.9816664286` ✓ | `+0.9816664286` ✗ |
 
-Odd order is the discriminator: at even order parity and absolute value agree, which is why the
-first measurement settled less than it looked. Until these are known, `besselJ` and `besselI`
-cannot be written — only `besselY` and `besselK` (steps 2 and 4) are unblocked, and both are
-defined only for `x > 0` so they never meet the question.
+Both negative. The absolute-value rule predicts positive in both cases, so this is settled by
+**sign, not by tolerance** — no interpretation required.
 
-§9 has two more open questions, neither blocking: confirming Excel's own precision with
-`TEXT()` (its error looks like ~1e-8 relative, which display rounding cannot explain), and
-whether `order` should be `Int` everywhere (proposed yes).
+**What to write:** for `x < 0`, evaluate at `|x|` and multiply by `(−1)ⁿ`. One line at the top
+of `besselJ` and `besselI`. Nothing for `besselY` and `besselK`, which refuse `x ≤ 0` outright
+and never meet the question.
 
----
+**One loose thread, not blocking.** `BESSELJ` matched to all nine printed digits. `BESSELI` came
+back `-0.981666428` where correct rounding of `−0.9816664285779…` gives `-0.981666429` — one
+unit low in the last place, ≈ 5.9 × 10⁻¹⁰ relative. Display truncation or a real Excel error;
+either way it is tighter than the `3 × 10⁻⁸` the even-order cells suggested. §3.2's question
+stays open with a better bound. **The tests never depended on Excel** (§6 uses published
+references and identities), so this changes nothing about how to proceed.
+
+### Order of work
+
+§7: **step 1 `besselJ`** (hardest — series/asymptotic J₀ and J₁, then the two-direction
+recurrence of §5.2; everything after reuses its structure), then Y, then I, then K, then
+`BesselFunctionsTests` (§6's three layers — published references, identities that share no code
+path with the implementation, boundaries), then the SwiftExcelFunctions binding, which is
+mechanical and **belongs to the other session**.
+
+§9 leaves two open questions, neither blocking: confirming Excel's precision with `TEXT()`, and
+whether `order` should be `Int` everywhere — proposed yes, and worth one look before four
+signatures are committed to.
 
 ## After Bessel
 

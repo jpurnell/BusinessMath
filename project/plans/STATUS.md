@@ -52,14 +52,15 @@ about formatting; a parser does not.
 | `AdditionalModelTests` ×2 — "Enable after adding validation" | Rate and capacity validation is absent |
 | `MonteCarloGPUIntegrationTests:723` | GPU device returns wrong results on initial runs; the production path via `MonteCarloSimulation` is correct |
 
-**Bessel — the next body of work, and blocked.**
-`proposals/excel-coverage/PROPOSAL_bessel_functions.md`, with a negative-`X` measurement at
-`fc49aa1b`. Four functions for `Statistics/SpecialFunctions/`; the proposal argues **3.1.0, not
-3.0.0** (§8). Steps 1 and 3 (`besselJ`, `besselI`) are blocked on two Excel-for-Mac cells that
-settle the negative-`X` sign convention at **odd** order — `=BESSELJ(-1.5,1)` and
-`=BESSELI(-1.5,1)`. Even order cannot discriminate, which is why the first measurement settled
-less than it appeared to. Steps 2 and 4 (`besselY`, `besselK`) are unblocked: both are defined
-only for `x > 0` and never meet the question.
+**Bessel — the next body of work, and unblocked.**
+`proposals/excel-coverage/PROPOSAL_bessel_functions.md`. Four functions for
+`Statistics/SpecialFunctions/`; the proposal argues **3.1.0, not 3.0.0** (§8).
+
+§3.1's negative-`X` convention was **settled 2026-09-11: parity, not absolute value.**
+`=BESSELJ(-1.5,1)` returned `-0.557936508` and `=BESSELI(-1.5,1)` returned `-0.981666428`,
+both negative where the absolute-value rule predicts positive — decided by sign, not tolerance.
+For `x < 0`, evaluate at `|x|` and multiply by `(−1)ⁿ`. All of §7 can now proceed; start at
+step 1, `besselJ`.
 
 **3.0.0 final** — docs-only, no technical blocker, whenever wanted.
 

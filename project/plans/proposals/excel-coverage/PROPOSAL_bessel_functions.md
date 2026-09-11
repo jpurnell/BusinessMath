@@ -1,6 +1,7 @@
 # Design Proposal — the four Bessel functions
 
-**Status:** proposal, 2026-09-10. Phase 0 (Design).
+**Status:** proposal, 2026-09-10. Phase 0 (Design). **Unblocked 2026-09-11** — §3.1's
+negative-`X` convention is measured and settled; all of §7 can proceed.
 **Scope:** `BESSELJ`, `BESSELY`, `BESSELI`, `BESSELK` — four functions in
 `Sources/BusinessMath/Statistics/SpecialFunctions/`, for BusinessMath.
 **Motivated by:** the Excel engineering block, which after this proposal contains no
@@ -100,41 +101,53 @@ Both arguments are numbers, and `N` is the order.
 | `X ≤ 0` for `BESSELK`, `BESSELY` | `#NUM!` — Kₙ and Yₙ are undefined there |
 | `X < 0` for `BESSELI`, `BESSELJ` | defined mathematically; see §3.1 |
 
-### 3.1 Negative `X` — measured 2026-09-10, and half answered
+### 3.1 Negative `X` — measured, and fully answered
 
 Jₙ and Iₙ *are* defined for negative `x` — both satisfy `f(−x) = (−1)ⁿ f(x)` — and
 Microsoft's reference says nothing about it. Kₙ and Yₙ are genuinely undefined there, so
 those two need no decision.
 
-Under ADR-001 the specification is Excel, so this was measured rather than reasoned about:
+Under ADR-001 the specification is Excel, so this was measured rather than reasoned about, in
+two rounds. The first round used an **even** order and could not answer the question it was
+chosen for:
 
 | Cell | Excel returned |
 |---|---|
 | `=BESSELJ(-1.5,2)` | `0.232087679` |
 | `=BESSELI(-1.5,2)` | `0.337834621` |
 
-**What that settles: Excel does not refuse a negative `X`.** The `#NUM!` branch is
-eliminated, which removes the guard clause that would otherwise have to be written into
-all four functions. That is real progress and it is the larger half of the question.
+That settled the larger half — **Excel does not refuse a negative `X`** — which eliminates the
+`#NUM!` branch and the guard clause it would have required in all four functions. It could not
+settle the sign, because at `n = 2` the factor `(−1)ⁿ` is `+1` and the two candidate rules give
+identical answers.
 
-**What it does not settle: parity or absolute value.** Order 2 is even, so `(−1)ⁿ = +1` and
-the two candidate rules give *identical* answers. The measurement is consistent with both.
-Discriminating needs an **odd** order, where they differ in sign:
+The second round used an **odd** order, where they differ in sign:
 
-| Cell | If parity | If \|x\| |
-|---|---|---|
-| `=BESSELJ(-1.5,1)` | `-0.557936508` | `+0.557936508` |
-| `=BESSELI(-1.5,1)` | `-0.981666429` | `+0.981666429` |
+| Cell | Excel returned | If parity | If \|x\| |
+|---|---|---|---|
+| `=BESSELJ(-1.5,1)` | **`-0.557936508`** | `-0.557936508` | `+0.557936508` |
+| `=BESSELI(-1.5,1)` | **`-0.981666428`** | `-0.981666429` | `+0.981666429` |
 
-Two cells. Until they are run, **`besselJ` and `besselI` should not be written**, because
-the sign convention is not recoverable from the code afterwards without redoing this.
+**Settled: Excel applies the true parity relation.** Both results are negative; the
+absolute-value rule predicts positive in both cases and is wrong by a whole sign, not by a
+tolerance. No interpretation is needed.
 
-The proposal's own framing was at fault here: §3.1 originally offered `BESSELJ(-1.5, 2)` as
-the probe, and it is the one call in the family that cannot answer the question it was
-chosen to answer. An even order was picked because it matched the reference value already
-written down elsewhere in this document, which is a bad reason to choose a measurement.
+**What the implementation does, therefore:** for `x < 0`, evaluate at `|x|` and multiply by
+`(−1)ⁿ`. One line at the top of `besselJ` and `besselI`; nothing for `besselY` and `besselK`,
+which refuse `x ≤ 0` outright.
 
----
+Two notes on the measurement itself, both worth keeping:
+
+- **`BESSELJ` matched the prediction to all nine printed digits.** `BESSELI` came back
+  `-0.981666428` where correct rounding of `−0.9816664285779…` to nine decimals gives
+  `-0.981666429`. One unit low in the last printed place — about `5.9 × 10⁻¹⁰` relative. That
+  is either display truncation or a real error, and either way it is *tighter* than the
+  `3 × 10⁻⁸` the even-order cells suggested. §3.2's question stays open but its bound moves in.
+- **The first probe was chosen badly, and by this document.** §3.1 originally offered
+  `BESSELJ(-1.5, 2)`, which is the one call in the family that cannot discriminate. The even
+  order was picked because it matched a reference value already written down elsewhere here —
+  convenience, not discriminating power. A measurement chosen to be easy to check against what
+  you already have is a measurement that tends to confirm what you already have.
 
 ### 3.2 Excel's own accuracy — the same two cells answered this unasked
 
@@ -369,7 +382,7 @@ later by someone who does not know why it was tight.
 
 | Step | Content |
 |---|---|
-| 0 | **Measure Excel's negative-`X` behaviour at an *odd* order** (§3.1). The even-order half is done and eliminated `#NUM!`; the sign convention is still open and still blocks steps 1 and 3. Two cells. |
+| ~~0~~ | ~~**Measure Excel's negative-`X` behaviour at an *odd* order** (§3.1).~~ **Done 2026-09-11: parity, not absolute value.** `BESSELJ(-1.5,1) = -0.557936508` and `BESSELI(-1.5,1) = -0.981666428`, both negative. Steps 1 and 3 are unblocked; all four steps can now proceed. |
 | 1 | `besselJ` — series/asymptotic J₀ and J₁, then the two-direction recurrence of §5.2. The hardest of the four; everything after reuses its structure. |
 | 2 | `besselY` — Y₀ and Y₁ (series-with-log, asymptotic), then upward recurrence. |
 | 3 | `besselI` — mirrors step 1, modified. |
@@ -405,9 +418,10 @@ already available.* That sentence is fine to publish.
 
 ## 9. Open questions
 
-1. **Parity or absolute value for negative `X`** (§3.1). Half measured 2026-09-10: Excel
-   accepts a negative `X` rather than refusing it. The sign is still open and needs
-   `=BESSELJ(-1.5,1)` and `=BESSELI(-1.5,1)`. **Blocks steps 1 and 3.**
+1. ~~**Parity or absolute value for negative `X`** (§3.1).~~ **Resolved 2026-09-11: parity.**
+   `=BESSELJ(-1.5,1)` returned `-0.557936508` and `=BESSELI(-1.5,1)` returned `-0.981666428`.
+   Both negative, where the absolute-value rule predicts positive — settled by sign, not by
+   tolerance. For `x < 0`, evaluate at `|x|` and multiply by `(−1)ⁿ`. Nothing is blocked now.
 2. **Confirm Excel's precision with the full mantissa** (§3.2). The nine-digit reading puts
    Excel's error near 10⁻⁸ relative, which display rounding cannot account for. Does not
    block anything — the tests never depended on Excel — but it fixes the tolerance any
@@ -429,8 +443,8 @@ person should be able to see what was actually run rather than what was conclude
 |---|---|---|---|
 | 2026-09-10 | `=BESSELJ(-1.5,2)` | `0.232087679` | negative `X` accepted, not `#NUM!`; Excel ≈ 3.0 × 10⁻⁸ relative error |
 | 2026-09-10 | `=BESSELI(-1.5,2)` | `0.337834621` | as above; Excel ≈ 7.9 × 10⁻⁹ relative error |
-| pending | `=BESSELJ(-1.5,1)` | | parity vs absolute value |
-| pending | `=BESSELI(-1.5,1)` | | parity vs absolute value |
+| 2026-09-11 | `=BESSELJ(-1.5,1)` | `-0.557936508` | **parity, not \|x\|** — matches `−J₁(1.5)` to all nine printed digits |
+| 2026-09-11 | `=BESSELI(-1.5,1)` | `-0.981666428` | **parity, not \|x\|** — `−I₁(1.5)` is `−0.9816664286`, so Excel is one unit low in the last printed place, ≈ 5.9 × 10⁻¹⁰ relative |
 | pending | Wronskian pair (§3.2) | | Excel's error budget, measured against an exact identity |
 
 Reference values at `x = 1.5`, cross-checked against each other through the three-term
