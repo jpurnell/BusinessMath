@@ -58,6 +58,54 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
     /// Returns `nil` if Metal is unavailable or initialization fails.
     public static let shared: MonteCarloGPUDevice? = MonteCarloGPUDevice()
 
+    // MARK: - Compilation
+
+    /// Compile options for the kernel, with fast math **off**.
+    ///
+    /// `options: nil` takes Metal's defaults, and the default is fast math *on*
+    /// (`MTLCompileOptions().fastMathEnabled` is `true`), which licenses the compiler to assume
+    /// no NaNs and no infinities and to rewrite arithmetic accordingly.
+    ///
+    /// **No divergence is observable in this kernel today.** Measured on an Apple M1 Max
+    /// against a replica of `evaluateModel`'s exact shape — a `float stack[32]` indexed by a
+    /// runtime counter — fast and safe math agree on every condition that has one:
+    ///
+    /// | expression | fast | safe |
+    /// |---|---|---|
+    /// | `0 / 0` | `NaN` | `NaN` |
+    /// | `1 / 0` | `inf` | `inf` |
+    /// | `log(0)` | `-inf` | `-inf` |
+    /// | `sqrt(-1)` | `NaN` | `NaN` |
+    /// | `inf * 0` | `NaN` | `NaN` |
+    ///
+    /// Written as `v / v` on operands the compiler *can* resolve, fast math does fold `0 / 0`
+    /// to `1.0`. It cannot do that here because the operands are stack slots at indices it
+    /// cannot follow. That is the whole reason this kernel is safe under fast math: not a
+    /// guarantee, but the optimizer's inability to see through an array subscript.
+    ///
+    /// Which is why the flag is off anyway. This package has already been caught once relying
+    /// on protection the optimizer was free to remove — `factorial`'s overflow trap was
+    /// incidental to an arithmetic result, and inlining deleted the multiply and its check
+    /// together, turning a trap into `exit 0` under `-O`. Fast math is a standing licence to do
+    /// the same to every guard in this kernel the moment a rewrite makes the operands visible.
+    /// Declining the licence costs, on `GPUPerformanceBenchmark` at 100,000 iterations, medians
+    /// of three runs: **376 ms** fast against **408 ms** safe, with a run-to-run spread
+    /// (374–625 ms) wider than the difference — on a path the same benchmark clocks at only
+    /// 1.2–1.4× the CPU.
+    ///
+    /// The divergences that remain are real and are not about this flag: the kernel returns
+    /// `inf` or `NaN` where ``BytecodeInterpreter`` throws. Closing those needs an error channel
+    /// the kernel does not have. See `project/plans/proposals/PROPOSAL_gpu_error_parity.md`.
+    private static var compileOptions: MTLCompileOptions {
+        let options = MTLCompileOptions()
+        if #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
+            options.mathMode = .safe
+        } else {
+            options.fastMathEnabled = false
+        }
+        return options
+    }
+
     // MARK: - Types
 
     /// Distribution configuration for GPU
@@ -255,7 +303,7 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
         // Compile library
         let compiledLibrary: MTLLibrary
         do {
-            compiledLibrary = try device.makeLibrary(source: kernelSource, options: nil)
+            compiledLibrary = try device.makeLibrary(source: kernelSource, options: Self.compileOptions)
         } catch {
             #if canImport(os)
             logger.error("Metal kernel compilation failed: \(error, privacy: .public)")

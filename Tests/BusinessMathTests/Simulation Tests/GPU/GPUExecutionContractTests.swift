@@ -296,6 +296,173 @@ struct GPUExecutionContractTests {
 @Suite("The package's Metal kernel compiles", .requiresMetalGPU)
 struct MetalKernelCompilationTests {
 
+    /// Every opcode, computed both ways on the same inputs, compared.
+    ///
+    /// Nothing checked that the kernel's arithmetic agreed with the interpreter's. The opcode
+    /// *numbers* now cannot drift (`GPUOpcode`), but agreeing on which case to enter says
+    /// nothing about what the case does — `OP_SUB` could subtract in the other order and every
+    /// table test would still pass.
+    ///
+    /// Exact inputs reach the kernel through a degenerate uniform: distribution type 1 is
+    /// `param1 + u * (param2 - param1)`, so `param1 == param2` returns that value for every
+    /// draw, whatever the RNG does.
+    ///
+    /// The tolerance is Float32's, not a fitted one. The kernel computes in single precision and
+    /// the interpreter in double, so a relative difference of a few times `Float.ulpOfOne`
+    /// (1.19e-7) is the expected cost of the crossing; `2e-6` allows a handful of roundings in a
+    /// chain. Anything larger is a disagreement about the operation, not about precision.
+    @Test("Every opcode agrees between the interpreter and the kernel", .requiresMetalGPU)
+    func everyOpcodeAgreesWithTheInterpreter() throws {
+        let gpu = try #require(MonteCarloGPUDevice.shared,
+                               "a trivial kernel compiles here, so the package's kernel failing to is our defect")
+
+        // Chosen so every opcode is in range: positive for log and sqrt, non-zero for divide,
+        // and a first operand that is non-zero so `select` takes its true branch.
+        let values: [Float] = [3.0, 2.0, 7.0]
+        let distributions: [MonteCarloGPUDevice.DistributionConfig] = values.map {
+            (type: 1, params: ($0, $0, 0.0))
+        }
+
+        for opcode in GPUOpcode.allCases {
+            // `input` and `constant` are operands, not operations; they are what the others
+            // are built from and are exercised by every case below.
+            if opcode == .input || opcode == .constant { continue }
+
+            let operands = opcode.operandCount
+            var bytecode: [Bytecode] = (0..<operands).map { Bytecode.input($0) }
+            let operation: Bytecode
+            switch opcode {
+            case .add: operation = .add
+            case .subtract: operation = .subtract
+            case .multiply: operation = .multiply
+            case .divide: operation = .divide
+            case .power: operation = .power
+            case .min: operation = .min
+            case .max: operation = .max
+            case .negate: operation = .negate
+            case .abs: operation = .abs
+            case .sqrt: operation = .sqrt
+            case .log: operation = .log
+            case .exp: operation = .exp
+            case .sin: operation = .sin
+            case .cos: operation = .cos
+            case .tan: operation = .tan
+            case .lessThan: operation = .lessThan
+            case .greaterThan: operation = .greaterThan
+            case .lessOrEqual: operation = .lessOrEqual
+            case .greaterOrEqual: operation = .greaterOrEqual
+            case .equal: operation = .equal
+            case .notEqual: operation = .notEqual
+            case .select: operation = .select
+            case .input, .constant: continue
+            }
+            bytecode.append(operation)
+
+            let onCPU = try BytecodeInterpreter.evaluate(
+                bytecode: bytecode,
+                inputs: values.prefix(operands).map(Double.init)
+            )
+
+            let onGPU = try gpu.runSimulation(
+                distributions: Array(distributions.prefix(Swift.max(operands, 1))),
+                modelBytecode: BytecodeCompiler.toGPUFormat(bytecode),
+                iterations: 4,
+                seed: 1
+            )
+
+            #expect(onGPU.count == 4, "\(opcode): got \(onGPU.count) results")
+            guard let first = onGPU.first else { continue }
+
+            let expected = Double(Float(onCPU))
+            let actual = Double(first)
+            let scale = Swift.max(1.0, Swift.abs(expected))
+            let relative = Swift.abs(actual - expected) / scale
+            #expect(relative < 2e-6,
+                    "\(opcode): interpreter \(onCPU), kernel \(first), relative \(relative)")
+        }
+    }
+
+    /// Where the two executors part company on a division by zero, pinned as it stands.
+    ///
+    /// The interpreter throws `.divisionByZero`. The kernel has no way to throw and returns
+    /// what IEEE says: `NaN` for `0 / 0`, `inf` for `1 / 0`. This is the gap
+    /// `PROPOSAL_gpu_error_parity.md` exists to close; until it is closed, the gap is at least
+    /// written down and asserted, so narrowing it is a deliberate change with a failing test.
+    ///
+    /// - Note: an earlier version of this test claimed to prove the kernel is compiled with
+    ///   fast math off, by asserting `0 / 0` is not `1.0`. It passed under *both* math modes and
+    ///   so proved nothing. Fast math folds `0 / 0` to `1.0` only where the compiler can see
+    ///   both operands are the same value; `evaluateModel` divides two slots of a stack array at
+    ///   runtime indices, which it cannot follow. The flag is still off — see
+    ///   ``MonteCarloGPUDevice`` — but this is not the test that shows it, and no test can show
+    ///   it through this kernel, because the flag currently changes nothing it computes.
+    @Test("Division by zero: the interpreter throws, the kernel returns IEEE", .requiresMetalGPU)
+    func divisionByZeroDivergesAsDocumented() throws {
+        let gpu = try #require(MonteCarloGPUDevice.shared,
+                               "a trivial kernel compiles here, so the package's kernel failing to is our defect")
+
+        // A degenerate uniform pinned at zero: `param1 + u * (param2 - param1)` with the two
+        // equal returns that value for every draw.
+        let zero: [MonteCarloGPUDevice.DistributionConfig] = [(type: 1, params: (0.0, 0.0, 0.0))]
+
+        let indeterminate: [Bytecode] = [.input(0), .input(0), .divide]
+        let indeterminateOnGPU = try gpu.runSimulation(
+            distributions: zero,
+            modelBytecode: BytecodeCompiler.toGPUFormat(indeterminate),
+            iterations: 4, seed: 1
+        )
+        #expect(indeterminateOnGPU.first?.isNaN == true,
+                "0 / 0 on the GPU returned \(String(describing: indeterminateOnGPU.first))")
+
+        let overZero: [Bytecode] = [.constant(1.0), .input(0), .divide]
+        let overZeroOnGPU = try gpu.runSimulation(
+            distributions: zero,
+            modelBytecode: BytecodeCompiler.toGPUFormat(overZero),
+            iterations: 4, seed: 1
+        )
+        #expect(overZeroOnGPU.first?.isInfinite == true,
+                "1 / 0 on the GPU returned \(String(describing: overZeroOnGPU.first))")
+
+        // The interpreter refuses both, by the same case.
+        for bytecode in [indeterminate, overZero] {
+            do {
+                let value = try BytecodeInterpreter.evaluate(bytecode: bytecode, inputs: [0.0])
+                Issue.record("the interpreter returned \(value) instead of throwing")
+            } catch let error as EvaluationError {
+                guard case .divisionByZero = error else {
+                    Issue.record("the interpreter threw \(error), not divisionByZero")
+                    return
+                }
+            }
+        }
+    }
+
+    /// The equality opcodes do not use the same epsilon on the two sides.
+    ///
+    /// The interpreter tests `abs(a - b) < 1e-10`; the kernel tests `< 1e-6f`. Four orders of
+    /// magnitude apart, so two values differing by 1e-8 are **equal** on the GPU and **unequal**
+    /// on the CPU — a divergence with no error, no NaN and no infinity in it, which is why none
+    /// of the error-parity machinery would ever surface it.
+    ///
+    /// This test pins the gap as it stands rather than asserting agreement, so that closing it
+    /// is a deliberate change with a failing test attached. Filed in
+    /// `PROPOSAL_gpu_error_parity.md` section 10.
+    @Test("The equality epsilons differ, and this is where")
+    func equalityEpsilonsDiffer() throws {
+        let interpreterEpsilon = 1e-10
+        let kernelEpsilon = 1e-6
+
+        // A gap the two classify differently: below the kernel's threshold, above the
+        // interpreter's.
+        let gap = 1e-8
+        #expect(gap < kernelEpsilon, "the kernel would call these equal")
+        #expect(gap > interpreterEpsilon, "the interpreter would call these unequal")
+
+        let bytecode: [Bytecode] = [.input(0), .input(1), .equal]
+        let equalOnCPU = try BytecodeInterpreter.evaluate(bytecode: bytecode, inputs: [1.0, 1.0 + gap])
+        #expect(equalOnCPU == 0.0, "the interpreter called a gap of \(gap) equal")
+    }
+
     @Test("The kernel compiles, dispatches, and returns what it was asked for")
     func kernelCompilesAndRuns() throws {
         let gpu = try #require(MonteCarloGPUDevice.shared,
