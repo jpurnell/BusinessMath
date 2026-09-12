@@ -18,9 +18,14 @@ import Numerics
 /// ## Interpretation
 ///
 /// The ``price`` is the discounted expected payoff estimated by averaging
-/// across ``pathCount`` independent simulation paths. The ``standardError``
-/// quantifies sampling uncertainty: the true price lies within approximately
+/// across ``pathCount`` simulation paths. The ``standardError`` quantifies
+/// sampling uncertainty: the true price lies within approximately
 /// `price +/- 2 * standardError` with 95% confidence.
+///
+/// Under ``antithetic`` sampling the paths come in negatively correlated pairs, so
+/// ``pathCount`` is not the number of *independent* observations — the pair is. The
+/// standard error is measured across the pair means and over their count, which is
+/// what lets the interval narrow as the technique intends.
 ///
 /// ## Example
 ///
@@ -41,8 +46,9 @@ public struct MonteCarloPricingResult: Sendable {
 
     /// The standard error of the price estimate.
     ///
-    /// Computed as `sampleStdDev / sqrt(pathCount)`. Decreases as
-    /// path count increases, at a rate of `O(1/sqrt(N))`.
+    /// Computed as `sampleStdDev / sqrt(observations)`, where an observation is a single
+    /// path in plain sampling and an antithetic *pair mean* under ``antithetic``.
+    /// Decreases as path count increases, at a rate of `O(1/sqrt(N))`.
     public let standardError: Double
 
     /// The number of Monte Carlo paths used in the simulation.
@@ -140,8 +146,11 @@ public struct MonteCarloEngine: Sendable {
         let pairsCount: Int
 
         if antithetic {
-            // Generate N/2 pairs; each pair produces 2 paths
-            pairsCount = paths / 2
+            // Generate N/2 pairs; each pair produces 2 paths. Antithetic sampling has no
+            // meaning below one pair, so one pair is the floor — `paths / 2` is zero for a
+            // single-path request, which left nothing to average and returned 0.0 / 0.0.
+            // `pathCount` then reports the two paths, not the one that was asked for.
+            pairsCount = Swift.max(1, paths / 2)
             effectivePaths = pairsCount * 2
         } else {
             pairsCount = paths
@@ -149,7 +158,13 @@ public struct MonteCarloEngine: Sendable {
         }
 
         var sumPayoffs = 0.0
-        var sumPayoffsSquared = 0.0
+
+        // The independent observations, accumulated by Welford's online algorithm. An
+        // antithetic pair is negatively correlated by construction, so the unit that varies
+        // independently is the pair *mean*, not the individual path.
+        var observationCount = 0
+        var observationMean = 0.0
+        var sumSquaredDeviations = 0.0
         var payoffCopy = payoff
 
         for _ in 0..<pairsCount {
@@ -170,7 +185,7 @@ public struct MonteCarloEngine: Sendable {
             )
             let discountedOriginal = originalPayoffValue * discountFactor
             sumPayoffs += discountedOriginal
-            sumPayoffsSquared += discountedOriginal * discountedOriginal
+            var observation = discountedOriginal
 
             if antithetic {
                 // Simulate the antithetic path (negated draws)
@@ -184,23 +199,40 @@ public struct MonteCarloEngine: Sendable {
                 )
                 let discountedAntithetic = antitheticPayoffValue * discountFactor
                 sumPayoffs += discountedAntithetic
-                sumPayoffsSquared += discountedAntithetic * discountedAntithetic
+                observation = (discountedOriginal + discountedAntithetic) / 2.0
             }
+
+            // Welford's update, not `E[X^2] - E[X]^2`. The textbook form subtracts two
+            // nearly equal numbers, and where antithetic sampling cancels a payoff exactly
+            // the true spread is rounding: the difference then loses every significant
+            // digit and can come out negative. Welford's `M2` is a sum of products of two
+            // deviations that always share a sign, so it cannot.
+            observationCount += 1
+            let delta: Double = observation - observationMean
+            let count: Double = Double(observationCount)
+            observationMean += delta / count // fp-safety:disable — observationCount was just incremented, so count >= 1
+            let deltaAfterUpdate: Double = observation - observationMean
+            sumSquaredDeviations += delta * deltaAfterUpdate
         }
 
+        // The price averages every path, in the order it always has, so a pinned price
+        // stays bit-identical; only the standard error below changes.
         let n = Double(effectivePaths)
-        let mean = sumPayoffs / n // fp-safety:disable — n = effectivePaths which is >= numPaths >= 1
-        // Sample variance: E[X^2] - E[X]^2, with Bessel correction
+        let mean = sumPayoffs / n // fp-safety:disable — effectivePaths >= 1: plain sampling guards paths > 0, antithetic floors at one pair
+
+        // Sample variance of the observations, over their own count. Pooling 2N antithetic
+        // paths as 2N independent draws ignores the negative correlation the technique
+        // exists to create: it reports the plain-sampling spread and hides the whole
+        // variance reduction, leaving the documented `price +/- 2 * standardError`
+        // interval about 40% too wide.
+        let m = Double(observationCount)
         let variance: Double
-        if effectivePaths > 1 {
-            let meanOfSquares = sumPayoffsSquared / n // fp-safety:disable — n = effectivePaths >= 2 (guarded by effectivePaths > 1)
-            let squareOfMean = mean * mean
-            // Use n/(n-1) Bessel correction
-            variance = (meanOfSquares - squareOfMean) * n / (n - 1.0)
+        if observationCount > 1 {
+            variance = sumSquaredDeviations / (m - 1.0) // fp-safety:disable — observationCount >= 2 in this branch, so m - 1 >= 1
         } else {
             variance = 0.0
         }
-        let standardError = variance >= 0 ? (variance.squareRoot() / n.squareRoot()) : 0.0
+        let standardError = variance >= 0 ? (variance.squareRoot() / m.squareRoot()) : 0.0
 
         return MonteCarloPricingResult(
             price: mean,
