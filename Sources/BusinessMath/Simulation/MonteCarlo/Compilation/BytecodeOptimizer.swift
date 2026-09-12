@@ -32,13 +32,17 @@ import Foundation
 /// - Evaluates any expression with only constant operands
 ///
 /// **Algebraic Simplification:**
-/// - `a + 0` → `a`
+/// - `a + (-0.0)` → `a`
+/// - `a - (+0.0)` → `a`
 /// - `a * 1` → `a`
-/// - `a - 0` → `a`
 /// - `a / 1` → `a`
 ///
-/// `a * 0 → 0` is deliberately absent: it is false for `inf`, `NaN` and any negative `a`.
-/// See the note at the multiply case.
+/// The two additive rules are one identity written twice: adding a negative zero, and
+/// subtracting a positive one, are exact for every `a`. Their mirror images are not —
+/// `a + (+0.0)` and `a - (-0.0)` both turn `-0.0` into `+0.0` — so neither is applied.
+///
+/// `a * 0 → 0` is absent for a larger reason: it is false for `inf`, `NaN` and any negative
+/// `a`. See the note at the multiply case.
 ///
 /// Folding stops where the interpreter throws. `1 / 0`, `sqrt(-1)` and `log(0)` are left
 /// in the bytecode so that an optimized model raises the same error an unoptimized one
@@ -266,20 +270,23 @@ public struct BytecodeOptimizer {
     /// equivalents.
     ///
     /// Simplification rules:
-    /// - `a + 0` → `a`
-    /// - `0 + a` → `a`
-    /// - `a - 0` → `a`
+    /// - `a + (-0.0)` → `a`
+    /// - `(-0.0) + a` → `a`
+    /// - `a - (+0.0)` → `a`
     /// - `a * 1` → `a`
     /// - `1 * a` → `a`
     /// - `a / 1` → `a`
     ///
     /// `a * 0 → 0` and `0 * a → 0` were removed as unsound; the multiply case says why.
     ///
-    /// - Note: `a + 0 → a` and `0 + a → a` are exact for every `a` except `-0.0`, where
-    ///   the sum is `+0.0` and the rewrite yields `-0.0`. The two compare equal and
-    ///   propagate identically through every operation this interpreter has except the
-    ///   sign of a printed zero, so the rewrite is kept. It is the one place in this pass
-    ///   where the optimized and unoptimized forms can differ at all.
+    /// - Note: the additive rules carry a sign condition, and it is not decoration. Exactly
+    ///   one additive identity is exact for every `a`: adding `-0.0`. Adding `+0.0` turns
+    ///   `-0.0` into `+0.0`, and subtracting `-0.0` is the same operation under another
+    ///   name. Since `-0.0 == 0.0`, a `case .constant(0.0)` pattern matches both, so the
+    ///   condition has to read `.sign` — which is why `a - 0 → a` was unsound here without
+    ///   a `-0.0` appearing anywhere in the source.
+    ///
+    ///   This pass now has no rewrite that can change a result, in any bit, for any input.
     private static func algebraicSimplificationPass(_ bytecode: [Bytecode]) -> [Bytecode] {
         var stack: [StackValue] = []
 
@@ -293,12 +300,22 @@ public struct BytecodeOptimizer {
                 let right = stack.removeLast()
                 let left = stack.removeLast()
 
-                // a + 0 → a
-                if case .single(.constant(0.0)) = right {
+                // a + (-0.0) → a, and only that.
+                //
+                // `a + (+0.0)` is exact for every `a` except `-0.0`, where the sum is
+                // `+0.0` and returning `a` gives `-0.0`. Adding a *negative* zero is the
+                // identity without exception, which is why LLVM folds `fadd x, -0.0`
+                // unconditionally and requires the `nsz` fast-math flag for `fadd x, 0.0`.
+                //
+                // The sign has to be asked for. `case .constant(0.0)` matches through
+                // `==`, and `-0.0 == 0.0`, so the pattern alone cannot tell the two apart —
+                // which is how the subtract case below was unsound without anyone writing
+                // a `-0.0` anywhere.
+                if case .single(.constant(let addend)) = right, addend.isZero, addend.sign == .minus {
                     stack.append(left)
                 }
-                // 0 + a → a
-                else if case .single(.constant(0.0)) = left {
+                // (-0.0) + a → a
+                else if case .single(.constant(let addend)) = left, addend.isZero, addend.sign == .minus {
                     stack.append(right)
                 }
                 // No simplification - rebuild bytecode
@@ -315,8 +332,10 @@ public struct BytecodeOptimizer {
                 let right = stack.removeLast()
                 let left = stack.removeLast()
 
-                // a - 0 → a
-                if case .single(.constant(0.0)) = right {
+                // a - (+0.0) → a, which is the same identity as the addition above:
+                // subtracting a positive zero is adding a negative one. `a - (-0.0)` is
+                // `a + (+0.0)` and fails for `a = -0.0` exactly as that does.
+                if case .single(.constant(let subtrahend)) = right, subtrahend.isZero, subtrahend.sign == .plus {
                     stack.append(left)
                 }
                 // No simplification - rebuild bytecode

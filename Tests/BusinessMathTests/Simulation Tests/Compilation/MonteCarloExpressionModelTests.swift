@@ -173,27 +173,35 @@ struct MonteCarloExpressionModelTests {
         #expect(abs(result - 42.0) < 1e-6)
     }
 
-    @Test("Optimization: a + 0 → a")
+    /// The additive identity carries a sign condition — see
+    /// `BytecodeOptimizerTests.testAdditiveIdentityIsSignExact`. Adding `-0.0` is exact for
+    /// every input and simplifies; adding `+0.0` turns `-0.0` into `+0.0` and does not.
+    @Test("Optimization: a + (-0.0) → a, a + (+0.0) stays")
     func testOptimizationAddZero() throws {
-        let model = try MonteCarloExpressionModel { builder in
+        let exact = try MonteCarloExpressionModel { builder in
+            return builder[0] + -0.0
+        }
+        #expect(exact.compile() == [.input(0)], "compiled to \(exact.compile())")
+        let exactResult = try exact.evaluate(inputs: [100.0])
+        #expect(abs(exactResult - 100.0) < 1e-6)
+
+        let kept = try MonteCarloExpressionModel { builder in
             return builder[0] + 0.0
         }
-
-        let bytecode = model.compile()
-        #expect(bytecode == [.input(0)])
-
-        let result = try model.evaluate(inputs: [100.0])
-        #expect(abs(result - 100.0) < 1e-6)
+        #expect(kept.compile() == [.input(0), .constant(0.0), .add],
+                "compiled to \(kept.compile())")
+        let keptResult = try kept.evaluate(inputs: [100.0])
+        #expect(abs(keptResult - 100.0) < 1e-6)
     }
 
-    @Test("Multi-pass optimization: (a + 0) * 1")
+    @Test("Multi-pass optimization: (a + (-0.0)) * 1")
     func testMultiPassOptimization() throws {
         let model = try MonteCarloExpressionModel { builder in
-            return (builder[0] + 0.0) * 1.0
+            return (builder[0] + -0.0) * 1.0
         }
 
         let bytecode = model.compile()
-        #expect(bytecode == [.input(0)])
+        #expect(bytecode == [.input(0)], "compiled to \(bytecode)")
 
         let result = try model.evaluate(inputs: [50.0])
         #expect(abs(result - 50.0) < 1e-6)

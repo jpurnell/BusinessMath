@@ -68,14 +68,35 @@ struct BytecodeOptimizerTests {
 
     // MARK: - Algebraic Simplification
 
-    @Test("Algebraic simplification: a + 0 → a")
-    func testAddZero() throws {
-        let expr = MathExpression.binary(.add, .input(0), .constant(0.0))
-        let bytecode = try BytecodeCompiler.compile(expr)
-        let optimized = BytecodeOptimizer.optimize(bytecode)
+    /// Exactly one additive identity is exact for every `a`, and it is the one with the
+    /// negative zero in it.
+    ///
+    /// `a + (+0.0)` is `a` for every input except `-0.0`, where the sum is `+0.0`. LLVM
+    /// folds `fadd x, -0.0` unconditionally and requires the `nsz` fast-math flag for
+    /// `fadd x, 0.0`, for this reason and no other.
+    ///
+    /// The distinction cannot be made by pattern alone: `-0.0 == 0.0`, so
+    /// `case .constant(0.0)` matches a stored negative zero too. The optimizer reads
+    /// `.sign`, and so does this test.
+    @Test("a + (-0.0) → a, and a + (+0.0) stays")
+    func testAdditiveIdentityIsSignExact() throws {
+        let positive = MathExpression.binary(.add, .input(0), .constant(0.0))
+        let positiveBytecode = try BytecodeCompiler.compile(positive)
+        let positiveOptimized = BytecodeOptimizer.optimize(positiveBytecode)
+        #expect(positiveOptimized == positiveBytecode,
+                "a + (+0.0) was rewritten to \(positiveOptimized)")
 
-        let expected: [Bytecode] = [.input(0)]
-        #expect(optimized == expected)
+        let negative = MathExpression.binary(.add, .input(0), .constant(-0.0))
+        let negativeOptimized = BytecodeOptimizer.optimize(try BytecodeCompiler.compile(negative))
+        #expect(negativeOptimized == [.input(0)],
+                "a + (-0.0) should simplify to the input, got \(negativeOptimized)")
+
+        // And the reason, measured rather than asserted from the algebra: the surviving
+        // `a + (+0.0)` returns +0.0 for an input of -0.0, which is what the rewrite would
+        // have got wrong.
+        let sum = try BytecodeInterpreter.evaluate(bytecode: positiveOptimized, inputs: [-0.0])
+        #expect(sum.sign == .plus, "(-0.0) + (+0.0) is +0.0; the model returned -0.0")
+        #expect(sum == 0.0, "the sum is a zero; got \(sum)")
     }
 
     @Test("Algebraic simplification: a - 0 → a")
@@ -254,14 +275,44 @@ struct BytecodeOptimizerTests {
         #expect(optimizedMessage == "log of non-positive")
     }
 
-    @Test("Algebraic simplification: 0 + a → a")
-    func testZeroPlus() throws {
-        let expr = MathExpression.binary(.add, .constant(0.0), .input(0))
-        let bytecode = try BytecodeCompiler.compile(expr)
-        let optimized = BytecodeOptimizer.optimize(bytecode)
+    /// The same rule on the left operand. Addition commutes; the sign condition does not
+    /// stop applying because the zero moved.
+    @Test("(-0.0) + a → a, and (+0.0) + a stays")
+    func testZeroPlusIsSignExact() throws {
+        let positive = MathExpression.binary(.add, .constant(0.0), .input(0))
+        let positiveBytecode = try BytecodeCompiler.compile(positive)
+        #expect(BytecodeOptimizer.optimize(positiveBytecode) == positiveBytecode,
+                "(+0.0) + a was rewritten")
 
-        let expected: [Bytecode] = [.input(0)]
-        #expect(optimized == expected)
+        let negative = MathExpression.binary(.add, .constant(-0.0), .input(0))
+        let negativeOptimized = BytecodeOptimizer.optimize(try BytecodeCompiler.compile(negative))
+        #expect(negativeOptimized == [.input(0)],
+                "(-0.0) + a should simplify to the input, got \(negativeOptimized)")
+    }
+
+    /// Subtraction is the same identity with the sign on the other side, and it was
+    /// unsound here without anyone writing a negative zero anywhere.
+    ///
+    /// `a - (+0.0)` is exact for every `a`. `a - (-0.0)` is `a + (+0.0)` under another
+    /// name and fails for `a = -0.0` exactly as that does — and because
+    /// `case .constant(0.0)` matches through `==`, the old code applied the rewrite to
+    /// both. This is the defect that only being strict about addition uncovered.
+    @Test("a - (+0.0) → a, and a - (-0.0) stays")
+    func testSubtractiveIdentityIsSignExact() throws {
+        let positive = MathExpression.binary(.subtract, .input(0), .constant(0.0))
+        let positiveOptimized = BytecodeOptimizer.optimize(try BytecodeCompiler.compile(positive))
+        #expect(positiveOptimized == [.input(0)],
+                "a - (+0.0) should simplify to the input, got \(positiveOptimized)")
+
+        let negative = MathExpression.binary(.subtract, .input(0), .constant(-0.0))
+        let negativeBytecode = try BytecodeCompiler.compile(negative)
+        let negativeOptimized = BytecodeOptimizer.optimize(negativeBytecode)
+        #expect(negativeOptimized == negativeBytecode,
+                "a - (-0.0) was rewritten to \(negativeOptimized)")
+
+        let difference = try BytecodeInterpreter.evaluate(bytecode: negativeOptimized, inputs: [-0.0])
+        #expect(difference.sign == .plus, "(-0.0) - (-0.0) is +0.0; the model returned -0.0")
+        #expect(difference == 0.0, "the difference is a zero; got \(difference)")
     }
 
     @Test("Algebraic simplification: 1 * a → a")
@@ -292,29 +343,44 @@ struct BytecodeOptimizerTests {
         let bytecode = try BytecodeCompiler.compile(expr)
         let optimized = BytecodeOptimizer.optimize(bytecode)
 
+        // `5 * 2` still folds to 10. `a + 0.0` does not simplify — the addend is a
+        // positive zero — so the multiply by 1 is what goes.
         let expected: [Bytecode] = [
             .input(0),
+            .constant(0.0),
+            .add,
             .constant(10.0),
             .add
         ]
-        #expect(optimized == expected)
+        #expect(optimized == expected, "optimized to \(optimized)")
     }
 
-    @Test("Multi-pass optimization: (a + 0) * 1")
+    /// Multi-pass still works; it just has one fewer identity to reach for.
+    ///
+    /// `(a + (-0.0)) * 1` needs both passes and both rules, so it is the version worth
+    /// keeping: pass 1 drops the negative-zero addend, pass 2 drops the multiply by one.
+    @Test("Multi-pass optimization: (a + (-0.0)) * 1")
     func testMultiPassOptimization() throws {
-        // Pass 1: a + 0 → a
-        // Pass 2: a * 1 → a
         let expr = MathExpression.binary(
             .multiply,
-            MathExpression.binary(.add, .input(0), .constant(0.0)),
+            MathExpression.binary(.add, .input(0), .constant(-0.0)),
             .constant(1.0)
         )
 
         let bytecode = try BytecodeCompiler.compile(expr)
         let optimized = BytecodeOptimizer.optimize(bytecode)
 
-        let expected: [Bytecode] = [.input(0)]
-        #expect(optimized == expected)
+        #expect(optimized == [.input(0)], "optimized to \(optimized)")
+
+        // With a positive zero only the multiply goes, and the add survives.
+        let positive = MathExpression.binary(
+            .multiply,
+            MathExpression.binary(.add, .input(0), .constant(0.0)),
+            .constant(1.0)
+        )
+        let positiveOptimized = BytecodeOptimizer.optimize(try BytecodeCompiler.compile(positive))
+        #expect(positiveOptimized == [.input(0), .constant(0.0), .add],
+                "optimized to \(positiveOptimized)")
     }
 
     @Test("Nested constant folding: sqrt(16.0) + 3.0")

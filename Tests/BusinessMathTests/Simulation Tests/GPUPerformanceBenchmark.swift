@@ -7,18 +7,21 @@
 
 import Foundation
 import Testing
+import TestSupport  // .requiresMetalGPU
 @testable import BusinessMath
 
 @Suite("GPU Performance Benchmark")
 struct GPUPerformanceBenchmark {
 
-    @Test("Measure GPU performance improvement")
+    @Test("Measure GPU performance improvement", .requiresMetalGPU)
     func benchmarkGPUPerformance() throws {
         #if canImport(Metal)
-        guard MonteCarloGPUDevice() != nil else {
-            print("⊘ Skipping: Metal unavailable")
-            return
-        }
+        // `#require`, not `guard … else { return }`. That idiom spells "could not run" the
+        // same way it spells "passed", and it fires on *our* kernel failing to compile, not
+        // on Metal being absent — the message it printed blamed the machine for our defect.
+        // The trait handles the genuinely-absent case, and reports it as skipped.
+        _ = try #require(MonteCarloGPUDevice.shared,
+                         "a trivial kernel compiles here, so the package's kernel failing to is our defect")
 
         let model = try MonteCarloExpressionModel { builder in
             builder[0] + builder[1]

@@ -290,10 +290,12 @@ struct MonteCarloGPUIntegrationTests {
     @Test("Expression model automatic GPU routing")
     func testExpressionModelGPURouting() throws {
         #if canImport(Metal)
-        guard MonteCarloGPUDevice() != nil else {
-            print("⊘ Skipping: Metal unavailable")
-            return
-        }
+        // Not `guard … else { return }`. Under this suite's `.requiresMetalGPU` trait the
+        // machine has already proved it compiles a trivial kernel, so the only way this
+        // device is nil is that *our* kernel source did not compile — and the old idiom
+        // reported that as a pass, with a message blaming Metal.
+        _ = try #require(MonteCarloGPUDevice.shared,
+                         "a trivial kernel compiles here, so the package's kernel failing to is our defect")
 
         // Create expression model
         let model = try MonteCarloExpressionModel { builder in
@@ -335,10 +337,12 @@ struct MonteCarloGPUIntegrationTests {
     @Test("Expression model GPU vs CPU equivalence")
     func testExpressionModelGPUvsCPU() throws {
         #if canImport(Metal)
-        guard MonteCarloGPUDevice() != nil else {
-            print("⊘ Skipping: Metal unavailable")
-            return
-        }
+        // Not `guard … else { return }`. Under this suite's `.requiresMetalGPU` trait the
+        // machine has already proved it compiles a trivial kernel, so the only way this
+        // device is nil is that *our* kernel source did not compile — and the old idiom
+        // reported that as a pass, with a message blaming Metal.
+        _ = try #require(MonteCarloGPUDevice.shared,
+                         "a trivial kernel compiles here, so the package's kernel failing to is our defect")
 
         // Create expression model
         let model = try MonteCarloExpressionModel { builder in
@@ -395,10 +399,12 @@ struct MonteCarloGPUIntegrationTests {
     @Test("GPU threshold: small simulation uses CPU")
     func testSmallSimulationUsesCPU() throws {
         #if canImport(Metal)
-        guard MonteCarloGPUDevice() != nil else {
-            print("⊘ Skipping: Metal unavailable")
-            return
-        }
+        // Not `guard … else { return }`. Under this suite's `.requiresMetalGPU` trait the
+        // machine has already proved it compiles a trivial kernel, so the only way this
+        // device is nil is that *our* kernel source did not compile — and the old idiom
+        // reported that as a pass, with a message blaming Metal.
+        _ = try #require(MonteCarloGPUDevice.shared,
+                         "a trivial kernel compiles here, so the package's kernel failing to is our defect")
 
         // Create expression model
         let model = try MonteCarloExpressionModel { builder in
@@ -428,10 +434,12 @@ struct MonteCarloGPUIntegrationTests {
     @Test("GPU threshold: large simulation uses GPU")
     func testLargeSimulationUsesGPU() throws {
         #if canImport(Metal)
-        guard MonteCarloGPUDevice() != nil else {
-            print("⊘ Skipping: Metal unavailable")
-            return
-        }
+        // Not `guard … else { return }`. Under this suite's `.requiresMetalGPU` trait the
+        // machine has already proved it compiles a trivial kernel, so the only way this
+        // device is nil is that *our* kernel source did not compile — and the old idiom
+        // reported that as a pass, with a message blaming Metal.
+        _ = try #require(MonteCarloGPUDevice.shared,
+                         "a trivial kernel compiles here, so the package's kernel failing to is our defect")
 
         // Create expression model
         let model = try MonteCarloExpressionModel { builder in
@@ -461,10 +469,12 @@ struct MonteCarloGPUIntegrationTests {
     @Test("Closure model uses CPU (cannot compile to GPU)")
     func testClosureModelUsesCPU() throws {
         #if canImport(Metal)
-        guard MonteCarloGPUDevice() != nil else {
-            print("⊘ Skipping: Metal unavailable")
-            return
-        }
+        // Not `guard … else { return }`. Under this suite's `.requiresMetalGPU` trait the
+        // machine has already proved it compiles a trivial kernel, so the only way this
+        // device is nil is that *our* kernel source did not compile — and the old idiom
+        // reported that as a pass, with a message blaming Metal.
+        _ = try #require(MonteCarloGPUDevice.shared,
+                         "a trivial kernel compiles here, so the package's kernel failing to is our defect")
 
         // Create closure-based simulation
         var simulation = MonteCarloSimulation(
@@ -491,10 +501,12 @@ struct MonteCarloGPUIntegrationTests {
     @Test("Complex financial model on GPU")
     func testComplexFinancialModelGPU() throws {
         #if canImport(Metal)
-        guard MonteCarloGPUDevice() != nil else {
-            print("⊘ Skipping: Metal unavailable")
-            return
-        }
+        // Not `guard … else { return }`. Under this suite's `.requiresMetalGPU` trait the
+        // machine has already proved it compiles a trivial kernel, so the only way this
+        // device is nil is that *our* kernel source did not compile — and the old idiom
+        // reported that as a pass, with a message blaming Metal.
+        _ = try #require(MonteCarloGPUDevice.shared,
+                         "a trivial kernel compiles here, so the package's kernel failing to is our defect")
 
         // Financial model: (Units × Price) - (FixedCosts + Units × VariableCost)
         let model = try MonteCarloExpressionModel { builder in
@@ -559,10 +571,12 @@ struct MonteCarloGPUIntegrationTests {
     @Test("Exponential distribution on GPU")
     func testExponentialDistributionGPU() throws {
         #if canImport(Metal)
-        guard MonteCarloGPUDevice() != nil else {
-            print("⊘ Skipping: Metal unavailable")
-            return
-        }
+        // Not `guard … else { return }`. Under this suite's `.requiresMetalGPU` trait the
+        // machine has already proved it compiles a trivial kernel, so the only way this
+        // device is nil is that *our* kernel source did not compile — and the old idiom
+        // reported that as a pass, with a message blaming Metal.
+        _ = try #require(MonteCarloGPUDevice.shared,
+                         "a trivial kernel compiles here, so the package's kernel failing to is our defect")
 
         // Model: a + b (one exponential, one normal)
         let model = try MonteCarloExpressionModel { builder in
@@ -602,10 +616,12 @@ struct MonteCarloGPUIntegrationTests {
     @Test("Lognormal distribution on GPU")
     func testLognormalDistributionGPU() throws {
         #if canImport(Metal)
-        guard MonteCarloGPUDevice() != nil else {
-            print("⊘ Skipping: Metal unavailable")
-            return
-        }
+        // Not `guard … else { return }`. Under this suite's `.requiresMetalGPU` trait the
+        // machine has already proved it compiles a trivial kernel, so the only way this
+        // device is nil is that *our* kernel source did not compile — and the old idiom
+        // reported that as a pass, with a message blaming Metal.
+        _ = try #require(MonteCarloGPUDevice.shared,
+                         "a trivial kernel compiles here, so the package's kernel failing to is our defect")
 
         // Model: a * b (both lognormal)
         let model = try MonteCarloExpressionModel { builder in
@@ -646,10 +662,12 @@ struct MonteCarloGPUIntegrationTests {
     @Test("All five distributions together on GPU")
     func testAllDistributionsGPU() throws {
         #if canImport(Metal)
-        guard MonteCarloGPUDevice() != nil else {
-            print("⊘ Skipping: Metal unavailable")
-            return
-        }
+        // Not `guard … else { return }`. Under this suite's `.requiresMetalGPU` trait the
+        // machine has already proved it compiles a trivial kernel, so the only way this
+        // device is nil is that *our* kernel source did not compile — and the old idiom
+        // reported that as a pass, with a message blaming Metal.
+        _ = try #require(MonteCarloGPUDevice.shared,
+                         "a trivial kernel compiles here, so the package's kernel failing to is our defect")
 
         // Model: (Normal + Uniform) × Triangular + Exponential × Lognormal
         let model = try MonteCarloExpressionModel { builder in

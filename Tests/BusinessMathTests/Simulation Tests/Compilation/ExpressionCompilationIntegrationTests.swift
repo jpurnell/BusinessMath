@@ -42,17 +42,19 @@ struct ExpressionCompilationIntegrationTests {
         }
     }
 
-    @Test("Pipeline with optimization: (a + 0) * 1 simplifies to a")
+    @Test("Pipeline with optimization: (a + (-0.0)) * 1 simplifies to a")
     func testOptimizationPipeline() throws {
+        // The addend is a negative zero, which is the one additive identity exact for
+        // every input. `(a + 0.0) * 1` keeps its add — see
+        // `BytecodeOptimizerTests.testAdditiveIdentityIsSignExact`.
         let builder = ExpressionBuilder()
-        let expr = (builder[0] + 0.0) * 1.0
+        let expr = (builder[0] + -0.0) * 1.0
 
         let bytecode = try BytecodeCompiler.compile(expr.expression)
         let optimized = BytecodeOptimizer.optimize(bytecode)
 
-        // Should optimize down to just input[0]
         let expected: [Bytecode] = [.input(0)]
-        #expect(optimized == expected)
+        #expect(optimized == expected, "optimized to \(optimized)")
     }
 
     @Test("Pipeline with constant folding: sqrt(16) + 3 → 7")
@@ -209,7 +211,7 @@ struct ExpressionCompilationIntegrationTests {
     @Test("Stack depth: After optimization")
     func testStackDepthAfterOptimization() throws {
         let builder = ExpressionBuilder()
-        let expr = (builder[0] + 0.0) * 1.0
+        let expr = (builder[0] + -0.0) * 1.0
 
         let bytecode = try BytecodeCompiler.compile(expr.expression)
         let optimized = BytecodeOptimizer.optimize(bytecode)
@@ -217,7 +219,7 @@ struct ExpressionCompilationIntegrationTests {
         let depth = optimized.maxStackDepth()
 
         // Optimized to just input[0] - depth should be 1
-        #expect(depth == 1)
+        #expect(depth == 1, "optimized to \(optimized), depth \(depth)")
     }
 
     // MARK: - Input Index Tracking
