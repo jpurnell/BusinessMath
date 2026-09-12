@@ -5,7 +5,8 @@
 //  Bytecode Optimizer for GPU Execution
 //
 //  Performs compile-time optimizations on bytecode including:
-//  - Constant folding: Evaluate constant expressions at compile time
+//  - Constant folding: Evaluate constant expressions at compile time, except where
+//    the interpreter would throw instead of producing one
 //  - Algebraic simplification: Apply mathematical identities (a + 0 = a, etc.)
 //  - Dead code elimination: Remove unreachable or redundant instructions
 //
@@ -33,9 +34,15 @@ import Foundation
 /// **Algebraic Simplification:**
 /// - `a + 0` → `a`
 /// - `a * 1` → `a`
-/// - `a * 0` → `0`
 /// - `a - 0` → `a`
 /// - `a / 1` → `a`
+///
+/// `a * 0 → 0` is deliberately absent: it is false for `inf`, `NaN` and any negative `a`.
+/// See the note at the multiply case.
+///
+/// Folding stops where the interpreter throws. `1 / 0`, `sqrt(-1)` and `log(0)` are left
+/// in the bytecode so that an optimized model raises the same error an unoptimized one
+/// does.
 ///
 /// **Multi-Pass Optimization:**
 /// - `(a + 0) * 1` → `a * 1` → `a`
@@ -130,10 +137,12 @@ public struct BytecodeOptimizer {
                 let right = stack.removeLast()
                 let left = stack.removeLast()
 
-                // Try constant folding
+                // Try constant folding. `evaluateBinaryOp` returns nil where the
+                // interpreter would throw rather than produce a value; the fold is then
+                // declined and the instruction survives to raise the error at run time.
                 if case .single(.constant(let a)) = left,
-                   case .single(.constant(let b)) = right {
-                    let result = evaluateBinaryOp(instruction, a, b)
+                   case .single(.constant(let b)) = right,
+                   let result = evaluateBinaryOp(instruction, a, b) {
                     stack.append(.single(.constant(result)))
                 } else {
                     // Can't fold - rebuild bytecode sequence
@@ -148,9 +157,9 @@ public struct BytecodeOptimizer {
                 guard stack.count >= 1 else { continue }
                 let operand = stack.removeLast()
 
-                // Try constant folding
-                if case .single(.constant(let value)) = operand {
-                    let result = evaluateUnaryOp(instruction, value)
+                // Try constant folding, declined where the interpreter would throw.
+                if case .single(.constant(let value)) = operand,
+                   let result = evaluateUnaryOp(instruction, value) {
                     stack.append(.single(.constant(result)))
                 } else {
                     // Can't fold - rebuild bytecode sequence
@@ -192,13 +201,24 @@ public struct BytecodeOptimizer {
         return result
     }
 
-    /// Evaluate a binary operation on constants
-    private static func evaluateBinaryOp(_ op: Bytecode, _ a: Double, _ b: Double) -> Double {
+    /// Evaluate a binary operation on constants.
+    ///
+    /// Returns `nil` where ``BytecodeInterpreter`` would throw instead of returning a
+    /// value. A model must not answer differently for having been optimized, and the
+    /// interpreter's errors are part of its answer: `1 / 0` throws
+    /// `EvaluationError.divisionByZero` unoptimized, so folding it to `inf` would make
+    /// optimization the difference between a thrown error and a silent infinity.
+    ///
+    /// - Returns: The folded constant, or `nil` if this operation must be left to run time.
+    private static func evaluateBinaryOp(_ op: Bytecode, _ a: Double, _ b: Double) -> Double? {
         switch op {
         case .add:      return a + b
         case .subtract: return a - b
         case .multiply: return a * b
-        case .divide:   return a / b
+        case .divide:
+            // The interpreter guards `b != 0` and throws. Decline, and let it.
+            guard b != 0 else { return nil }
+            return a / b
         case .power:    return pow(a, b)
         case .min:      return Swift.min(a, b)
         case .max:      return Swift.max(a, b)
@@ -212,13 +232,24 @@ public struct BytecodeOptimizer {
         }
     }
 
-    /// Evaluate a unary operation on a constant
-    private static func evaluateUnaryOp(_ op: Bytecode, _ value: Double) -> Double {
+    /// Evaluate a unary operation on a constant.
+    ///
+    /// Returns `nil` where ``BytecodeInterpreter`` would throw. See
+    /// ``evaluateBinaryOp(_:_:_:)`` for why the two must agree.
+    ///
+    /// - Returns: The folded constant, or `nil` if this operation must be left to run time.
+    private static func evaluateUnaryOp(_ op: Bytecode, _ value: Double) -> Double? {
         switch op {
         case .negate: return -value
         case .abs:    return abs(value)
-        case .sqrt:   return sqrt(value)
-        case .log:    return log(value)
+        case .sqrt:
+            // The interpreter guards `a >= 0` and throws `invalidOperation`.
+            guard value >= 0 else { return nil }
+            return sqrt(value)
+        case .log:
+            // The interpreter guards `a > 0` and throws `invalidOperation`.
+            guard value > 0 else { return nil }
+            return log(value)
         case .exp:    return exp(value)
         case .sin:    return sin(value)
         case .cos:    return cos(value)
@@ -231,8 +262,8 @@ public struct BytecodeOptimizer {
 
     /// Apply algebraic simplification for mathematical identities
     ///
-    /// Detects patterns like `a + 0`, `a * 1`, `a * 0` and replaces them
-    /// with simplified equivalents.
+    /// Detects patterns like `a + 0` and `a * 1` and replaces them with simplified
+    /// equivalents.
     ///
     /// Simplification rules:
     /// - `a + 0` → `a`
@@ -241,8 +272,14 @@ public struct BytecodeOptimizer {
     /// - `a * 1` → `a`
     /// - `1 * a` → `a`
     /// - `a / 1` → `a`
-    /// - `a * 0` → `0`
-    /// - `0 * a` → `0`
+    ///
+    /// `a * 0 → 0` and `0 * a → 0` were removed as unsound; the multiply case says why.
+    ///
+    /// - Note: `a + 0 → a` and `0 + a → a` are exact for every `a` except `-0.0`, where
+    ///   the sum is `+0.0` and the rewrite yields `-0.0`. The two compare equal and
+    ///   propagate identically through every operation this interpreter has except the
+    ///   sign of a printed zero, so the rewrite is kept. It is the one place in this pass
+    ///   where the optimized and unoptimized forms can differ at all.
     private static func algebraicSimplificationPass(_ bytecode: [Bytecode]) -> [Bytecode] {
         var stack: [StackValue] = []
 
@@ -296,16 +333,18 @@ public struct BytecodeOptimizer {
                 let right = stack.removeLast()
                 let left = stack.removeLast()
 
-                // a * 0 → 0
-                if case .single(.constant(0.0)) = right {
-                    stack.append(.single(.constant(0.0)))
-                }
-                // 0 * a → 0
-                else if case .single(.constant(0.0)) = left {
-                    stack.append(.single(.constant(0.0)))
-                }
+                // `a * 0 → 0` is not here, and must not be. It holds in real arithmetic
+                // and fails in three ways in IEEE-754: `inf * 0` and `NaN * 0` are NaN, and
+                // `(-3) * 0` is -0.0, so the rewrite turns two of them into a plausible
+                // zero and the third into the wrong zero. Establishing that `a` is finite
+                // would make it sound, but `a` here is an input or a computed sequence and
+                // nothing in this compiler carries that fact. Where `a` *is* a constant,
+                // `constantFoldingPass` has already evaluated the product exactly, signed
+                // zero and NaN included, so no optimization is lost by its absence.
+                //
+                // `a * 1 → a` needs no such care: `-0.0`, `inf` and `NaN` all survive it.
                 // a * 1 → a
-                else if case .single(.constant(1.0)) = right {
+                if case .single(.constant(1.0)) = right {
                     stack.append(left)
                 }
                 // 1 * a → a

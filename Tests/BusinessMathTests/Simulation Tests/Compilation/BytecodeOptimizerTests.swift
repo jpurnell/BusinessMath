@@ -108,14 +108,150 @@ struct BytecodeOptimizerTests {
         #expect(optimized == expected)
     }
 
-    @Test("Algebraic simplification: a * 0 → 0")
-    func testMultiplyByZero() throws {
+    /// `a * 0 → 0` is false in IEEE-754, and the optimizer no longer claims it.
+    ///
+    /// The rewrite held for any `a` the algebra has in mind and for none of the three the
+    /// hardware adds: `inf * 0` and `NaN * 0` are NaN, and `(-3) * 0` is `-0.0`. Rewriting
+    /// discarded `a` entirely, so a model that should have produced NaN produced a
+    /// perfectly plausible zero — the failure this library's rules exist to prevent.
+    ///
+    /// Knowing `a` to be finite would make it sound, but `a` is an input here and nothing
+    /// in this compiler tracks that.
+    @Test("a * 0 is not rewritten, because a * 0 is not always 0")
+    func testMultiplyByZeroIsNotRewritten() throws {
         let expr = MathExpression.binary(.multiply, .input(0), .constant(0.0))
         let bytecode = try BytecodeCompiler.compile(expr)
         let optimized = BytecodeOptimizer.optimize(bytecode)
 
-        let expected: [Bytecode] = [.constant(0.0)]
-        #expect(optimized == expected)
+        #expect(optimized == bytecode, "the multiply was optimized away into \(optimized)")
+
+        let fromInfinity = try BytecodeInterpreter.evaluate(bytecode: optimized, inputs: [Double.infinity])
+        #expect(fromInfinity.isNaN, "inf * 0 is NaN; the model returned \(fromInfinity)")
+
+        let fromNaN = try BytecodeInterpreter.evaluate(bytecode: optimized, inputs: [Double.nan])
+        #expect(fromNaN.isNaN, "NaN * 0 is NaN; the model returned \(fromNaN)")
+
+        let fromNegative = try BytecodeInterpreter.evaluate(bytecode: optimized, inputs: [-3.0])
+        #expect(fromNegative == 0.0, "(-3) * 0 is a zero; the model returned \(fromNegative)")
+        #expect(fromNegative.sign == .minus, "(-3) * 0 is -0.0; the model returned +0.0")
+    }
+
+    /// Nothing is lost by that removal: where the operand is a constant, folding already
+    /// evaluates the product exactly — sign of zero included.
+    ///
+    /// The assertion has to ask for the sign. `Bytecode` is `Equatable` through `Double`,
+    /// and `-0.0 == 0.0`, so comparing against `.constant(-0.0)` passes either way and
+    /// proves nothing.
+    @Test("A constant times zero still folds, and keeps the sign it earns")
+    func testConstantTimesZeroFoldsWithItsSign() throws {
+        let expr = MathExpression.binary(.multiply, .constant(-3.0), .constant(0.0))
+        let bytecode = try BytecodeCompiler.compile(expr)
+        let optimized = BytecodeOptimizer.optimize(bytecode)
+
+        guard optimized.count == 1, case .constant(let folded) = optimized[0] else {
+            Issue.record("expected one folded constant, got \(optimized)")
+            return
+        }
+        #expect(folded == 0.0, "(-3) * 0 folded to \(folded)")
+        #expect(folded.sign == .minus, "(-3) * 0 folded to +0.0, losing the sign")
+    }
+
+    // MARK: - Folding Stops Where the Interpreter Throws
+
+    /// Evaluates `bytecode` and returns the ``EvaluationError`` it threw.
+    ///
+    /// Records an issue and returns `nil` if it produced a value instead, so a test that
+    /// asks for the error case cannot quietly pass on a model that did not throw at all.
+    private func errorFrom(_ bytecode: [Bytecode], inputs: [Double] = []) -> EvaluationError? {
+        do {
+            let value = try BytecodeInterpreter.evaluate(bytecode: bytecode, inputs: inputs)
+            Issue.record("expected a throw, got \(value)")
+            return nil
+        } catch let error as EvaluationError {
+            return error
+        } catch {
+            Issue.record("expected an EvaluationError, got \(error)")
+            return nil
+        }
+    }
+
+    /// The same model must not answer differently for having been optimized.
+    ///
+    /// ``BytecodeInterpreter`` throws on three operations — `divide` by zero, `sqrt` of a
+    /// negative, `log` of a non-positive — so those are part of the model's answer, not
+    /// accidents of execution. Folding them at compile time replaced a thrown error with
+    /// `inf` or `NaN`, which is the same fail-silent trade the multiply rewrite made.
+    @Test("Division by zero is left for the interpreter to reject")
+    func testDivisionByZeroIsNotFolded() throws {
+        let expr = MathExpression.binary(.divide, .constant(1.0), .constant(0.0))
+        let bytecode = try BytecodeCompiler.compile(expr)
+        let optimized = BytecodeOptimizer.optimize(bytecode)
+
+        #expect(optimized == bytecode, "1 / 0 was folded to \(optimized)")
+
+        guard case .divisionByZero = errorFrom(optimized) else {
+            Issue.record("optimized 1 / 0 did not throw divisionByZero")
+            return
+        }
+    }
+
+    @Test("sqrt of a negative constant is left for the interpreter to reject")
+    func testNegativeSqrtIsNotFolded() throws {
+        let expr = MathExpression.unary(.sqrt, .constant(-1.0))
+        let bytecode = try BytecodeCompiler.compile(expr)
+        let optimized = BytecodeOptimizer.optimize(bytecode)
+
+        #expect(optimized == bytecode, "sqrt(-1) was folded to \(optimized)")
+
+        guard case .invalidOperation(let message) = errorFrom(optimized) else {
+            Issue.record("optimized sqrt(-1) did not throw invalidOperation")
+            return
+        }
+        #expect(message == "sqrt of negative", "threw invalidOperation(\(message))")
+    }
+
+    @Test("log of zero is left for the interpreter to reject")
+    func testLogOfZeroIsNotFolded() throws {
+        let expr = MathExpression.unary(.log, .constant(0.0))
+        let bytecode = try BytecodeCompiler.compile(expr)
+        let optimized = BytecodeOptimizer.optimize(bytecode)
+
+        #expect(optimized == bytecode, "log(0) was folded to \(optimized)")
+
+        guard case .invalidOperation(let message) = errorFrom(optimized) else {
+            Issue.record("optimized log(0) did not throw invalidOperation")
+            return
+        }
+        #expect(message == "log of non-positive", "threw invalidOperation(\(message))")
+    }
+
+    /// The case that needs both fixes at once, and the one the review named.
+    ///
+    /// `log(0) * 0` returned `0` optimized and threw unoptimized. Folding produced
+    /// `-infinity` for the logarithm, and the multiply rewrite then discarded it for a
+    /// zero — two separate unsound steps composing into an answer with no trace of the
+    /// error in it.
+    @Test("log(0) * 0 throws whether optimized or not")
+    func testOptimizationPreservesTheLogError() throws {
+        let expr = MathExpression.binary(
+            .multiply,
+            MathExpression.unary(.log, .constant(0.0)),
+            .constant(0.0)
+        )
+        let bytecode = try BytecodeCompiler.compile(expr)
+        let optimized = BytecodeOptimizer.optimize(bytecode)
+
+        guard case .invalidOperation(let unoptimizedMessage) = errorFrom(bytecode) else {
+            Issue.record("unoptimized log(0) * 0 did not throw invalidOperation")
+            return
+        }
+        guard case .invalidOperation(let optimizedMessage) = errorFrom(optimized) else {
+            Issue.record("optimized log(0) * 0 did not throw invalidOperation")
+            return
+        }
+        #expect(unoptimizedMessage == optimizedMessage,
+                "unoptimized threw \(unoptimizedMessage), optimized threw \(optimizedMessage)")
+        #expect(optimizedMessage == "log of non-positive")
     }
 
     @Test("Algebraic simplification: 0 + a → a")
