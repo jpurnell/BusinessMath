@@ -74,7 +74,12 @@ struct MonteCarloIntegrationSeedTests {
 		// second reproduced a standard-library implementation detail, which is documented as
 		// changeable between Swift releases and therefore cannot be what a reproducibility
 		// test rests on -- see ``openUnitUniform(_:using:)``.
-		let sample: Double = distributionUniform(openUnitUniform(Double.self, using: &g2))
+		//
+		// The draw goes in as it comes out of the generator. This line used to wrap it in
+		// `distributionUniform`, which pinned that wrapper's round-down lattice as the
+		// integrator's contract -- a systematic downward bias of about 5e-8 per sample,
+		// asserted as correct by the test meant to guard the integrator.
+		let sample: Double = openUnitUniform(Double.self, using: &g2)
 		#expect(identical(estimate, square(sample)))
 	}
 

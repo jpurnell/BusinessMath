@@ -64,14 +64,21 @@ public func distributionGeometric<T: Real, G: RandomNumberGenerator>(_ p: T, usi
 	// X = ceil(ln(U) / ln(1-p)) where U ~ Uniform(0,1)
 	let u: T = distributionUniform(min: T(0), max: T(1), openUnitUniform(Double.self, using: &generator))
 
-	// Avoid log(0) by using 1-U which has same distribution as U
+	// `log(u)` below is finite because the draw is strictly positive: `openUnitUniform`
+	// is open at zero, so the smallest `u` it can return is 2^-53 and `log(u)` bottoms out
+	// near -36.7. That is load-bearing — `Int(_:)` at the end traps on an infinity, so a
+	// `u` of exactly zero would take the process down rather than return a bad count. It
+	// was reachable until `distributionUniform` stopped rounding the draw down onto a
+	// lattice, which sent one draw in ten million to zero. The comment here used to claim
+	// the code passed `1-U` to avoid `log(0)`; it never did.
 	let oneMinusP = T(1) - p
 	let logOneMinusP = T.log(oneMinusP)
 
 	// Prevent division by zero for p very close to 1
 	guard logOneMinusP < T(0) else { return T(1) }
 
-	// ceil(ln(1-U) / ln(1-p)) but use ln(U) since U and 1-U have same distribution
+	// ceil(ln(1-U) / ln(1-p)), with ln(U) in place of ln(1-U): U and 1-U have the same
+	// distribution, so the substitution is a free one.
 	let result = T.log(u) / logOneMinusP
 	return T(max(1, Int(result.rounded(.up))))
 }

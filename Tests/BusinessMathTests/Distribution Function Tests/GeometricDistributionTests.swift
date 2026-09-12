@@ -416,4 +416,39 @@ struct GeometricDistributionTests {
 		let nanResult = distributionGeometric(Double.nan, seed: seed)
 		#expect(nanResult.isNaN, "NaN p should return NaN")
 	}
+
+	/// A generator pinned to one word, so the smallest draw the mapping can produce can be
+	/// demanded rather than waited for.
+	private struct ConstantWordRNG: RandomNumberGenerator {
+		let word: UInt64
+		func next() -> UInt64 { word }
+	}
+
+	/// The smallest uniform the mapping can produce must still give a finite count.
+	///
+	/// The sampler is `ceil(ln(U) / ln(1-p))` and then `Int(_:)`, and `Int` traps on an
+	/// infinity. `U` comes from ``openUnitUniform(_:using:)``, which is strictly positive —
+	/// its smallest value is `2^-53` from the zero word — so `ln(U)` is finite and the
+	/// conversion is safe. That held only as far as the mapping.
+	///
+	/// ``distributionUniform(_:)`` used to round the draw down onto a lattice of ten million
+	/// points, which sent every uniform below `1e-7` to exactly `0.0`: one draw in ten
+	/// million, measured, not estimated. `ln(0)` is `-infinity`, the ratio is `+infinity`,
+	/// and the `Int` conversion trapped — taking the process down, not returning a bad
+	/// number. The comment above the line says "Avoid log(0) by using 1-U", but the code
+	/// takes `log(u)`; the protection described was never the protection present, and the
+	/// lattice is what made its absence reachable.
+	@Test("The smallest possible draw gives a finite trial count")
+	func smallestDrawDoesNotTrap() {
+		var rng = ConstantWordRNG(word: 0)
+		let u: Double = openUnitUniform(Double.self, using: &rng)
+		#expect(identical(u, 0x1p-53), "the zero word gave \(u), not 2^-53")
+
+		var sampler = ConstantWordRNG(word: 0)
+		let trials: Double = distributionGeometric(0.5, using: &sampler)
+
+		// ceil(ln(2^-53) / ln(0.5)) = ceil(53) = 53, exactly — the bottom of the range is a
+		// number, and it is the number the formula says it is.
+		#expect(identical(trials, 53.0), "the smallest draw gave \(trials) trials")
+	}
 }

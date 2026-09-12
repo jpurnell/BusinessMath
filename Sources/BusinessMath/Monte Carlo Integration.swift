@@ -71,7 +71,9 @@ public func integrate<T: Real, G: RandomNumberGenerator>(_ f: (T) -> T, iteratio
 	// that value divided by n.
 	var m = T(0)
 	for i in 0..<n {
-		let sample: T = distributionUniform(openUnitUniform(Double.self, using: &generator))
+		// The draw goes straight in. Routing it through `distributionUniform` added nothing
+		// but a conversion, and until it was fixed, a downward bias of about 5e-8 per sample.
+		let sample: T = T(openUnitUniform(Double.self, using: &generator))
 		m += (f(sample) - m) / T(i + 1) // fp-safety:disable — i + 1 >= 1
 	}
 	return m

@@ -8,13 +8,19 @@
 import Foundation
 import Numerics
 
-/// Generates a random number from a uniform distribution over the interval [0, 1).
+/// Generates a random number from a uniform distribution over the interval (0, 1).
 ///
-/// This function generates a random number from a uniform distribution using the `Double.random(in:)` function,
-/// which returns a non-negative `Double` uniformly distributed between 0.0 and 1.0. The result is then scaled and converted to the specified `Real` type.
+/// The draw comes from ``openUnitUniform(_:using:)``, which maps 52 random bits onto the open
+/// unit interval; this function carries it into the requested `Real` type.
 ///
-/// - Parameter randomSeed: Random seed value in [0, 1] (default: newly generated random value)
-/// - Returns: A random number uniformly distributed between 0.0 (inclusive) and 1.0 (exclusive).
+/// - Parameter randomSeed: A uniform value in (0, 1) (default: newly generated random value)
+/// - Returns: A random number uniformly distributed strictly between 0.0 and 1.0.
+///
+/// - Note: This once rounded the seed down onto a lattice of ten million points, which cost
+///   about seven decimal digits and, because the rounding was directional, biased every
+///   sample downward by roughly 5e-8. A bias with a direction does not average out as the
+///   sample count rises — it is exactly what a Monte Carlo estimate cannot survive — so the
+///   quantization is gone. Values published before that change are not reproducible after it.
 ///
 /// - Example:
 ///   ```swift
@@ -22,9 +28,7 @@ import Numerics
 ///   // randomValue will be a uniform random number between 0.0 and 1.0
 ///   ```
 public func distributionUniform<T: Real>(_ randomSeed: Double = openUnitUniform()) -> T where T: BinaryFloatingPoint { // stochastic:exempt — the uniform arguments default to fresh draws; pass them explicitly for reproducibility
-	let scale = 10_000_000.0  // Use 10 million to provide sufficient precision while avoiding 32-bit overflow
-	let quantized = (randomSeed * scale).rounded(.down) / scale // fp-safety:disable — scale is constant 10_000_000
-	return T(quantized)
+	return T(randomSeed)
 }
 
 /// Generates a random number from a uniform distribution over a specified interval [l, h).

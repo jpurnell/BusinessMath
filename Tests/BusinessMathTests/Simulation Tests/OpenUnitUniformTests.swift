@@ -102,6 +102,26 @@ struct OpenUnitUniformTests {
 		let mean: Double = total / Double(n)
 		#expect(abs(mean - 0.5) < 2.6e-3, "mean of \(n) draws was \(mean)")
 	}
+
+	/// ``distributionUniform(_:)`` carries the draw through unchanged.
+	///
+	/// It used to round the draw down onto a lattice of ten million points —
+	/// `(u * 10_000_000).rounded(.down) / 10_000_000` — which threw away everything past the
+	/// seventh decimal digit and, because `.down` has a direction, moved every value that was
+	/// not already on the lattice *toward zero* by about 5e-8. More samples do not cure a bias
+	/// that always points the same way; they just measure it more precisely.
+	///
+	/// The oracle is exact rather than statistical: each of these seeds needs more than seven
+	/// decimal digits to write down, so the lattice could not have returned any of them.
+	@Test("The unit-interval mapping carries the draw through unchanged")
+	func distributionUniformIsNotOnALattice() {
+		let seeds: [Double] = [0.12345678901234, 0.99999999, 0x1p-53, 0.30000000000000004]
+		for seed in seeds {
+			let carried: Double = distributionUniform(seed)
+			#expect(identical(carried, seed),
+					"distributionUniform(\(seed)) returned \(carried)")
+		}
+	}
 }
 
 /// Counts the words a consumer takes from its base generator.
