@@ -126,8 +126,7 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
             float arg2;
         };
 
-        constant int MAX_INPUTS = 32;
-        constant int MAX_STACK = 32;
+        \(GPUOpcode.mslDeclarations)
 
         // Distributions - thread address space
         inline float sampleDistribution(thread RNGState* state, constant DistributionParams* params, int distType) {
@@ -171,36 +170,33 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
                 constant ModelOp& op = ops[i];
                 switch (op.opcode) {
                     // Binary operations
-                    case 0: stack[stackPtr - 2] = stack[stackPtr - 2] + stack[stackPtr - 1]; stackPtr--; break;  // ADD
-                    case 1: stack[stackPtr - 2] = stack[stackPtr - 2] - stack[stackPtr - 1]; stackPtr--; break;  // SUB
-                    case 2: stack[stackPtr - 2] = stack[stackPtr - 2] * stack[stackPtr - 1]; stackPtr--; break;  // MUL
-                    case 3: stack[stackPtr - 2] = stack[stackPtr - 2] / stack[stackPtr - 1]; stackPtr--; break;  // DIV
-                    case 4: stack[stackPtr++] = inputs[op.arg1]; break;  // INPUT
-                    case 5: stack[stackPtr++] = op.arg2; break;  // CONST
-                    case 6: stack[stackPtr - 2] = pow(stack[stackPtr - 2], stack[stackPtr - 1]); stackPtr--; break;  // POW
-                    case 7: stack[stackPtr - 2] = min(stack[stackPtr - 2], stack[stackPtr - 1]); stackPtr--; break;  // MIN
-                    case 8: stack[stackPtr - 2] = max(stack[stackPtr - 2], stack[stackPtr - 1]); stackPtr--; break;  // MAX
-
+                    case OP_ADD: stack[stackPtr - 2] = stack[stackPtr - 2] + stack[stackPtr - 1]; stackPtr--; break;
+                    case OP_SUB: stack[stackPtr - 2] = stack[stackPtr - 2] - stack[stackPtr - 1]; stackPtr--; break;
+                    case OP_MUL: stack[stackPtr - 2] = stack[stackPtr - 2] * stack[stackPtr - 1]; stackPtr--; break;
+                    case OP_DIV: stack[stackPtr - 2] = stack[stackPtr - 2] / stack[stackPtr - 1]; stackPtr--; break;
+                    case OP_INPUT: stack[stackPtr++] = inputs[op.arg1]; break;
+                    case OP_CONST: stack[stackPtr++] = op.arg2; break;
+                    case OP_POW: stack[stackPtr - 2] = pow(stack[stackPtr - 2], stack[stackPtr - 1]); stackPtr--; break;
+                    case OP_MIN: stack[stackPtr - 2] = min(stack[stackPtr - 2], stack[stackPtr - 1]); stackPtr--; break;
+                    case OP_MAX: stack[stackPtr - 2] = max(stack[stackPtr - 2], stack[stackPtr - 1]); stackPtr--; break;
                     // Unary operations
-                    case 9: stack[stackPtr - 1] = -stack[stackPtr - 1]; break;  // NEG
-                    case 10: stack[stackPtr - 1] = abs(stack[stackPtr - 1]); break;  // ABS
-                    case 11: stack[stackPtr - 1] = sqrt(stack[stackPtr - 1]); break;  // SQRT
-                    case 12: stack[stackPtr - 1] = log(stack[stackPtr - 1]); break;  // LOG
-                    case 13: stack[stackPtr - 1] = exp(stack[stackPtr - 1]); break;  // EXP
-                    case 14: stack[stackPtr - 1] = sin(stack[stackPtr - 1]); break;  // SIN
-                    case 15: stack[stackPtr - 1] = cos(stack[stackPtr - 1]); break;  // COS
-                    case 16: stack[stackPtr - 1] = tan(stack[stackPtr - 1]); break;  // TAN
-
+                    case OP_NEG: stack[stackPtr - 1] = -stack[stackPtr - 1]; break;
+                    case OP_ABS: stack[stackPtr - 1] = abs(stack[stackPtr - 1]); break;
+                    case OP_SQRT: stack[stackPtr - 1] = sqrt(stack[stackPtr - 1]); break;
+                    case OP_LOG: stack[stackPtr - 1] = log(stack[stackPtr - 1]); break;
+                    case OP_EXP: stack[stackPtr - 1] = exp(stack[stackPtr - 1]); break;
+                    case OP_SIN: stack[stackPtr - 1] = sin(stack[stackPtr - 1]); break;
+                    case OP_COS: stack[stackPtr - 1] = cos(stack[stackPtr - 1]); break;
+                    case OP_TAN: stack[stackPtr - 1] = tan(stack[stackPtr - 1]); break;
                     // Comparison operations (return 1.0 for true, 0.0 for false)
-                    case 17: stack[stackPtr - 2] = (stack[stackPtr - 2] < stack[stackPtr - 1]) ? 1.0f : 0.0f; stackPtr--; break;  // LT
-                    case 18: stack[stackPtr - 2] = (stack[stackPtr - 2] > stack[stackPtr - 1]) ? 1.0f : 0.0f; stackPtr--; break;  // GT
-                    case 19: stack[stackPtr - 2] = (stack[stackPtr - 2] <= stack[stackPtr - 1]) ? 1.0f : 0.0f; stackPtr--; break;  // LE
-                    case 20: stack[stackPtr - 2] = (stack[stackPtr - 2] >= stack[stackPtr - 1]) ? 1.0f : 0.0f; stackPtr--; break;  // GE
-                    case 21: stack[stackPtr - 2] = (abs(stack[stackPtr - 2] - stack[stackPtr - 1]) < 1e-6f) ? 1.0f : 0.0f; stackPtr--; break;  // EQ
-                    case 22: stack[stackPtr - 2] = (abs(stack[stackPtr - 2] - stack[stackPtr - 1]) >= 1e-6f) ? 1.0f : 0.0f; stackPtr--; break;  // NE
-
+                    case OP_LT: stack[stackPtr - 2] = (stack[stackPtr - 2] < stack[stackPtr - 1]) ? 1.0f : 0.0f; stackPtr--; break;
+                    case OP_GT: stack[stackPtr - 2] = (stack[stackPtr - 2] > stack[stackPtr - 1]) ? 1.0f : 0.0f; stackPtr--; break;
+                    case OP_LE: stack[stackPtr - 2] = (stack[stackPtr - 2] <= stack[stackPtr - 1]) ? 1.0f : 0.0f; stackPtr--; break;
+                    case OP_GE: stack[stackPtr - 2] = (stack[stackPtr - 2] >= stack[stackPtr - 1]) ? 1.0f : 0.0f; stackPtr--; break;
+                    case OP_EQ: stack[stackPtr - 2] = (abs(stack[stackPtr - 2] - stack[stackPtr - 1]) < 1e-6f) ? 1.0f : 0.0f; stackPtr--; break;
+                    case OP_NE: stack[stackPtr - 2] = (abs(stack[stackPtr - 2] - stack[stackPtr - 1]) >= 1e-6f) ? 1.0f : 0.0f; stackPtr--; break;
                     // Conditional operation (SELECT: condition ? trueValue : falseValue)
-                    case 23: {
+                    case OP_SELECT: {
                         float falseVal = stack[stackPtr - 1];
                         float trueVal = stack[stackPtr - 2];
                         float condition = stack[stackPtr - 3];
@@ -319,8 +315,8 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
         let numOps = modelBytecode.count
 
         // Validate inputs
-        guard numInputs > 0 && numInputs <= 32 else {
-            throw GPUError.invalidInput("Number of distributions must be 1-32")
+        guard numInputs > 0 && numInputs <= GPUExecutionLimits.maxInputs else {
+            throw GPUError.invalidInput("Number of distributions must be 1-\(GPUExecutionLimits.maxInputs)")
         }
         guard numOps > 0 && numOps <= 128 else {
             throw GPUError.invalidInput("Number of bytecode operations must be 1-128")
@@ -328,6 +324,11 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
         guard iterations > 0 else {
             throw GPUError.invalidInput("Iterations must be > 0")
         }
+
+        // The kernel indexes a fixed `float stack[MAX_STACK]` without bounds-checking it and
+        // reads `stack[stackPtr - 2]` without asking whether two values are there. It has no
+        // way to report either, so the operation stream is checked here or nowhere.
+        try GPUBytecodeValidator.validate(modelBytecode)
 
         // Get or allocate buffers (with caching for performance)
         let buffers = try getOrAllocateBuffers(
@@ -381,8 +382,8 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
         let numOps = modelBytecode.count
 
         // Validate inputs
-        guard numInputs > 0 && numInputs <= 32 else {
-            throw GPUError.invalidInput("Number of distributions must be 1-32")
+        guard numInputs > 0 && numInputs <= GPUExecutionLimits.maxInputs else {
+            throw GPUError.invalidInput("Number of distributions must be 1-\(GPUExecutionLimits.maxInputs)")
         }
         guard numOps > 0 && numOps <= 128 else {
             throw GPUError.invalidInput("Number of bytecode operations must be 1-128")
@@ -390,6 +391,11 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
         guard iterations > 0 else {
             throw GPUError.invalidInput("Iterations must be > 0")
         }
+
+        // The kernel indexes a fixed `float stack[MAX_STACK]` without bounds-checking it and
+        // reads `stack[stackPtr - 2]` without asking whether two values are there. It has no
+        // way to report either, so the operation stream is checked here or nowhere.
+        try GPUBytecodeValidator.validate(modelBytecode)
 
         // Get or allocate buffers (with caching for performance)
         let buffers = try getOrAllocateBuffers(

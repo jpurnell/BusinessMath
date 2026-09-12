@@ -261,44 +261,26 @@ public struct BytecodeCompiler {
     /// - Returns: GPU-compatible tuple array
     public static func toGPUFormat(_ bytecode: [Bytecode]) -> [(opcode: Int32, arg1: Int32, arg2: Float)] {
         var gpu: [(Int32, Int32, Float)] = []
+        gpu.reserveCapacity(bytecode.count)
 
         for instruction in bytecode {
+            // The number comes from `GPUOpcode`, which the kernel source is generated from,
+            // so the two cannot disagree. It used to be a literal here and a `case` label
+            // there, with the name only in a trailing comment on each.
+            let opcode = GPUOpcode.of(instruction).rawValue
+
             switch instruction {
             case .input(let index):
-                gpu.append((4, Int32(index), 0.0))  // INPUT opcode = 4
+                gpu.append((opcode, Int32(index), 0.0))
 
             case .constant(let value):
-                gpu.append((5, 0, Float(value)))    // CONST opcode = 5
+                // Narrowing to Float is lossy by design — the kernel is Float32 throughout.
+                // `gpuNarrowingIssues()` reports the constants this changes the meaning of,
+                // rather than the ones it merely rounds.
+                gpu.append((opcode, 0, Float(value)))
 
-            // Binary operations
-            case .add:      gpu.append((0, 0, 0.0))  // ADD opcode = 0
-            case .subtract: gpu.append((1, 0, 0.0))  // SUB opcode = 1
-            case .multiply: gpu.append((2, 0, 0.0))  // MUL opcode = 2
-            case .divide:   gpu.append((3, 0, 0.0))  // DIV opcode = 3
-            case .power:    gpu.append((6, 0, 0.0))  // POW opcode = 6
-            case .min:      gpu.append((7, 0, 0.0))  // MIN opcode = 7
-            case .max:      gpu.append((8, 0, 0.0))  // MAX opcode = 8
-
-            // Unary operations
-            case .negate:   gpu.append((9, 0, 0.0))  // NEG opcode = 9
-            case .abs:      gpu.append((10, 0, 0.0)) // ABS opcode = 10
-            case .sqrt:     gpu.append((11, 0, 0.0)) // SQRT opcode = 11
-            case .log:      gpu.append((12, 0, 0.0)) // LOG opcode = 12
-            case .exp:      gpu.append((13, 0, 0.0)) // EXP opcode = 13
-            case .sin:      gpu.append((14, 0, 0.0)) // SIN opcode = 14
-            case .cos:      gpu.append((15, 0, 0.0)) // COS opcode = 15
-            case .tan:      gpu.append((16, 0, 0.0)) // TAN opcode = 16
-
-            // Comparison operations
-            case .lessThan:        gpu.append((17, 0, 0.0)) // LT opcode = 17
-            case .greaterThan:     gpu.append((18, 0, 0.0)) // GT opcode = 18
-            case .lessOrEqual:     gpu.append((19, 0, 0.0)) // LE opcode = 19
-            case .greaterOrEqual:  gpu.append((20, 0, 0.0)) // GE opcode = 20
-            case .equal:           gpu.append((21, 0, 0.0)) // EQ opcode = 21
-            case .notEqual:        gpu.append((22, 0, 0.0)) // NE opcode = 22
-
-            // Conditional operations
-            case .select:          gpu.append((23, 0, 0.0)) // SELECT opcode = 23
+            default:
+                gpu.append((opcode, 0, 0.0))
             }
         }
 
