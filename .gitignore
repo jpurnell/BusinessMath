@@ -62,3 +62,9 @@ CLAUDE.md
 
 # Generated context bundle for NotebookLM — rebuild with project/tools/build-notebooklm-bundle.sh
 project/notebooklm/
+
+# Reference material belongs outside the repository.
+# project/library/ accumulated ~90 MB of third-party copyrighted books and was
+# published on a public repo until 2026-09-12. filter-repo excised it from history;
+# this line is what stops a stray `git add .` putting it back.
+project/library/

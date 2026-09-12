@@ -324,9 +324,34 @@ loose tolerance would wave through. **Set the tolerance tight enough to fail tha
    `PsiCorrMatrix` is documented as rank and does need one. Applying the adjustment to both, or
    neither, is wrong in one case. Frontline's `PsiCopulaGauss` page does not say. **This blocks
    only `PsiCopulaGauss`, not `PsiCorrMatrix`**, so it need not hold up the primary path.
-3. **What does a group containing a discrete distribution do?** A discrete quantile is a step
-   function, so the achievable rank correlation is bounded below the declared one and no sampler
-   can do better. Proposed: allow it, and report the achieved correlation rather than pretending.
-4. **Should the repair in §6.2 be opt-in?** A model-validation user may prefer a hard refusal to
-   any silent adjustment. Leaning toward repair-and-report by default with a strict mode
-   available, but it is a judgement call about who the caller is.
+3. **~~Discrete distributions in a correlation group?~~** **Decided 2026-09-11: allow, and report
+   the achieved correlation beside the declared one.** A discrete quantile is a step function, so
+   the achievable rank correlation is bounded below the declared value and no sampler can do
+   better — the limitation is mathematical, not ours. Refusing would block a great many real
+   models; allowing it silently would reproduce exactly the failure this proposal exists to
+   prevent, a plausible number nobody can question. So the run proceeds and the gap is visible:
+
+   ```
+   Correlation group "market" (3 inputs)
+     declared  achieved
+     0.80      0.80      Revenue (normal)
+     0.60      0.52      Units   (discrete, bounded)
+   ```
+
+   **This adds a requirement:** the run must *measure* the achieved rank correlation of the drawn
+   sample, not only apply the target. `spearmansRho` already exists, so it is cheap — but it has
+   to be in the result type, which is a shape decision rather than an afterthought.
+
+4. **~~Should the §6.2 repair be opt-in?~~** **Decided 2026-09-11: repair and report by default,
+   with a strict mode available.** The modeller's intent is clear and the matrix is a near-miss;
+   refusing helps nobody on a first run. The report must name the distance moved and the largest
+   single change:
+
+   ```
+   warning: correlation matrix "market" was not positive semi-definite; repaired to
+     the nearest valid matrix (Frobenius distance 0.0143). Largest change:
+     rho(2,3) 0.90 → 0.87
+   ```
+
+   A silent repair would be the same failure as a silent correlation. The strict mode exists
+   because a model-validation caller may reasonably treat any adjustment as a finding.
