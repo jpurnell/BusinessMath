@@ -50,14 +50,14 @@ public func regularizedIncompleteBeta<T: Real>(x: T, a: T, b: T) throws -> T {
 	let logPrefactor: T = leftLog + rightLog - logBeta(a, b)
 	let prefactor = T.exp(logPrefactor)
 
-	// Evaluate continued fraction and divide by a (NR formula: bt * betacf / a)
+	// I_x(a,b) = prefactor · CF / a, where the prefactor carries x^a(1−x)^b/B(a,b).
 	let cf = continuedFractionBeta(x: x, a: a, b: b)
 
 	return prefactor * cf / a
 }
 
 /// Evaluates the continued fraction for the incomplete beta function
-/// using the modified Lentz algorithm (Numerical Recipes §6.4).
+/// using the modified Lentz algorithm (Lentz 1976; Thompson and Barnett 1986) (§6.4).
 ///
 /// The CF has the form: CF = 1/(1+) d1/(1+) d2/(1+) ...
 /// where the first term d₁ = -(a+b)x/(a+1) is handled in initialization.
@@ -66,13 +66,13 @@ private func continuedFractionBeta<T: Real>(x: T, a: T, b: T) -> T {
 	let epsilon = T(sign: .plus, exponent: -52, significand: T(1))
 	let tiny = T(sign: .plus, exponent: -100, significand: T(1))
 
-	let qab = a + b
-	let qap = a + T(1)
-	let qam = a - T(1)
+	let shapeSum = a + b
+	let shapePlusOne = a + T(1)
+	let shapeMinusOne = a - T(1)
 
 	// Initial setup: first term is 1/(1 - (a+b)*x/(a+1))
 	var c = T(1)
-	var d = T(1) - qab * x / qap
+	var d = T(1) - shapeSum * x / shapePlusOne
 	if abs(d) < tiny { d = tiny }
 	d = T(1) / d
 	var h = d
@@ -82,7 +82,7 @@ private func continuedFractionBeta<T: Real>(x: T, a: T, b: T) -> T {
 		let m2 = T(2) * mT
 
 		// Even-indexed coefficient: m*(b-m)*x / ((a+2m-1)*(a+2m))
-		var aa = mT * (b - mT) * x / ((qam + m2) * (a + m2))
+		var aa = mT * (b - mT) * x / ((shapeMinusOne + m2) * (a + m2))
 
 		d = T(1) + aa * d
 		if abs(d) < tiny { d = tiny }
@@ -92,8 +92,8 @@ private func continuedFractionBeta<T: Real>(x: T, a: T, b: T) -> T {
 		h *= d * c
 
 		// Odd-indexed coefficient: -(a+m)*(a+b+m)*x / ((a+2m)*(a+2m+1))
-		let numerOdd = -(a + mT) * (qab + mT) * x
-		let denomOdd = (a + m2) * (qap + m2)
+		let numerOdd = -(a + mT) * (shapeSum + mT) * x
+		let denomOdd = (a + m2) * (shapePlusOne + m2)
 		aa = numerOdd / denomOdd
 
 		d = T(1) + aa * d

@@ -905,7 +905,9 @@ internal struct SeededRandomNumberGenerator: RandomNumberGenerator {
     }
 
     mutating func next() -> UInt64 {
-        // LCG parameters (from Numerical Recipes)
+        // Knuth's MMIX linear congruential parameters (TAOCP vol. 2, §3.3.4).
+        // Widely republished, including by Numerical Recipes, which is where this
+        // comment used to point; the constants are Knuth's.
         state = state &* 6364136223846793005 &+ 1442695040888963407
         return state
     }

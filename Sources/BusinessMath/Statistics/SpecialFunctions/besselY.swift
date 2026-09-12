@@ -100,7 +100,7 @@ private func besselY01<T: Real>(x: T) -> (T, T) {
 ///
 /// At integer order the general form's μ-dependent factors — `πμ/sin πμ`,
 /// `sinh(μd)/μd`, and the Chebyshev fit for 1/Γ(1±μ) — are all exactly 1, and the
-/// remaining constant is γ. The recurrence on `ff` carries the logarithmic
+/// remaining constant is γ. The recurrence on `f` carries the logarithmic
 /// singularity so that the sum itself stays well-behaved.
 private func besselY01Temme<T: Real>(x: T) -> (T, T) {
 	let half: T = x / T(2)
@@ -110,37 +110,37 @@ private func besselY01Temme<T: Real>(x: T) -> (T, T) {
 	let twoOverPi: T = T(2) / T.pi
 	let inversePi: T = T(1) / T.pi
 
-	var ff: T = twoOverPi * leading
+	var f: T = twoOverPi * leading
 	var p: T = inversePi
 	var q: T = inversePi
 	var c: T = T(1)
-	let d: T = -half * half
-	var sum: T = ff
-	var sum1: T = p
+	let negativeQuarterSquare: T = -half * half
+	var ySum: T = f
+	var ySumNext: T = p
 
 	for i in 1...besselIterationLimit {
 		let fi: T = T(i)
-		let scaled: T = fi * ff
+		let scaled: T = fi * f
 		let numerator: T = scaled + p + q
 		let square: T = fi * fi
-		ff = numerator / square
-		let step: T = d / fi
+		f = numerator / square
+		let step: T = negativeQuarterSquare / fi
 		c *= step
 		p /= fi
 		q /= fi
-		let del: T = c * ff
-		sum += del
-		let cp: T = c * p
-		let iDel: T = fi * del
-		sum1 += cp - iDel
-		let magnitude: T = T(1) + abs(sum)
+		let increment: T = c * f
+		ySum += increment
+		let weighted: T = c * p
+		let scaledIncrement: T = fi * increment
+		ySumNext += weighted - scaledIncrement
+		let magnitude: T = T(1) + abs(ySum)
 		let tolerance: T = magnitude * T.ulpOfOne
-		if abs(del) < tolerance { break }
+		if abs(increment) < tolerance { break }
 	}
 
 	let twoOverX: T = T(2) / x
-	let y0: T = -sum
-	let y1: T = -sum1 * twoOverX
+	let y0: T = -ySum
+	let y1: T = -ySumNext * twoOverX
 	return (y0, y1)
 }
 
@@ -200,92 +200,112 @@ private func besselY01ContinuedFraction<T: Real>(x: T) -> (T, T) {
 	return (y0, y1)
 }
 
-/// Steed's continued fraction for the pair (p, q), evaluated in the complex plane
-/// with real pairs — *Numerical Recipes* §6.7's CF2.
+/// A complex value carried as a real pair, with the three operations Steed's
+/// recurrence needs.
 ///
-/// Reached only for 2 ≤ x < ``besselAsymptoticThreshold()``, so 2x is small and the
-/// plain modulus-squared complex divisions cannot overflow.
+/// `Complex<T>` from swift-numerics would serve, and is deliberately not used:
+/// its division applies Smith's scaling to survive overflow, which changes the
+/// last ulp. This fraction is only ever evaluated for 2 ≤ x < 18, where nothing
+/// can overflow, so the straightforward form is both safe and exactly
+/// reproducible. The operations are written as named methods rather than
+/// operators so the order of the real arithmetic inside them is visible and
+/// fixed.
+private struct BesselComplexPair<T: Real> {
+	var real: T
+	var imaginary: T
+
+	/// `self * other`.
+	func multiplied(by other: BesselComplexPair<T>) -> BesselComplexPair<T> {
+		let crossReal: T = real * other.real
+		let crossImaginary: T = imaginary * other.imaginary
+		let productReal: T = crossReal - crossImaginary
+		let firstOuter: T = real * other.imaginary
+		let secondOuter: T = imaginary * other.real
+		let productImaginary: T = firstOuter + secondOuter
+		return BesselComplexPair(real: productReal, imaginary: productImaginary)
+	}
+
+	/// `1 / self`, as conj(self) over the squared modulus.
+	func reciprocal() -> BesselComplexPair<T> {
+		let realSquared: T = real * real
+		let imaginarySquared: T = imaginary * imaginary
+		let modulus: T = realSquared + imaginarySquared
+		let inverseReal: T = real / modulus
+		let inverseImaginary: T = -imaginary / modulus
+		return BesselComplexPair(real: inverseReal, imaginary: inverseImaginary)
+	}
+
+	/// `base + scalar / self`, the one fused step the recurrence repeats.
+	func addedTo(_ base: BesselComplexPair<T>, scaling scalar: T) -> BesselComplexPair<T> {
+		let realSquared: T = real * real
+		let imaginarySquared: T = imaginary * imaginary
+		let modulus: T = realSquared + imaginarySquared
+		let factor: T = scalar / modulus
+		let shiftedReal: T = base.real + real * factor
+		let shiftedImaginary: T = base.imaginary - imaginary * factor
+		return BesselComplexPair(real: shiftedReal, imaginary: shiftedImaginary)
+	}
+}
+
+/// Steed's continued fraction for the pair (p, q).
+///
+/// The fraction is complex-valued and is advanced by the modified Lentz recurrence,
+/// with the running value `estimate` accumulating the product of successive ratios.
+/// The method is Steed's — Barnett, Feng, Steed and Goldfarb (1974), with the
+/// complex form for Yν set out in Temme (1976) — and the (p, q) it returns combine
+/// with J₀ and J₁ to give Y₀ and Y₁ in ``besselY01ContinuedFraction(x:)``.
+///
+/// Reached only for 2 ≤ x < ``besselAsymptoticThreshold()``, so 2x is small and no
+/// intermediate can overflow.
 private func besselSteedPQ<T: Real>(x: T) -> (p: T, q: T) {
-	let xi: T = T(1) / x
-	var a: T = T(1) / T(4)
-	let half: T = T(1) / T(2)
-	var p: T = -half * xi
-	var q: T = T(1)
-	let br: T = T(2) * x
-	var bi: T = T(2)
+	let two: T = T(2)
+	let quarter: T = T(1) / T(4)
+	let half: T = T(1) / two
+	let inverseX: T = T(1) / x
 
-	let pSquared: T = p * p
-	let qSquared: T = q * q
-	let modulus: T = pSquared + qSquared
-	let aXi: T = a * xi
-	var fact: T = aXi / modulus
-	var cr: T = br + q * fact
-	var ci: T = bi + p * fact
+	var coefficient: T = quarter
+	var estimate = BesselComplexPair<T>(real: -half * inverseX, imaginary: T(1))
+	let denominator = BesselComplexPair<T>(real: two * x, imaginary: two)
+	var shifted = denominator
 
-	let brSquared: T = br * br
-	let biSquared: T = bi * bi
-	var den: T = brSquared + biSquared
-	var dr: T = br / den
-	var di: T = -bi / den
+	// The opening step is NOT the loop's step, and must not be folded into it. Here
+	// the shift is b + i·a·ξ/(p+iq) — the real part takes q and the imaginary part
+	// takes p, both added — where every later step is b + a/c. The two differ by a
+	// factor of i, and unifying them silently costs three significant figures.
+	let squaredReal: T = estimate.real * estimate.real
+	let squaredImaginary: T = estimate.imaginary * estimate.imaginary
+	let openingModulus: T = squaredReal + squaredImaginary
+	let scaled: T = coefficient * inverseX
+	let opening: T = scaled / openingModulus
+	var numerator = BesselComplexPair<T>(
+		real: shifted.real + estimate.imaginary * opening,
+		imaginary: shifted.imaginary + estimate.real * opening
+	)
+	var inverse: BesselComplexPair<T> = shifted.reciprocal()
+	var ratio: BesselComplexPair<T> = numerator.multiplied(by: inverse)
+	estimate = estimate.multiplied(by: ratio)
 
-	let crDr: T = cr * dr
-	let ciDi: T = ci * di
-	var dlr: T = crDr - ciDi
-	let crDi: T = cr * di
-	let ciDr: T = ci * dr
-	var dli: T = crDi + ciDr
+	for index in 2...besselIterationLimit {
+		let step: T = T(2 * (index - 1))
+		coefficient += step
+		shifted.imaginary += two
 
-	let pDlr: T = p * dlr
-	let qDli: T = q * dli
-	var temp: T = pDlr - qDli
-	let pDli: T = p * dli
-	let qDlr: T = q * dlr
-	q = pDli + qDlr
-	p = temp
+		let scaledReal: T = coefficient * inverse.real
+		let scaledImaginary: T = coefficient * inverse.imaginary
+		inverse.real = scaledReal + denominator.real
+		inverse.imaginary = scaledImaginary + shifted.imaginary
 
-	for i in 2...besselIterationLimit {
-		let step: T = T(2 * (i - 1))
-		a += step
-		bi += T(2)
+		numerator = numerator.addedTo(
+			BesselComplexPair(real: denominator.real, imaginary: shifted.imaginary),
+			scaling: coefficient
+		)
+		inverse = inverse.reciprocal()
+		ratio = numerator.multiplied(by: inverse)
+		estimate = estimate.multiplied(by: ratio)
 
-		let aDr: T = a * dr
-		dr = aDr + br
-		let aDi: T = a * di
-		di = aDi + bi
-
-		let crSquared: T = cr * cr
-		let ciSquared: T = ci * ci
-		let cModulus: T = crSquared + ciSquared
-		fact = a / cModulus
-		let crFact: T = cr * fact
-		let ciFact: T = ci * fact
-		cr = br + crFact
-		ci = bi - ciFact
-
-		let drSquared: T = dr * dr
-		let diSquared: T = di * di
-		den = drSquared + diSquared
-		dr /= den
-		di /= -den
-
-		let nextCrDr: T = cr * dr
-		let nextCiDi: T = ci * di
-		dlr = nextCrDr - nextCiDi
-		let nextCrDi: T = cr * di
-		let nextCiDr: T = ci * dr
-		dli = nextCrDi + nextCiDr
-
-		let nextPDlr: T = p * dlr
-		let nextQDli: T = q * dli
-		temp = nextPDlr - nextQDli
-		let nextPDli: T = p * dli
-		let nextQDlr: T = q * dlr
-		q = nextPDli + nextQDlr
-		p = temp
-
-		let realGap: T = abs(dlr - T(1))
-		let totalGap: T = realGap + abs(dli)
+		let realGap: T = abs(ratio.real - T(1))
+		let totalGap: T = realGap + abs(ratio.imaginary)
 		if totalGap < T.ulpOfOne { break }
 	}
-	return (p, q)
+	return (estimate.real, estimate.imaginary)
 }

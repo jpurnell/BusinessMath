@@ -29,8 +29,10 @@ import Numerics
 ///
 /// ## Method
 ///
-/// Two representations, split where each converges quickly — the standard treatment
-/// from *Numerical Recipes* §6.2:
+/// Two representations, split where each converges quickly. The split is the standard
+/// treatment for this function; the continued fraction is evaluated by the modified
+/// Lentz recurrence (Lentz 1976; Thompson and Barnett 1986), whose `b`/`c`/`d`/`h`
+/// are that method's own notation:
 ///
 /// - **Series** for `x < a + 1`, summing `Γ(a)xⁿ/Γ(a+1+n)`.
 /// - **Continued fraction** for `x ≥ a + 1`, evaluated by Lentz's algorithm on the
@@ -144,14 +146,14 @@ private func gammaContinuedFraction<T: Real>(a: T, x: T) -> T {
 
 	for i in 1...maxIterations {
 		let iT = T(i)
-		let an: T = -iT * (iT - a)
+		let numerator: T = -iT * (iT - a)
 		b += T(2)
 
-		let dScaled: T = an * d
+		let dScaled: T = numerator * d
 		d = dScaled + b
 		if abs(d) < tiny { d = tiny }
 
-		let cScaled: T = an / c
+		let cScaled: T = numerator / c
 		c = b + cScaled
 		if abs(c) < tiny { c = tiny }
 

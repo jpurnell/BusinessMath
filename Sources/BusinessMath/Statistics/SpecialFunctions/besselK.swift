@@ -117,37 +117,37 @@ private func besselK01Temme<T: Real>(x: T) -> (T, T) {
 	let gamma: T = besselEulerGamma()
 	let logHalf: T = besselLogHalf(x)
 
-	var ff: T = -gamma - logHalf
+	var f: T = -gamma - logHalf
 	var p: T = T(1) / T(2)
 	var q: T = T(1) / T(2)
 	var c: T = T(1)
-	let d: T = half * half
-	var sum: T = ff
-	var sum1: T = p
+	let quarterSquare: T = half * half
+	var kSum: T = f
+	var kSumNext: T = p
 
 	for i in 1...besselIterationLimit {
 		let fi: T = T(i)
-		let scaled: T = fi * ff
+		let scaled: T = fi * f
 		let numerator: T = scaled + p + q
 		let square: T = fi * fi
-		ff = numerator / square
-		let step: T = d / fi
+		f = numerator / square
+		let step: T = quarterSquare / fi
 		c *= step
 		p /= fi
 		q /= fi
-		let del: T = c * ff
-		sum += del
-		let iFf: T = fi * ff
-		let inner: T = p - iFf
-		sum1 += c * inner
-		let tolerance: T = abs(sum) * T.ulpOfOne
-		if abs(del) < tolerance { break }
+		let increment: T = c * f
+		kSum += increment
+		let weighted: T = fi * f
+		let inner: T = p - weighted
+		kSumNext += c * inner
+		let tolerance: T = abs(kSum) * T.ulpOfOne
+		if abs(increment) < tolerance { break }
 	}
 
 	let scale: T = T.exp(x)
 	let twoOverX: T = T(2) / x
-	let k0: T = sum * scale
-	let k1Unscaled: T = sum1 * twoOverX
+	let k0: T = kSum * scale
+	let k1Unscaled: T = kSumNext * twoOverX
 	let k1: T = k1Unscaled * scale
 	return (k0, k1)
 }
@@ -156,57 +156,76 @@ private func besselK01Temme<T: Real>(x: T) -> (T, T) {
 ///
 /// The e^(−x) that the closed form carries is simply not applied — which is what
 /// keeps the order recurrence alive past the point where K itself underflows.
+/// K₀ and K₁ for x ≥ 2 by Steed's algorithm, returned scaled by e^(+x).
+///
+/// Steed's method drives the continued fraction for Kμ₊₁/Kμ alongside an auxiliary
+/// two-term sequence that supplies the normalisation, so a single pass yields both
+/// orders. The method is Steed's, published in Barnett, Feng, Steed and Goldfarb
+/// (1974) and set out with the auxiliary sequence in Thompson and Barnett (1987);
+/// the fraction itself advances by the modified Lentz recurrence this directory
+/// already uses — compare ``regularizedUpperIncompleteGamma(a:x:)``, which carries
+/// the same `lentzD`/`increment`/`deviation` shape.
+///
+/// The exponential factor is deliberately *not* applied here.
+/// ``besselK(x:order:)`` carries it in logarithms so the order recurrence survives
+/// the range where K itself underflows.
 private func besselK01Steed<T: Real>(x: T) -> (T, T) {
-	let a1: T = T(1) / T(4)
+	let two: T = T(2)
+	let quarter: T = T(1) / T(4)
 	let onePlusX: T = T(1) + x
-	var b: T = T(2) * onePlusX
-	var d: T = T(1) / b
-	var h: T = d
-	var delh: T = d
-	var q1: T = T.zero
-	var q2: T = T(1)
-	var c: T = a1
-	var q: T = c
-	var a: T = -a1
-	var s: T = T(1) + q * delh
 
-	for i in 2...besselIterationLimit {
-		let fi: T = T(i)
-		let step: T = T(2 * (i - 1))
-		a -= step
-		let negA: T = -a
-		let scaledC: T = negA * c
-		c = scaledC / fi
+	// aₙ and bₙ of the continued fraction, and Lentz's Dⱼ with its running factor.
+	var numerator: T = -quarter
+	var denominator: T = two * onePlusX
+	var lentzD: T = T(1) / denominator
+	var increment: T = lentzD
+	var fraction: T = lentzD
 
-		let bq2: T = b * q2
-		let qNumerator: T = q1 - bq2
-		let qnew: T = qNumerator / a
-		q1 = q2
-		q2 = qnew
-		q += c * qnew
+	// Steed's auxiliary sequence, held as an explicit two-term state rather than a
+	// pair of scalars shuffled by hand: the recurrence is second order and reads as
+	// one when it is written that way.
+	var auxiliary: (previous: T, current: T) = (T.zero, T(1))
+	var coefficient: T = quarter
+	var weight: T = quarter
+	var normalizer: T = T(1) + weight * increment
 
-		b += T(2)
-		let aD: T = a * d
-		let denominator: T = b + aD
-		d = T(1) / denominator
-		let bd: T = b * d
-		let factor: T = bd - T(1)
-		delh = factor * delh
-		h += delh
-		let dels: T = q * delh
-		s += dels
-		let relative: T = dels / s
-		if abs(relative) < T.ulpOfOne { break }
+	for index in 2...besselIterationLimit {
+		let position: T = T(index)
+		let shift: T = T(2 * (index - 1))
+		numerator -= shift
+		let negated: T = -numerator
+		let scaled: T = negated * coefficient
+		coefficient = scaled / position
+
+		let weighted: T = denominator * auxiliary.current
+		let difference: T = auxiliary.previous - weighted
+		let next: T = difference / numerator
+		auxiliary = (auxiliary.current, next)
+		weight += coefficient * next
+
+		denominator += two
+		let tail: T = numerator * lentzD
+		let divisor: T = denominator + tail
+		lentzD = T(1) / divisor
+		let scaledD: T = denominator * lentzD
+		let delta: T = scaledD - T(1)
+		increment = delta * increment
+		fraction += increment
+
+		let contribution: T = weight * increment
+		normalizer += contribution
+		let deviation: T = contribution / normalizer
+		if abs(deviation) < T.ulpOfOne { break }
 	}
 
-	h = a1 * h
-	let twoX: T = T(2) * x
+	fraction = quarter * fraction
+	let twoX: T = two * x
 	let piOverTwoX: T = T.pi / twoX
 	let amplitude: T = T.sqrt(piOverTwoX)
-	let k0: T = amplitude / s
-	let halfShift: T = T(1) / T(2)
-	let numerator: T = x + halfShift - h
-	let ratio: T = numerator / x
+	let k0: T = amplitude / normalizer
+	let half: T = T(1) / two
+	let shifted: T = x + half - fraction
+	let ratio: T = shifted / x
 	let k1: T = k0 * ratio
 	return (k0, k1)
 }

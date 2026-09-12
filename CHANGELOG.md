@@ -57,6 +57,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Three special-function routines were transcriptions of *Numerical Recipes*, and are now our
+  own expression of the published mathematics.** A provenance audit flagged `besselK01Steed`,
+  `besselSteedPQ` and the beta continued fraction on distinctive-identifier correspondence
+  (`delh`, `dels`, `qnew`, `qab`/`qap`/`qam`). Confirmed, and worse than the audit could see
+  without a copy to diff: `besselK01Steed` matched NR's `bessik` CF2 block line for line — same
+  variable names, same declaration order, same statement order — and `besselY.swift` carried a
+  doc comment citing *Numerical Recipes* §6.7 as its source.
+
+  The algorithms are not NR's. Steed's method is Barnett, Feng, Steed and Goldfarb (1974) and
+  Thompson and Barnett (1987); the series are Temme (1975, 1976); the continued fractions advance
+  by Lentz's recurrence (Lentz 1976). What was copied is NR's *expression* of them: the naming,
+  and their bookkeeping arrangement. Both are replaced. Steed's auxiliary sequence is now an
+  explicit two-term state, the complex recurrence runs on a named pair type with its three
+  operations written out, and the citations point at the primary literature.
+
+  **Every value is bit-identical.** Verified over 60,048 results — J, Y, I and K across the full
+  argument-order grid, plus the regularized incomplete gamma P and Q and the incomplete beta —
+  compared as raw bit patterns before and after. Not one differs.
+
+  Two of the five NR citations found were false alarms and are corrected rather than removed:
+  `GeneticAlgorithm`'s LCG constants are **Knuth's** MMIX parameters (TAOCP vol. 2 §3.3.4), which
+  NR republishes; and `CubicSpline` cites NR for the method while implementing it independently
+  (`sub`/`diag`/`sup`/`rhs` against NR's `u`/`y2`/`sig`/`qn`/`un`).
+
+
 - **Every exit test in the package was passing under ThreadSanitizer without running.**
   `#expect(processExitsWith:)` re-launches the test executable as a child process. Under a
   sanitizer that child does not inherit the `DYLD_INSERT_LIBRARIES` entry installing the
