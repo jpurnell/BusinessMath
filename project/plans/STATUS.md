@@ -1,6 +1,6 @@
 # Plans — what is complete, what is open, what is in progress
 
-**Last reconciled:** 2026-09-12, after the history rewrite and the two test-suite reviews.
+**Last reconciled:** 2026-09-12 (later), after Phase 1 of the simulation review.
 
 **History was rewritten 2026-09-12** — `git filter-repo` removed ~90 MB of third-party books.
 Every SHA quoted in this file from `ca7afd83` onward is dead; commit *subjects* still resolve.
@@ -8,10 +8,22 @@ See `HANDOFF.md` §1 before running any git command.
 
 **Two validated reviews are committed and are the work queue:**
 `proposals/REVIEW_simulation_tests.md` (6 corrections, 1 escalated library bug, 6 phases) and
-`proposals/REVIEW_statistics_tests.md` (3 corrections, 8 conventions decided, 7 phases). **The
-next piece of work is Phase 1 of the simulation review** — the antithetic standard error, the
-`distributionUniform` downward bias, the `a * 0` rewrite, constant-folding error preservation,
-and the CPU/GPU contract.
+`proposals/REVIEW_statistics_tests.md` (3 corrections, 8 conventions decided, 7 phases).
+
+**Phase 1 of the simulation review is COMPLETE** — all five items, `88af88d7` through `4df8a678`:
+the antithetic standard error (now measured over pair means, reported ÷ realised 1.449 → 1.079),
+the `distributionUniform` lattice (which also collapsed one draw in ten million to exactly zero and
+trapped `distributionGeometric`), the `a * 0` rewrite, constant folding preserving interpreter
+errors, and the CPU/GPU contract. Two things came out of it that the review did not contain: a NaN
+price for a single-path antithetic request, and `a + 0 → a` being unsound for `-0.0` — kept, with
+the reasoning written down, and flagged for confirmation.
+
+**Not done in Phase 1:** error parity between the CPU interpreter and the Metal kernel. It needs a
+per-thread error flag and a decision about partially-failed batches, so it is design rather than
+correction.
+
+**The next piece of work is Phase 2, GPU test integrity**, starting with decision 5.2 — the Mac CI
+job must fail rather than skip when Metal is unavailable.
 
 **Previously:** 2026-09-11 (later), after the Bessel family landed.
 

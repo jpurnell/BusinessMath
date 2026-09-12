@@ -1,16 +1,17 @@
-# Handoff — 2026-09-12
+# Handoff — 2026-09-12 (later)
 
-**`main` is `d3543352`, pushed and verified. History was rewritten today — read §1 before running
-any git command.** Two test-suite reviews are validated, decided and committed. The next piece of
-work is **Phase 1 of `REVIEW_simulation_tests.md` §6**, and every decision it needs is settled.
+**`main` is `4df8a678`. History was rewritten today — read §1 before running any git command.**
+**Phase 1 of `REVIEW_simulation_tests.md` §6 is complete**, all five items, in four commits. The
+next piece of work is **Phase 2, GPU test integrity**, whose first step is decision 5.2 — the Mac
+CI job must fail rather than skip when Metal is unavailable.
 
 ## State
 
 | | |
 |---|---|
-| branch | `main` at `d3543352`, local == remote by `ls-remote` |
+| branch | `main` at `4df8a678` |
 | tags | **89** (was 109). Latest `v3.0.0-alpha.4` |
-| tests | 7,700 in 689 suites, exit 0 |
+| tests | **7,723 in 691 suites**, exit 0 (was 7,700 in 689) |
 | gate | `quality-gate --no-cache --check all --continue-on-failure` → 45/45, **0 errors**, 10 warnings |
 | the 10 warnings | pre-existing `non-strict-improvement` notices in other suites. Not the skipped-test inventory, whatever older handoffs said |
 | working tree | clean except `project/plans/proposals/excel_function_coverage_matrix_bak.tsv` — **your backup, deliberately untracked, leave it alone** |
@@ -57,40 +58,77 @@ has a new SHA.**
 | `0297a2ed` | `REVIEW_simulation_tests.md` — validated |
 | `11262208` | Three Numerical Recipes transcriptions re-expressed, bit-identically |
 | `d3543352` | `REVIEW_statistics_tests.md` — validated, eight conventions decided |
+| `7f76a9fe` | This file and `STATUS.md` caught up to the rewrite they describe |
+| `88af88d7` | **Phase 1 item 1** — antithetic SE from pair means, plus Welford |
+| `292868a3` | **Phase 1 item 2** — the unit-interval lattice, and a trap with it |
+| `0195cf31` | **Phase 1 items 3–4** — optimizer soundness |
+| `4df8a678` | **Phase 1 item 5** — the CPU/GPU contract |
 
-CI green throughout. `Release Tests` green on both platforms and Thread Sanitizer, verified for the
-right reason: 7,700 tests ran and the three exit tests report **skipped**, not passed.
+CI green throughout up to `d3543352`. The four Phase 1 commits are local-gate-green (45/45,
+0 errors) and **have not yet been seen by CI** — watch the run after the push.
 
 ---
 
-## 3. Next: Phase 1 of `REVIEW_simulation_tests.md` §6
+## 3. Phase 1 is done. What it found, beyond what the review said.
 
-Library correctness, non-breaking. In order:
+Each item was confirmed to fail by reintroducing the defect, and each fix ran the full suite.
 
-1. **The antithetic standard error is wrong by 40%.** `MonteCarloEngine.price` pools 2N negatively
-   correlated paths as independent instead of taking the variance of the N/2 **pair means**.
-   Measured over 200 seeds: realised sd(price) 0.3010 plain vs **0.2084** antithetic — a real 31%
-   variance reduction — while reported SE is 0.2926 vs 0.2921, i.e. no reduction reported.
-   `MonteCarloPricingResult` documents "price ± 2 · standardError with 95% confidence"; for
-   antithetic runs that interval is 40% too wide. The guarding test
-   `antitheticReducesStandardError` passes **109 of 200 seeds (54.5%)** — a coin flip that seed 42
-   wins. **Fix the SE, then replace that test with the SE-honesty check.**
-2. **`integrate` samples on a biased lattice.** `distributionUniform` is
-   `(u * 10_000_000).rounded(.down) / 10_000_000` — a systematic **downward bias of ~5e-8**, not
-   merely a 1e-7 lattice. Drop the wrapper; `openUnitUniform` underneath is already correct.
-   Direction matters: bias does not average out with more samples.
-3. **`a * 0 → 0` is unsound** (`BytecodeOptimizer.swift:299–306`, unconditional). `inf*0` and
-   `NaN*0` are NaN, and a negative `a` gives −0.0. Restrict to known-finite operands. `a * 1 → a`
-   is sound and needs nothing.
-4. **Constant folding must preserve interpreter errors.** `BytecodeInterpreter` throws on
-   divide-by-zero (`MonteCarloExpressionModel.swift:246`), `sqrt` of negative (:281) and `log` of
-   non-positive (:287). `log(0) * 0` returns 0 optimized and **throws** unoptimized.
-5. **CPU/GPU contract.** Pinned opcode table (assertions today are only `>= 0` and `<= 16`, so any
-   renumbering passes), stack-depth rejection, `Float` constant narrowing, malformed-bytecode
-   validation, error parity.
+1. **Antithetic SE** (`88af88d7`). Reported ÷ realised over 200 fixed seeds went from **1.449 to
+   1.079**; the reported reduction against plain went from none to **0.746** against a realised
+   0.659. Welford replaced `E[X²] − E[X]²` — not tidying: on a payoff antithetic sampling cancels
+   exactly, the naive form loses every digit to cancellation and would have reported a spurious
+   4e-8, failing the new oracle on arithmetic rather than on the defect. The price keeps its
+   original accumulation and is bit-identical.
+   **New, not in the review:** a single-path antithetic request had `paths / 2 == 0`, so the loop
+   never ran and the mean divided 0.0 by 0.0 — a NaN price with `pathCount` 0. One pair is now the
+   floor.
+2. **The lattice** (`292868a3`). **Bigger than the review recorded.** Beyond the 5e-8 downward bias,
+   every uniform below 1e-7 quantized to exactly 0.0 — measured at **1.0000000006e-07 of the word
+   space, one draw in ten million**. `distributionGeometric` is `ceil(ln U / ln(1−p))` then `Int(_:)`,
+   so a zero draw gave −inf, then +inf, then **a trap**. Confirmed in isolation: exit 133. The
+   comment above that line claimed the code used `1−U` to avoid `log(0)`; it never did. Blast
+   radius of removing the lattice, measured: **none** — no other test pinned it.
+3. **`a * 0 → 0`** (`0195cf31`). Removed, not guarded: `a` is an input or a computed sequence and
+   nothing in the compiler tracks finiteness. Where `a` is a constant, folding already handled it
+   exactly. **New, not in the review:** `a + 0 → a` is also unsound, for `-0.0` only — the sum is
+   `+0.0` and the rewrite yields `-0.0`. LLVM declines it without `nsz` for exactly that reason.
+   **Kept**, because the only reachable difference is the sign of a printed zero, and it is now
+   written down at the pass. **That trade is yours to confirm or reverse.**
+4. **Folding vs interpreter errors** (`0195cf31`). `evaluateBinaryOp`/`evaluateUnaryOp` return
+   `Double?` and decline the three the interpreter throws on.
+5. **CPU/GPU contract** (`4df8a678`). Opcodes live once in `GPUOpcode`; the kernel is generated from
+   it and contains no numbers. `GPUBytecodeValidator` runs before both `runSimulation` overloads.
+   `gpuNarrowingIssues()` reports constants that overflow or underflow Float32.
 
-Everything after that is in §6 of the same document: GPU test integrity, the breaking API set,
-assertion strength, test infrastructure, gate rules.
+**The trap that mattered most here:** `MonteCarloGPUDevice` compiles its kernel inside a *failable*
+initializer. Break one line of MSL and the initializer returns nil, every `.requiresMetalGPU` suite
+skips on reaching for a device, and **the whole GPU surface reports green**. A filtered GPU run is
+not evidence that a shader edit is sound. `MetalKernelCompilationTests` now closes that, and it was
+itself verified by breaking the generated declarations on purpose.
+
+### Open, and needing your decision
+
+- **Error parity, the fifth part of §3.7 — not done.** The CPU throws on divide-by-zero, `sqrt` of a
+  negative and `log` of a non-positive; the kernel produces inf or NaN and carries on. Closing it
+  needs a per-thread error flag in the kernel *and* a decision about what a partially-failed batch
+  returns. That is design, not correction.
+- **`a + 0 → a`**, above.
+- `MonteCarloCommon.h` is still a hand-maintained mirror SPM never compiles. It now disagrees with
+  nothing; nothing checks that.
+- The review's own §8 open questions are untouched: whether `MonteCarloPricingResult` should expose
+  the pair-mean estimator, and the per-family KS tolerance.
+
+---
+
+## 3a. Next: Phase 2, GPU test integrity
+
+From §6: three exposed guards to traits and 14 dead ones removed; a CI-aware trait so the Mac job
+fails rather than skips (decision 5.2 — and §3 above is the concrete reason it matters); KS per
+kernel distribution; CPU-versus-GPU differential per opcode; samplers and evaluator into
+`MetalShaderSource`; the two disabled tests to `withKnownIssue` + `.bug`.
+
+`GPUOpcode.operandCount` and `stackEffect` are already in place, so the per-opcode differential has
+a table to iterate.
 
 ---
 
@@ -126,6 +164,12 @@ was 25 MB into one step.
 
 **Compare against a passing run before reading anything into the shape of a failing one.** That is
 what broke the above open, not a cleverer hypothesis.
+
+**A green GPU suite can mean the GPU suite was deleted.** `MonteCarloGPUDevice` compiles its kernel
+inside a failable initializer. A syntax error in the MSL returns nil, `MetalAvailability.canRunKernels`
+is unaffected — it compiles a trivial kernel of its own — and every `.requiresMetalGPU` suite skips
+on reaching for a device. The run is green with the GPU path untested. Never take a passing GPU run
+as evidence that a shader edit compiled; `MetalKernelCompilationTests` is what makes it evidence.
 
 **The pre-push gate is load-sensitive.** It blocked a push, then passed unchanged on retry minutes
 later. Re-run quietly before hunting for what you broke.
