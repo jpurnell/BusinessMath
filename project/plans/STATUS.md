@@ -1,6 +1,6 @@
 # Plans — what is complete, what is open, what is in progress
 
-**Last reconciled:** 2026-09-12 (later), after Phase 1 of the simulation review.
+**Last reconciled:** 2026-09-12 (later still), after Phase 1 and the first of Phase 2.
 
 **History was rewritten 2026-09-12** — `git filter-repo` removed ~90 MB of third-party books.
 Every SHA quoted in this file from `ca7afd83` onward is dead; commit *subjects* still resolve.
@@ -18,9 +18,15 @@ errors, and the CPU/GPU contract. Two things came out of it that the review did 
 price for a single-path antithetic request, and `a + 0 → a` being unsound for `-0.0` — kept, with
 the reasoning written down, and flagged for confirmation.
 
-**Not done in Phase 1:** error parity between the CPU interpreter and the Metal kernel. It needs a
-per-thread error flag and a decision about partially-failed batches, so it is design rather than
-correction.
+**Error parity now has a design proposal:** `proposals/PROPOSAL_gpu_error_parity.md`. Its two
+steps that need no decision are done — fast math off, and a CPU/GPU differential over all 22
+operations. **§8 blocks the rest and is a question for Justin:** what does a partially-failed batch
+return? Read §2.1 first — it retracts a measurement that the first draft was built on.
+
+**Part of Phase 2 landed early** at `9f661666`, because it is what makes GPU work verifiable at
+all: seventeen `guard … else { print("Skipping"); return }` sites became `try #require`. Review
+§4.6 calls fourteen of them dead code; they were not. Breaking the kernel on purpose took the same
+three suites from 4 failures to 16.
 
 **The next piece of work is Phase 2, GPU test integrity**, starting with decision 5.2 — the Mac CI
 job must fail rather than skip when Metal is unavailable.

@@ -1,6 +1,6 @@
-# Handoff — 2026-09-12 (later)
+# Handoff — 2026-09-12 (later still)
 
-**`main` is `4df8a678`. History was rewritten today — read §1 before running any git command.**
+**`main` is `f5b4454e`. History was rewritten today — read §1 before running any git command.**
 **Phase 1 of `REVIEW_simulation_tests.md` §6 is complete**, all five items, in four commits. The
 next piece of work is **Phase 2, GPU test integrity**, whose first step is decision 5.2 — the Mac
 CI job must fail rather than skip when Metal is unavailable.
@@ -9,9 +9,9 @@ CI job must fail rather than skip when Metal is unavailable.
 
 | | |
 |---|---|
-| branch | `main` at `4df8a678` |
+| branch | `main` at `f5b4454e` |
 | tags | **89** (was 109). Latest `v3.0.0-alpha.4` |
-| tests | **7,723 in 691 suites**, exit 0 (was 7,700 in 689) |
+| tests | **7,727 in 691 suites**, exit 0 (was 7,700 in 689) |
 | gate | `quality-gate --no-cache --check all --continue-on-failure` → 45/45, **0 errors**, 10 warnings |
 | the 10 warnings | pre-existing `non-strict-improvement` notices in other suites. Not the skipped-test inventory, whatever older handoffs said |
 | working tree | clean except `project/plans/proposals/excel_function_coverage_matrix_bak.tsv` — **your backup, deliberately untracked, leave it alone** |
@@ -63,6 +63,8 @@ has a new SHA.**
 | `292868a3` | **Phase 1 item 2** — the unit-interval lattice, and a trap with it |
 | `0195cf31` | **Phase 1 items 3–4** — optimizer soundness |
 | `4df8a678` | **Phase 1 item 5** — the CPU/GPU contract |
+| `9f661666` | additive identity made sign-exact; 17 silent-pass guards removed |
+| `f5b4454e` | safe math, the per-opcode differential, and `PROPOSAL_gpu_error_parity.md` |
 
 CI green throughout up to `d3543352`. The four Phase 1 commits are local-gate-green (45/45,
 0 errors) and **have not yet been seen by CI** — watch the run after the push.
@@ -90,29 +92,44 @@ Each item was confirmed to fail by reintroducing the defect, and each fix ran th
    radius of removing the lattice, measured: **none** — no other test pinned it.
 3. **`a * 0 → 0`** (`0195cf31`). Removed, not guarded: `a` is an input or a computed sequence and
    nothing in the compiler tracks finiteness. Where `a` is a constant, folding already handled it
-   exactly. **New, not in the review:** `a + 0 → a` is also unsound, for `-0.0` only — the sum is
-   `+0.0` and the rewrite yields `-0.0`. LLVM declines it without `nsz` for exactly that reason.
-   **Kept**, because the only reachable difference is the sign of a printed zero, and it is now
-   written down at the pass. **That trade is yours to confirm or reverse.**
+   exactly. **New, not in the review:** the additive identities were unsound too, and
+   **`9f661666` made them strict** at Justin's direction. There is exactly one exact additive
+   identity — `a + (-0.0) → a`, equivalently `a - (+0.0) → a`. Being strict uncovered a second
+   defect: **`a - 0 → a` was already firing on `-0.0`**, because `case .constant(0.0)` matches
+   through `==`. The conditions now read `.sign`, and this pass has no rewrite that can change a
+   result, in any bit, for any input.
 4. **Folding vs interpreter errors** (`0195cf31`). `evaluateBinaryOp`/`evaluateUnaryOp` return
    `Double?` and decline the three the interpreter throws on.
 5. **CPU/GPU contract** (`4df8a678`). Opcodes live once in `GPUOpcode`; the kernel is generated from
    it and contains no numbers. `GPUBytecodeValidator` runs before both `runSimulation` overloads.
    `gpuNarrowingIssues()` reports constants that overflow or underflow Float32.
 
-**The trap that mattered most here:** `MonteCarloGPUDevice` compiles its kernel inside a *failable*
-initializer. Break one line of MSL and the initializer returns nil, every `.requiresMetalGPU` suite
-skips on reaching for a device, and **the whole GPU surface reports green**. A filtered GPU run is
-not evidence that a shader edit is sound. `MetalKernelCompilationTests` now closes that, and it was
-itself verified by breaking the generated declarations on purpose.
+**The trap that mattered most here**, stated correctly on the second attempt: `MonteCarloGPUDevice`
+compiles its kernel inside a *failable* initializer, so a broken shader makes it return nil. The
+`.requiresMetalGPU` trait does **not** hide that — it compiles a trivial kernel of its own and stays
+enabled. What hid it was seventeen sites spelling "could not run" as `guard … else { print; return }`,
+which reports **passed**. Measured by breaking the generated MSL, same three suites, 29 tests:
+**4 failures before, 16 after** `9f661666` converted them all to `try #require`. Twelve tests
+exercised the GPU, found no device, and passed. An earlier draft of this file said the *whole* GPU
+surface went green; it was twelve of twenty-nine, because fourteen `#require` sites already failed
+honestly. Review §4.6 calls those seventeen guards dead code under their suite traits — **they were
+not**: the trait rules out an absent GPU, not our own kernel failing to compile.
 
 ### Open, and needing your decision
 
-- **Error parity, the fifth part of §3.7 — not done.** The CPU throws on divide-by-zero, `sqrt` of a
-  negative and `log` of a non-positive; the kernel produces inf or NaN and carries on. Closing it
-  needs a per-thread error flag in the kernel *and* a decision about what a partially-failed batch
-  returns. That is design, not correction.
-- **`a + 0 → a`**, above.
+- **Error parity — `PROPOSAL_gpu_error_parity.md` is written and its two independent steps are
+  done** (safe math, per-opcode differential). **§8 is the open question and blocks the rest:
+  what does a partially-failed batch return?** Throw on any failed iteration, return values plus
+  per-iteration errors, or a threshold. The proposal leans to throwing by default with an explicit
+  `.collect` opt-out, and says it cannot make the call.
+- **A retraction worth reading before trusting any GPU measurement here.** A probe measured the
+  kernel returning `1.0` for `0 / 0` under Metal's default fast math. It was an artifact: the probe
+  wrote `v / v`, which fast math folds via `x / x → 1`; the kernel divides two stack slots at
+  runtime indices and the compiler cannot follow them. Re-measured in the kernel's real shape, fast
+  and safe math agree on every condition. Fast math is off regardless — the kernel's IEEE behaviour
+  otherwise rests on the optimizer failing to see through an array subscript, which is what
+  `factorial`'s incidental trap already taught this package not to rely on. **That one is a
+  judgement call, flagged in §2.1, and reversible.**
 - `MonteCarloCommon.h` is still a hand-maintained mirror SPM never compiles. It now disagrees with
   nothing; nothing checks that.
 - The review's own §8 open questions are untouched: whether `MonteCarloPricingResult` should expose
@@ -120,15 +137,21 @@ itself verified by breaking the generated declarations on purpose.
 
 ---
 
-## 3a. Next: Phase 2, GPU test integrity
+## 3a. Next: Phase 2, GPU test integrity — partly done already
 
-From §6: three exposed guards to traits and 14 dead ones removed; a CI-aware trait so the Mac job
-fails rather than skips (decision 5.2 — and §3 above is the concrete reason it matters); KS per
-kernel distribution; CPU-versus-GPU differential per opcode; samplers and evaluator into
-`MetalShaderSource`; the two disabled tests to `withKnownIssue` + `.bug`.
+From §6, with what `9f661666` and `f5b4454e` already landed struck through:
 
-`GPUOpcode.operandCount` and `stackEffect` are already in place, so the per-opcode differential has
-a table to iterate.
+- ~~three exposed guards to traits, 14 dead ones removed~~ — **done**, all 17 converted to
+  `#require`; and they were not dead.
+- ~~CPU-versus-GPU differential per opcode~~ — **done**, 22 operations, exact inputs through
+  degenerate uniforms.
+- **a CI-aware trait so the Mac job fails rather than skips** (decision 5.2). Still open, and §3
+  is the concrete reason it matters.
+- **KS per kernel distribution.** Open. Review §8 question 2 — per-family tolerance or the
+  proposed α = 1e-5 two-sample critical value of 0.0156 at n = m = 50,000 — is unanswered.
+- **samplers and evaluator into `MetalShaderSource`.** Open; `GPUOpcode.mslDeclarations` shows the
+  shape to follow.
+- **the two disabled tests to `withKnownIssue` + `.bug`.** Open.
 
 ---
 
