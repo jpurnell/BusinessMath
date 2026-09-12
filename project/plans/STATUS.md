@@ -1,6 +1,19 @@
 # Plans — what is complete, what is open, what is in progress
 
-**Last reconciled:** 2026-09-11 (later), after the Bessel family landed.
+**Last reconciled:** 2026-09-12, after the history rewrite and the two test-suite reviews.
+
+**History was rewritten 2026-09-12** — `git filter-repo` removed ~90 MB of third-party books.
+Every SHA quoted in this file from `ca7afd83` onward is dead; commit *subjects* still resolve.
+See `HANDOFF.md` §1 before running any git command.
+
+**Two validated reviews are committed and are the work queue:**
+`proposals/REVIEW_simulation_tests.md` (6 corrections, 1 escalated library bug, 6 phases) and
+`proposals/REVIEW_statistics_tests.md` (3 corrections, 8 conventions decided, 7 phases). **The
+next piece of work is Phase 1 of the simulation review** — the antithetic standard error, the
+`distributionUniform` downward bias, the `a * 0` rewrite, constant-folding error preservation,
+and the CPU/GPU contract.
+
+**Previously:** 2026-09-11 (later), after the Bessel family landed.
 
 **Previously:** 2026-09-11, at `70d29b1e` (post `v3.0.0-alpha.3`).
 
