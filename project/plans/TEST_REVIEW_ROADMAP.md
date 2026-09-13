@@ -169,8 +169,8 @@ midnight — the mechanism `DayCountConvention`'s own note describes.
 
 ### T5. Convention pins that are owed
 
-Every one of these is a decision, not a bug, and several are the *same* decision reached from
-different directions:
+Eight decisions (the day count was a ninth until it turned out to be L11, a 4.01× error rather
+than a convention). Several are the *same* decision reached from different directions:
 
 | Convention | Reached from | Status |
 |---|---|---|
@@ -386,38 +386,119 @@ is the one a later contributor reaches for first.
 
 ## 5. Sequencing
 
-The ordering principle: **library defects, then unblockers, then bulk.** Bulk work done before an
-unblocker has to be redone.
+**Re-prioritised 2026-09-13** after the optimization and validation/forecasting intake. The
+previous ordering predated them and had no place for the gradient certificate, L12, the eleven
+vacuous optimizer assertions or the thirty commented-out tests.
 
-**Wave 0 — the two live defects found by reading the source.** Both are shipping, both are
-wrong by a factor, and neither is a test problem.
-1. **L11** — DSO/DIO/DPO, 4.01× on quarterly statements. Route the day count through
-   `DayCountConvention.days(in: period)`. Small, contained, and the fixture and correct values are
-   already measured.
-2. **L7/L7a** — replace `Calendar.current` with `gregorianUTC` at the ~15 source sites. The
-   constant, the doctrine and the precedent all exist; this applies a rule the package wrote down
-   for itself and then did not follow. **Do this before any test-side calendar work**, because a
-   fixed test calendar cannot reach it.
+Two ordering principles, and the second is the one that changed this revision:
 
-**Wave 1 — decide and unblock.**
-3. L3 — seed `runFinancialSimulation`. Gates ~15 tests and all of T3.
-4. L1/L2 — `bayes`: contract and genericity. Smallest whole-file win in the corpus.
-5. The remaining T5 decisions, as a batch. They are cheap to decide and expensive to discover
-   later.
+1. **Library defects, then unblockers, then bulk.** Bulk work done before an unblocker is redone.
+2. **Cheap high-information moves go early, even when they are "only" test changes.** An assertion
+   that cannot fail is not merely weak coverage — it is an *unknown*. Converting one costs a line
+   and either passes (costing nothing) or turns the suite red on a live defect. That asymmetry beats
+   almost anything else per unit of effort, and it is why Wave 0 now contains test edits.
 
-**Wave 2 — the mechanical bulk**, once Wave 1 fixes what it must.
-5. T1: 103 `?? 0` → `try #require`.
-6. T4: fixed test calendar, 93 sites.
-7. Deduplicate the ratio fixture; 20 `guard let` → `try #require`.
+---
 
-**Wave 3 — exactness.**
-8. T2 across all domains, starting with the two npvExcel comment errors.
-9. The composition identities (driver) and tornado pins (scenario).
+### Wave 0 — ships wrong, or tells us cheaply whether it does
 
-**Wave 4 — coverage and hygiene.**
-10. T7: 10 disabled tests.
-11. T6: error specificity.
-12. The per-domain coverage gaps in §4.
+**0.1 — L11: DSO / DIO / DPO, 4.01× on any non-annual statement.**
+Measured, not argued: DIO returns 91.25 where the answer is 22.75. Route the day count through
+`DayCountConvention.days(in: period)`, which already exists and already returns the right 91.0.
+Small, contained, correct values in hand.
+
+**0.2 — L7 / L7a: `Calendar.current` at ~15 source sites.**
+`gregorianUTC`, the doctrine and the precedent all exist in `DayCountConvention.swift`; this applies
+a rule the package wrote down for itself and then did not follow. **Must precede any test-side
+calendar work** — a fixed test calendar cannot reach a module-level global.
+
+**0.3 — The eleven assertions that cannot fail in the optimizers.**
+Promoted into Wave 0 on principle 2, not on volume. Seven `.rounded()` comparisons and four
+always-true convergence disjunctions currently mean **nobody knows whether the stochastic and
+robust optimizers respect their own constraints**. `#expect(weight.rounded() >= 0.0)` passes for a
+weight of −0.4.
+
+Each is a one-line edit with two possible outcomes, and both are valuable:
+
+| Outcome | What it means |
+|---|---|
+| Still green | The constraint handling was fine; ~11 unknowns become evidence, for an hour's work |
+| Turns red | A live solver defect that has been invisible for the life of these tests |
+
+Do these **before** the gradient certificate: if a constraint is being violated, that changes what
+the certificate work is even looking at.
+
+---
+
+### Wave 1 — decisions and unblockers
+
+1. **L3** — seed `runFinancialSimulation` and `ScenarioRunner` sampling. Gates ~15 tests and all of
+   T3; every statistical bound downstream must be re-tuned after it, so tightening them first is
+   wasted work.
+2. **L1 / L2** — `bayes`: zero-denominator contract, and genericity over `T: Real`. The smallest
+   whole-file win in the corpus, and fully validated.
+3. **The T5 convention batch**, now eight items rather than nine (the day count turned out to be
+   L11, not a convention). Cheap to decide, expensive to discover later.
+4. **L12** — decide whether the library wants a modified-z or IQR rule at all. Currently its only
+   outlier rule is the one that masks. This is a capability question, not a defect fix.
+
+---
+
+### Wave 2 — the structural test work, highest leverage first
+
+5. **The gradient certificate for the multivariate optimizers.** Replaces ~40 distance-to-known-
+   minimum assertions with `‖∇f(x*)‖ < tol` — the condition that *defines* a minimum — and extends
+   to problems where no exact answer is known, which the current assertions cannot. **The single
+   highest-leverage item in the ten reviews.**
+6. **DEA units invariance for SBM and super-efficiency.** CCR and BCC have it; a scaling error
+   breaks it while leaving every score plausible. Cheapest high-value addition in that domain.
+7. **The ETS exact-recovery oracle.** Not for the phase defect — ETS delegates to
+   `HoltWintersModel` and inherits that fix — but because ETS adds a parameter *search* whose
+   recovery of a noiseless series is untested.
+8. **Interval calibration** for `EmpiricalIntervalsTests`. Same shape as the antithetic-SE defect
+   fixed in `88af88d7`: a reported uncertainty that nothing measures against realised spread.
+9. **The driver composition identities** — the seeding contract already makes them cheap, and they
+   catch a composite that re-draws its operands, which no band assertion can.
+
+---
+
+### Wave 3 — the mechanical bulk
+
+10. **T1: 103 `?? 0` → `try #require`.** Highest-volume single item in the corpus.
+11. **T4: the fixed test calendar, 93 sites** — *after* 0.2, which is what actually fixes it.
+12. Deduplicate the ratio fixture (~115 lines × 2) and convert its 20 `guard let` blocks.
+
+---
+
+### Wave 4 — exactness
+
+13. **T2, ~150 band assertions → exact values.** Start with the two `npvExcel` comment errors,
+    which are wrong arithmetic rather than loose bounds.
+14. Tornado impacts pinned exactly; baselines and error metrics pinned to their closed forms;
+    backtest fold *boundaries* rather than counts.
+
+---
+
+### Wave 5 — hygiene and coverage
+
+15. **T7: 10 `.disabled` tests and 30 commented-out `@Test` declarations.** The commented-out set
+    is larger and worse — no count, no trait, no record of why.
+16. **T6: error specificity**, starting with the `(any Error).self` sites.
+17. The per-domain coverage gaps in §4, and the certificate techniques of §4.6 applied to K-means,
+    the constrained optimizers (KKT rather than primal feasibility alone) and the cut generators.
+
+---
+
+### What moved, and why
+
+| Item | Was | Now | Reason |
+|---|---|---|---|
+| 11 vacuous optimizer assertions | unplaced | **0.3** | one line each; either outcome is information, and one of them is a live defect |
+| Gradient certificate | unplaced | **5** | highest leverage in the batch, but needs 0.3 first |
+| L12 anomaly masking | unplaced | **4** | a capability decision for Justin, not a fix |
+| 30 commented-out tests | unplaced | **15** | real, but nothing depends on them |
+| Day-count convention | T5 decision | **0.1** | it was never a convention — it is a 4.01× error |
+| Test-side calendar | Wave 2 | **11, after 0.2** | a test calendar cannot reach a module-level global |
 
 ---
 
