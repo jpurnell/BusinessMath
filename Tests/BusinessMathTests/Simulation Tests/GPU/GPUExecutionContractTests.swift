@@ -382,59 +382,181 @@ struct MetalKernelCompilationTests {
         }
     }
 
-    /// Where the two executors part company on a division by zero, pinned as it stands.
+    // MARK: - Error Parity
+
+    /// Each of the three conditions the interpreter throws on is now reported by the kernel.
     ///
-    /// The interpreter throws `.divisionByZero`. The kernel has no way to throw and returns
-    /// what IEEE says: `NaN` for `0 / 0`, `inf` for `1 / 0`. This is the gap
-    /// `PROPOSAL_gpu_error_parity.md` exists to close; until it is closed, the gap is at least
-    /// written down and asserted, so narrowing it is a deliberate change with a failing test.
-    ///
-    /// - Note: an earlier version of this test claimed to prove the kernel is compiled with
-    ///   fast math off, by asserting `0 / 0` is not `1.0`. It passed under *both* math modes and
-    ///   so proved nothing. Fast math folds `0 / 0` to `1.0` only where the compiler can see
-    ///   both operands are the same value; `evaluateModel` divides two slots of a stack array at
-    ///   runtime indices, which it cannot follow. The flag is still off — see
-    ///   ``MonteCarloGPUDevice`` — but this is not the test that shows it, and no test can show
-    ///   it through this kernel, because the flag currently changes nothing it computes.
-    @Test("Division by zero: the interpreter throws, the kernel returns IEEE", .requiresMetalGPU)
-    func divisionByZeroDivergesAsDocumented() throws {
+    /// Not inferred from the output. The kernel tests the operand *before* the operation and
+    /// writes a code into a per-thread buffer, so the report says which condition, at which
+    /// iteration — things a `NaN` in the output can never say, because `sqrt(-1)`, `log(-1)`,
+    /// `0/0` and an honest NaN are indistinguishable after the fact.
+    @Test("Every condition the interpreter throws on is reported by the kernel", .requiresMetalGPU)
+    func everyThrowingConditionIsReported() throws {
         let gpu = try #require(MonteCarloGPUDevice.shared,
                                "a trivial kernel compiles here, so the package's kernel failing to is our defect")
 
-        // A degenerate uniform pinned at zero: `param1 + u * (param2 - param1)` with the two
-        // equal returns that value for every draw.
-        let zero: [MonteCarloGPUDevice.DistributionConfig] = [(type: 1, params: (0.0, 0.0, 0.0))]
+        // A degenerate uniform: `param1 + u * (param2 - param1)` with the two equal returns that
+        // value for every draw, whatever the RNG does.
+        func pinned(_ value: Float) -> [MonteCarloGPUDevice.DistributionConfig] {
+            [(type: 1, params: (value, value, 0.0))]
+        }
 
-        let indeterminate: [Bytecode] = [.input(0), .input(0), .divide]
-        let indeterminateOnGPU = try gpu.runSimulation(
-            distributions: zero,
-            modelBytecode: BytecodeCompiler.toGPUFormat(indeterminate),
-            iterations: 4, seed: 1
-        )
-        #expect(indeterminateOnGPU.first?.isNaN == true,
-                "0 / 0 on the GPU returned \(String(describing: indeterminateOnGPU.first))")
+        let cases: [(String, [Bytecode], Float, GPUIterationError)] = [
+            ("0 / 0", [.input(0), .input(0), .divide], 0.0, .divisionByZero),
+            ("1 / 0", [.constant(1.0), .input(0), .divide], 0.0, .divisionByZero),
+            ("sqrt(-1)", [.input(0), .sqrt], -1.0, .sqrtOfNegative),
+            ("log(0)", [.input(0), .log], 0.0, .logOfNonPositive),
+            ("log(-1)", [.input(0), .log], -1.0, .logOfNonPositive)
+        ]
 
-        let overZero: [Bytecode] = [.constant(1.0), .input(0), .divide]
-        let overZeroOnGPU = try gpu.runSimulation(
-            distributions: zero,
-            modelBytecode: BytecodeCompiler.toGPUFormat(overZero),
-            iterations: 4, seed: 1
-        )
-        #expect(overZeroOnGPU.first?.isInfinite == true,
-                "1 / 0 on the GPU returned \(String(describing: overZeroOnGPU.first))")
+        for (label, bytecode, input, expected) in cases {
+            let outcome = try gpu.runSimulation(
+                distributions: pinned(input),
+                modelBytecode: BytecodeCompiler.toGPUFormat(bytecode),
+                iterations: 4, seed: 1,
+                onIterationError: .collect
+            )
+            #expect(outcome.errors.count == 4, "\(label): \(outcome.errors.count) error slots")
+            #expect(outcome.errors.allSatisfy { $0 == expected },
+                    "\(label): expected \(expected) on every iteration, got \(outcome.errors)")
 
-        // The interpreter refuses both, by the same case.
-        for bytecode in [indeterminate, overZero] {
+            // The interpreter's verdict on the same model, for comparison.
             do {
-                let value = try BytecodeInterpreter.evaluate(bytecode: bytecode, inputs: [0.0])
-                Issue.record("the interpreter returned \(value) instead of throwing")
-            } catch let error as EvaluationError {
-                guard case .divisionByZero = error else {
-                    Issue.record("the interpreter threw \(error), not divisionByZero")
-                    return
-                }
+                let value = try BytecodeInterpreter.evaluate(bytecode: bytecode, inputs: [Double(input)])
+                Issue.record("\(label): the interpreter returned \(value) instead of throwing")
+            } catch is EvaluationError {
+                // As expected — the point is that both refuse, not how the message reads.
             }
         }
+    }
+
+    /// A clean model reports no errors. The control for the suite above.
+    @Test("A model that meets no condition reports none", .requiresMetalGPU)
+    func cleanModelReportsNoErrors() throws {
+        let gpu = try #require(MonteCarloGPUDevice.shared,
+                               "a trivial kernel compiles here, so the package's kernel failing to is our defect")
+
+        let outcome = try gpu.runSimulation(
+            distributions: [(type: 1, params: (4.0, 4.0, 0.0))],
+            modelBytecode: BytecodeCompiler.toGPUFormat([.input(0), .sqrt]),
+            iterations: 8, seed: 1,
+            onIterationError: .collect
+        )
+        #expect(outcome.errors.allSatisfy { $0 == nil }, "reported \(outcome.errors)")
+        #expect(outcome.values.allSatisfy { abs($0 - 2.0) < 1e-6 },
+                "sqrt(4) should be 2; got \(outcome.values)")
+    }
+
+    /// The default throws, and names the count, the first failing iteration and the condition.
+    @Test("The default refuses the batch, and says why", .requiresMetalGPU)
+    func theDefaultThrowsAndNamesTheFailure() throws {
+        let gpu = try #require(MonteCarloGPUDevice.shared,
+                               "a trivial kernel compiles here, so the package's kernel failing to is our defect")
+
+        let bytecode: [Bytecode] = [.constant(1.0), .input(0), .divide]
+        do {
+            let values = try gpu.runSimulation(
+                distributions: [(type: 1, params: (0.0, 0.0, 0.0))],
+                modelBytecode: BytecodeCompiler.toGPUFormat(bytecode),
+                iterations: 8, seed: 1
+            )
+            Issue.record("returned \(values.count) values for a model that divides by zero")
+        } catch let error as GPUError {
+            guard case .iterationsFailed(let count, let firstIteration, let reason) = error else {
+                Issue.record("threw \(error), not iterationsFailed")
+                return
+            }
+            #expect(count == 8, "every iteration divides by zero; \(count) were reported")
+            #expect(firstIteration == 0, "the first failure was iteration \(firstIteration)")
+            #expect(reason == .divisionByZero, "reported \(reason)")
+        }
+    }
+
+    /// `.collect` keeps the good values when only some iterations fail.
+    ///
+    /// One draw in a million landing on a pole is an ordinary Monte Carlo situation, not a broken
+    /// model, and throwing the batch away for it is the behaviour `.collect` exists to avoid.
+    /// The split is made deterministic with a `select`: input 1 is zero, so the divisor is zero
+    /// exactly when the condition picks it.
+    @Test("Collect keeps the values that succeeded", .requiresMetalGPU)
+    func collectKeepsTheGoodValues() throws {
+        let gpu = try #require(MonteCarloGPUDevice.shared,
+                               "a trivial kernel compiles here, so the package's kernel failing to is our defect")
+
+        // input0 is a uniform on [0, 1); the divisor is 0 when input0 < 0.5 and 2 otherwise.
+        // 1 / divisor, so the low half fails and the high half returns 0.5.
+        let bytecode: [Bytecode] = [
+            .constant(1.0),
+            .input(0), .constant(0.5), .lessThan,
+            .constant(0.0), .constant(2.0), .select,
+            .divide
+        ]
+        let outcome = try gpu.runSimulation(
+            distributions: [(type: 1, params: (0.0, 1.0, 0.0))],
+            modelBytecode: BytecodeCompiler.toGPUFormat(bytecode),
+            iterations: 512, seed: 99,
+            onIterationError: .collect
+        )
+
+        let failed = outcome.errors.filter { $0 != nil }.count
+        let succeeded = outcome.errors.count - failed
+        #expect(failed > 0, "no iteration hit the zero divisor")
+        #expect(succeeded > 0, "every iteration hit the zero divisor")
+        #expect(outcome.values.count == 512)
+
+        // Every surviving value is the one the model computes, and every failed one is excluded
+        // rather than silently averaged in.
+        let usable = zip(outcome.values, outcome.errors).filter { $0.1 == nil }.map(\.0)
+        #expect(usable.count == succeeded)
+        #expect(usable.allSatisfy { abs($0 - 0.5) < 1e-6 }, "surviving values were \(usable.prefix(4))")
+
+        // And the same model under the default refuses the whole batch.
+        #expect(throws: GPUError.self) {
+            _ = try gpu.runSimulation(
+                distributions: [(type: 1, params: (0.0, 1.0, 0.0))],
+                modelBytecode: BytecodeCompiler.toGPUFormat(bytecode),
+                iterations: 512, seed: 99
+            )
+        }
+    }
+
+    /// The value the kernel leaves behind when it records an error is the IEEE one.
+    ///
+    /// Evaluation continues after a condition is recorded, rather than stopping the thread.
+    /// Stopping would leave the output slot holding whatever the buffer had, which is a second
+    /// undefined value to account for; letting IEEE finish leaves something whose provenance is
+    /// understood, and the error code says not to trust it. This pins that choice.
+    ///
+    /// - Note: an earlier version of this test claimed to prove the kernel is compiled with fast
+    ///   math off, by asserting `0 / 0` is not `1.0`. It passed under *both* math modes and so
+    ///   proved nothing — fast math folds `0 / 0` to `1.0` only where the compiler can see both
+    ///   operands are the same value, and `evaluateModel` divides two slots of a stack array at
+    ///   runtime indices it cannot follow. That is exactly why the guards above test the operand
+    ///   instead of reading the result: an explicit comparison is one the optimizer has to keep.
+    @Test("A failed iteration still leaves the IEEE value behind", .requiresMetalGPU)
+    func failedIterationsLeaveTheIEEEValue() throws {
+        let gpu = try #require(MonteCarloGPUDevice.shared,
+                               "a trivial kernel compiles here, so the package's kernel failing to is our defect")
+
+        let zero: [MonteCarloGPUDevice.DistributionConfig] = [(type: 1, params: (0.0, 0.0, 0.0))]
+
+        let indeterminate = try gpu.runSimulation(
+            distributions: zero,
+            modelBytecode: BytecodeCompiler.toGPUFormat([.input(0), .input(0), .divide]),
+            iterations: 4, seed: 1, onIterationError: .collect
+        )
+        #expect(indeterminate.values.first?.isNaN == true,
+                "0 / 0 left \(String(describing: indeterminate.values.first))")
+        #expect(indeterminate.errors.first == .divisionByZero)
+
+        let overZero = try gpu.runSimulation(
+            distributions: zero,
+            modelBytecode: BytecodeCompiler.toGPUFormat([.constant(1.0), .input(0), .divide]),
+            iterations: 4, seed: 1, onIterationError: .collect
+        )
+        #expect(overZero.values.first?.isInfinite == true,
+                "1 / 0 left \(String(describing: overZero.values.first))")
+        #expect(overZero.errors.first == .divisionByZero)
     }
 
     /// The equality opcodes do not use the same epsilon on the two sides.

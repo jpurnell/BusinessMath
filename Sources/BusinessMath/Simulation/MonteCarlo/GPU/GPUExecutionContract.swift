@@ -151,6 +151,77 @@ public enum GPUExecutionLimits: Sendable {
     public static let maxInputs = 32
 }
 
+// MARK: - Iteration Errors
+
+/// A condition one GPU iteration met that `BytecodeInterpreter` throws on.
+///
+/// The kernel cannot throw, and until these existed it could not report either — it computed the
+/// IEEE answer (`inf`, `NaN`) and carried on, so a caller could see *that* something was wrong by
+/// testing the output but never *what*, *where*, or *which operation*.
+///
+/// The kernel tests for these **explicitly**, before performing the operation, rather than
+/// inspecting the result afterwards. Two reasons, and the second is the load-bearing one:
+///
+/// 1. A `NaN` in the output is ambiguous. `sqrt(-1)`, `log(-1)`, `0/0` and a model that honestly
+///    produced a NaN are indistinguishable after the fact.
+/// 2. **Inferring an error from an IEEE result means trusting the optimizer to preserve IEEE.**
+///    Fast math is a standing licence not to, and this package has already been burned by relying
+///    on protection an optimizer was free to remove — `factorial`'s overflow trap was incidental
+///    to an arithmetic result, and inlining deleted the multiply and its check together. An
+///    explicit comparison against zero is a comparison the compiler must keep, whatever it does
+///    to the arithmetic around it.
+///
+/// The raw values are a wire format shared with the kernel, exactly as ``GPUOpcode`` is. Zero is
+/// reserved for "no error", so the cases start at one.
+public enum GPUIterationError: Int32, CaseIterable, Sendable, Equatable, CustomStringConvertible {
+    /// The divisor was zero. `BytecodeInterpreter` throws `EvaluationError.divisionByZero`.
+    case divisionByZero = 1
+
+    /// The argument to `sqrt` was negative, or NaN.
+    /// `BytecodeInterpreter` throws `EvaluationError.invalidOperation("sqrt of negative")`.
+    case sqrtOfNegative = 2
+
+    /// The argument to `log` was zero, negative, or NaN.
+    /// `BytecodeInterpreter` throws `EvaluationError.invalidOperation("log of non-positive")`.
+    case logOfNonPositive = 3
+
+    /// The identifier this condition carries in the generated Metal source.
+    public var mslName: String {
+        switch self {
+        case .divisionByZero:   return "ERR_DIVISION_BY_ZERO"
+        case .sqrtOfNegative:   return "ERR_SQRT_OF_NEGATIVE"
+        case .logOfNonPositive: return "ERR_LOG_OF_NON_POSITIVE"
+        }
+    }
+
+    /// The message `BytecodeInterpreter` uses for the same condition, so a GPU failure and a CPU
+    /// failure read alike.
+    public var description: String {
+        switch self {
+        case .divisionByZero:   return "division by zero"
+        case .sqrtOfNegative:   return "sqrt of negative"
+        case .logOfNonPositive: return "log of non-positive"
+        }
+    }
+}
+
+/// What ``MonteCarloGPUDevice`` should do about iterations that met one of those conditions.
+public enum IterationErrorPolicy: Sendable, Equatable {
+    /// Throw `GPUError.iterationsFailed`, naming how many failed, the first that did, and why.
+    ///
+    /// The default, and what the CPU path does: `evaluate(inputs:)` throws rather than return a
+    /// number it cannot stand behind.
+    case `throw`
+
+    /// Return the values and the per-iteration errors together, and let the caller decide.
+    ///
+    /// For models where a pole is expected and rare — one draw in a million landing on a zero
+    /// divisor is an ordinary Monte Carlo situation, not a broken model. Asking for it at the call
+    /// site is deliberate: the alternative, returning errors nobody has to look at, is the shape
+    /// this library refuses elsewhere.
+    case collect
+}
+
 // MARK: - Generated Metal Source
 
 extension GPUOpcode {
@@ -169,6 +240,10 @@ extension GPUOpcode {
         ]
         for opcode in GPUOpcode.allCases {
             lines.append("constant int \(opcode.mslName) = \(opcode.rawValue);")
+        }
+        lines.append("constant int ERR_NONE = 0;")
+        for failure in GPUIterationError.allCases {
+            lines.append("constant int \(failure.mslName) = \(failure.rawValue);")
         }
         return lines.joined(separator: "\n        ")
     }

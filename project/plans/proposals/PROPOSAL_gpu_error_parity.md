@@ -1,11 +1,13 @@
 # Design Proposal — the GPU says what went wrong, or stops saying anything
 
-**Status:** proposal, 2026-09-12. Phase 0 (Design).
+**Status:** **implemented**, 2026-09-12. Phase 0 (Design) through Phase 5 (Verify).
 **Scope:** error behaviour of the Metal Monte Carlo kernel against `BytecodeInterpreter`.
 **Motivated by:** `REVIEW_simulation_tests.md` §3.7, the fifth of its five CPU/GPU gaps — the four
 others landed in `4df8a678`. This one was held back because it is a decision, not a correction.
 **Revised:** 2026-09-12 — §2's central measurement was an artifact and is retracted in §2.1. The
 correction lowers the urgency and changes the recommendation's justification, not its shape.
+**Resolved:** 2026-09-12 — §8 answered (throw by default, `.collect` opt-out), §5 built, §9 done.
+See §11 for what the build changed about §2.1's argument.
 
 ---
 
@@ -208,52 +210,50 @@ The error buffer's own cost is not measured yet and is expected to be dominated 
 4 bytes per iteration, against the 4 the outputs buffer already needs.
 **Measuring it is step 2 of §9, before any of the kernel work is committed to.**
 
-## 8. The decision this proposal cannot make
+## 8. The decision this proposal could not make — answered
 
 **What does a partially-failed batch return?**
 
 The interpreter evaluates one input vector and throws. A batch of a million has no obvious analogue.
-Three candidates:
+Three candidates were put:
 
 1. **Throw if any iteration failed**, naming the count, the first failing iteration and its
    condition. Faithful to the CPU, loudest, and discards 999,999 good results because one draw hit a
    pole.
-2. **Return the results, and the per-iteration errors alongside them**, as
-   `(values: [Float], errors: [GPUIterationError?])`. Keeps the data, and puts the decision where
-   the domain knowledge is. Silent if a caller ignores the second element — which is exactly the
-   fail-silent shape this library refuses elsewhere.
+2. **Return the results and the per-iteration errors together.** Keeps the data, and puts the
+   decision where the domain knowledge is — but is silent if a caller ignores the second element,
+   which is exactly the fail-silent shape this library refuses elsewhere.
 3. **Throw above a threshold, report below it.** Needs a threshold nobody can derive.
 
-A tail-risk model that divides by a draw which is occasionally zero is a *badly specified model*,
-and 1 says so. A model where one draw in 10⁶ legitimately hits a pole is a *normal* Monte Carlo
-situation, and 1 makes it unusable.
+**Decided (Justin, 2026-09-12): 1 as the default, with 2 as an explicit opt-out.**
 
-Leaning to **1, with an explicit opt-out** — `runSimulation(..., onIterationError: .throw)` as the
-default and `.collect` for callers who ask for the per-iteration detail. That keeps the default
-honest and the escape hatch visible at the call site rather than in a return value someone may
-never destructure.
+```swift
+let values = try gpu.runSimulation(...)                      // throws
+let (values, errors) = try gpu.runSimulation(..., onIterationError: .collect)
+```
 
-**This is the question to settle before §9 starts.**
+The default is honest and the escape hatch is visible at the call site, rather than living in a
+return value a caller may never destructure. A tail-risk model that divides by an occasionally-zero
+draw is badly specified, and the default says so; a model where one draw in 10⁶ legitimately hits a
+pole is ordinary, and `.collect` serves it without making silence the default.
 
----
-
-## 9. Build order
+## 9. Build order — done
 
 1. ~~Safe math (§4.2), alone.~~ **Done.** It changed no numerical result (§2.1), and landed with
    the per-opcode CPU/GPU differential §4.5 needs anyway — 22 opcodes, exact inputs fed through
    degenerate uniforms (`param1 == param2`), compared at Float32 tolerance.
-2. **Measure the error buffer's cost** on the existing benchmark before building on it. If the
-   allocation dominates at large iteration counts, reuse it through the existing buffer cache.
-3. `GPUIterationError` and the error codes, in `GPUExecutionContract.swift` beside `GPUOpcode`, with
-   the MSL codes generated from the Swift enum exactly as the opcodes now are.
-4. Kernel: `recordError` and the three guards.
-5. Host: read-back, and whichever of §8 is chosen.
-6. Tests: one per condition, asserting the *case*, against both executors. Plus the Float32 boundary
-   of §2.2 asserted as the documented contract rather than as a defect.
-
-Steps 1 and 2 are independent of §8 and can start immediately.
-
----
+2. ~~Measure the error buffer's cost before building on it.~~ **Done, and it is negligible.**
+   `GPUPerformanceBenchmark` at 100,000 iterations, medians of three runs: 408 ms safe math alone,
+   **414 ms** with the buffer — about 1.3%, well inside a spread of 374–625 ms. No buffer-cache
+   work needed.
+3. ~~`GPUIterationError` and the error codes in `GPUExecutionContract.swift`.~~ **Done**, with the
+   MSL codes generated from the Swift enum exactly as the opcodes are.
+4. ~~Kernel: `recordError` and the three guards.~~ **Done.**
+5. ~~Host: read-back, and whichever of §8 is chosen.~~ **Done**, four public entry points —
+   sync and async, each with and without `onIterationError:`.
+6. ~~Tests.~~ **Done**: every condition reported with its case, a clean model reporting none, the
+   default naming count/first/reason, and `.collect` keeping the good values from a batch where a
+   `select` makes exactly half the divisors zero.
 
 ## 10. What this proposal does not cover
 
@@ -262,3 +262,32 @@ Steps 1 and 2 are independent of §8 and can start immediately.
   a different one — it makes `equal` answer differently, with no error involved. Belongs with the
   §4.5 per-opcode differential, filed separately.
 - `MonteCarloCommon.h`, still a hand-maintained mirror that nothing compiles or checks.
+
+---
+
+## 11. What building it changed about §2.1
+
+§2.1 left fast math off on a *principle* — that the kernel's IEEE behaviour rested on the optimizer
+being unable to see through an array subscript — while admitting no divergence was observable. The
+guards of §5 change that argument, and it is worth writing down which way.
+
+**The guards are mode-independent, measured.** The whole contract suite, including every
+error-parity test and the 22-opcode differential, passes with `mathMode = .fast` as well as
+`.safe`. That is the point of testing the operand instead of reading the result: an explicit
+comparison against zero is one the compiler has to keep, whatever it does to the arithmetic around
+it. Error *detection* no longer depends on the flag at all.
+
+**So why is fast math still off?** Because detection is not the whole surface. Two residues:
+
+1. **The values.** A recorded failure still leaves the IEEE result in the output slot, and
+   `.collect` callers may look at it. Under fast math the compiler is licensed to assume that value
+   cannot exist, and what flows out of subsequent operations on it is not specified.
+2. **`inf * 0`.** It is NaN, the interpreter does not throw on it, so no guard covers it — and it
+   is exactly the shape the optimizer is free to fold under fast math. Measured as NaN under both
+   modes in the kernel's real shape today, which is reassurance, not a guarantee.
+
+The cost of declining the licence is 376 ms → 414 ms at 100,000 iterations, about 10%, on a path
+the same benchmark clocks at 1.2–1.4× the CPU. **This is now a performance decision rather than a
+correctness one, and it can be reversed by changing one line** — `compileOptions` in
+`MonteCarloGPUDevice` — with the contract suite standing as evidence that error reporting survives
+it.

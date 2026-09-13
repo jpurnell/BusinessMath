@@ -94,7 +94,7 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
     /// 1.2–1.4× the CPU.
     ///
     /// The divergences that remain are real and are not about this flag: the kernel returns
-    /// `inf` or `NaN` where ``BytecodeInterpreter`` throws. Closing those needs an error channel
+    /// `inf` or `NaN` where `BytecodeInterpreter` throws. Closing those needs an error channel
     /// the kernel does not have. See `project/plans/proposals/PROPOSAL_gpu_error_parity.md`.
     private static var compileOptions: MTLCompileOptions {
         let options = MTLCompileOptions()
@@ -211,7 +211,14 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
         }
 
         // Model evaluator
-        inline float evaluateModel(thread float* inputs, constant ModelOp* ops, int numOps) {
+        // `firstError` keeps the first condition met and ignores later ones, matching the CPU
+        // interpreter, which throws at the first and never reaches the rest.
+        inline void recordError(thread int* firstError, int code) {
+            if (*firstError == ERR_NONE) { *firstError = code; }
+        }
+
+        inline float evaluateModel(thread float* inputs, constant ModelOp* ops, int numOps,
+                                   thread int* firstError) {
             float stack[MAX_STACK];
             int stackPtr = 0;
             for (int i = 0; i < numOps; i++) {
@@ -221,7 +228,18 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
                     case OP_ADD: stack[stackPtr - 2] = stack[stackPtr - 2] + stack[stackPtr - 1]; stackPtr--; break;
                     case OP_SUB: stack[stackPtr - 2] = stack[stackPtr - 2] - stack[stackPtr - 1]; stackPtr--; break;
                     case OP_MUL: stack[stackPtr - 2] = stack[stackPtr - 2] * stack[stackPtr - 1]; stackPtr--; break;
-                    case OP_DIV: stack[stackPtr - 2] = stack[stackPtr - 2] / stack[stackPtr - 1]; stackPtr--; break;
+                    case OP_DIV: {
+                        // Tested before dividing, not inferred from the result afterwards. An
+                        // `inf` or a `NaN` in the output cannot say which operation produced it,
+                        // and reading IEEE semantics back out of a result means trusting the
+                        // optimizer to have preserved them. A comparison against zero is one the
+                        // compiler has to keep.
+                        float divisor = stack[stackPtr - 1];
+                        if (divisor == 0.0f) { recordError(firstError, ERR_DIVISION_BY_ZERO); }
+                        stack[stackPtr - 2] = stack[stackPtr - 2] / divisor;
+                        stackPtr--;
+                        break;
+                    }
                     case OP_INPUT: stack[stackPtr++] = inputs[op.arg1]; break;
                     case OP_CONST: stack[stackPtr++] = op.arg2; break;
                     case OP_POW: stack[stackPtr - 2] = pow(stack[stackPtr - 2], stack[stackPtr - 1]); stackPtr--; break;
@@ -230,8 +248,21 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
                     // Unary operations
                     case OP_NEG: stack[stackPtr - 1] = -stack[stackPtr - 1]; break;
                     case OP_ABS: stack[stackPtr - 1] = abs(stack[stackPtr - 1]); break;
-                    case OP_SQRT: stack[stackPtr - 1] = sqrt(stack[stackPtr - 1]); break;
-                    case OP_LOG: stack[stackPtr - 1] = log(stack[stackPtr - 1]); break;
+                    case OP_SQRT: {
+                        // Negated so a NaN argument is caught: the interpreter guards `a >= 0`,
+                        // which a NaN fails, so `!(v >= 0)` is the same test and `v < 0` is not.
+                        float v = stack[stackPtr - 1];
+                        if (!(v >= 0.0f)) { recordError(firstError, ERR_SQRT_OF_NEGATIVE); }
+                        stack[stackPtr - 1] = sqrt(v);
+                        break;
+                    }
+                    case OP_LOG: {
+                        // Likewise negated: the interpreter guards `a > 0`, and a NaN fails it.
+                        float v = stack[stackPtr - 1];
+                        if (!(v > 0.0f)) { recordError(firstError, ERR_LOG_OF_NON_POSITIVE); }
+                        stack[stackPtr - 1] = log(v);
+                        break;
+                    }
                     case OP_EXP: stack[stackPtr - 1] = exp(stack[stackPtr - 1]); break;
                     case OP_SIN: stack[stackPtr - 1] = sin(stack[stackPtr - 1]); break;
                     case OP_COS: stack[stackPtr - 1] = cos(stack[stackPtr - 1]); break;
@@ -283,6 +314,7 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
             constant int& numInputs [[buffer(5)]],
             constant int& numOps [[buffer(6)]],
             constant uint& iterationCount [[buffer(7)]],
+            device int* errors [[buffer(8)]],
             uint tid [[thread_position_in_grid]]
         ) {
             // Threadgroups are dispatched rounded up — (iterations + w - 1) / w — so the
@@ -296,7 +328,14 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
             for (int i = 0; i < numInputs; i++) {
                 inputs[i] = sampleDistribution(&rngStates[tid], &distributions[i], distTypes[i]);
             }
-            outputs[tid] = evaluateModel(inputs, modelOps, numOps);
+
+            // Evaluation continues after an error is recorded. Stopping the thread would leave
+            // its output slot holding whatever the buffer had, which is a second undefined value
+            // to account for; letting IEEE finish leaves something whose provenance is understood,
+            // and the error code says not to trust it.
+            int firstError = ERR_NONE;
+            outputs[tid] = evaluateModel(inputs, modelOps, numOps, &firstError);
+            errors[tid] = firstError;
         }
         """
 
@@ -353,12 +392,12 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
     ///   - seed: Random seed for reproducibility (optional)
     /// - Returns: Array of simulation results (one per iteration)
     /// - Throws: GPUError if execution fails
-    public func runSimulation(
+    private func runSimulationCore(
         distributions: [DistributionConfig],
         modelBytecode: [ModelOperation],
         iterations: Int,
-        seed: UInt64? = nil
-    ) throws -> [Float] {
+        seed: UInt64?
+    ) throws -> (values: [Float], errors: [GPUIterationError?]) {
         let numInputs = distributions.count
         let numOps = modelBytecode.count
 
@@ -400,8 +439,10 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
             seed: seed
         )
 
-        // Download results
-        return downloadResults(from: buffers.outputs, count: iterations)
+        // Download results, and the per-iteration error codes alongside them.
+        let values = downloadResults(from: buffers.outputs, count: iterations)
+        let failures = downloadErrors(from: buffers.errors, count: iterations)
+        return (values: values, errors: failures)
     }
 
     /// Run Monte Carlo simulation on GPU without blocking the calling thread.
@@ -420,12 +461,12 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
     ///   - seed: Random seed for reproducibility (optional)
     /// - Returns: Array of simulation results (one per iteration)
     /// - Throws: GPUError if execution fails
-    public func runSimulation(
+    private func runSimulationCore(
         distributions: [DistributionConfig],
         modelBytecode: [ModelOperation],
         iterations: Int,
-        seed: UInt64? = nil
-    ) async throws -> [Float] {
+        seed: UInt64?
+    ) async throws -> (values: [Float], errors: [GPUIterationError?]) {
         let numInputs = distributions.count
         let numOps = modelBytecode.count
 
@@ -467,8 +508,133 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
             seed: seed
         )
 
-        // Download results
-        return downloadResults(from: buffers.outputs, count: iterations)
+        // Download results, and the per-iteration error codes alongside them.
+        let values = downloadResults(from: buffers.outputs, count: iterations)
+        let failures = downloadErrors(from: buffers.errors, count: iterations)
+        return (values: values, errors: failures)
+    }
+
+    // MARK: - Public Entry Points
+
+    /// Run Monte Carlo simulation on GPU.
+    ///
+    /// Throws if any iteration met a condition `BytecodeInterpreter` throws on — a division by
+    /// zero, a `sqrt` of a negative, a `log` of a non-positive. The CPU path refuses to return a
+    /// number it cannot stand behind, and this is that refusal for a batch.
+    ///
+    /// For models where a pole is expected and rare, pass
+    /// ``IterationErrorPolicy/collect`` to the overload taking `onIterationError:` and keep the
+    /// values alongside the per-iteration errors.
+    ///
+    /// - Parameters:
+    ///   - distributions: Array of distribution configurations (type, params)
+    ///   - modelBytecode: Bytecode operations for model evaluation
+    ///   - iterations: Number of Monte Carlo iterations
+    ///   - seed: Random seed for reproducibility (optional)
+    /// - Returns: One value per iteration.
+    /// - Throws: `GPUError.iterationsFailed` if any iteration failed, plus the validation and
+    ///   execution errors of `GPUError`.
+    public func runSimulation(
+        distributions: [DistributionConfig],
+        modelBytecode: [ModelOperation],
+        iterations: Int,
+        seed: UInt64? = nil
+    ) throws -> [Float] {
+        let outcome = try runSimulationCore(
+            distributions: distributions, modelBytecode: modelBytecode,
+            iterations: iterations, seed: seed
+        )
+        try apply(.throw, to: outcome.errors)
+        return outcome.values
+    }
+
+    /// Run Monte Carlo simulation on GPU, choosing what to do about failed iterations.
+    ///
+    /// ```swift
+    /// if let gpu = MonteCarloGPUDevice.shared {
+    ///     let configs: [MonteCarloGPUDevice.DistributionConfig] = [(type: 1, params: (0.0, 1.0, 0.0))]
+    ///     let ops = BytecodeCompiler.toGPUFormat([.input(0)])
+    ///     let (values, errors) = try gpu.runSimulation(
+    ///         distributions: configs, modelBytecode: ops, iterations: 1_000,
+    ///         onIterationError: .collect
+    ///     )
+    ///     let usable = zip(values, errors).filter { $0.1 == nil }.map(\.0)
+    ///     print(usable.count)
+    /// }
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - distributions: Array of distribution configurations (type, params)
+    ///   - modelBytecode: Bytecode operations for model evaluation
+    ///   - iterations: Number of Monte Carlo iterations
+    ///   - seed: Random seed for reproducibility (optional)
+    ///   - policy: What to do about iterations that met a condition the CPU throws on.
+    /// - Returns: The values, and one entry per iteration that is `nil` where it completed cleanly.
+    /// - Throws: `GPUError.iterationsFailed` under ``IterationErrorPolicy/throw``.
+    public func runSimulation(
+        distributions: [DistributionConfig],
+        modelBytecode: [ModelOperation],
+        iterations: Int,
+        seed: UInt64? = nil,
+        onIterationError policy: IterationErrorPolicy
+    ) throws -> (values: [Float], errors: [GPUIterationError?]) {
+        let outcome = try runSimulationCore(
+            distributions: distributions, modelBytecode: modelBytecode,
+            iterations: iterations, seed: seed
+        )
+        try apply(policy, to: outcome.errors)
+        return outcome
+    }
+
+    /// Run Monte Carlo simulation on GPU without blocking the calling thread.
+    ///
+    /// The async twin of ``runSimulation(distributions:modelBytecode:iterations:seed:)``, with
+    /// the same validation, seeding, results and error behaviour.
+    ///
+    /// - Parameters:
+    ///   - distributions: Array of distribution configurations (type, params)
+    ///   - modelBytecode: Bytecode operations for model evaluation
+    ///   - iterations: Number of Monte Carlo iterations
+    ///   - seed: Random seed for reproducibility (optional)
+    /// - Returns: One value per iteration.
+    /// - Throws: `GPUError.iterationsFailed` if any iteration failed.
+    public func runSimulation(
+        distributions: [DistributionConfig],
+        modelBytecode: [ModelOperation],
+        iterations: Int,
+        seed: UInt64? = nil
+    ) async throws -> [Float] {
+        let outcome = try await runSimulationCore(
+            distributions: distributions, modelBytecode: modelBytecode,
+            iterations: iterations, seed: seed
+        )
+        try apply(.throw, to: outcome.errors)
+        return outcome.values
+    }
+
+    /// Run Monte Carlo simulation on GPU without blocking, choosing what to do about failures.
+    ///
+    /// - Parameters:
+    ///   - distributions: Array of distribution configurations (type, params)
+    ///   - modelBytecode: Bytecode operations for model evaluation
+    ///   - iterations: Number of Monte Carlo iterations
+    ///   - seed: Random seed for reproducibility (optional)
+    ///   - policy: What to do about iterations that met a condition the CPU throws on.
+    /// - Returns: The values, and one entry per iteration that is `nil` where it completed cleanly.
+    /// - Throws: `GPUError.iterationsFailed` under ``IterationErrorPolicy/throw``.
+    public func runSimulation(
+        distributions: [DistributionConfig],
+        modelBytecode: [ModelOperation],
+        iterations: Int,
+        seed: UInt64? = nil,
+        onIterationError policy: IterationErrorPolicy
+    ) async throws -> (values: [Float], errors: [GPUIterationError?]) {
+        let outcome = try await runSimulationCore(
+            distributions: distributions, modelBytecode: modelBytecode,
+            iterations: iterations, seed: seed
+        )
+        try apply(policy, to: outcome.errors)
+        return outcome
     }
 
     // MARK: - Buffer Management
@@ -479,6 +645,7 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
         let distTypes: MTLBuffer
         let modelOps: MTLBuffer
         let outputs: MTLBuffer
+        let errors: MTLBuffer
     }
 
     private func getOrAllocateBuffers(
@@ -495,21 +662,30 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
         let distTypeSize = numInputs * MemoryLayout<Int32>.stride
         let opsSize = numOps * MemoryLayout<(Int32, Int32, Float)>.stride
         let outputSize = iterations * MemoryLayout<Float>.stride
+        // One Int32 per iteration: 4 bytes against the 4 the outputs buffer already needs.
+        let errorSize = iterations * MemoryLayout<Int32>.stride
 
         guard let rngStates = device.makeBuffer(length: rngStateSize, options: .storageModeShared),
               let distributions = device.makeBuffer(length: distSize, options: .storageModeShared),
               let distTypes = device.makeBuffer(length: distTypeSize, options: .storageModeShared),
               let modelOps = device.makeBuffer(length: opsSize, options: .storageModeShared),
-              let outputs = device.makeBuffer(length: outputSize, options: .storageModeShared) else {
+              let outputs = device.makeBuffer(length: outputSize, options: .storageModeShared),
+              let errors = device.makeBuffer(length: errorSize, options: .storageModeShared) else {
             throw GPUError.bufferAllocationFailed
         }
+
+        // Every thread writes its slot unconditionally, so the kernel does not depend on this —
+        // but a thread past `iterationCount` returns early without writing, and those slots are
+        // read back. Zeroing is what keeps a short tail from reporting a stale error.
+        memset(errors.contents(), 0, errorSize)
 
         return Buffers(
             rngStates: rngStates,
             distributions: distributions,
             distTypes: distTypes,
             modelOps: modelOps,
-            outputs: outputs
+            outputs: outputs,
+            errors: errors
         )
     }
 
@@ -663,6 +839,35 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
         encoder.endEncoding()
     }
 
+    /// Reads the per-iteration error codes back, as ``GPUIterationError`` values.
+    ///
+    /// - Parameters:
+    ///   - buffer: The kernel's error buffer.
+    ///   - count: The iteration count.
+    /// - Returns: One entry per iteration; `nil` where the iteration completed cleanly. An
+    ///   unrecognised non-zero code is reported as `nil` rather than guessed at — it can only mean
+    ///   the kernel and this enum have drifted, and inventing a condition would be worse than
+    ///   saying nothing.
+    private func downloadErrors(from buffer: MTLBuffer, count: Int) -> [GPUIterationError?] {
+        guard count > 0 else { return [] }
+        let pointer = buffer.contents().bindMemory(to: Int32.self, capacity: count)
+        return (0..<count).map { GPUIterationError(rawValue: pointer[$0]) }
+    }
+
+    /// Applies an ``IterationErrorPolicy`` to the codes the kernel reported.
+    ///
+    /// - Throws: `GPUError.iterationsFailed` under ``IterationErrorPolicy/throw`` when any
+    ///   iteration failed, naming the count, the first failing index and its condition.
+    private func apply(_ policy: IterationErrorPolicy, to errors: [GPUIterationError?]) throws {
+        guard policy == .throw else { return }
+        guard let firstIndex = errors.firstIndex(where: { $0 != nil }),
+              let reason = errors[firstIndex] else { return }
+        let failures = errors.reduce(into: 0) { total, error in
+            if error != nil { total += 1 }
+        }
+        throw GPUError.iterationsFailed(count: failures, firstIteration: firstIndex, reason: reason)
+    }
+
     private func encodeMonteCarloIterations(
         commandBuffer: MTLCommandBuffer,
         buffers: Buffers,
@@ -684,6 +889,7 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
         encoder.setBuffer(buffers.distTypes, offset: 0, index: 2)
         encoder.setBuffer(buffers.modelOps, offset: 0, index: 3)
         encoder.setBuffer(buffers.outputs, offset: 0, index: 4)
+        encoder.setBuffer(buffers.errors, offset: 0, index: 8)
 
         var numInputsVar = Int32(numInputs)
         var numOpsVar = Int32(numOps)
@@ -723,6 +929,17 @@ public enum GPUError: Error {
 
     /// Invalid input parameters for GPU computation
     case invalidInput(String)
+
+    /// One or more iterations met a condition `BytecodeInterpreter` throws on.
+    ///
+    /// The CPU path refuses to return a number it cannot stand behind; this is that refusal for a
+    /// batch. `count` is how many of the iterations failed, `firstIteration` is the index of the
+    /// earliest, and `reason` is what it met — enough to reproduce it on the CPU with
+    /// `evaluate(inputs:)` and see the interpreter's own error.
+    ///
+    /// Callers for whom a rare pole is expected rather than exceptional can ask for the values and
+    /// the errors together; see ``IterationErrorPolicy/collect``.
+    case iterationsFailed(count: Int, firstIteration: Int, reason: GPUIterationError)
 }
 
 #endif
