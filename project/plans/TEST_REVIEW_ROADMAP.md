@@ -72,8 +72,10 @@ question about whether it is.
 | L3 | **`runFinancialSimulation` takes no `seed:`.** | **CONFIRMED** | `FinancialSimulation.swift:498`. ~15 tests draw fresh values per run as a result. This is the coverage ceiling for the whole scenario suite, and the same defect the simulation review recorded for `ScenarioAnalysis` and `SensitivityAnalysis` (its Phase 3, breaking). |
 | L4 | **`debtToAssets` and `debtToEquity` use different debt definitions.** | **CORRECTED — not a bug** | Real asymmetry: `debtToEquity = interestBearingDebt / totalEquity`, `debtToAssets = totalLiabilities / totalAssets`. But the review's diagnosis is wrong twice: the numerator is **all interest-bearing debt** (accounts with `balanceSheetRole.isDebt`), not long-term debt, so the proposed rename to `longTermDebtToEquity` would be *less* accurate; and `BalanceSheet.swift:354` already documents the choice. It matched the LTD hypothesis only because LTD is the fixture's sole debt account. **Work: document it on `debtToAssets` too, and pin both values.** |
 | L5 | **`ConstrainedDriver` clamping distorts the distribution, unmeasured.** | UNVALIDATED | Claimed: Normal(1000,100) clamped to ±1σ has sd ≈ 60.6 and ~31.7% boundary mass. Arithmetic is right; whether the implementation clamps or truncates is unchecked. |
-| L6 | **`Period` arithmetic may add fixed second counts rather than calendar components.** | **OPEN** | Time-series review Q1. If it uses components, this is test coverage only; if anything adds 86,400s, it is a DST defect. No test crosses a DST boundary, so nothing currently distinguishes them. **Must be answered before the calendar work.** |
-| L7 | **`Period.startDate`/`endDate` and `FiscalCalendar.fiscalYear(for:)` may read `Calendar.current` internally.** | **OPEN** | Time-series review Q2. If so, the same computation returns different answers per region — a library defect no test-side fix reaches. |
+| L6 | **`Period` arithmetic may add fixed second counts.** | **RESOLVED — it does not** | Read the source. `Period.endDate` and every `PeriodArithmetic` operation go through `calendar.date(byAdding:)` and `dateComponents`. No 86,400-second additions anywhere. The feared defect does not exist. DST still moves results, but by the mechanism in L7, not this one. |
+| L7 | **`Period`/`FiscalCalendar` read `Calendar.current` internally.** | **RESOLVED — CONFIRMED, and already known in-repo** | `Period.swift:17` and `PeriodArithmetic.swift:56` are both `private let cachedCalendar = Calendar.current`; `FiscalCalendar.swift:154,236` read it directly, as do `TimeSeriesOperations` (3), `TimeSeriesAnalytics` (1), `BondPricing` (2), `CreditSpreadModel` (4), `LeaseAccounting` (1), `DebtInstrument` (1). **~15 executable sites** (the other ~70 matches are doc comments). A module-level global captured once — not a parameter anyone can override, so **no test-side fixed calendar can reach it**. Demonstrated live: a `Period` for 2024-Q1 stores `2024-01-01 05:00:00 +0000`, i.e. midnight in `America/New_York`. |
+| L7a | **The fix already exists in the package, unapplied.** | **NEW** | `DayCountConvention.swift:49` defines `gregorianUTC` — Gregorian, fixed to UTC, `internal` so it is already shareable — with the doctrine written out above it, including: *"It is deliberately not named `cachedCalendar`, which is the name `Period` arithmetic uses for a cached `Calendar.current` — the opposite of this one."* and *"This reasoning was written here and applied here, while `Calendar.current` stayed in every other file that walks a schedule of dates … and the coupon grid drifted a day for exactly the reason set out above."* **This is a known, documented, unfixed defect with its own remedy sitting beside it.** |
+| L11 | **DSO / DIO / DPO are wrong on any non-annual statement.** | **NEW — measured, live defect** | `daysInventoryOutstanding` is `365 / inventoryTurnover`, and `inventoryTurnover` is `COGS / averageInventory` over the **period**, un-annualised. On the quarterly documentation fixture, measured: turnover 4.0 turns *per quarter*, DIO **91.25** days where the answer is 91/4 = **22.75** — **4.01× too large**. DSO returns 73.0 where it should be 18.2. The financial-ratio review presents "90-day quarter or 365-day year" as an open convention; it is neither. It is a dimensional error: an annual day count divided by a quarterly turn rate. **And 91.25 is within a quarter-day of the 91 days in the quarter, so a reader sanity-checking "is DIO about one quarter?" sees agreement.** The fix is `DayCountConvention.days(in: period)`, which already exists and returned the correct 91.0 in the same probe. |
 | L8 | **`MonthDay` accepts February 30.** | UNVALIDATED | A 1–31 day range admits impossible dates. Also: what does a February 29 fiscal year-end mean in a non-leap year? Currently undefined. |
 | L9 | **`npvExcel` discounts the first element by one period.** | UNVALIDATED (behaviour), **CONFIRMED** (design) | Implementation is `flow / (1+r)^(index+1)` — correct Excel semantics. Passing an array that *begins with the initial outlay* silently misprices. Documentation, not a code change. |
 | L10 | **Mixed period types unsupported, recorded only in a commented-out test.** | UNVALIDATED | "Trigger a Strideable issue when Swift's stdlib tries to optimize." A capability recorded in a comment will be rediscovered by a user. |
@@ -128,9 +130,18 @@ independent motivation for the transitive form.
 | `Calendar.current` in Time Series tests | **75** (review said 73) |
 | `Date()` in Time Series tests | **18** (review said 16) |
 
-**Blocked on L6/L7** — if the library reads the ambient calendar internally, a fixed test calendar
-does not fix it. The review's proposed `testCalendar` helper in TestSupport is right either way and
-also removes ~200 lines of `DateComponents` boilerplate.
+**No longer blocked — and the answer changes the work.** L7 is confirmed: the library reads
+`Calendar.current` at ~15 executable sites, so **a fixed test calendar cannot fix this**. The
+source order is now:
+
+1. Replace `cachedCalendar` with `gregorianUTC` at the ~15 source sites (L7/L7a). The constant and
+   the doctrine already exist; this is applying a rule the package already wrote down.
+2. *Then* the test-side `testCalendar` helper, which becomes a consistency measure rather than the
+   fix, and still removes ~200 lines of `DateComponents` boilerplate.
+
+L6 is resolved in the good direction: the arithmetic is component-based, so there is no
+fixed-seconds DST defect. DST reaches these through the ambient **time zone** moving a date across
+midnight — the mechanism `DayCountConvention`'s own note describes.
 
 ### T5. Convention pins that are owed
 
@@ -140,7 +151,7 @@ different directions:
 | Convention | Reached from | Status |
 |---|---|---|
 | **Percentile interpolation (R-7)** | statistics (`weightedPercentile`), operational driver (`ProjectionResults`), scenario | **DECIDED R-7** in the statistics review. Now needs applying, plus a delegation test that every percentile path uses one implementation. The reviews count "three or four percentile conventions in the library". |
-| Day count for DSO/DIO/DPO | financial ratio | **OPEN** — 90-day quarter or 365-day year. The CCC identity cancels it, so no test can see it. |
+| ~~Day count for DSO/DIO/DPO~~ | financial ratio | **NOT A CONVENTION — see L11.** Measured as a live 4.01× error. The day count must come from the period, via `DayCountConvention.days(in:)`. No ISDA convention applies: ISDA day-count *fractions* govern interest accrual, not activity ratios. |
 | Rounding rule for integer drivers | operational driver | **OPEN** — `.toNearestOrAwayFromZero` vs `.toNearestOrEven`. 1025 users / 50 = 20.5 is reachable, and a headcount that rounds differently in two places is a payroll discrepancy. |
 | Gross margin with no COGS: 1.0 or nil | financial ratio | **OPEN** |
 | `TimeVaryingDriver` outside its schedule | operational driver | **OPEN** — nil, nearest, extrapolate, or throw |
@@ -277,11 +288,21 @@ best error tests in the corpus.
 The ordering principle: **library defects, then unblockers, then bulk.** Bulk work done before an
 unblocker has to be redone.
 
-**Wave 1 — decide and unblock.** Nothing large starts until these land.
-1. L6/L7 — the two calendar questions. They gate ~93 sites.
-2. L3 — seed `runFinancialSimulation`. Gates ~15 tests and all of T3.
-3. L1/L2 — `bayes`: contract and genericity. Smallest whole-file win in the corpus.
-4. T5 decisions, as a batch. They are cheap to decide and expensive to discover later.
+**Wave 0 — the two live defects found by reading the source.** Both are shipping, both are
+wrong by a factor, and neither is a test problem.
+1. **L11** — DSO/DIO/DPO, 4.01× on quarterly statements. Route the day count through
+   `DayCountConvention.days(in: period)`. Small, contained, and the fixture and correct values are
+   already measured.
+2. **L7/L7a** — replace `Calendar.current` with `gregorianUTC` at the ~15 source sites. The
+   constant, the doctrine and the precedent all exist; this applies a rule the package wrote down
+   for itself and then did not follow. **Do this before any test-side calendar work**, because a
+   fixed test calendar cannot reach it.
+
+**Wave 1 — decide and unblock.**
+3. L3 — seed `runFinancialSimulation`. Gates ~15 tests and all of T3.
+4. L1/L2 — `bayes`: contract and genericity. Smallest whole-file win in the corpus.
+5. The remaining T5 decisions, as a batch. They are cheap to decide and expensive to discover
+   later.
 
 **Wave 2 — the mechanical bulk**, once Wave 1 fixes what it must.
 5. T1: 103 `?? 0` → `try #require`.
@@ -296,6 +317,45 @@ unblocker has to be redone.
 10. T7: 10 disabled tests.
 11. T6: error specificity.
 12. The per-domain coverage gaps in §4.
+
+---
+
+## 5a. Which standard governs which question
+
+Asked 2026-09-13, and the answer splits in a way that matters.
+
+**IEEE 754** is floating-point arithmetic. It has nothing to say about day counts. It governs a
+great deal else in this library — every tolerance, every `identical` claim, the signed zeros in the
+optimizer — but not this.
+
+**ISDA** is the right standard for *interest accrual*. The 2006 ISDA Definitions §4.16 define Day
+Count Fractions: ACT/365 (Fixed), ACT/360, ACT/ACT (ISDA), 30/360 (Bond Basis), 30E/360, 30E/360
+(ISDA), ACT/365L, BUS/252. **The library already implements a subset** —
+`DayCountConvention` has ACT/365, ACT/360, ACT/ACT, 30/360 and 30E/360, with the 30E/360 end-of-month
+distinction written out correctly, and `gregorianUTC` beneath it for the reason a day count must not
+depend on the host.
+
+**ISO 8601** governs date *representation*. Not day counts.
+
+**But DSO/DIO/DPO are not an ISDA question, and answering them with ISDA would be a category
+error.** An ISDA day-count fraction answers *"what fraction of a year is this accrual period?"* for
+interest. DSO answers *"how many days of sales are sitting in receivables?"* — an activity ratio,
+governed by financial-analysis practice rather than by any standards body. The rule there is
+dimensional, not conventional: **the day count must match the period of the flow in the
+denominator.** A quarterly revenue figure gives a per-quarter turn rate, so the numerator must be
+the days in that quarter. Using 365 against a quarterly turn rate is not a defensible alternative
+convention; it is L11.
+
+So both answers land in the same place by different routes:
+
+| Question | Standard | Mechanism |
+|---|---|---|
+| TVM, accrual, coupon schedules | **ISDA**, already implemented | `DayCountConvention` + `gregorianUTC` |
+| DSO / DIO / DPO | none — dimensional analysis | `DayCountConvention.days(in: period)` |
+| `Period` arithmetic and fiscal mapping | none — but must not read the host | `gregorianUTC`, replacing `Calendar.current` |
+
+The practical upshot is one sentence: **`DayCountConvention` and `gregorianUTC` are the answer to
+all three, and both already exist.** The work is application, not design.
 
 ---
 
