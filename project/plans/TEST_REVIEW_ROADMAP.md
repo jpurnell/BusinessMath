@@ -63,8 +63,11 @@ three already there.
 | **Streaming / builders** | 18 files | 2026-09-13 | 🟡 partial | ⬜ |
 | **Helpers / diagnostics** | 14 files | 2026-09-13 | 🟡 partial — 1 confirmed exactly | ⬜ |
 | **Operations / inventory** | 6 files | 2026-09-13 | ⬜ not yet — **cleanest batch in the corpus** | ⬜ |
+| **Differential reference** | 6 files | 2026-09-13 | ✅ — 1 refuted, 1 stale claim caught | ⬜ |
+| **Marketing** | 8 files | 2026-09-13 | ✅ — 1 refuted; **carries the design answer to T5** | ⬜ |
+| **Attribution** | 2 files | 2026-09-13 | ✅ — axioms as oracle; **collapses the `#expect(true)` thread** | ⬜ |
 
-**Seventeen reviews, ~300 test files, and Justin has more.** The per-domain detail is §4; the reason this
+**Twenty reviews, ~320 test files, and Justin has more.** The per-domain detail is §4; the reason this
 file is organised around §3 instead is that the same handful of findings account for most of the
 volume.
 
@@ -90,6 +93,7 @@ question about whether it is.
 | L6 | **`Period` arithmetic may add fixed second counts.** | **RESOLVED — it does not** | Read the source. `Period.endDate` and every `PeriodArithmetic` operation go through `calendar.date(byAdding:)` and `dateComponents`. No 86,400-second additions anywhere. The feared defect does not exist. DST still moves results, but by the mechanism in L7, not this one. |
 | L7 | **`Period`/`FiscalCalendar` read `Calendar.current` internally.** | **RESOLVED — CONFIRMED, and already known in-repo** | `Period.swift:17` and `PeriodArithmetic.swift:56` are both `private let cachedCalendar = Calendar.current`; `FiscalCalendar.swift:154,236` read it directly, as do `TimeSeriesOperations` (3), `TimeSeriesAnalytics` (1), `BondPricing` (2), `CreditSpreadModel` (4), `LeaseAccounting` (1), `DebtInstrument` (1). **~15 executable sites** (the other ~70 matches are doc comments). A module-level global captured once — not a parameter anyone can override, so **no test-side fixed calendar can reach it**. Demonstrated live: a `Period` for 2024-Q1 stores `2024-01-01 05:00:00 +0000`, i.e. midnight in `America/New_York`. |
 | L7a | **The fix already exists in the package, unapplied.** | **NEW** | `DayCountConvention.swift:49` defines `gregorianUTC` — Gregorian, fixed to UTC, `internal` so it is already shareable — with the doctrine written out above it, including: *"It is deliberately not named `cachedCalendar`, which is the name `Period` arithmetic uses for a cached `Calendar.current` — the opposite of this one."* and *"This reasoning was written here and applied here, while `Calendar.current` stayed in every other file that walks a schedule of dates … and the coupon grid drifted a day for exactly the reason set out above."* **This is a known, documented, unfixed defect with its own remedy sitting beside it.** |
+| L15 | **Three days-per-year conventions in one package.** | **NEW — found while refuting a claim** | `FinancialRatios` uses 365; `TimeSeriesAnalytics:181` and `BondPricing` use **365.25** ("to account for leap years over long periods"); `DayCountConvention` implements the ISDA set properly. None is wrong alone, and a CAGR over decades has a real case for 365.25. But the choice is undecided and undocumented, and it sits directly next to L11. Decide once, document, and route through `DayCountConvention` where a convention is genuinely at stake. |
 | L13 | **`sharpeRatio` returns 0 when risk is 0.** | **NEW — escalated from the options/portfolio review** | `Portfolio.swift:182` is `guard risk > T(0) else { return T(0) }`. The review could not tell whether the implementation guarded or the test failed; it guards. But **0 is a plausible-but-wrong answer**: a Sharpe of 0 means "no excess return per unit of risk", and the fixture earns 7.5%/yr of excess return at *exactly zero risk* — infinitely good, reported as mediocre. The guard inverts the best possible case. Same family as `a * 0 → 0` and the antithetic SE: a guard returning a plausible number where the answer is undefined. **Decide +∞, NaN or throw, then pin it.** Consequence meanwhile: `sharpeFinite` asserts `.isFinite` on a constant 0, and `optimizerBeatsEqualWeights` reduces to `0 >= 0 - 1e-6`. |
 | L14 | **A shared test helper ships a generator with two contract bugs.** | **CONFIRMED** | `Tests/.../Stochastic/StochasticTestHelpers.swift:13` is `Double(state) / Double(UInt64.max)` — **closed** on both ends, returning exactly 1.0 at `UInt64.max` and exactly 0.0 at 0, while its own doc says "(0, 1)". Its `nextNormal` guards `max(u1, 1e-15)`, the shape `BoxMullerPoleGuardTests` calls wrong, and does not guard u₁ = 1.0 where `log(1) = 0` collapses the draw. It duplicates `MMIXSeededRNG`, already in TestSupport. **This is the Nth inline Box-Muller in the corpus and the first found in a *shared* helper, so it seeds several files at once.** Delete it; use `DeterministicRNG` and the TestSupport transform. |
 | L12 | **The only outlier rule the library has is the one that masks.** | **NEW — reframed from the review** | `AnomalyDetection.detect(in:threshold:)` computes a z-score against the series' own mean and standard deviation, and takes the threshold as a parameter. There is no modified z-score and no IQR fence. The review files this as "the test does not pin which rule is in force"; there is no choice to pin — but the consequence is sharper than that. On its own example `[10,12,11,13,12,50,11,12]`, verified: z = **2.4694** (sample sd) or **2.6399** (population), both **below the conventional 3.0**, so the obvious outlier is **not flagged**. Modified z is 25.631 and the IQR fence is 14.125; both flag it decisively. A single large outlier inflates the standard deviation enough to hide itself, and the library offers no alternative. **This is a capability gap, not a test gap.** |
@@ -113,6 +117,7 @@ question about whether it is.
 | `converged \|\| iterations …` | 1 → 4 (optimization) | **11** | 11× |
 | `results.count >= 1` | 17 (streaming) | **31** | 1.8× |
 | `.rounded()` in a comparison | 2 (optimization) | **7** | 3.5× |
+| Type-only `#expect(throws: X.self)` | ~300 (marketing) | **530** | 1.8× |
 | `.disabled` tests | 2 (scenario) | **10** | 5× |
 | Commented-out `@Test` | 7 (optimization) | **30** | 4.3× |
 
@@ -142,7 +147,7 @@ than by domain is what turns 900 lines of review into a finite amount of work.
 | Finiteness / sign / ordering only | ~45 + ~20 + ~12 | Time series financials, scenario, operational driver percentiles |
 | Encoding asserted by `data.count > 0` | 2 | Period, FiscalCalendar |
 | Guarded assertions that never execute (`if abs(npv) < 10.0`) | ≥1 | `profitabilityIndexBreakEven` |
-| `#expect(true)` markers | **75 corpus-wide**, 13 of them in `LoggerTests` | some are the gate's nested-scope bug; **`LoggerTests` is not** — every logging test is a did-not-crash check |
+| `#expect(true)` markers | **75 corpus-wide**, 13 in `LoggerTests` | **53 of the 75 say "no-throw" in their own comment** — mechanically convertible to `#expect(throws: Never.self)`, a form already used 11 times here. The rest are the gate's nested-scope bug plus a handful of genuine cases |
 | `results.count >= 1` on a stream with fixed input | **31** | streaming, alignment, anomaly |
 | Tautologies: `x == x`, `s >= 0 \|\| s < 0` | ≥4 | `CalculationTraceTests` ×2, `PortfolioTests`, `StreamAlignmentTests` |
 | **`.rounded()` inside a relational operator** | **7** (review said 2) | `StochasticOptimizationTests` 3, `RobustOptimizationTests` 3, `ScenarioOptimizationTests` 1 |
@@ -219,7 +224,47 @@ midnight — the mechanism `DayCountConvention`'s own note describes.
 ### T5. Convention pins that are owed
 
 Eight decisions (the day count was a ninth until it turned out to be L11, a 4.01× error rather
-than a convention). Several are the *same* decision reached from different directions:
+than a convention). Several are the *same* decision reached from different directions.
+
+### The design answer, from `CustomerValueTests`
+
+The marketing review supplies a resolution this thread has lacked for twenty reviews, and it is an
+**API** answer rather than a test one:
+
+> "if there are four definitions of CLV in common use, then verifying that the code matches its
+> documentation proves internal consistency and not correctness. A user who wants definition three
+> gets a library rigorously computing definition one.
+>
+> The answer is that the variant is named at the call site. The library's claim is not 'we compute
+> CLV' — which is not a claim anyone can check — but 'we compute exactly the definition you asked
+> for', which is."
+
+`QuantileType7ReferenceTests` solves the same problem one level down: **pin which of the nine
+published definitions is implemented, by choosing an input the definitions disagree on.** Its table
+is the template —
+
+| definition | Q(0.4) on [15, 20, 35, 40, 50] |
+|---|---|
+| type 7 (R, NumPy) | **29** |
+| type 6 (Minitab, SPSS) | 26 |
+| type 4 | 20 |
+
+— "so a single assertion at that point distinguishes type 7 from the three most common
+alternatives."
+
+**So each open convention now has two possible resolutions, and they are not exclusive:** name the
+variant at the call site where there is a real choice a caller should make, and pin the default with
+a discriminating case either way. The differential review supplies discriminating cases for several:
+
+| Convention | Discriminating case |
+|---|---|
+| `weightedPercentile` type 5 vs 7 | n = 7, equal weights, p = 0.25 → **2.25 vs 2.5** |
+| Skewness g₁ vs G₁ | the 24-point fixture → **−0.0577 vs −0.0616** |
+| `weightedVariance` frequency vs reliability | any non-integer weight set |
+
+**One row of that table is refuted and one is stale** — see the note below.
+
+Several are the *same* decision reached from different directions:
 
 | Convention | Reached from | Status |
 |---|---|---|
@@ -235,9 +280,24 @@ than a convention). Several are the *same* decision reached from different direc
 
 ### T6. Error assertions by type only
 
-~20 in time series, plus `(any Error).self` in `ScenarioRunnerTests:497` — the loosest possible
-form, in a file whose sibling tests pin `.invalidDriver` with its error code. The formula-engine
-tests are the model: they distinguish parse errors from evaluation errors.
+**530 type-only sites corpus-wide** (`#expect(throws: X.self)`), against **99** that pin an
+associated value. The loosest form, `(any Error).self`, appears in `ScenarioRunnerTests:497` — in a
+file whose sibling tests pin `.invalidDriver` with its error code.
+
+The marketing batch demonstrates the standard:
+
+```swift
+#expect(throws: UpliftError.unbalancedAllocation(treatedShare: 0.6875))
+#expect(throws: SegmentationError.invalidSegmentCount(requested: 9, customers: 6))
+#expect(throws: CLVError.definitionNeedsHistory(.historic))
+```
+
+**Correction to that review:** it calls these "the corpus's first error assertions that pin
+associated values." They are not — 99 such sites exist and **83 are outside Marketing**, including
+`ClusteringError.tooManyClusters(k: 5, dataPoints: 3)` in `KMeansTests` and
+`BusinessMathError.divisionByZero(context: "Index of Dispersion")`. Marketing is the most
+*systematic*, not the first. The technique is already in the corpus and needs spreading, which is a
+cheaper problem than inventing it.
 
 ### T7. Disabled tests — bigger than any single review saw
 
@@ -511,6 +571,68 @@ stockout probability at the mean is exactly 0.5 by symmetry. **This batch is the
 
 ---
 
+### 4.9 Differential reference, marketing, attribution — the three that set the standard
+
+These three batches are the corpus's best work, and validating them mostly confirmed them. What
+they contribute is technique; what they cost is two stale claims to catch.
+
+**Differential reference (6 files).** The TrustPlan §2.2 set. Every file cites its source precisely
+enough to re-derive, carries a tolerance table with the *measured* worst case, and separates the
+reference's precision from the code's. The policy statement in `NormalReferenceTests` is the one
+this series has been asking for:
+
+> "No tolerance in this file was chosen by loosening one that failed. Where the library disagreed
+> with the reference the test was marked `withKnownIssue` with the measured magnitude, so that
+> fixing the defect made the marker fail. Three such markers … were removed when the defects were
+> fixed, not when they became inconvenient."
+
+- [ ] `TVMReferenceTests`' header cites `NPV(10%, 3000, 4200, 6800) - 10000 = 1188.44`. That
+      expression is 1307.29; the number 1188.44 belongs to `NPV(10%, -10000, 3000, 4200, 6800)`,
+      which is what the body actually computes and what its inline comment says correctly. **Third
+      instance of comment arithmetic being wrong while the code is right** — after `npvExcel` and
+      the H-Model. **And it independently corroborates the `npvExcel` diagnosis**: this file gets
+      the convention right, which strengthens the case that `NPVTests` is wrong rather than the
+      implementation.
+- [ ] `excelExampleDates` falls back to `Date(timeIntervalSince1970: 0)`; `monotoneInP` issues
+      1,001 expectations where one would do.
+
+**Two claims in it did not survive validation:**
+- **REFUTED: "DIO on 365 vs DSO on 150 — internally inconsistent today."** There is no DSO-on-150.
+  All three activity ratios use `T(365)`; the only `150`s in the package are a doc-example data
+  point and `DayCountConvention`'s 30/360 prose, where 150 days for a stub period is correct. The
+  claim is sourced to "valuation batch 2", a review not yet received — **reviews carrying each
+  other's claims instead of the code, which is the trap `HANDOFF.md` §5 names.**
+- **STALE: the H-model listed as an open convention (61.33 vs 48.00).** Settled in the previous
+  round: the implementation and the API doc are both correct; the *test's* comment is the error.
+
+**But looking for the refuted one surfaced a real inconsistency (L15):** the package uses **three
+different days-per-year conventions** — `FinancialRatios` 365, `TimeSeriesAnalytics:181` and
+`BondPricing` **365.25**, and `DayCountConvention`'s full ISDA set. Not wrong in itself; undecided,
+undocumented, and adjacent to L11.
+
+**Marketing (8 files).** The strongest domain batch. Every file opens by naming three *measured*
+fail-silent shapes in its own subject — a cohort average that reports 0.17 where the answer is 0.50;
+a log-log fit scoring R² 0.975 on exactly-linear data while missing by 2.75 units everywhere; an
+optimal price that comes out **negative** under inelastic demand. And every file names an anchor
+needing no reference implementation: the Lerner condition, the CLV/perpetuity limit,
+Σ(yᵢ − pᵢ) = 0 at the likelihood maximum.
+- [ ] Carries **the design answer to T5** — see §3, T5. This is the item with the longest reach in
+      the batch.
+
+**Attribution (2 files).** Adds a technique no other file has: **axioms as the oracle.** Attribution
+has no ground truth — no experiment reveals what a channel "really" contributed — so the files test
+what any credit allocation *must* satisfy: efficiency, null player, symmetry, order invariance.
+
+The null-player test is the only assertion in the corpus that argues for its own exactness from
+first principles: "a channel that changes no coalition's worth receives precisely zero, which is the
+one assertion in attribution that can be made without a tolerance." It uses `== 0` deliberately, and
+correctly.
+- [ ] **`#expect(throws: Never.self)` is the answer to the `#expect(true)` thread.** 53 of the 75
+      markers say "no-throw" in their own comments; `Never.self` says it as an assertion instead of
+      a marker, and reads as the deliberate pair of the throwing case beside it.
+
+---
+
 ## 5. Sequencing
 
 **Re-prioritised 2026-09-13 (second revision)** after the seven-review batch. What changed the
@@ -560,7 +682,10 @@ the TestSupport transform already exist.
 1. **L3** — seed `runFinancialSimulation`. Gates ~15 tests and all of T3.
 2. **L1 / L2** — `bayes`: zero-denominator contract and genericity. Smallest whole-file win.
 3. **The T5 convention batch** (8 items), plus **L12** (does the library want a non-masking outlier
-   rule at all).
+   rule at all) and **L15** (365 vs 365.25). **Decide these against the marketing design answer**,
+   not one at a time: where a caller has a real choice, name the variant at the call site and there
+   is nothing left to pin; where there is a sensible default, pin it with a discriminating case.
+   Several discriminating cases are already supplied (T5).
 4. **The three highest-volume gate rules, before their sweeps** — principle 3:
    `?? <literal>` inside an assertion (225), ambient calendar/clock in a test target (152),
    `#expect(true)` as a test's only assertion (75). Each is a static check; each prevents the
@@ -591,8 +716,11 @@ the TestSupport transform already exist.
 
 12. **`?? 0` → `try #require`, 225 sites.**
 13. **The fixed test calendar, ~152 sites** — after 0.2.
-14. **`#expect(true)`, 75 sites**, starting with `LoggerTests`' 13 (inject a recording sink; the
-    others are the gate's nested-scope bug and clear themselves when it is fixed).
+14. **`#expect(true)`, 75 sites — but 53 of them are a mechanical substitution.** Those say
+    "no-throw" in their own comments and become `#expect(throws: Never.self)`, already used 11 times
+    in the corpus. That leaves `LoggerTests`' 13 (inject a recording sink) and the gate's
+    nested-scope cases, which clear themselves when the checker is fixed. **This thread is much
+    cheaper than its count suggests.**
 15. Ratio fixture deduplication; 20 `guard let` → `try #require`.
 
 ---
@@ -611,7 +739,9 @@ the TestSupport transform already exist.
 ### Wave 5 — hygiene and coverage
 
 19. 10 `.disabled` and 30 commented-out `@Test`.
-20. Error specificity, starting with `(any Error).self`.
+20. **Error specificity: 530 type-only sites against 99 that pin a value.** Not an invention
+    problem — the technique is already in `KMeansTests`, the dispersion tests and the marketing
+    batch; it needs spreading. Start with `(any Error).self`, the loosest form.
 21. Per-domain coverage gaps; certificate techniques extended to K-means, KKT, cut generators.
 
 ---
@@ -627,6 +757,9 @@ the TestSupport transform already exist.
 | `?? 0` sweep | Wave 3, "103 sites" | **12, 225 sites** | corpus-wide count is 2.4× the review's |
 | Test calendar sweep | "93 sites" | **13, ~152 sites** | 2.1× |
 | Operations exact values | unplaced | **17** | complete verified table, no other defects in the batch |
+| `#expect(true)` sweep | Wave 3, "75 hard" | **14, 53 of them mechanical** | `Never.self` substitution, not a rewrite |
+| T5 convention decisions | "decide 8 things" | **1.3, against a design rule** | name the variant at the call site where the caller has a real choice |
+| L15 three days-per-year | new | **1.3** | undecided and undocumented, adjacent to L11 |
 
 ---
 
