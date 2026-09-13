@@ -9,7 +9,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
-### [Unreleased]
+### [3.0.0-alpha.5] - 2026-09-13
+
+**Six correctness defects, five of them breaking.** Every one was found by working the
+test-suite review programme in `project/plans/TEST_REVIEW_ROADMAP.md`, and every one was
+measured before it was fixed.
+
+- **Days outstanding counts the days in its own period.** `daysSalesOutstanding`,
+  `daysInventoryOutstanding` and `daysPayableOutstanding` divided an annual day count by a
+  per-period turnover rate. On the quarterly documentation fixture inventory turned 4.0 times
+  in a 91-day quarter and DIO reported **91.25 days** where the answer is 22.75 — a factor of
+  **4.01**. The number is also why it survived: 91.25 sits a quarter-day from the length of
+  the quarter, so it passes a reader's sanity check. The three functions now take
+  `dayCount: DayCountConvention = .actual365`. **Breaking** for every non-annual statement;
+  the cash conversion cycle is unchanged, because the day count cancels in it — which is
+  exactly why the CCC identity test could not detect any of this.
+
+- **A period is a calendar date, not a statement about the machine.** `Period`,
+  `PeriodArithmetic`, `FiscalCalendar`, the time-series operations and five valuation files
+  read `Calendar.current`, so the same instant fell in different fiscal years depending on
+  where the process ran. Measured with the package's own `ZoneInvariance.sweep`: 1 January
+  2025 was fiscal 2025 in Tokyo and **2024** in New York. Seventeen sites now use
+  `gregorianUTC`. Two were invisible to a search for `Calendar.current` — `PeriodSequence`
+  used `Calendar(identifier: .gregorian)`, which looks fixed and carries `TimeZone.current`,
+  putting January's value in the previous year's Q4; and `formatted(using:)` rendered
+  January 2025 as **"December 2024"** west of Greenwich. **Breaking:** period boundaries move
+  from the reader's midnight to UTC midnight.
+
+- **A riskless portfolio has a Sharpe ratio, and it is not zero.** `sharpeRatio` guarded its
+  denominator and returned 0, reporting a portfolio with positive excess return at exactly
+  zero risk — the best case there is — as mediocre. The guard is gone; `+infinity`,
+  `-infinity` and `NaN` each answer for themselves. **Breaking.**
+
+- **`bayes` has a stated contract and is generic.** It returned `nan` at a zero denominator
+  by accident rather than by decision, and was `Double`-only against the package's own rule.
+  Now documented, pinned, generic over `T: Real`, and paired with a throwing `bayesChecked`
+  in the `factorial`/`factorialChecked` shape. **Breaking** (the generic signature).
+
+- **Cut statistics were discarded, so cutting planes looked dead.** Four of five return paths
+  in `BranchAndBoundSolver.solve` built the result with a fresh empty `CuttingPlaneStats()`
+  instead of the accumulated tracker, so `totalCutsGenerated` read 0 for every solve that
+  finished at the root. Cutting planes worked the whole time: traced, a Gomory cut took the
+  relaxation from a fractional 5.5 straight to the integer optimum without branching. Not
+  breaking — the numbers were always right, only the report was wrong.
+
+- **`bayes` and the Sharpe ratio gained the tests that would have caught them**, along with
+  the property no existing test could check: posterior odds are prior odds times the
+  likelihood ratio, which is asymmetric in sensitivity and false-positive rate and therefore
+  fails if the two are transposed. The existing `symmetricCase` is *invariant* under that
+  swap and never could.
+
+#### Known issue
+
+`cuttingRounds` and `totalCutsGenerated` count different things — a cut is counted when
+generated, a round only after the LP re-solve succeeds — so a round that adds a cut and then
+fails to re-solve reports cuts without rounds. Recorded as `withKnownIssue` rather than
+patched: "rounds attempted" and "rounds completed" are both defensible and are not the same
+number. Surfaced by a guarded assertion in `NodeCutLoopTests` that had never executed, because
+the counter it guarded on was structurally zero.
+
+#### A note on 3.0.0-alpha.4
+
+That tag shipped without its own heading. Everything below in this section predates it and was
+released there; it is folded in here rather than retro-fitted, so the record says what happened
+instead of implying a tidier history.
+
 
 ### Added
 
