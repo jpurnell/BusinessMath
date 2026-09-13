@@ -1,271 +1,180 @@
-# Handoff — 2026-09-12 (end of day)
+# Handoff — 2026-09-13
 
-**`main` is `e417c78b`. History was rewritten today — read §1 before running any git command.**
-**Phase 1 of `REVIEW_simulation_tests.md` §6 is complete**, all five items, in four commits. The
-next piece of work is **Phase 2, GPU test integrity**, whose first step is decision 5.2 — the Mac
-CI job must fail rather than skip when Metal is unavailable.
+**`main` is `4f552768`. Two commits are unpushed. `v3.0.0-alpha.5` is tagged, pushed and
+CI-green.** The work queue is **`project/plans/TEST_REVIEW_ROADMAP.md`** — read that before
+anything else; this file is the state and the traps, that file is the plan.
+
+The next piece of work is **Phase A2**, and it needs no decisions.
 
 ## State
 
 | | |
 |---|---|
-| branch | `main` at `e417c78b` |
-| tags | **89** (was 109). Latest `v3.0.0-alpha.4` |
-| tests | **7,731 in 691 suites**, exit 0 (was 7,700 in 689) |
-| gate | `quality-gate --no-cache --check all --continue-on-failure` → 45/45, **0 errors**, 11 warnings |
-| the 11 warnings | all pre-existing: 10 `non-strict-improvement` notices in other suites, plus `CHANGELOG has no entry for version 3.0.0-alpha.4`. Not the skipped-test inventory, whatever older handoffs said |
-| working tree | clean except `project/plans/proposals/excel_function_coverage_matrix_bak.tsv` — **your backup, deliberately untracked, leave it alone** |
+| branch | `main` at `4f552768`; **remote is at `82bff1ee`, so 2 commits are unpushed** |
+| tags | latest `v3.0.0-alpha.5` = `82bff1ee`, verified on remote by `ls-remote` |
+| tests | **7,757 in 696 suites**, exit 0, **1 known issue** (L17, deliberate) |
+| gate | `quality-gate --no-cache --check all --continue-on-failure` → 0 errors |
+| working tree | clean |
+| CI | green on `82bff1ee` (all jobs, 21m52s) |
 
-Always `--check all`. Plain `--no-cache` runs 40 of 45 and prints an identical PASSED line.
+The two unpushed commits are the roadmap ordering and A1. **Push them.** Everything below
+`82bff1ee` is already public.
 
----
-
-## 1. The history was rewritten today. Read this first.
-
-The BusinessMathExcel session ran `git filter-repo --path project/library/ --invert-paths` to remove
-~90 MB of third-party copyrighted books from a public repo. **Every commit from `ca7afd83` onward
-has a new SHA.**
-
-- All 1,025 commits survive; only the books are gone. 141.22 → 60.62 MiB.
-- **88 tags at or below `v2.5.1` keep their original SHAs** — deliberately, so SwiftPM's
-  trust-on-first-use fingerprints still match. **20 affected tags were deleted, not re-pointed**,
-  because no version number may ever point at two commits. `v3.0.0-alpha.4` is the fresh tag above.
-- Verified independently here: **no surviving remote tag carries `project/library`**.
-
-**Consequences for you.**
-
-- **Any SHA in a document older than today is dead.** This file's own history, the CHANGELOG, and
-  both review documents may quote pre-rewrite SHAs. Commit *subjects* still resolve; SHAs do not.
-- **Never `git pull` from a stale clone.** `git fetch --prune --prune-tags origin && git reset --hard origin/main`.
-- **`git fetch` does not prune tags.** After the rewrite this checkout still held all 20 deleted
-  tags, pointing at old-history commits that still contained the books — one `git push --tags` from
-  undoing the whole operation. Pruned here; **any other machine or CI runner with a persistent
-  checkout still has them.**
-- 19 surviving tags, `v2.5.1` among them, are no longer *ancestors* of `main` — filter-repo forked
-  the chain slightly earlier than `ca7afd83`. Harmless; they resolve and carry nothing.
-- Still open, not ours: GitHub holds the unreferenced blobs until a support request expires them.
+Always `--check all`. Plain `--no-cache` runs a subset and prints an identical PASSED line.
+`--check` takes **one** checker per flag; `--check a,b,c` prints *"No checkers enabled"* and exits 0.
 
 ---
 
-## 2. What shipped this session
+## 1. What this session was
 
-| Commit | Contents |
+Twenty-two incoming test-suite reviews were validated against the code, a roadmap was built from
+them, and then **the six defects blocking 3.0.0 were fixed and shipped as `v3.0.0-alpha.5`**.
+
+### Shipped in alpha.5 — the six blockers
+
+| | Defect | What it was |
+|---|---|---|
+| B1 | DSO/DIO/DPO **4.01×** | An annual day count divided by a per-period turnover rate. DIO reported 91.25 days in a 91-day quarter where the answer is 22.75 — and 91.25 sits a quarter-day from the quarter's length, so it survived every sanity check |
+| B2/B6 | Fiscal year varied by time zone | 17 source sites read `Calendar.current`. Measured with the package's own `ZoneInvariance.sweep`: 1 January 2025 was fiscal 2025 in Tokyo and **2024** in New York |
+| B3 | Sharpe returned **0** at zero risk | Reported the best possible case — positive excess, zero risk — as mediocre. Guard deleted; `±∞` and `NaN` each answer for themselves |
+| B4 | `bayes` NaN by accident | No contract. Now stated, pinned, paired with `bayesChecked`, and generic over `T: Real` (L2 landed with it) |
+| B5 | "Is `enableCuttingPlanes` inert?" | **It never was.** Four of five return paths discarded the accumulated statistics for a fresh empty object (L16) |
+
+Earlier in the session, Phase 1 of `REVIEW_simulation_tests.md` and the GPU error-parity work also
+shipped into the same tag.
+
+### And A1, unpushed
+
+`runFinancialSimulation` gained a seed — **additively, not breaking**, because the randomness was
+never there. See §4.
+
+---
+
+## 2. Next: Phase A2, then the rest of Phase A
+
+`TEST_REVIEW_ROADMAP.md` §5.2 is the order. Every item carries a **done when**, so no further
+decisions are needed to proceed.
+
+**A2 — delete `Tests/BusinessMathTests/Stochastic/StochasticTestHelpers.swift`.** A *shared* test
+helper whose generator is `Double(state) / Double(UInt64.max)` — **closed on both ends**, returning
+exactly 1.0 and exactly 0.0, while its own documentation says `(0, 1)`. Its Box-Muller uses
+`max(u1, 1e-15)`, the guard shape `BoxMullerPoleGuardTests` explicitly calls wrong, and does not
+guard u₁ = 1.0 where `log(1) = 0` collapses the draw. It duplicates `MMIXSeededRNG`, already in
+TestSupport. It is the first inline Box-Muller found in a shared helper, so it seeds several files
+at once.
+
+**Done when:** the file is gone, its users take `DeterministicRNG` and the TestSupport Box-Muller,
+and no test constructs its own uniform.
+
+Then A3 (document the debt asymmetry), A4 (365 vs 365.25), A5 (the outlier rule), A6 (the counter
+asymmetry). Then Phase B.
+
+---
+
+## 3. Decisions already taken — do not reopen
+
+| Decision | Made by |
 |---|---|
-| `6735df37` | The four Bessel functions, fixture and 21 tests |
-| `5365e270` | Miller's seed order bounded by the order, not a shared constant |
-| `bb05023a` | `factorial` states its ceiling as a `precondition` |
-| `1d927726` | Exit tests skip under a sanitizer instead of passing without running |
-| `0297a2ed` | `REVIEW_simulation_tests.md` — validated |
-| `11262208` | Three Numerical Recipes transcriptions re-expressed, bit-identically |
-| `d3543352` | `REVIEW_statistics_tests.md` — validated, eight conventions decided |
-| `7f76a9fe` | This file and `STATUS.md` caught up to the rewrite they describe |
-| `88af88d7` | **Phase 1 item 1** — antithetic SE from pair means, plus Welford |
-| `292868a3` | **Phase 1 item 2** — the unit-interval lattice, and a trap with it |
-| `0195cf31` | **Phase 1 items 3–4** — optimizer soundness |
-| `4df8a678` | **Phase 1 item 5** — the CPU/GPU contract |
-| `9f661666` | additive identity made sign-exact; 17 silent-pass guards removed |
-| `f5b4454e` | safe math, the per-opcode differential, and `PROPOSAL_gpu_error_parity.md` |
-| `e417c78b` | **GPU error parity** — the proposal built, §8 answered |
-
-CI green throughout up to `d3543352`. The four Phase 1 commits are local-gate-green (45/45,
-0 errors) and **have not yet been seen by CI** — watch the run after the push.
+| **Keep taking reviews**; do not freeze intake | Justin |
+| **Build durable quality infrastructure**, in service of a strong 3.0.0 with **correctness first** | Justin |
+| `sharpeRatio` at zero risk: **delete the guard**, let IEEE answer | Justin |
+| `bayes` zero denominator: **`nan` from the free function**, throw from `bayesChecked` — the `factorial`/`factorialChecked` shape | convention from the statistics review |
+| Activity-ratio day count: **actual days**, so a leap year counts 366 | stated in the API docs |
+| **ISDA is the right standard for accrual**, and the library already implements a subset. It is **not** the standard for DSO/DIO/DPO — that is dimensional, not conventional | §5a |
 
 ---
 
-## 3. Phase 1 is done. What it found, beyond what the review said.
+## 4. What the work taught, that the reviews did not
 
-Each item was confirmed to fail by reintroducing the defect, and each fix ran the full suite.
+**Gate rules cannot deliver correctness.** Tested against the ten library defects found: a static
+rule catches three, partially catches two, **misses five outright — and those five are the ones
+that make the library wrong.** L11's 4.01× is type-correct and dimensionally wrong; no linter finds
+that. This is §2b, and it is why intake stays open: the reviews are the only detector that finds
+semantic defects, and four of the six blockers came from them.
 
-1. **Antithetic SE** (`88af88d7`). Reported ÷ realised over 200 fixed seeds went from **1.449 to
-   1.079**; the reported reduction against plain went from none to **0.746** against a realised
-   0.659. Welford replaced `E[X²] − E[X]²` — not tidying: on a payoff antithetic sampling cancels
-   exactly, the naive form loses every digit to cancellation and would have reported a spurious
-   4e-8, failing the new oracle on arithmetic rather than on the defect. The price keeps its
-   original accumulation and is bit-identical.
-   **New, not in the review:** a single-path antithetic request had `paths / 2 == 0`, so the loop
-   never ran and the mean divided 0.0 by 0.0 — a NaN price with `pathCount` 0. One pair is now the
-   floor.
-2. **The lattice** (`292868a3`). **Bigger than the review recorded.** Beyond the 5e-8 downward bias,
-   every uniform below 1e-7 quantized to exactly 0.0 — measured at **1.0000000006e-07 of the word
-   space, one draw in ten million**. `distributionGeometric` is `ceil(ln U / ln(1−p))` then `Int(_:)`,
-   so a zero draw gave −inf, then +inf, then **a trap**. Confirmed in isolation: exit 133. The
-   comment above that line claimed the code used `1−U` to avoid `log(0)`; it never did. Blast
-   radius of removing the lattice, measured: **none** — no other test pinned it.
-3. **`a * 0 → 0`** (`0195cf31`). Removed, not guarded: `a` is an input or a computed sequence and
-   nothing in the compiler tracks finiteness. Where `a` is a constant, folding already handled it
-   exactly. **New, not in the review:** the additive identities were unsound too, and
-   **`9f661666` made them strict** at Justin's direction. There is exactly one exact additive
-   identity — `a + (-0.0) → a`, equivalently `a - (+0.0) → a`. Being strict uncovered a second
-   defect: **`a - 0 → a` was already firing on `-0.0`**, because `case .constant(0.0)` matches
-   through `==`. The conditions now read `.sign`, and this pass has no rewrite that can change a
-   result, in any bit, for any input.
-4. **Folding vs interpreter errors** (`0195cf31`). `evaluateBinaryOp`/`evaluateUnaryOp` return
-   `Double?` and decline the three the interpreter throws on.
-5. **CPU/GPU contract** (`4df8a678`). Opcodes live once in `GPUOpcode`; the kernel is generated from
-   it and contains no numbers. `GPUBytecodeValidator` runs before both `runSimulation` overloads.
-   `gpuNarrowingIssues()` reports constants that overflow or underflow Float32.
+**Every review count is a lower bound** (§2a). Measured corpus-wide against the best single-review
+claim: `?? 0` 93 → **225**; `Calendar.current` in tests 73 → **152**; `Date()` 16 → **210**;
+`#expect(true)` 13 → **75**; type-only error assertions ~300 → **530**. Structural, not sloppiness —
+each review is domain-scoped and counts honestly within its domain. **Measure corpus-wide before
+scheduling any thread.**
 
-**The trap that mattered most here**, stated correctly on the second attempt: `MonteCarloGPUDevice`
-compiles its kernel inside a *failable* initializer, so a broken shader makes it return nil. The
-`.requiresMetalGPU` trait does **not** hide that — it compiles a trivial kernel of its own and stays
-enabled. What hid it was seventeen sites spelling "could not run" as `guard … else { print; return }`,
-which reports **passed**. Measured by breaking the generated MSL, same three suites, 29 tests:
-**4 failures before, 16 after** `9f661666` converted them all to `try #require`. Twelve tests
-exercised the GPU, found no device, and passed. An earlier draft of this file said the *whole* GPU
-surface went green; it was twelve of twenty-nine, because fourteen `#require` sites already failed
-honestly. Review §4.6 calls those seventeen guards dead code under their suite traits — **they were
-not**: the trait rules out an absent GPU, not our own kernel failing to compile.
+**An enabling fix wakes dormant assertions.** Fixing L16 made a guarded assertion execute for the
+first time and it failed immediately (L17). Six such guards exist in the integer-programming suite
+alone. This is ordering principle 4, and it is why Phase B precedes Phase D.
 
-### Settled since, and how
+**Two defects were found by fixing, not by reviewing** — L16 and L17. Neither appears in any of the
+22 reviews.
 
-- **Error parity is DONE** (`e417c78b`). The kernel tests each operand *before* the operation and
-  writes a code into a per-thread buffer; `GPUError.iterationsFailed` names the count, the first
-  failing iteration and the condition. **§8 decided by Justin: throw by default,
-  `onIterationError: .collect` to opt out.** Four entry points, sync and async.
-  **Breaking in effect if not in signature** — a batch that used to return values with an `inf`
-  among them now throws unless `.collect` is passed.
-- **Why explicit guards and not result inspection.** Reading an error back out of a NaN means
-  trusting the optimizer to have preserved IEEE. Measured: the whole contract suite passes under
-  `mathMode = .fast` as well as `.safe`, so reporting no longer depends on the flag.
-- **Fast math stays off, on a narrower basis than before.** Two residues the guards do not cover:
-  a recorded failure still leaves the IEEE value in the output slot, and `inf * 0` is a NaN the
-  interpreter does not throw on so nothing guards it. ~10% at 100k iterations, on a path the same
-  benchmark clocks at 1.2–1.4× the CPU. **A performance decision now, reversible in one line
-  (`compileOptions`), with the contract suite as evidence reporting survives the flip.**
-- **A retraction worth reading before trusting any GPU measurement here.** A probe measured the
-  kernel returning `1.0` for `0 / 0` under fast math. It was an artifact: the probe wrote `v / v`,
-  which fast math folds via `x / x → 1`; the kernel divides two stack slots at runtime indices the
-  compiler cannot follow. Re-measured in the kernel's real shape, fast and safe agree on every
-  condition. **The proposal keeps the wrong version in §2.1 on purpose.**
+**Three reviews' claims were refuted**, and one pattern explains two of them: reviews cite each
+other instead of the code. "DIO on 365 vs DSO on 150" does not exist; it was sourced to a batch
+that has never arrived. **Valuation batch 2 is still referenced and still not received.**
 
-## 3a. Next: Phase 2, GPU test integrity — partly done already
-
-From §6, with what `9f661666` and `f5b4454e` already landed struck through:
-
-- ~~three exposed guards to traits, 14 dead ones removed~~ — **done**, all 17 converted to
-  `#require`; and they were not dead.
-- ~~CPU-versus-GPU differential per opcode~~ — **done**, 22 operations, exact inputs through
-  degenerate uniforms.
-- ~~error parity~~ — **done** (`e417c78b`), though it belongs to §3.7 rather than Phase 2.
-- **a CI-aware trait so the Mac job fails rather than skips** (decision 5.2). Still open, and §3
-  is the concrete reason it matters.
-- **KS per kernel distribution.** Open. Review §8 question 2 — per-family tolerance or the
-  proposed α = 1e-5 two-sample critical value of 0.0156 at n = m = 50,000 — is unanswered.
-- **samplers and evaluator into `MetalShaderSource`.** Open; `GPUOpcode.mslDeclarations` shows the
-  shape to follow.
-- **the two disabled tests to `withKnownIssue` + `.bug`.** Open.
-
----
-
-## 4. The two reviews, and what was decided
-
-Both incoming reviews were **accurate**; both had corrections worth keeping.
-
-**`REVIEW_simulation_tests.md`** — 6 corrections, 1 escalation. The escalation is the antithetic SE
-above: filed as test-quality, actually a library bug. Corrections include the GPU guard count (17,
-not 25 — and 14 sit inside `.requiresMetalGPU` suites and cannot report false green) and the
-`integrate` fix being half stale.
-
-**`REVIEW_statistics_tests.md`** — 3 corrections, **eight conventions decided** (§3), which unblocks
-32 assertions written as `isNaN || ≈ 0`. The load-bearing decision: **free functions return
-`T.nan`; composed and checked entry points throw** — the `factorial`/`factorialChecked` shape.
-Also: `weightedPercentile` → R-7; `weightedVariance` gains a weight-kind flag defaulting to
-`.frequency` (its docstring says "reliability weights" and its formula is the frequency
-denominator — the formula is the intent); QQ plotting positions gain a `PlottingPosition` flag
-defaulting to **Blom**; `binomialPMF` moves to log-space (it **traps** at n = 2000 today).
-
-`confidenceInterval` → `coverageInterval` plus a real `confidenceInterval` (μ ± zσ/√n) is decided
-and lives in the simulation review's §5.3. Breaking; belongs with the 3.0.0 line.
+**Five instances of "the code is right and the comment is wrong"** — `npvExcel` ×2, the H-model
+test, `TVMReferenceTests`' header, `ClassifierEvaluationTests`' tie values. When a comment's
+arithmetic disagrees with the code, check the code first; it has won every time.
 
 ---
 
 ## 5. Traps, in the order they bite
 
-**`gh run view --job --log` truncates at ~9.5 MB, and these jobs pass `-v`.** Every compiler
-invocation is a ~6 KB line, so the log ends ~100 seconds in, mid-build — **on passing runs too**.
-Read cold it looks exactly like a hang. That cost two wrong conclusions today. Get the archive:
-`gh api repos/<owner>/<repo>/actions/runs/<id>/logs > run.zip && unzip run.zip`. The real message
-was 25 MB into one step.
+**`ZoneInvariance.sweep` mutates `NSTimeZone.default`, and its own documentation says the calling
+suite must be `.serialized`.** I missed that and got an order-dependent test: it passed inside its
+suite and failed in isolation, because a sweep had already moved the default zone before `Period`
+first looked.
 
-**Compare against a passing run before reading anything into the shape of a failing one.** That is
-what broke the above open, not a cleverer hypothesis.
+**A grep for `Calendar.current` is not a search for ambient time.** `Calendar(identifier: .gregorian)`
+looks fixed and carries `TimeZone.current`. One such site put January's value in the previous
+year's Q4, and the grep could not see it.
 
-**A green GPU suite can mean the GPU suite was deleted.** `MonteCarloGPUDevice` compiles its kernel
-inside a failable initializer. A syntax error in the MSL returns nil, `MetalAvailability.canRunKernels`
-is unaffected — it compiles a trivial kernel of its own — and every `.requiresMetalGPU` suite skips
-on reaching for a device. The run is green with the GPU path untested. Never take a passing GPU run
-as evidence that a shader edit compiled; `MetalKernelCompilationTests` is what makes it evidence.
+**A statistic can be zero while the feature works.** Cutting planes did the entire job — closing an
+IP at the root with no branching — while `totalCutsGenerated` read 0. I concluded "cuts never fire"
+from the counter and was wrong. Trace the behaviour, not the telemetry.
 
-**The pre-push gate is load-sensitive.** It blocked a push, then passed unchanged on retry minutes
-later. Re-run quietly before hunting for what you broke.
+**A green GPU suite can mean the GPU suite was removed.** `MonteCarloGPUDevice` compiles its kernel
+inside a *failable* initializer, so a broken shader returns nil and suites skip. Measured: breaking
+the MSL took three suites from 4 failures to 16 only *after* 17 `guard … else { return }` sites
+became `#require`.
 
-**Exit tests are vacuous under any sanitizer.** The re-launched child aborts in sanitizer start-up
-before the closure runs, and that abort is a non-zero exit, so `processExitsWith: .failure` is
-satisfied by the sanitizer killing the child. `.requiresUnsanitizedRuntime` now skips them.
+**`.requiresMetalGPU` is a runtime trait, not a compile guard.** It cost a red CI on Linux, where
+`MonteCarloGPUDevice` does not exist at all. The guard has to be lexical `#if canImport(Metal)`.
 
-**A runaway-loop backstop is not a correctness bound.** `besselIterationLimit` is 1,000,000 and was
-capping a search whose answer starts near `n`; at order 1,000,000 it returned a plausible number
-wrong by 12×.
+**The pre-commit gate takes ~9 minutes and the harness caps a command at 10.** A commit will look
+like it timed out while succeeding. **Check `git log` before retrying, and never background a
+commit** — a peer session shares this index.
 
-**In Steed's continued fraction the opening step is not the loop's step.** The opening is
-`b + i·a·ξ/(p+iq)`; every later step is `b + a/c`. They differ by a factor of `i`. This bit twice
-today — once writing the CF, once re-expressing it — and both times cost three significant figures.
+**The gate rejects `==` on floating-point operands** against a non-zero literal. Use `isEqual(to:)`
+where the comparison is deliberate; `== 0.0` is permitted. Auditor justification comments must be
+**single-line, on the line immediately above**.
 
-**Numerical Recipes: the algorithms are not theirs, the expression is.** Steed, Temme, Lentz and
-Barnett published the mathematics. Copying NR's naming and bookkeeping is what creates a problem on
-a public AGPL repo. Three routines were re-expressed today, verified **bit-identical over 60,048
-values**. Distinctive identifiers to watch for: `delh`, `dels`, `qnew`, `qab`/`qap`/`qam`. **Do not**
-use `q1`/`q2` as evidence — 45+ files use them as fiscal quarters.
-
-**An oracle is a measurement, not an authority.** SciPy is out by 1.8e-12 on `jv(200, 3000)` and
-~5 ulp on `binom.pmf(15, 30, 0.5)`. Both incoming reviews cite that Bessel finding approvingly and
-then take a reference value from scipy anyway. For anything with a closed form or an exact rational,
-compute it exactly.
-
-**Reviews carry stale claims to each other.** The `normalCDF` lower-tail claim has now appeared in
-two reviews, having been fixed at `91ca7f03` before either was written. Check the code, not the
-previous review.
-
-**`quality-gate --check` takes ONE checker per flag.** `--check a,b,c` prints *"No checkers
-enabled"* and **exits 0**.
-
-**The gate rejects `==` on floating-point operands** against a non-zero literal. Use
-`isEqual(to:)` where the comparison is deliberate; `== 0.0` is permitted.
-
-**Budget nine minutes for a commit and a push** — both hooks run the gate, and the harness caps a
-foreground command at 10 minutes, so a commit will appear to time out while still succeeding.
-**Check `git log` before retrying.**
-
-**`git commit -- <paths>` is the only safe form here.** A peer session shares this index and has had
-work staged in it more than once.
-
-**No suppression markers, ever.**
+**`doc-claims` will block a push** when a documented number drifts. Its advice is right: find out
+which one is wrong before changing either. A bond price moved two cents because the old figure was
+never canonical — it was this machine's answer.
 
 ---
 
 ## 6. Cross-session context
 
-**BusinessMathExcel** is a peer session on this machine, reachable at
-`uds:/tmp/cc-socks/14089.sock`. It owns the Excel lane and the provenance audit; it ran today's
-history rewrite. The lane split is settled: **mathematics here, spreadsheet argument semantics
-there.** It shares this git index — always commit with explicit paths.
+**BusinessMathExcel** is a peer session on this machine, reachable at `uds:/tmp/cc-socks/14089.sock`.
+It owns the Excel lane. **It shares this git index — always commit with explicit paths.**
 
-Still outstanding on its side, not ours: GitHub's unreferenced blobs, and 270 MB of orphaned
-worktree copies of the books that Justin is deleting locally.
+History was rewritten on 2026-09-12 (`git filter-repo`, ~90 MB of third-party books removed). Any
+SHA quoted in a document older than that is dead; commit *subjects* still resolve. Never `git pull`
+from a stale clone — `git fetch --prune --prune-tags origin && git reset --hard origin/main`.
 
 ---
 
 ## 7. How this work has been done
 
-**Prove the arithmetic did not move.** The NR re-expression preserved every operation exactly and
-was verified bit-identical across 60,048 values. That turns a risky rewrite of numerical code into
-a mechanical check.
+**Validate every review claim against the code.** Twenty-two for twenty-two contained something
+that changed the fix — 3 refutations, ~11 corrections, 4 resolutions of questions the review left
+open, and 11 findings that were in no review at all.
 
-**Write the stub.** *What is the simplest wrong implementation that still passes this?* Every
-regression test added today was confirmed to fail against the defect it names, by reintroducing it.
+**Confirm RED by reintroducing the defect.** Every fix this session was verified by putting the
+defect back and watching the new test fail, with the failure message carrying the argument:
+*"inventory turned 4.0 times in 91.0 days, so it cannot sit for 91.25"*.
 
-**Print the value.** The 40% SE overstatement, the e³¹² seed-order overestimate, the 54.5% coin
-flip and the `binomialPMF` trap were all found by running the code, none by reading it.
+**Measure the blast radius; do not estimate it.** B2 broke 75 tests in 5 files, and two of those
+were real defects rather than test churn.
 
-**Derive the bound, do not tune it.** Where a tolerance had to open, the mechanism was measured
-first and written into the test as named terms.
+**Print the value.** The 4.01×, the zone disagreement, the cut counter and the reseeding collapse
+were all found by running code, none by reading it.
