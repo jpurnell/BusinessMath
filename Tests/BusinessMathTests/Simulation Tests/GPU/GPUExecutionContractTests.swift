@@ -278,7 +278,41 @@ struct GPUExecutionContractTests {
         #expect(rounded.gpuNarrowingIssues().isEmpty,
                 "reported \(rounded.gpuNarrowingIssues())")
     }
+
+    /// The equality opcodes do not use the same epsilon on the two sides.
+    ///
+    /// The interpreter tests `abs(a - b) < 1e-10`; the kernel tests `< 1e-6f`. Four orders of
+    /// magnitude apart, so two values differing by 1e-8 are **equal** on the GPU and **unequal**
+    /// on the CPU — a divergence with no error, no NaN and no infinity in it, which is why none
+    /// of the error-parity machinery would ever surface it.
+    ///
+    /// This test pins the gap as it stands rather than asserting agreement, so that closing it
+    /// is a deliberate change with a failing test attached. Filed in
+    /// `PROPOSAL_gpu_error_parity.md` section 10.
+    @Test("The equality epsilons differ, and this is where")
+    func equalityEpsilonsDiffer() throws {
+        let interpreterEpsilon = 1e-10
+        let kernelEpsilon = 1e-6
+
+        // A gap the two classify differently: below the kernel's threshold, above the
+        // interpreter's.
+        let gap = 1e-8
+        #expect(gap < kernelEpsilon, "the kernel would call these equal")
+        #expect(gap > interpreterEpsilon, "the interpreter would call these unequal")
+
+        let bytecode: [Bytecode] = [.input(0), .input(1), .equal]
+        let equalOnCPU = try BytecodeInterpreter.evaluate(bytecode: bytecode, inputs: [1.0, 1.0 + gap])
+        #expect(equalOnCPU == 0.0, "the interpreter called a gap of \(gap) equal")
+    }
 }
+
+// Everything below needs `MonteCarloGPUDevice`, which lives behind `#if canImport(Metal)`.
+//
+// `.requiresMetalGPU` is a *runtime* condition — it decides whether a test executes, not whether
+// it compiles. On Linux the symbols simply are not there, so the trait cannot help and the guard
+// has to be lexical. This is the same `#if canImport(Metal)` the other GPU suites use, hoisted to
+// cover a whole file's worth of tests rather than repeated inside each body.
+#if canImport(Metal)
 
 // MARK: - The Kernel Itself
 
@@ -559,32 +593,6 @@ struct MetalKernelCompilationTests {
         #expect(overZero.errors.first == .divisionByZero)
     }
 
-    /// The equality opcodes do not use the same epsilon on the two sides.
-    ///
-    /// The interpreter tests `abs(a - b) < 1e-10`; the kernel tests `< 1e-6f`. Four orders of
-    /// magnitude apart, so two values differing by 1e-8 are **equal** on the GPU and **unequal**
-    /// on the CPU — a divergence with no error, no NaN and no infinity in it, which is why none
-    /// of the error-parity machinery would ever surface it.
-    ///
-    /// This test pins the gap as it stands rather than asserting agreement, so that closing it
-    /// is a deliberate change with a failing test attached. Filed in
-    /// `PROPOSAL_gpu_error_parity.md` section 10.
-    @Test("The equality epsilons differ, and this is where")
-    func equalityEpsilonsDiffer() throws {
-        let interpreterEpsilon = 1e-10
-        let kernelEpsilon = 1e-6
-
-        // A gap the two classify differently: below the kernel's threshold, above the
-        // interpreter's.
-        let gap = 1e-8
-        #expect(gap < kernelEpsilon, "the kernel would call these equal")
-        #expect(gap > interpreterEpsilon, "the interpreter would call these unequal")
-
-        let bytecode: [Bytecode] = [.input(0), .input(1), .equal]
-        let equalOnCPU = try BytecodeInterpreter.evaluate(bytecode: bytecode, inputs: [1.0, 1.0 + gap])
-        #expect(equalOnCPU == 0.0, "the interpreter called a gap of \(gap) equal")
-    }
-
     @Test("The kernel compiles, dispatches, and returns what it was asked for")
     func kernelCompilesAndRuns() throws {
         let gpu = try #require(MonteCarloGPUDevice.shared,
@@ -623,3 +631,5 @@ struct MetalKernelCompilationTests {
                 "\(distinct.count) distinct values in \(iterations) draws")
     }
 }
+
+#endif
