@@ -54,9 +54,17 @@ three already there.
 | **Financial ratio** | 6 files | 2026-09-13 | 🟡 partial | ⬜ |
 | **Bayes** | 1 file | 2026-09-13 | ✅ | ⬜ |
 | **Time series** | 33 files | 2026-09-13 | 🟡 partial | ⬜ |
+| **Optimization** | 78 files | 2026-09-13 | 🟡 partial — 4 corrections, all upward | ⬜ |
+| **Validation / forecasting** | 19 files | 2026-09-13 | 🟡 partial — 1 refuted, 1 reframed | ⬜ |
 
-**Eight reviews, and Justin has more.** The per-domain detail is §4; the reason this file is
-organised around §3 instead is that the same six findings account for most of the volume.
+**Ten reviews, 182 test files, and Justin has more.** The per-domain detail is §4; the reason this
+file is organised around §3 instead is that the same handful of findings account for most of the
+volume.
+
+**A note on intake.** The 2026-09-13 second batch listed five documents, three of which
+(operational driver, scenario analysis, financial ratio) were byte-identical to copies already
+archived. Only optimization and validation/forecasting were new. Worth a `diff` against
+`reviews/` before re-validating anything.
 
 ---
 
@@ -75,6 +83,7 @@ question about whether it is.
 | L6 | **`Period` arithmetic may add fixed second counts.** | **RESOLVED — it does not** | Read the source. `Period.endDate` and every `PeriodArithmetic` operation go through `calendar.date(byAdding:)` and `dateComponents`. No 86,400-second additions anywhere. The feared defect does not exist. DST still moves results, but by the mechanism in L7, not this one. |
 | L7 | **`Period`/`FiscalCalendar` read `Calendar.current` internally.** | **RESOLVED — CONFIRMED, and already known in-repo** | `Period.swift:17` and `PeriodArithmetic.swift:56` are both `private let cachedCalendar = Calendar.current`; `FiscalCalendar.swift:154,236` read it directly, as do `TimeSeriesOperations` (3), `TimeSeriesAnalytics` (1), `BondPricing` (2), `CreditSpreadModel` (4), `LeaseAccounting` (1), `DebtInstrument` (1). **~15 executable sites** (the other ~70 matches are doc comments). A module-level global captured once — not a parameter anyone can override, so **no test-side fixed calendar can reach it**. Demonstrated live: a `Period` for 2024-Q1 stores `2024-01-01 05:00:00 +0000`, i.e. midnight in `America/New_York`. |
 | L7a | **The fix already exists in the package, unapplied.** | **NEW** | `DayCountConvention.swift:49` defines `gregorianUTC` — Gregorian, fixed to UTC, `internal` so it is already shareable — with the doctrine written out above it, including: *"It is deliberately not named `cachedCalendar`, which is the name `Period` arithmetic uses for a cached `Calendar.current` — the opposite of this one."* and *"This reasoning was written here and applied here, while `Calendar.current` stayed in every other file that walks a schedule of dates … and the coupon grid drifted a day for exactly the reason set out above."* **This is a known, documented, unfixed defect with its own remedy sitting beside it.** |
+| L12 | **The only outlier rule the library has is the one that masks.** | **NEW — reframed from the review** | `AnomalyDetection.detect(in:threshold:)` computes a z-score against the series' own mean and standard deviation, and takes the threshold as a parameter. There is no modified z-score and no IQR fence. The review files this as "the test does not pin which rule is in force"; there is no choice to pin — but the consequence is sharper than that. On its own example `[10,12,11,13,12,50,11,12]`, verified: z = **2.4694** (sample sd) or **2.6399** (population), both **below the conventional 3.0**, so the obvious outlier is **not flagged**. Modified z is 25.631 and the IQR fence is 14.125; both flag it decisively. A single large outlier inflates the standard deviation enough to hide itself, and the library offers no alternative. **This is a capability gap, not a test gap.** |
 | L11 | **DSO / DIO / DPO are wrong on any non-annual statement.** | **NEW — measured, live defect** | `daysInventoryOutstanding` is `365 / inventoryTurnover`, and `inventoryTurnover` is `COGS / averageInventory` over the **period**, un-annualised. On the quarterly documentation fixture, measured: turnover 4.0 turns *per quarter*, DIO **91.25** days where the answer is 91/4 = **22.75** — **4.01× too large**. DSO returns 73.0 where it should be 18.2. The financial-ratio review presents "90-day quarter or 365-day year" as an open convention; it is neither. It is a dimensional error: an annual day count divided by a quarterly turn rate. **And 91.25 is within a quarter-day of the 91 days in the quarter, so a reader sanity-checking "is DIO about one quarter?" sees agreement.** The fix is `DayCountConvention.days(in: period)`, which already exists and returned the correct 91.0 in the same probe. |
 | L8 | **`MonthDay` accepts February 30.** | UNVALIDATED | A 1–31 day range admits impossible dates. Also: what does a February 29 fiscal year-end mean in a non-leap year? Currently undefined. |
 | L9 | **`npvExcel` discounts the first element by one period.** | UNVALIDATED (behaviour), **CONFIRMED** (design) | Implementation is `flow / (1+r)^(index+1)` — correct Excel semantics. Passing an array that *begins with the initial outlay* silently misprices. Documentation, not a code change. |
@@ -97,9 +106,24 @@ than by domain is what turns 900 lines of review into a finite amount of work.
 | Encoding asserted by `data.count > 0` | 2 | Period, FiscalCalendar |
 | Guarded assertions that never execute (`if abs(npv) < 10.0`) | ≥1 | `profitabilityIndexBreakEven` |
 | `#expect(true) // TEST-QUALITY: checker workaround` | ≥3 | Ratio, seasonality — **gate scope bug, not a test defect** |
+| **`.rounded()` inside a relational operator** | **7** (review said 2) | `StochasticOptimizationTests` 3, `RobustOptimizationTests` 3, `ScenarioOptimizationTests` 1 |
+| **Always-true disjunctions on convergence** | **4** (review said 1) | Newton-Raphson, LBFGS, performance ×2 |
 
 **The `?? 0` fix is mechanical and the highest-volume single item in the corpus.** `try #require`
 is the replacement, and the same files already use it in places.
+
+**The two optimization rows are the sharpest instances of the category**, because the assertion
+looks like a real bound:
+
+- `#expect(weight.rounded() >= 0.0)` — a weight of −0.4 rounds to −0.0 and passes. Any violation
+  below 0.5 is invisible. `optimalProduction.rounded() <= 200.0` admits 200.49.
+- `RobustOptimizationTests:335` is `weight.rounded() >= -1e-6` — a rounding **and** a tolerance,
+  where the rounding makes the tolerance meaningless. Someone reached for precision and the
+  `.rounded()` ate it.
+- `#expect(result.converged || result.iterations > 50)` passes for an optimizer that ran 51
+  iterations and diverged. Two sibling sites use `|| result.iterations == 200`, which passes
+  precisely when the optimizer **exhausted its budget without converging** — the worst outcome
+  satisfying the assertion. A third uses `|| result.iterations < 20`, passing when it gave up early.
 
 ### T2. Bands where an exact value is one division away
 
@@ -174,6 +198,11 @@ operational drivers and the fluent API. Six `withKnownIssue` uses exist, so the 
 established.
 
 Every one either runs nowhere or documents nothing about what would re-enable it.
+
+**And a second population: 30 commented-out `@Test` declarations corpus-wide**, seven of them in
+`VectorSpaceTests` alone — including matrix-vector multiplication, a core operation with no
+coverage at all. A commented-out test is worse than a disabled one: it does not appear in any
+count, no trait records why, and nothing distinguishes "temporarily broken" from "abandoned".
 
 ---
 
@@ -255,6 +284,78 @@ discriminating one), `testValuationRatiosExactValues`, and the second suite gene
 **Keep as models:** the six driver-name validation tests, especially the `BuilderRan` sentinel that
 proves validation happens *before* any projection runs. `taxRateNoImpactOnPreTax`. These are the
 best error tests in the corpus.
+
+### 4.6 Optimization — largest by file count, 78 files
+
+The review's central contribution is a **three-way rule for choosing an oracle**, and it is the
+clearest statement of the question this whole series has circled:
+
+| The answer is… | Use | Because |
+|---|---|---|
+| **Verifiable but not unique** (LP vertices, DEA reference sets) | a **certificate** | a fixture imports another implementation's tie-breaking as if it were correctness |
+| **Unique and externally published** (Cooper et al.) | a **fixture** | it pins the *scale*, which no self-consistency check can |
+| **Determined by the mathematics** (a noiseless series) | **exact recovery** | nothing is estimated that is not already present, so no convention enters |
+
+That is worth lifting out of this review and into the project's testing doctrine — it generalises
+past optimization, and the third row is the Holt-Winters technique arrived at independently.
+
+- [ ] **Apply the gradient certificate** to L-BFGS, gradient descent, Newton-Raphson, multi-start.
+      Replaces ~40 distance-to-known-minimum assertions with `‖∇f(x*)‖ < tol` — the condition that
+      *defines* a minimum, and which extends to problems with no known answer. **Highest value.**
+- [ ] Fix the 7 `.rounded()` comparisons and 4 always-true disjunctions (T1).
+- [ ] Retire solution-vector assertions in `SimplexSolverTests` for objective values — the
+      certificate file argues explicitly that a fixture must not pin a tie-break.
+- [ ] Units invariance for SBM and super-efficiency (CCR and BCC have it). Cheapest high-value
+      addition in the domain: a scaling error breaks it while leaving every score plausible.
+- [ ] KKT for the constrained optimizers — they currently check primal feasibility, one of four.
+- [ ] K-means fixed-point conditions; async-vs-sync `identical`; Gomory cut validity.
+- [ ] **`memorySizeComparison` never compares.** CONFIRMED: it runs m = 3, 5, 10, 20, `print`s the
+      four results, then asserts `val < 1.0` for each. The comparison its name promises is
+      discarded. (The review calls it `compareMemorySizes`; the actual name differs.)
+- [ ] Restore or delete 7 commented-out tests here, 30 corpus-wide (T7).
+
+**Keep as models:** `LinearProgrammingCertificateTests` and `DEACertificateTests`. Two details
+worth copying package-wide: **the oracle must not share code with the subject** (its Gaussian
+elimination is written out in the test file, "because an oracle that shared the package's linear
+algebra could agree with the simplex through a fault they both inherit"), and **skipping an
+inapplicable check is honest where loosening a tolerance is not** (degenerate problems carry
+`dualsAreDetermined: false` and are excluded from the finite-difference check only).
+
+### 4.7 Validation, schema, audit and forecasting — 19 files
+
+`HoltWintersReferenceTests` is the model, and its two defects are **already fixed** — the
+multiplicative fitted value in an additive model and the zero-indexed seasonal phase, both landed
+at `64a7f64b`. The review describes them as context, not as open work.
+
+- [ ] **ETS exact-recovery oracle.** **The review's stated worry is refuted:** it asks whether ETS
+      shares the seasonal path and might carry the phase defect too. It shares it completely —
+      `ETSFit.model` *is* a `HoltWintersModel`, and both the fit and the parameter search construct
+      one — so ETS **inherits the fix** and cannot diverge. **The recommendation survives for a
+      different reason:** ETS adds a parameter *search* on top, and whether the search recovers a
+      noiseless series exactly is untested.
+- [ ] **L12** — the anomaly capability gap, above. Pin the threshold behaviour; decide whether a
+      modified-z or IQR rule is wanted.
+- [ ] Pin the moving-average seed and output length. For `[10,20,30,40,50]`, α = 0.5: seeded from
+      the first value gives 10, 15, 22.5, 31.25, 40.625; seeded from the first SMA gives 20, 30, 40
+      — a different series **and a different length**.
+- [ ] Exact assertions for baselines and error metrics — all closed forms. MAE 3.5, RMSE
+      3.8078865529319543, MAPE 3.1308275058275057%, sMAPE 3.086232853942339%, MASE 0.35. Drift has
+      a standard off-by-one in its denominator (n vs n−1) that only an exact assertion finds.
+- [ ] Pin backtest fold *boundaries*, not counts.
+- [ ] **Interval calibration.** `EmpiricalIntervalsTests` asserts an 80% interval is narrower than
+      a 95% one and that both contain the point forecast. Neither is a coverage claim. *This is the
+      same shape as the antithetic-SE honesty defect fixed in `88af88d7`* — a reported uncertainty
+      nothing measures against realised spread.
+- [ ] `(any Error).self` at `HoltWintersReferenceTests:334` and the `guard … else { continue }` at
+      :167 — both CONFIRMED, both in the corpus's best file.
+- [ ] Migration properties: path independence (v1→v3 equals v1→v2→v3), idempotence, rejection of
+      unknown or downgrade versions.
+
+**Worth adopting as doctrine:** the review's §6 observation that **a reference file should state
+its oracle's provenance, including oracles it rejected.** `HoltWintersReferenceTests` rejects
+statsmodels (0.5% disagreement traced to an initial-state convention, not a defect) and
+`BesselFunctionsTests` records that SciPy is wrong at J₂₀₀(3000). In both cases the rejected oracle
+is the one a later contributor reaches for first.
 
 ### 4.5 Time series — largest, 33 files
 
@@ -389,6 +490,10 @@ Not yet filed as quality-gate work. Highest-volume first.
 | Encoding asserted only by size | 2 | advisory |
 | Error asserted by type only, `(any Error)` separately | ~21 | advisory |
 | Ordering assertions that are definitional | ~20 | advisory |
+| **`.rounded()` inside a relational operator** | **7** | blocking |
+| **Always-true disjunction on a convergence flag** | **4** | blocking |
+| **Commented-out `@Test` declarations** | **30** | blocking |
+| Certificate coverage for solver types | — | advisory |
 | Comment arithmetic vs asserted value | 3 found | advisory |
 | Subjunctive property in a comment with no assertion after it | 1 | advisory |
 | Display-name-vs-body mismatch | several | advisory |
