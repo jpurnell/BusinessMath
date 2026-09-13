@@ -1,6 +1,6 @@
 # Handoff — 2026-09-13
 
-**`main` is `4f552768`. Two commits are unpushed. `v3.0.0-alpha.5` is tagged, pushed and
+**`main` is `3c979828`, pushed and verified by `ls-remote`. `v3.0.0-alpha.5` is tagged and
 CI-green.** The work queue is **`project/plans/TEST_REVIEW_ROADMAP.md`** — read that before
 anything else; this file is the state and the traps, that file is the plan.
 
@@ -10,15 +10,15 @@ The next piece of work is **Phase A2**, and it needs no decisions.
 
 | | |
 |---|---|
-| branch | `main` at `4f552768`; **remote is at `82bff1ee`, so 2 commits are unpushed** |
+| branch | `main` at `3c979828`, local == remote by `ls-remote` |
 | tags | latest `v3.0.0-alpha.5` = `82bff1ee`, verified on remote by `ls-remote` |
 | tests | **7,757 in 696 suites**, exit 0, **1 known issue** (L17, deliberate) |
 | gate | `quality-gate --no-cache --check all --continue-on-failure` → 0 errors |
 | working tree | clean |
 | CI | green on `82bff1ee` (all jobs, 21m52s) |
 
-The two unpushed commits are the roadmap ordering and A1. **Push them.** Everything below
-`82bff1ee` is already public.
+Nothing is unpushed. `v3.0.0-alpha.5` = `82bff1ee`; A1 and the roadmap ordering sit above it and
+will go into alpha.6.
 
 Always `--check all`. Plain `--no-cache` runs a subset and prints an identical PASSED line.
 `--check` takes **one** checker per flag; `--check a,b,c` prints *"No checkers enabled"* and exits 0.
@@ -43,7 +43,7 @@ them, and then **the six defects blocking 3.0.0 were fixed and shipped as `v3.0.
 Earlier in the session, Phase 1 of `REVIEW_simulation_tests.md` and the GPU error-parity work also
 shipped into the same tag.
 
-### And A1, unpushed
+### And A1, since the tag
 
 `runFinancialSimulation` gained a seed — **additively, not breaking**, because the randomness was
 never there. See §4.
