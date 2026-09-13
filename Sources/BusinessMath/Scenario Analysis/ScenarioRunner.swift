@@ -305,6 +305,31 @@ public struct ScenarioRunner: Sendable {
 		CashFlowStatement<Double>
 	)
 
+	/// A builder that draws from a generator the caller controls.
+	///
+	/// The unseeded ``StatementBuilder`` has nowhere to put a generator, so a builder that
+	/// samples a probabilistic driver has to reach for the global source — and every run
+	/// produces different numbers. That is why roughly fifteen tests over the scenario
+	/// suite are bounded rather than pinned, and why several of those bounds sit at ten,
+	/// twelve and thirty-two standard errors: they were widened until they stopped flaking.
+	///
+	/// Drivers already had the seeded half of this — `sample(for:using:)` has existed on
+	/// every driver type — so the gap was only that nothing handed them a generator.
+	///
+	/// The generator is `inout` so consecutive draws advance one stream. Handing each call
+	/// a *fresh* generator seeded the same way is the failure the optimization review
+	/// records: a sample of one value repeated, which is not merely unrepresentative but
+	/// materially easier or harder to solve than a real one.
+	public typealias SeededStatementBuilder = @Sendable (
+		_ drivers: [String: AnyDriver<Double>],
+		_ periods: [Period],
+		_ generator: inout Xoshiro256StarStar
+	) throws -> (
+		IncomeStatement<Double>,
+		BalanceSheet<Double>,
+		CashFlowStatement<Double>
+	)
+
 	// MARK: - Initialization
 
 	/// Creates a new scenario runner.
@@ -400,6 +425,40 @@ public struct ScenarioRunner: Sendable {
 		let (incomeStatement, balanceSheet, cashFlowStatement) = try builder(drivers, periods)
 
 		// Wrap in FinancialProjection
+		return FinancialProjection(
+			scenario: scenario,
+			incomeStatement: incomeStatement,
+			balanceSheet: balanceSheet,
+			cashFlowStatement: cashFlowStatement
+		)
+	}
+
+	/// Run a scenario, drawing from a generator the caller owns.
+	///
+	/// The seeded twin of ``run(scenario:entity:periods:builder:)``. Identical in every
+	/// respect except that the builder is handed a generator, so a probabilistic driver can
+	/// be sampled reproducibly through `sample(for:using:)`.
+	///
+	/// - Parameters:
+	///   - scenario: The scenario whose driver overrides the builder receives.
+	///   - entity: The entity the projection belongs to.
+	///   - periods: The periods to project.
+	///   - generator: The random source. Advanced by however many draws the builder takes.
+	///   - builder: Builds the three statements from the drivers, the periods and the
+	///     generator.
+	/// - Returns: The resulting projection.
+	/// - Throws: Whatever `builder` throws.
+	public func run(
+		scenario: FinancialScenario,
+		entity: Entity,
+		periods: [Period],
+		using generator: inout Xoshiro256StarStar,
+		builder: SeededStatementBuilder
+	) throws -> FinancialProjection {
+		let drivers = scenario.driverOverrides
+		let (incomeStatement, balanceSheet, cashFlowStatement) =
+			try builder(drivers, periods, &generator)
+
 		return FinancialProjection(
 			scenario: scenario,
 			incomeStatement: incomeStatement,

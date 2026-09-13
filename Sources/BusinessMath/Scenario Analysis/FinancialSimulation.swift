@@ -520,3 +520,72 @@ public func runFinancialSimulation(
 
 	return FinancialSimulation(projections: projections)
 }
+
+/// Run a Monte Carlo financial simulation from a seed.
+///
+/// The reproducible twin of ``runFinancialSimulation(scenario:entity:periods:iterations:builder:)``.
+/// One generator is created from `seed` and threaded through every iteration, so the same
+/// seed gives the same simulation and two seeds give different ones.
+///
+/// ## Why this exists
+///
+/// The unseeded form has nowhere to put a generator, so a builder sampling a probabilistic
+/// driver reaches for the global source and every run differs. About fifteen tests across
+/// the scenario suite are bounded rather than pinned for that reason, several at ten,
+/// twelve and thirty-two standard errors — bounds widened until they stopped flaking, which
+/// is a coverage ceiling rather than a choice.
+///
+/// ## One generator, not one per iteration
+///
+/// The generator is created once and advanced across iterations. Seeding a fresh generator
+/// per iteration would make every iteration draw the same values, collapsing the sample to
+/// a point — the defect the optimization review records for `ScenarioGenerator`, where it
+/// made the problem materially harder to solve rather than merely unrepresentative:
+/// ten convergences in sixty, against forty in forty for a real sample.
+///
+/// ```swift
+/// let simulation = try runFinancialSimulation(
+///     scenario: scenario, entity: entity, periods: periods,
+///     iterations: 1_000, seed: 42
+/// ) { drivers, periods, generator in
+///     // `sample(for:using:)` has existed on every driver type all along.
+///     let revenue = try periods.map { try drivers["Revenue"]?.sample(for: $0, using: &generator) ?? 0 }
+///     return buildStatements(revenue: revenue, periods: periods)
+/// }
+/// ```
+///
+/// - Parameters:
+///   - scenario: The scenario to run.
+///   - entity: The entity the projections belong to.
+///   - periods: The periods to project.
+///   - iterations: How many projections to draw.
+///   - seed: The seed. The same seed reproduces the same simulation exactly.
+///   - builder: Builds the statements, drawing from the generator it is handed.
+/// - Returns: The simulation over all iterations.
+/// - Throws: Whatever `builder` throws.
+public func runFinancialSimulation(
+	scenario: FinancialScenario,
+	entity: Entity,
+	periods: [Period],
+	iterations: Int,
+	seed: UInt64,
+	builder: @escaping ScenarioRunner.SeededStatementBuilder
+) throws -> FinancialSimulation {
+	let runner = ScenarioRunner()
+	var generator = Xoshiro256StarStar(seed: seed)
+	var projections: [FinancialProjection] = []
+	projections.reserveCapacity(iterations)
+
+	for _ in 0..<iterations {
+		let projection = try runner.run(
+			scenario: scenario,
+			entity: entity,
+			periods: periods,
+			using: &generator,
+			builder: builder
+		)
+		projections.append(projection)
+	}
+
+	return FinancialSimulation(projections: projections)
+}

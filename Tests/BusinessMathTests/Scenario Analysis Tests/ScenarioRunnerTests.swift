@@ -7,6 +7,7 @@
 
 import Testing
 import Numerics
+import TestSupport  // identical(_:_:)
 @testable import BusinessMath
 
 @Suite("Scenario Runner Tests")
@@ -352,6 +353,81 @@ struct ScenarioRunnerTests {
 		// Verify mean is roughly correct (within reasonable bounds)
 		let mean = revenues.reduce(0.0, +) / Double(revenues.count)
 		#expect(abs(mean - 1000.0) < 200.0)  // Within 200 of expected mean
+	}
+
+	/// A seeded simulation reproduces itself, and different seeds diverge.
+	///
+	/// Until 2026-09-13 `runFinancialSimulation` had no `seed:` and `StatementBuilder` had
+	/// nowhere to put a generator, so a builder sampling a probabilistic driver reached for
+	/// the global source. About fifteen tests across this suite are bounded rather than
+	/// pinned as a result, several at ten, twelve and thirty-two standard errors — bounds
+	/// widened until they stopped flaking, which is a coverage ceiling rather than a choice.
+	///
+	/// The assertions here are `identical` and `!identical` rather than `==` and `!=`:
+	/// `==` reports two identical NaN streams as different, and `!=` passes for free if
+	/// either stream has gone non-finite, so the divergence check carries an `isFinite`
+	/// guard as well.
+	@Test("A seeded simulation reproduces exactly, and different seeds diverge")
+	func seededSimulationIsReproducible() throws {
+		let entity = createTestEntity()
+		let periods = createTestPeriods()
+		let q1 = Period.quarter(year: 2025, quarter: 1)
+
+		var overrides: [String: AnyDriver<Double>] = [:]
+		overrides["Revenue"] = AnyDriver(ProbabilisticDriver<Double>(
+			name: "Revenue",
+			distribution: DistributionNormal(1000.0, 100.0)
+		))
+		let scenario = FinancialScenario(
+			name: "Uncertain Revenue",
+			description: "Revenue with uncertainty",
+			driverOverrides: overrides
+		)
+
+		let builder: ScenarioRunner.SeededStatementBuilder = { drivers, periods, generator in
+			let revenue = try periods.map { period -> Double in
+				guard let driver = drivers["Revenue"] else { return 0.0 }
+				return try driver.sample(for: period, using: &generator)
+			}
+			let series = TimeSeries<Double>(periods: periods, values: revenue)
+			let revenueAccount = try Account(entity: entity, name: "Revenue",
+											 incomeStatementRole: .revenue, timeSeries: series)
+			let incomeStatement = try IncomeStatement(entity: entity, periods: periods,
+													  accounts: [revenueAccount])
+			let balanceSheet = try self.createBalancedBalanceSheet(entity: entity,
+																   periods: periods, values: series)
+			let cashAccount = try Account(entity: entity, name: "Cash",
+										  cashFlowRole: .otherOperatingActivities, timeSeries: series)
+			let cashFlowStatement = try CashFlowStatement(entity: entity, periods: periods,
+														  accounts: [cashAccount])
+			return (incomeStatement, balanceSheet, cashFlowStatement)
+		}
+
+		func revenues(seed: UInt64) throws -> [Double] {
+			let simulation = try runFinancialSimulation(
+				scenario: scenario, entity: entity, periods: periods,
+				iterations: 20, seed: seed, builder: builder
+			)
+			return try simulation.projections.map {
+				try #require($0.incomeStatement.totalRevenue[q1])
+			}
+		}
+
+		let first = try revenues(seed: 20_260_913)
+		let second = try revenues(seed: 20_260_913)
+		#expect(first.count == 20)
+		#expect(identical(first, second), "the same seed produced a different simulation")
+
+		// One generator threaded across iterations, not a fresh one per iteration: the
+		// draws must vary within a run. A fresh generator per iteration would collapse the
+		// sample to a single value repeated.
+		let distinct = Set(first.map(\.bitPattern))
+		#expect(distinct.count > 1,
+				"every iteration drew the same value, so the generator is being reseeded")
+
+		let other = try revenues(seed: 99)
+		#expect(other.allSatisfy { $0.isFinite }, "a diverging stream must still be finite")
+		#expect(!identical(first, other), "two seeds produced the same simulation")
 	}
 
 	@Test("ScenarioRunner with empty scenario uses all provided drivers")

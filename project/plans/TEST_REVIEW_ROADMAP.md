@@ -853,8 +853,7 @@ found *by fixing* rather than by reviewing — L16, fixed, and L17, recorded.
 - **L15** three days-per-year conventions. Decide, document, and route through `DayCountConvention`
   where a convention is genuinely at stake.
 - ~~**L2** `bayes` being `Double`-only.~~ ✅ **DONE** with B4 — generic over `T: Real`.
-- **L3** `runFinancialSimulation` without `seed:`. Also breaking, also belongs in 3.0.0, and it
-  unblocks T3.
+- ~~**L3** `runFinancialSimulation` without `seed:`.~~ ✅ **DONE**, additively — see A1.
 - **L14** delete `StochasticTestHelpers`. Test-only; no bearing on the tag.
 
 **AFTER — everything else**, ordered in §5.2. The 225 `?? 0` sites do not make the library wrong;
@@ -885,7 +884,7 @@ Small, release-relevant, and two of them are breaking so they belong in the majo
 
 | | Item | Done when |
 |---|---|---|
-| **A1** | **L3** — `seed:` on `runFinancialSimulation` and `ScenarioRunner` sampling. **Breaking.** | The parameter exists, a fixed seed reproduces bit-for-bit via `identical`, and two seeds diverge. Unblocks T3 and every statistical bound in the scenario suite. |
+| ~~**A1**~~ | ~~**L3** — `seed:` on `runFinancialSimulation`~~ | ✅ **DONE — and additive, not breaking.** The randomness was never in `runFinancialSimulation`: it is in the caller's builder closure, which had nowhere to put a generator. Drivers already had `sample(for:using:)`. So a `SeededStatementBuilder` and a `run(…using:builder:)` overload thread one through, and existing builders are untouched. T3 is unblocked. |
 | **A2** | **L14** — delete `StochasticTestHelpers`. | The file is gone, its users take `DeterministicRNG` and the TestSupport Box-Muller, and no test constructs its own uniform. |
 | **A3** | **L4** — document the debt asymmetry. | `debtToAssets` says it uses total liabilities, as `interestBearingDebt` already says it uses interest-bearing debt, and both values are pinned on the shared fixture. |
 | **A4** | **L15** — decide 365 vs 365.25. | One convention stated per call site, documented, and routed through `DayCountConvention` wherever a convention is genuinely at stake. |
