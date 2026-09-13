@@ -66,8 +66,9 @@ three already there.
 | **Differential reference** | 6 files | 2026-09-13 | ✅ — 1 refuted, 1 stale claim caught | ⬜ |
 | **Marketing** | 8 files | 2026-09-13 | ✅ — 1 refuted; **carries the design answer to T5** | ⬜ |
 | **Attribution** | 2 files | 2026-09-13 | ✅ — axioms as oracle; **collapses the `#expect(true)` thread** | ⬜ |
+| **Integer programming** | 31 files | 2026-09-13 | ✅ — **confirmed by measurement, and extended**; opens Q5 | ⬜ |
 
-**Twenty reviews, ~320 test files, and Justin has more.** The per-domain detail is §4; the reason this
+**Twenty-one reviews, ~350 test files, and Justin has more.** The per-domain detail is §4; the reason this
 file is organised around §3 instead is that the same handful of findings account for most of the
 volume.
 
@@ -93,6 +94,7 @@ question about whether it is.
 | L6 | **`Period` arithmetic may add fixed second counts.** | **RESOLVED — it does not** | Read the source. `Period.endDate` and every `PeriodArithmetic` operation go through `calendar.date(byAdding:)` and `dateComponents`. No 86,400-second additions anywhere. The feared defect does not exist. DST still moves results, but by the mechanism in L7, not this one. |
 | L7 | **`Period`/`FiscalCalendar` read `Calendar.current` internally.** | **RESOLVED — CONFIRMED, and already known in-repo** | `Period.swift:17` and `PeriodArithmetic.swift:56` are both `private let cachedCalendar = Calendar.current`; `FiscalCalendar.swift:154,236` read it directly, as do `TimeSeriesOperations` (3), `TimeSeriesAnalytics` (1), `BondPricing` (2), `CreditSpreadModel` (4), `LeaseAccounting` (1), `DebtInstrument` (1). **~15 executable sites** (the other ~70 matches are doc comments). A module-level global captured once — not a parameter anyone can override, so **no test-side fixed calendar can reach it**. Demonstrated live: a `Period` for 2024-Q1 stores `2024-01-01 05:00:00 +0000`, i.e. midnight in `America/New_York`. |
 | L7a | **The fix already exists in the package, unapplied.** | **NEW** | `DayCountConvention.swift:49` defines `gregorianUTC` — Gregorian, fixed to UTC, `internal` so it is already shareable — with the doctrine written out above it, including: *"It is deliberately not named `cachedCalendar`, which is the name `Period` arithmetic uses for a cached `Calendar.current` — the opposite of this one."* and *"This reasoning was written here and applied here, while `Calendar.current` stayed in every other file that walks a schedule of dates … and the coupon grid drifted a day for exactly the reason set out above."* **This is a known, documented, unfixed defect with its own remedy sitting beside it.** |
+| Q5 | **Could not make `totalCutsGenerated` exceed zero on any fractional IP.** | **OPEN — needs investigation, not yet a defect claim** | Measured on four problems through the closure-objective API with `enableCuttingPlanes: true, maxCuttingRounds: 5`: `max 3x+4y s.t. 2x+3y≤11` (LP optimum x = 5.5, fractional), `max x+y s.t. 4x+5y≤17` (LP x = 4.25), and two more. Every one returned the **correct integer optimum**, but with `nodesExplored = 1`, `totalCutsGenerated = 0`, `gomoryCuts = 0`, `cuttingRounds = 0`, and an objective off by ~3e-8 from the exact integer (3.9999999752 for 4). The default relaxation *is* `SimplexRelaxationSolver`, so cuts should be reachable. **The likely innocent explanation** is the documented finite-difference path: `5.8-IntegerProgramming.md:953` says a closure objective is linearised by finite differences, which matches the 3e-8 residual and may not produce a tableau Gomory cuts can read. **What needs settling:** whether `enableCuttingPlanes: true` is inert for closure objectives, and if so whether that is documented anywhere a caller would see it. Not filed as a defect because the alternative — these fixtures are simply too small to need a cut — has not been excluded. |
 | L15 | **Three days-per-year conventions in one package.** | **NEW — found while refuting a claim** | `FinancialRatios` uses 365; `TimeSeriesAnalytics:181` and `BondPricing` use **365.25** ("to account for leap years over long periods"); `DayCountConvention` implements the ISDA set properly. None is wrong alone, and a CAGR over decades has a real case for 365.25. But the choice is undecided and undocumented, and it sits directly next to L11. Decide once, document, and route through `DayCountConvention` where a convention is genuinely at stake. |
 | L13 | **`sharpeRatio` returns 0 when risk is 0.** | **NEW — escalated from the options/portfolio review** | `Portfolio.swift:182` is `guard risk > T(0) else { return T(0) }`. The review could not tell whether the implementation guarded or the test failed; it guards. But **0 is a plausible-but-wrong answer**: a Sharpe of 0 means "no excess return per unit of risk", and the fixture earns 7.5%/yr of excess return at *exactly zero risk* — infinitely good, reported as mediocre. The guard inverts the best possible case. Same family as `a * 0 → 0` and the antithetic SE: a guard returning a plausible number where the answer is undefined. **Decide +∞, NaN or throw, then pin it.** Consequence meanwhile: `sharpeFinite` asserts `.isFinite` on a constant 0, and `optimizerBeatsEqualWeights` reduces to `0 >= 0 - 1e-6`. |
 | L14 | **A shared test helper ships a generator with two contract bugs.** | **CONFIRMED** | `Tests/.../Stochastic/StochasticTestHelpers.swift:13` is `Double(state) / Double(UInt64.max)` — **closed** on both ends, returning exactly 1.0 at `UInt64.max` and exactly 0.0 at 0, while its own doc says "(0, 1)". Its `nextNormal` guards `max(u1, 1e-15)`, the shape `BoxMullerPoleGuardTests` calls wrong, and does not guard u₁ = 1.0 where `log(1) = 0` collapses the draw. It duplicates `MMIXSeededRNG`, already in TestSupport. **This is the Nth inline Box-Muller in the corpus and the first found in a *shared* helper, so it seeds several files at once.** Delete it; use `DeterministicRNG` and the TestSupport transform. |
@@ -633,6 +635,70 @@ correctly.
 
 ---
 
+### 4.10 Integer programming — 31 files, and the batch's sharpest single finding
+
+`IntegerProgrammingCertificateTests` states the problem better than any of my own notes:
+
+> "Across 29 files the integer-programming suite checks a great deal about the *machinery* … None of
+> it answers the one question a caller asks: is the returned solution actually the best integer
+> point? A branch-and-bound that prunes one node too eagerly returns a feasible integer solution
+> with a plausible objective and a bound that still points the right way. Every existing assertion
+> passes. The answer is simply not optimal."
+
+Its oracle is exhaustive enumeration over a boxed integer region — "a complete, independent integer
+programming solver, written in a dozen lines, sharing nothing with the one under test" — and the
+reasoning for why that is the right oracle is the same one `LinearProgrammingCertificateTests`
+reaches: **it cannot prune, so it cannot prune wrongly.** `degenerateTies` compares the optimal
+*value* and not the point, because "asserting one would be asserting a convention rather than a
+result."
+
+The time-limit pair does the same for a budget: the clock is advanced **inside the objective
+function**, ten modelled milliseconds per evaluation, so "one second" is exactly one hundred
+evaluations and the assertion is fixed rather than machine-dependent. The pre-fix measurement is
+recorded in the file: **153 seconds against a one-second limit.**
+
+**The headline finding — confirmed by measurement, and it goes further than the review.**
+`Phase1_CutValidityTests` is named for cutting-plane validity and, as shipped, never runs the
+cutting-plane code. Sixteen of its seventeen `minimize:` settings are `true`, on fixtures of the
+shape *minimise Σx subject to Σx ≤ b*, whose optimum is the origin — already integral. One test has
+`minimize: false  // MAXIMIZE to hit the upper bound`, which is the smoking gun the review cites,
+and it is there verbatim.
+
+Measured on the file's own first fixture (`x + y`, `x + y ≤ 3.7`, x integer):
+
+| | status | objective | nodes | cuts |
+|---|---|---|---|---|
+| `minimize: true`, as shipped | optimal | **0.0** | **1** | **0** |
+| `minimize: false`, the proposed fix | optimal | 3.7 | 3 | **0** |
+
+One node under minimisation — the root, never branched. **A solver with cutting planes entirely
+unimplemented passes all fifteen tests.**
+
+**But the review's one-word fix is necessary and not sufficient.** Flipping the sense does make it
+branch, and still generates zero cuts. The deduplication tests (`identicalCutsDeduplicated` and
+siblings) still could not mean what their names say. See **Q5** — I could not make
+`totalCutsGenerated` exceed zero on any of four fractional IPs, and the reason needs settling before
+this file is rewritten around cut counts.
+
+- [ ] Flip the sense **and** establish a fixture that provably generates a cut (blocked on Q5).
+- [ ] **Restore three stale assertions.** `handlesNegativeLowerBounds` prints
+      `"Expected: x = -3, Got: …"` and comments "When fixed, should be: `#expect(...)`" — that
+      assertion now exists and passes elsewhere. `detectsQuadraticObjective` and
+      `detectsBilinearConstraint` each carry a commented-out `#expect(throws:)` with "TODO: should
+      FAIL until we implement linearity checking" — and `validateLinearity` now exists.
+      **All three capabilities shipped; none of the three tests was updated.** This is precisely
+      what `withKnownIssue` is for: recorded as executable expectations, Swift Testing would have
+      reported the unexpected pass when each fix landed.
+- [ ] `CapitalBudgetingTests` accepts a **22%-suboptimal** answer by design: the three-project
+      knapsack has a unique optimum of 90 at {A, B}, and the test asserts `>= 60.0`, which admits
+      {B, C} at 70 and {A, C} at 80. The comment names the cause. `withKnownIssue` asserting 90.
+- [ ] `cutsReduceTreeSize` never compares tree sizes; `stats.totalCutsGenerated >= 0` on an unsigned
+      count; six `if stats.totalCutsGenerated > 0 { … }` guards whose bodies may never execute.
+- [ ] Four more `#expect(true)` markers — and three are a **second form** of the gate's nested-scope
+      bug: nested `struct` suites rather than nested `func`. They are the fixtures for fixing it.
+
+---
+
 ## 5. Sequencing
 
 **Re-prioritised 2026-09-13 (second revision)** after the seven-review batch. What changed the
@@ -671,6 +737,11 @@ a solver defect invisible for the life of these tests. Still ahead of the gradie
 possible case (positive excess return, zero risk) as a Sharpe of **0** inverts its meaning. One
 decision, one guard, one test.
 
+**0.45 — Restore the three stale integer-programming assertions.** Each names the exact
+expectation to write, each capability has since shipped, and each test currently asserts nothing.
+Three one-line additions that either pass — closing three recorded defects — or reveal that a
+capability shipped incomplete. Same reasoning as 0.3.
+
 **0.5 — L14: delete `StochasticTestHelpers`.** A shared helper with a closed-interval generator and
 the wrong pole guard, seeding several files at once. Deletion, not repair — `DeterministicRNG` and
 the TestSupport transform already exist.
@@ -686,11 +757,14 @@ the TestSupport transform already exist.
    not one at a time: where a caller has a real choice, name the variant at the call site and there
    is nothing left to pin; where there is a sensible default, pin it with a discriminating case.
    Several discriminating cases are already supplied (T5).
-4. **The three highest-volume gate rules, before their sweeps** — principle 3:
+4. **Q5 — settle whether `enableCuttingPlanes: true` is inert for closure objectives.** It blocks
+   the `Phase1_CutValidityTests` rewrite, and if the answer is "inert and undocumented" it is a
+   library defect rather than a test one.
+5. **The three highest-volume gate rules, before their sweeps** — principle 3:
    `?? <literal>` inside an assertion (225), ambient calendar/clock in a test target (152),
    `#expect(true)` as a test's only assertion (75). Each is a static check; each prevents the
    corresponding Wave 3 sweep from being a one-off.
-5. **`PerformanceOptimizationTests` behind `.benchmarkOnly`** — ~17 wall-clock assertions in the
+6. **`PerformanceOptimizationTests` behind `.benchmarkOnly`** — ~17 wall-clock assertions in the
    regular suite, tightest 50 ms. A standing CI-flake source, and cheap: split timings from the
    correctness assertions in the same tests.
 
@@ -760,6 +834,9 @@ the TestSupport transform already exist.
 | `#expect(true)` sweep | Wave 3, "75 hard" | **14, 53 of them mechanical** | `Never.self` substitution, not a rewrite |
 | T5 convention decisions | "decide 8 things" | **1.3, against a design rule** | name the variant at the call site where the caller has a real choice |
 | L15 three days-per-year | new | **1.3** | undecided and undocumented, adjacent to L11 |
+| 3 stale IP assertions | new | **0.45** | the expectation is already written in a comment; shipped capabilities, untested |
+| Q5 cut generation | new | **1.4** | blocks a file rewrite; may be a library defect |
+| IP certificate technique | new | **6, with the gradient certificate** | same shape: assert optimality, not plausibility |
 
 ---
 
