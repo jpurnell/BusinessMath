@@ -67,8 +67,9 @@ three already there.
 | **Marketing** | 8 files | 2026-09-13 | ✅ — 1 refuted; **carries the design answer to T5** | ⬜ |
 | **Attribution** | 2 files | 2026-09-13 | ✅ — axioms as oracle; **collapses the `#expect(true)` thread** | ⬜ |
 | **Integer programming** | 31 files | 2026-09-13 | ✅ — **confirmed by measurement, and extended**; opens Q5 | ⬜ |
+| **Network / survival / classification** | 18 files | 2026-09-13 | ✅ — **proved L7 empirically**; corrects a gate rule | ⬜ |
 
-**Twenty-one reviews, ~350 test files, and Justin has more.** The per-domain detail is §4; the reason this
+**Twenty-two reviews, ~370 test files, and Justin has more.** The per-domain detail is §4; the reason this
 file is organised around §3 instead is that the same handful of findings account for most of the
 volume.
 
@@ -92,8 +93,22 @@ question about whether it is.
 | L4 | **`debtToAssets` and `debtToEquity` use different debt definitions.** | **CORRECTED — not a bug** | Real asymmetry: `debtToEquity = interestBearingDebt / totalEquity`, `debtToAssets = totalLiabilities / totalAssets`. But the review's diagnosis is wrong twice: the numerator is **all interest-bearing debt** (accounts with `balanceSheetRole.isDebt`), not long-term debt, so the proposed rename to `longTermDebtToEquity` would be *less* accurate; and `BalanceSheet.swift:354` already documents the choice. It matched the LTD hypothesis only because LTD is the fixture's sole debt account. **Work: document it on `debtToAssets` too, and pin both values.** |
 | L5 | **`ConstrainedDriver` clamping distorts the distribution, unmeasured.** | UNVALIDATED | Claimed: Normal(1000,100) clamped to ±1σ has sd ≈ 60.6 and ~31.7% boundary mass. Arithmetic is right; whether the implementation clamps or truncates is unchecked. |
 | L6 | **`Period` arithmetic may add fixed second counts.** | **RESOLVED — it does not** | Read the source. `Period.endDate` and every `PeriodArithmetic` operation go through `calendar.date(byAdding:)` and `dateComponents`. No 86,400-second additions anywhere. The feared defect does not exist. DST still moves results, but by the mechanism in L7, not this one. |
-| L7 | **`Period`/`FiscalCalendar` read `Calendar.current` internally.** | **RESOLVED — CONFIRMED, and already known in-repo** | `Period.swift:17` and `PeriodArithmetic.swift:56` are both `private let cachedCalendar = Calendar.current`; `FiscalCalendar.swift:154,236` read it directly, as do `TimeSeriesOperations` (3), `TimeSeriesAnalytics` (1), `BondPricing` (2), `CreditSpreadModel` (4), `LeaseAccounting` (1), `DebtInstrument` (1). **~15 executable sites** (the other ~70 matches are doc comments). A module-level global captured once — not a parameter anyone can override, so **no test-side fixed calendar can reach it**. Demonstrated live: a `Period` for 2024-Q1 stores `2024-01-01 05:00:00 +0000`, i.e. midnight in `America/New_York`. |
+| L7 | **`Period`/`FiscalCalendar` read `Calendar.current` internally.** | **CONFIRMED BY MEASUREMENT, with the package's own detector** | `Period.swift:17` and `PeriodArithmetic.swift:56` are both `private let cachedCalendar = Calendar.current`; `FiscalCalendar.swift:154,236` read it directly, as do `TimeSeriesOperations` (3), `TimeSeriesAnalytics` (1), `BondPricing` (2), `CreditSpreadModel` (4), `LeaseAccounting` (1), `DebtInstrument` (1). **~15 executable sites** (the other ~70 matches are doc comments). A module-level global captured once — not a parameter anyone can override, so **no test-side fixed calendar can reach it**. Demonstrated live: a `Period` for 2024-Q1 stores `2024-01-01 05:00:00 +0000`, i.e. midnight in `America/New_York`.
+
+**Measured 2026-09-13 with `ZoneInvariance.sweep`, the harness `BondClockZoneInvarianceTests` already ships:**
+
+| sweep | `isInvariant` |
+|---|---|
+| control — `Calendar.current.component(.day,…)` | **false** (the harness has teeth) |
+| `FiscalCalendar.standard.fiscalYear(2025-01-01 UTC)` | **false** |
+| `FiscalCalendar(yearEnd: Sep 30).fiscalYear(2025-10-01 UTC)` | **false** |
+| `Period.startDate` / `.endDate` / constructed inside the sweep | true |
+
+**`FiscalCalendar.fiscalYear(for:)` returns a different fiscal year for the same instant depending on the machine's time zone.** Both failing dates are the day *after* a fiscal year-end, where a westward zone still reads the previous year — the highest-stakes place for a fiscal calendar to disagree with itself.
+
+**And `Period` reporting `true` is not reassurance — it is a blind spot (Q6).** `Period.swift:17` captures `Calendar.current` into a module-level `let`, once, at first use. Mutating `NSTimeZone.default` afterwards cannot change it, so the sweep cannot see the dependence. `Period` is not zone-independent; it is **locked to whichever zone the process started in**, which is worse and undetectable by this harness. |
 | L7a | **The fix already exists in the package, unapplied.** | **NEW** | `DayCountConvention.swift:49` defines `gregorianUTC` — Gregorian, fixed to UTC, `internal` so it is already shareable — with the doctrine written out above it, including: *"It is deliberately not named `cachedCalendar`, which is the name `Period` arithmetic uses for a cached `Calendar.current` — the opposite of this one."* and *"This reasoning was written here and applied here, while `Calendar.current` stayed in every other file that walks a schedule of dates … and the coupon grid drifted a day for exactly the reason set out above."* **This is a known, documented, unfixed defect with its own remedy sitting beside it.** |
+| Q6 | **`ZoneInvariance.sweep` cannot detect a cached calendar.** | **NEW — a blind spot in the package's own detector** | The sweep mutates `NSTimeZone.default` and re-evaluates. A module-level `private let cachedCalendar = Calendar.current` is captured once at first use and never re-read, so the sweep reports `isInvariant = true` for code that plainly depends on the ambient zone. Measured: `Period.startDate` and `.endDate` both report invariant while storing `2024-01-01 05:00:00 +0000` for 2024-Q1. **The harness's own excellent principle — "a detector that has never been observed to fire is indistinguishable from one that cannot" — applies to itself here.** The fix for the *code* is L7/0.2; the fix for the *harness* is either to document the limitation or to run each probe in a fresh process. |
 | Q5 | **Could not make `totalCutsGenerated` exceed zero on any fractional IP.** | **OPEN — needs investigation, not yet a defect claim** | Measured on four problems through the closure-objective API with `enableCuttingPlanes: true, maxCuttingRounds: 5`: `max 3x+4y s.t. 2x+3y≤11` (LP optimum x = 5.5, fractional), `max x+y s.t. 4x+5y≤17` (LP x = 4.25), and two more. Every one returned the **correct integer optimum**, but with `nodesExplored = 1`, `totalCutsGenerated = 0`, `gomoryCuts = 0`, `cuttingRounds = 0`, and an objective off by ~3e-8 from the exact integer (3.9999999752 for 4). The default relaxation *is* `SimplexRelaxationSolver`, so cuts should be reachable. **The likely innocent explanation** is the documented finite-difference path: `5.8-IntegerProgramming.md:953` says a closure objective is linearised by finite differences, which matches the 3e-8 residual and may not produce a tableau Gomory cuts can read. **What needs settling:** whether `enableCuttingPlanes: true` is inert for closure objectives, and if so whether that is documented anywhere a caller would see it. Not filed as a defect because the alternative — these fixtures are simply too small to need a cut — has not been excluded. |
 | L15 | **Three days-per-year conventions in one package.** | **NEW — found while refuting a claim** | `FinancialRatios` uses 365; `TimeSeriesAnalytics:181` and `BondPricing` use **365.25** ("to account for leap years over long periods"); `DayCountConvention` implements the ISDA set properly. None is wrong alone, and a CAGR over decades has a real case for 365.25. But the choice is undecided and undocumented, and it sits directly next to L11. Decide once, document, and route through `DayCountConvention` where a convention is genuinely at stake. |
 | L13 | **`sharpeRatio` returns 0 when risk is 0.** | **NEW — escalated from the options/portfolio review** | `Portfolio.swift:182` is `guard risk > T(0) else { return T(0) }`. The review could not tell whether the implementation guarded or the test failed; it guards. But **0 is a plausible-but-wrong answer**: a Sharpe of 0 means "no excess return per unit of risk", and the fixture earns 7.5%/yr of excess return at *exactly zero risk* — infinitely good, reported as mediocre. The guard inverts the best possible case. Same family as `a * 0 → 0` and the antithetic SE: a guard returning a plausible number where the answer is undefined. **Decide +∞, NaN or throw, then pin it.** Consequence meanwhile: `sharpeFinite` asserts `.isFinite` on a constant 0, and `optimizerBeatsEqualWeights` reduces to `0 >= 0 - 1e-6`. |
@@ -696,6 +711,52 @@ this file is rewritten around cut counts.
       count; six `if stats.totalCutsGenerated > 0 { … }` guards whose bodies may never execute.
 - [ ] Four more `#expect(true)` markers — and three are a **second form** of the gate's nested-scope
       bug: nested `struct` suites rather than nested `func`. They are the fixtures for fixing it.
+
+---
+
+### 4.11 Network, survival, classification, financial — 18 files, and the harness that proved L7
+
+**`BondClockZoneInvarianceTests` implements the time-series review's recommendation and adds what
+that recommendation lacked: a proof that the detector fires.**
+
+> "A detector that has never been observed to fire is indistinguishable from one that cannot, and
+> this entire file exists because a suite that *could not fail* was mistaken for a suite that
+> passed."
+
+`theSweepDetectsAKnownDependence` runs `Calendar.current.component(.day,…)` through the sweep and
+requires `!isInvariant` first. **This is the third independent arrival at the self-testing oracle** —
+after `enumerationIsItselfCorrect` in the integer-programming certificate and the paired
+property/violation tests in interpolation.
+
+**Using it proved L7 and found Q6** — see §2. The harness generalises, the defect is real at fiscal
+year boundaries, and the harness cannot see the `Period` case at all.
+
+**`WallClockAdoptionTests` is 33 tests of injected-clock adoption**, every one an exact equality,
+and `Sources/BusinessMath/Determinism/` already ships `ElapsedTimeSource`, `ManualElapsedTimeSource`
+and `WallClock`. **That lowers the cost of the `PerformanceOptimizationTests` item (1.6) and of any
+future timing work** — the infrastructure exists and has 33 tests behind it.
+
+**It also corrects one of my proposed gate rules.** §3.2 draws a distinction I had missed:
+
+- A **tolerance** (`abs(recorded - Date()) < 0.1`) asserts a *duration* — it can fail on a loaded
+  machine and passes for a clock that is merely close.
+- **Bracketing** (`before <= recorded && recorded <= after`) asserts *ordering* — it cannot fail for
+  a correct implementation however slow the machine, and fails for any other clock.
+
+So the proposed "flag `Date()` in test targets" rule **needs a carve-out**: flag a reading used in an
+*arithmetic* comparison; allow two readings bracketing a call. Without it the rule would flag nine
+correct tests in `WallClockAdoptionTests`. Recorded in §7.
+
+- [ ] `ClassifierEvaluationTests`' header cites tie-convention values (0.8125, 0.9375) that
+      correspond to no standard convention. Verified on its own fixture: half-credit **0.875** =
+      14/16 ✓ (the asserted value is right), strict wins 0.750, ties-as-wins 1.000, tied pairs
+      dropped 1.000. **Fourth instance of comment arithmetic being wrong while the code is right.**
+- [ ] `ExperimentDesignTests` still carries a "RED phase for v2.7.0" header while asserting exact
+      integers — check whether it now passes and drop the label if so.
+
+**Technique worth copying:** `ClassifierEvaluationTests`' Mann–Whitney helper is *deliberately* the
+naive O(n²) double loop — "this is the definition, and a test that reimplements the implementation's
+optimisation checks nothing." The implementation integrates the ROC curve; the test counts pairs.
 
 ---
 
