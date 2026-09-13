@@ -49,12 +49,12 @@ struct JumpDiffusionTests {
             jumpIntensity: 3.0, jumpMean: 0.0, jumpVolatility: 0.15
         )
 
-        var rng = StochasticTestRNG(seed: 42)
+        var rng = DeterministicRNG(seed: 42)
         var gbmValues: [Double] = []
         var jdValues: [Double] = []
 
         for _ in 0..<5_000 {
-            let dW = rng.nextNormal()
+            let (dW, _): (Double, Double) = boxMullerSeed(using: &rng)
             gbmValues.append(gbm.step(from: 100.0, dt: 1.0, normalDraws: dW))
             jdValues.append(jd.step(from: 100.0, dt: 1.0, normalDraws: dW))
         }
@@ -74,13 +74,13 @@ struct JumpDiffusionTests {
             jumpIntensity: 5.0, jumpMean: -0.20, jumpVolatility: 0.05
         )
 
-        var rng = StochasticTestRNG(seed: 77)
+        var rng = DeterministicRNG(seed: 77)
         var gbmSum = 0.0
         var jdSum = 0.0
         let n = 5_000
 
         for _ in 0..<n {
-            let dW = rng.nextNormal()
+            let (dW, _): (Double, Double) = boxMullerSeed(using: &rng)
             gbmSum += gbm.step(from: 100.0, dt: 1.0, normalDraws: dW)
             jdSum += jd.step(from: 100.0, dt: 1.0, normalDraws: dW)
         }

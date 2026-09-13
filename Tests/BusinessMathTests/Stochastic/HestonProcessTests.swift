@@ -33,12 +33,11 @@ struct HestonProcessTests {
                                     volOfVol: 0.3, correlation: -0.7)
         let dt = 1.0 / 252.0
 
-        var rng = StochasticTestRNG(seed: 42)
+        var rng = DeterministicRNG(seed: 42)
         var state = HestonState(price: 100.0, variance: 0.04)
 
         for _ in 0..<5000 {
-            let z1 = rng.nextNormal()
-            let z2 = rng.nextNormal()
+            let (z1, z2): (Double, Double) = boxMullerSeed(using: &rng)
             state = heston.step(from: state, dt: dt, normalDraw1: z1, normalDraw2: z2)
             #expect(state.price > 0, "Price should always be positive, got \(state.price)")
         }
@@ -52,14 +51,13 @@ struct HestonProcessTests {
                                     volOfVol: 0.2, correlation: -0.7)
         let dt = 1.0 / 252.0
 
-        var rng = StochasticTestRNG(seed: 55)
+        var rng = DeterministicRNG(seed: 55)
         var finalVariances: [Double] = []
 
         for _ in 0..<3000 {
             var state = HestonState(price: 100.0, variance: 0.16) // Start 4x above theta
             for _ in 0..<504 { // ~2 years daily
-                let z1 = rng.nextNormal()
-                let z2 = rng.nextNormal()
+                let (z1, z2): (Double, Double) = boxMullerSeed(using: &rng)
                 state = heston.step(from: state, dt: dt, normalDraw1: z1, normalDraw2: z2)
             }
             finalVariances.append(state.variance)

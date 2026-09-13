@@ -50,13 +50,14 @@ struct ArithmeticBrownianMotionTests {
         let abm = ArithmeticBrownianMotion(name: "Test", drift: 6.0, volatility: 10.0)
         let dt = 1.0 / 12.0
 
-        var rng = StochasticTestRNG(seed: 99)
+        var rng = DeterministicRNG(seed: 99)
         var finalValues: [Double] = []
 
         for _ in 0..<10_000 {
             var current = 100.0
             for _ in 0..<12 {
-                current = abm.step(from: current, dt: dt, normalDraws: rng.nextNormal())
+                let (z, _): (Double, Double) = boxMullerSeed(using: &rng)
+                current = abm.step(from: current, dt: dt, normalDraws: z)
             }
             finalValues.append(current)
         }

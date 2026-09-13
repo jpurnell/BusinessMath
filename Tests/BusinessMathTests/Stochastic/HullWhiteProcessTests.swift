@@ -59,15 +59,17 @@ struct HullWhiteProcessTests {
         let dt = 1.0 / 12.0
 
         // Run the same path twice with same draws
-        var rng1 = StochasticTestRNG(seed: 42)
-        var rng2 = StochasticTestRNG(seed: 42)
+        var rng1 = DeterministicRNG(seed: 42)
+        var rng2 = DeterministicRNG(seed: 42)
 
         var rate1 = 0.025
         var rate2 = 0.025
 
         for _ in 0..<24 {
-            rate1 = hw.step(from: rate1, dt: dt, normalDraws: rng1.nextNormal())
-            rate2 = hw.step(from: rate2, dt: dt, normalDraws: rng2.nextNormal())
+            let (draw1, _): (Double, Double) = boxMullerSeed(using: &rng1)
+            let (draw2, _): (Double, Double) = boxMullerSeed(using: &rng2)
+            rate1 = hw.step(from: rate1, dt: dt, normalDraws: draw1)
+            rate2 = hw.step(from: rate2, dt: dt, normalDraws: draw2)
         }
 
         #expect(identical(rate1, rate2), "Same RNG seed should produce identical paths")
@@ -81,13 +83,14 @@ struct HullWhiteProcessTests {
                                    longRunLevel: 0.05, volatility: 0.005)
         let dt = 1.0 / 12.0
 
-        var rng = StochasticTestRNG(seed: 123)
+        var rng = DeterministicRNG(seed: 123)
         var finalValues: [Double] = []
 
         for _ in 0..<5000 {
             var rate = 0.15 // Start far above 0.05
             for _ in 0..<60 { // 5 years
-                rate = hw.step(from: rate, dt: dt, normalDraws: rng.nextNormal())
+                let (z, _): (Double, Double) = boxMullerSeed(using: &rng)
+                rate = hw.step(from: rate, dt: dt, normalDraws: z)
             }
             finalValues.append(rate)
         }
@@ -108,11 +111,12 @@ struct HullWhiteProcessTests {
         let dt = 1.0 / 252.0 // daily step
         let r0 = 0.03
 
-        var rng = StochasticTestRNG(seed: 77)
+        var rng = DeterministicRNG(seed: 77)
         var values: [Double] = []
 
         for _ in 0..<10000 {
-            let r = hw.step(from: r0, dt: dt, normalDraws: rng.nextNormal())
+            let (z, _): (Double, Double) = boxMullerSeed(using: &rng)
+            let r = hw.step(from: r0, dt: dt, normalDraws: z)
             values.append(r)
         }
 
@@ -135,13 +139,14 @@ struct HullWhiteProcessTests {
                                    longRunLevel: 0.0, volatility: 0.05)
         let dt = 1.0 / 12.0
 
-        var rng = StochasticTestRNG(seed: 99)
+        var rng = DeterministicRNG(seed: 99)
         var foundNegative = false
 
         for _ in 0..<5000 {
             var rate = 0.01
             for _ in 0..<12 {
-                rate = hw.step(from: rate, dt: dt, normalDraws: rng.nextNormal())
+                let (z, _): (Double, Double) = boxMullerSeed(using: &rng)
+                rate = hw.step(from: rate, dt: dt, normalDraws: z)
                 if rate < 0 {
                     foundNegative = true
                     break

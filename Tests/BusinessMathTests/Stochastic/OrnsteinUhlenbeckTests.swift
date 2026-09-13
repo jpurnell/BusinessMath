@@ -130,13 +130,13 @@ struct OrnsteinUhlenbeckTests {
         let ou = OrnsteinUhlenbeck(name: "Test", speed: 0.5, longRunMean: 70.0, volatility: 5.0)
         let dt = 1.0 / 12.0
 
-        var rng = StochasticTestRNG(seed: 42)
+        var rng = DeterministicRNG(seed: 42)
         var finalValues: [Double] = []
 
         for _ in 0..<10_000 {
             var current = 100.0 // Start far from mean
             for _ in 0..<120 { // 10 years
-                let z = rng.nextNormal()
+                let (z, _): (Double, Double) = boxMullerSeed(using: &rng)
                 current = ou.step(from: current, dt: dt, normalDraws: z)
             }
             finalValues.append(current)

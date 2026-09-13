@@ -600,7 +600,7 @@ worth stealing: **assert the property, then assert a sibling implementation viol
 must not overshoot and a spline on the same data *must* — "if it did not, the two would be the same
 code and the property above would be vacuous." `AsymmetricGarchTests` uses nesting as its oracle
 (APARCH at γ=0, δ=2 *is* GARCH).
-- [ ] **L14** — delete `StochasticTestHelpers`.
+- [x] ~~**L14** — delete `StochasticTestHelpers`.~~ ✅ **DONE** — see A2.
 - [ ] `ProcessStateTests`/`MeasureTagTests` assert literals against themselves; the *binding* is the
       test and it is a compile-time one. Keep the bindings, delete the assertions.
 - [ ] `FinancialReferenceValidationTests` recomputes NPV's expected value from the implementation's
@@ -854,7 +854,7 @@ found *by fixing* rather than by reviewing — L16, fixed, and L17, recorded.
   where a convention is genuinely at stake.
 - ~~**L2** `bayes` being `Double`-only.~~ ✅ **DONE** with B4 — generic over `T: Real`.
 - ~~**L3** `runFinancialSimulation` without `seed:`.~~ ✅ **DONE**, additively — see A1.
-- **L14** delete `StochasticTestHelpers`. Test-only; no bearing on the tag.
+- ~~**L14** delete `StochasticTestHelpers`.~~ ✅ **DONE** — see A2. Test-only; no bearing on the tag.
 
 **AFTER — everything else**, ordered in §5.2. The 225 `?? 0` sites do not make the library wrong;
 they make it under-tested. That is the next release's problem, but it is a *sequenced* problem.
@@ -885,7 +885,7 @@ Small, release-relevant, and two of them are breaking so they belong in the majo
 | | Item | Done when |
 |---|---|---|
 | ~~**A1**~~ | ~~**L3** — `seed:` on `runFinancialSimulation`~~ | ✅ **DONE — and additive, not breaking.** The randomness was never in `runFinancialSimulation`: it is in the caller's builder closure, which had nowhere to put a generator. Drivers already had `sample(for:using:)`. So a `SeededStatementBuilder` and a `run(…using:builder:)` overload thread one through, and existing builders are untouched. T3 is unblocked. |
-| **A2** | **L14** — delete `StochasticTestHelpers`. | The file is gone, its users take `DeterministicRNG` and the TestSupport Box-Muller, and no test constructs its own uniform. |
+| ~~**A2**~~ | ~~**L14** — delete `StochasticTestHelpers`.~~ | ✅ **DONE.** The file is gone and its 13 call sites across 6 files take `DeterministicRNG` and the library's `boxMullerSeed(using:)`. The Box-Muller is the *library's*, not TestSupport's — TestSupport has no transform, and the library's is the one whose `openUnitUniform` is open by construction. Both contract bugs were reproduced before deletion rather than taken on the review's word: the recurrence is a **full-period** LCG (modulus 2⁶⁴, increment 1, multiplier ≡ 1 mod 4), so both endpoints are *guaranteed* rather than unlikely, and inverting it gives the exact seeds. Seed `4568919932995229531` returns `u == 0.0`, where the `max(u1, 1e-15)` guard yields **z = 8.31** — an 8.3σ "standard normal" delivered deterministically. Seed `9137839865990459062` returns `u == 1.0`, unguarded, where `log(1) = 0` collapses the draw to **exactly 0.0**. Neither throws. At one occurrence per 2⁶⁴ draws both were latent, not firing — the live defect was duplication in a *shared* helper. |
 | **A3** | **L4** — document the debt asymmetry. | `debtToAssets` says it uses total liabilities, as `interestBearingDebt` already says it uses interest-bearing debt, and both values are pinned on the shared fixture. |
 | **A4** | **L15** — decide 365 vs 365.25. | One convention stated per call site, documented, and routed through `DayCountConvention` wherever a convention is genuinely at stake. |
 | **A5** | **L12** — decide the outlier rule. | Either a modified-z or IQR rule exists, or the z-score's masking limitation is documented at `AnomalyDetection.detect` with the worked example. |

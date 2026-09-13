@@ -106,13 +106,13 @@ struct GeometricBrownianMotionTests {
         let steps = 12 // 1 year
 
         // Run 10,000 paths with deterministic RNG
-        var rng = StochasticTestRNG(seed: 42)
+        var rng = DeterministicRNG(seed: 42)
         var finalValues: [Double] = []
 
         for _ in 0..<10_000 {
             var current = s0
             for _ in 0..<steps {
-                let z = rng.nextNormal()
+                let (z, _): (Double, Double) = boxMullerSeed(using: &rng)
                 current = gbm.step(from: current, dt: dt, normalDraws: z)
             }
             finalValues.append(current)
@@ -130,13 +130,13 @@ struct GeometricBrownianMotionTests {
         let gbm = GeometricBrownianMotion(name: "HighVol", drift: 0.0, volatility: 1.0)
         let dt = 1.0 / 252.0 // daily
 
-        var rng = StochasticTestRNG(seed: 123)
+        var rng = DeterministicRNG(seed: 123)
         var minValue = Double.infinity
 
         for _ in 0..<10_000 {
             var current = 10.0 // Start small to stress positivity
             for _ in 0..<252 {
-                let z = rng.nextNormal()
+                let (z, _): (Double, Double) = boxMullerSeed(using: &rng)
                 current = gbm.step(from: current, dt: dt, normalDraws: z)
                 minValue = min(minValue, current)
             }
