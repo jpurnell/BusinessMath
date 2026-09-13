@@ -1,10 +1,10 @@
 # Handoff — 2026-09-13
 
-**`main` is `3c979828`, pushed and verified by `ls-remote`. `v3.0.0-alpha.5` is tagged and
+**`main` is `43aaba32`, pushed and verified by `ls-remote`. `v3.0.0-alpha.5` is tagged and
 CI-green.** The work queue is **`project/plans/TEST_REVIEW_ROADMAP.md`** — read that before
 anything else; this file is the state and the traps, that file is the plan.
 
-The next piece of work is **Phase A2**, and it needs no decisions.
+The next piece of work is **Phase A3**, and it needs no decisions.
 
 ## State
 
@@ -43,31 +43,44 @@ them, and then **the six defects blocking 3.0.0 were fixed and shipped as `v3.0.
 Earlier in the session, Phase 1 of `REVIEW_simulation_tests.md` and the GPU error-parity work also
 shipped into the same tag.
 
-### And A1, since the tag
+### And A1 and A2, since the tag
 
-`runFinancialSimulation` gained a seed — **additively, not breaking**, because the randomness was
-never there. See §4.
+**A1** — `runFinancialSimulation` gained a seed, **additively, not breaking**, because the
+randomness was never there. See §4.
+
+**A2** (`43aaba32`) — `StochasticTestHelpers` is deleted; its 13 call sites across 6 process
+suites take `DeterministicRNG` and the library's `boxMullerSeed(using:)`. Two corrections worth
+carrying: the roadmap said users should take "the TestSupport Box-Muller" and **there isn't one** —
+TestSupport has no normal transform, and the library's is the right target because its
+`openUnitUniform` is open *by construction*. And the helper's contract bugs were *reproduced*, not
+taken on the review's word: its recurrence is a **full-period** LCG (modulus 2⁶⁴, increment 1,
+multiplier ≡ 1 mod 4), so Hull-Dobell makes both endpoints **guaranteed** rather than unlikely, and
+inverting it gives the seeds. `4568919932995229531` → `u == 0.0`, where the `max(u1, 1e-15)` guard
+yields **z = 8.31**, an 8.3σ normal delivered deterministically; `9137839865990459062` → `u == 1.0`,
+unguarded, where `log(1) = 0` collapses the draw to **exactly 0.0**. At one hit per 2⁶⁴ draws both
+were latent — the live defect was that it was *shared*.
 
 ---
 
-## 2. Next: Phase A2, then the rest of Phase A
+## 2. Next: Phase A3, then the rest of Phase A
 
 `TEST_REVIEW_ROADMAP.md` §5.2 is the order. Every item carries a **done when**, so no further
 decisions are needed to proceed.
 
-**A2 — delete `Tests/BusinessMathTests/Stochastic/StochasticTestHelpers.swift`.** A *shared* test
-helper whose generator is `Double(state) / Double(UInt64.max)` — **closed on both ends**, returning
-exactly 1.0 and exactly 0.0, while its own documentation says `(0, 1)`. Its Box-Muller uses
-`max(u1, 1e-15)`, the guard shape `BoxMullerPoleGuardTests` explicitly calls wrong, and does not
-guard u₁ = 1.0 where `log(1) = 0` collapses the draw. It duplicates `MMIXSeededRNG`, already in
-TestSupport. It is the first inline Box-Muller found in a shared helper, so it seeds several files
-at once.
+**A3 — document the debt asymmetry (L4).** `debtToAssets` should say it uses total liabilities, as
+`interestBearingDebt` already says it uses interest-bearing debt, and both values pinned on the
+shared fixture.
 
-**Done when:** the file is gone, its users take `DeterministicRNG` and the TestSupport Box-Muller,
-and no test constructs its own uniform.
+**Done when:** both are documented and both values are pinned on the shared fixture.
 
-Then A3 (document the debt asymmetry), A4 (365 vs 365.25), A5 (the outlier rule), A6 (the counter
-asymmetry). Then Phase B.
+Then A4 (365 vs 365.25), A5 (the outlier rule), A6 (the counter asymmetry — closing it would clear
+the one known issue). Then Phase B.
+
+**On the gate's 10 warnings.** `--no-cache --check all` reports 0 errors and **10 warnings**, all
+from `[test-quality]` and all one class: a test *claims* an improvement but asserts `<=` or `>=`,
+which an unchanged implementation also satisfies. They sit in ten different directories, none of
+them touched by A1 or A2. This is **Phase B1's material**, not drift — leave them until B, where
+the roadmap says not to sweep past a red.
 
 ---
 
@@ -141,6 +154,20 @@ became `#require`.
 **The pre-commit gate takes ~9 minutes and the harness caps a command at 10.** A commit will look
 like it timed out while succeeding. **Check `git log` before retrying, and never background a
 commit** — a peer session shares this index.
+
+**The pre-commit hook runs a *bare* `quality-gate`** — no `--no-cache`, no `--check all`. That is
+the cached subset, and it prints a PASSED line indistinguishable from a full run. **A green commit
+is not evidence the gate is clean; run it yourself.** The hook's own header records the sibling
+lesson — it used to pipe through `| tail -3`, keeping the summary and discarding the findings above
+it, so "a blocked commit reported only that it had been blocked."
+
+**`git add -- <path>` on an already-deleted file fails with `fatal: pathspec … did not match`, and
+that aborts the *entire* add** — every other path on the same command line goes unstaged, silently.
+Commit "with explicit paths" then produces a commit holding only whatever was already in the index.
+It bit A2: the deletion had been staged by `git rm`, so the commit landed as *delete the helper,
+keep the six files that call it* — a broken tree that still reported success. Stage the deletion
+separately (or let `git rm` carry it) and **read the `--stat` line the commit prints**: "1 file
+changed" where you expected eight is the whole tell.
 
 **The gate rejects `==` on floating-point operands** against a non-zero literal. Use `isEqual(to:)`
 where the comparison is deliberate; `== 0.0` is permitted. Auditor justification comments must be
