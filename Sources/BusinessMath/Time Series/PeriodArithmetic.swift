@@ -53,7 +53,8 @@ extension PeriodError: LocalizedError {
 /// Creating Calendar instances is expensive. This cached instance significantly
 /// improves performance for operations that require calendar calculations,
 /// such as period arithmetic and projections.
-private let cachedCalendar = Calendar.current
+/// The calendar period arithmetic goes through. See the note in `Period.swift`.
+private let cachedCalendar = gregorianUTC
 
 // MARK: - Distance and Arithmetic Operations
 

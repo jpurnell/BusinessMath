@@ -190,7 +190,7 @@ public struct Bond<T: Real>: BondLike where T: Sendable {
     public func cashFlowSchedule(asOf: Date = Date()) -> [BondCashFlow<T>] {
         var cashFlows: [BondCashFlow<T>] = []
 
-        let calendar = Calendar.current
+        let calendar = gregorianUTC
         let periodsPerYear = paymentFrequency.periodsPerYear
         let m = T(periodsPerYear)  // Convert Int to T
         let couponPayment = faceValue * couponRate / m
@@ -852,7 +852,7 @@ public struct AmortizingBond<T: Real>: BondLike where T: Sendable {
     public func cashFlowSchedule(asOf: Date = Date()) -> [BondCashFlow<T>] {
         var cashFlows: [BondCashFlow<T>] = []
 
-        let calendar = Calendar.current
+        let calendar = gregorianUTC
         let periodsPerYear = paymentFrequency.periodsPerYear
         let m = T(periodsPerYear)
         let monthsBetween = 12 / periodsPerYear

@@ -10,6 +10,11 @@ import Foundation
 import TestSupport
 @testable import BusinessMath
 
+// Dates here are built and read back through the same fixed Gregorian UTC calendar the
+// library uses. `Calendar.current` would construct one instant and read another: a period
+// created at 14:30 UTC reads back as 09:30 in New York, and the test would be asserting
+// the runner's time zone rather than the arithmetic.
+
 @Suite("Period Tests")
 struct PeriodTests {
 
@@ -30,7 +35,7 @@ struct PeriodTests {
 		)
 		#expect(period.type == .millisecond)
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents(
 			[.year, .month, .day, .hour, .minute, .second, .nanosecond],
 			from: period.date
@@ -55,7 +60,7 @@ struct PeriodTests {
 		)
 		#expect(period.type == .second)
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents(
 			[.year, .month, .day, .hour, .minute, .second],
 			from: period.date
@@ -76,7 +81,7 @@ struct PeriodTests {
 		)
 		#expect(period.type == .minute)
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents(
 			[.year, .month, .day, .hour, .minute],
 			from: period.date
@@ -96,7 +101,7 @@ struct PeriodTests {
 		)
 		#expect(period.type == .hourly)
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents(
 			[.year, .month, .day, .hour],
 			from: period.date
@@ -117,7 +122,7 @@ struct PeriodTests {
 		#expect(period.type == .daily)
 
 		// Compare date components rather than exact Date (timezone-aware)
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let inputComponents = calendar.dateComponents([.year, .month, .day], from: date)
 		let periodComponents = calendar.dateComponents([.year, .month, .day], from: period.date)
 
@@ -230,7 +235,7 @@ struct PeriodTests {
 		let period = Period.month(year: 2025, month: 1)
 		let startDate = period.startDate
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: startDate)
 
 		#expect(components.year == 2025)
@@ -246,7 +251,7 @@ struct PeriodTests {
 		let period = Period.month(year: 2025, month: 3)
 		let startDate = period.startDate
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.year, .month, .day], from: startDate)
 
 		#expect(components.year == 2025)
@@ -261,7 +266,7 @@ struct PeriodTests {
 		let q3 = Period.quarter(year: 2025, quarter: 3)
 		let q4 = Period.quarter(year: 2025, quarter: 4)
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 
 		let q1Start = calendar.dateComponents([.year, .month, .day], from: q1.startDate)
 		#expect(q1Start.month == 1)
@@ -285,7 +290,7 @@ struct PeriodTests {
 		let period = Period.year(2025)
 		let startDate = period.startDate
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.year, .month, .day], from: startDate)
 
 		#expect(components.year == 2025)
@@ -300,7 +305,7 @@ struct PeriodTests {
 		let jan = Period.month(year: 2025, month: 1)
 		let feb = Period.month(year: 2025, month: 2)
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 
 		let janEnd = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: jan.endDate)
 		#expect(janEnd.year == 2025)
@@ -320,7 +325,7 @@ struct PeriodTests {
 	func februaryLeapYear() {
 		let feb2024 = Period.month(year: 2024, month: 2) // 2024 is a leap year
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.day], from: feb2024.endDate)
 
 		#expect(components.day == 29)
@@ -330,7 +335,7 @@ struct PeriodTests {
 	func quarterlyEndDate() {
 		let q1 = Period.quarter(year: 2025, quarter: 1)
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.year, .month, .day], from: q1.endDate)
 
 		#expect(components.year == 2025)
@@ -342,7 +347,7 @@ struct PeriodTests {
 	func annualEndDate() {
 		let period = Period.year(2025)
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.year, .month, .day], from: period.endDate)
 
 		#expect(components.year == 2025)
@@ -387,7 +392,7 @@ struct PeriodTests {
 		components.year = 2025
 		components.month = 1
 		components.day = 15
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let date = try #require(calendar.date(from: components))
 //		print(date)
 		let period = Period.day(date)
@@ -576,7 +581,7 @@ struct PeriodTests {
 		#expect(months.count == 12)
 
 		// Check first and last months
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let firstMonth = calendar.dateComponents([.month], from: months[0].startDate)
 		let lastMonth = calendar.dateComponents([.month], from: months[11].startDate)
 
@@ -591,7 +596,7 @@ struct PeriodTests {
 
 		#expect(months.count == 3)
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let month1 = calendar.dateComponents([.month], from: months[0].startDate)
 		let month2 = calendar.dateComponents([.month], from: months[1].startDate)
 		let month3 = calendar.dateComponents([.month], from: months[2].startDate)
@@ -629,7 +634,7 @@ struct PeriodTests {
 		#expect(quarters.count == 4)
 
 		// Check that each quarter starts in correct month
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let q1Start = calendar.dateComponents([.month], from: quarters[0].startDate)
 		let q2Start = calendar.dateComponents([.month], from: quarters[1].startDate)
 		let q3Start = calendar.dateComponents([.month], from: quarters[2].startDate)
@@ -808,7 +813,7 @@ struct PeriodTests {
 
 		#expect(dec < jan)
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let decEnd = calendar.dateComponents([.year, .month, .day], from: dec.endDate)
 		let janStart = calendar.dateComponents([.year, .month, .day], from: jan.startDate)
 
@@ -864,7 +869,7 @@ struct PeriodTests {
 		let period = Period.day(date)
 
 		// The stored date should be at the start of the day
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let startOfDay = calendar.startOfDay(for: date)
 		let components1 = calendar.dateComponents([.year, .month, .day], from: period.date)
 		let components2 = calendar.dateComponents([.year, .month, .day], from: startOfDay)

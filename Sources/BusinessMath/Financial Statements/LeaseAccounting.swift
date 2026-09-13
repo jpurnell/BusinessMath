@@ -499,7 +499,7 @@ public struct Lease {
 
         // Use periods if available to determine actual years
         if let periods = periods, let startPeriod = periods.first {
-            let calendar = Calendar.current
+            let calendar = gregorianUTC
             let startYear = calendar.component(.year, from: startPeriod.startDate)
 
             for (index, payment) in payments.enumerated() {

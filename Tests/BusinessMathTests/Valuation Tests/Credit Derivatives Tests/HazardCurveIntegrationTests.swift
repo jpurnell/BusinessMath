@@ -11,6 +11,11 @@ import TestSupport  // Cross-platform math functions
 import Foundation
 @testable import BusinessMath
 
+// Dates here are built and read back through the same fixed Gregorian UTC calendar the
+// library uses. `Calendar.current` would construct one instant and read another: a period
+// created at 14:30 UTC reads back as 09:30 in New York, and the test would be asserting
+// the runner's time zone rather than the arithmetic.
+
 @Suite("Hazard Curve Integration Tests")
 struct HazardCurveIntegrationTests {
 
@@ -40,7 +45,7 @@ struct HazardCurveIntegrationTests {
         components.year = year
         components.month = month
         components.day = day
-        guard let date = Calendar.current.date(from: components) else {
+        guard let date = gregorianUTC.date(from: components) else {
             fatalError("Unable to build \(year)-\(month)-\(day)")
         }
         return date

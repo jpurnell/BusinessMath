@@ -9,6 +9,11 @@ import Testing
 import Foundation
 @testable import BusinessMath
 
+// Dates here are built and read back through the same fixed Gregorian UTC calendar the
+// library uses. `Calendar.current` would construct one instant and read another: a period
+// created at 14:30 UTC reads back as 09:30 in New York, and the test would be asserting
+// the runner's time zone rather than the arithmetic.
+
 @Suite("FiscalCalendar Tests")
 struct FiscalCalendarTests {
 
@@ -64,7 +69,7 @@ struct FiscalCalendarTests {
 		components.year = 2025
 		components.month = 1
 		components.day = 15
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let date = try #require(calendar.date(from: components))
 
 		let fy = standard.fiscalYear(for: date)
@@ -80,7 +85,7 @@ struct FiscalCalendarTests {
 		components.year = 2025
 		components.month = 12
 		components.day = 15
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let date = try #require(calendar.date(from: components))
 
 		let fy = standard.fiscalYear(for: date)
@@ -105,7 +110,7 @@ struct FiscalCalendarTests {
 		components.year = 2024
 		components.month = 10
 		components.day = 1
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let date = try #require(calendar.date(from: components))
 
 		let fy = apple.fiscalYear(for: date)
@@ -121,7 +126,7 @@ struct FiscalCalendarTests {
 		components.year = 2024
 		components.month = 9
 		components.day = 30
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let date = try #require(calendar.date(from: components))
 
 		let fy = apple.fiscalYear(for: date)
@@ -137,7 +142,7 @@ struct FiscalCalendarTests {
 		components.year = 2025
 		components.month = 1
 		components.day = 15
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let date = try #require(calendar.date(from: components))
 
 		let fy = apple.fiscalYear(for: date)
@@ -155,7 +160,7 @@ struct FiscalCalendarTests {
 		components.year = 2025
 		components.month = 1
 		components.day = 15
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let jan = try #require(calendar.date(from: components))
 		#expect(standard.fiscalQuarter(for: jan) == 1)
 
@@ -174,7 +179,7 @@ struct FiscalCalendarTests {
 		components.year = 2025
 		components.month = 4
 		components.day = 1
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let apr = try #require(calendar.date(from: components))
 		#expect(standard.fiscalQuarter(for: apr) == 2)
 
@@ -192,7 +197,7 @@ struct FiscalCalendarTests {
 		components.year = 2025
 		components.month = 7
 		components.day = 1
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let jul = try #require(calendar.date(from: components))
 		#expect(standard.fiscalQuarter(for: jul) == 3)
 
@@ -210,7 +215,7 @@ struct FiscalCalendarTests {
 		components.year = 2025
 		components.month = 10
 		components.day = 1
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let oct = try #require(calendar.date(from: components))
 		#expect(standard.fiscalQuarter(for: oct) == 4)
 
@@ -228,7 +233,7 @@ struct FiscalCalendarTests {
 		components.year = 2024
 		components.month = 10
 		components.day = 1
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let oct = try #require(calendar.date(from: components))
 		#expect(apple.fiscalQuarter(for: oct) == 1)
 
@@ -246,7 +251,7 @@ struct FiscalCalendarTests {
 		components.year = 2025
 		components.month = 1
 		components.day = 15
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let jan = try #require(calendar.date(from: components))
 		#expect(apple.fiscalQuarter(for: jan) == 2)
 
@@ -264,7 +269,7 @@ struct FiscalCalendarTests {
 		components.year = 2025
 		components.month = 4
 		components.day = 15
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let apr = try #require(calendar.date(from: components))
 		#expect(apple.fiscalQuarter(for: apr) == 3)
 
@@ -282,7 +287,7 @@ struct FiscalCalendarTests {
 		components.year = 2025
 		components.month = 7
 		components.day = 15
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let jul = try #require(calendar.date(from: components))
 		#expect(apple.fiscalQuarter(for: jul) == 4)
 
@@ -301,7 +306,7 @@ struct FiscalCalendarTests {
 		var components = DateComponents()
 		components.year = 2025
 		components.day = 15
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 
 		for month in 1...12 {
 			components.month = month
@@ -319,7 +324,7 @@ struct FiscalCalendarTests {
 		components.year = 2024
 		components.month = 10
 		components.day = 15
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let date = try #require(calendar.date(from: components))
 
 		let fiscalMonth = apple.fiscalMonth(for: date)
@@ -334,7 +339,7 @@ struct FiscalCalendarTests {
 		components.year = 2025
 		components.month = 9
 		components.day = 15
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let date = try #require(calendar.date(from: components))
 
 		let fiscalMonth = apple.fiscalMonth(for: date)
@@ -349,7 +354,7 @@ struct FiscalCalendarTests {
 		components.year = 2025
 		components.month = 1
 		components.day = 15
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let date = try #require(calendar.date(from: components))
 
 		let fiscalMonth = apple.fiscalMonth(for: date)
@@ -447,7 +452,7 @@ struct FiscalCalendarTests {
 		components.year = 2024
 		components.month = 7
 		components.day = 1
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let date = try #require(calendar.date(from: components))
 
 		let fy = june30.fiscalYear(for: date)
@@ -463,7 +468,7 @@ struct FiscalCalendarTests {
 		components.year = 2024
 		components.month = 4
 		components.day = 1
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let date = try #require(calendar.date(from: components))
 
 		let fy = march31.fiscalYear(for: date)
@@ -481,7 +486,7 @@ struct FiscalCalendarTests {
 		components.year = 2024
 		components.month = 2
 		components.day = 29
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let date = try #require(calendar.date(from: components))
 
 		let fy = standard.fiscalYear(for: date)
@@ -506,7 +511,7 @@ struct FiscalCalendarTests {
 		components.hour = 23
 		components.minute = 59
 		components.second = 59
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let endDate = try #require(calendar.date(from: components))
 
 		let fy = apple.fiscalYear(for: endDate)
@@ -525,7 +530,7 @@ struct FiscalCalendarTests {
 		components.hour = 0
 		components.minute = 0
 		components.second = 0
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let nextDate = try #require(calendar.date(from: components))
 
 		let fy = apple.fiscalYear(for: nextDate)
@@ -540,7 +545,7 @@ struct FiscalCalendarTests {
 		components.year = 2024
 		components.month = 10
 		components.day = 15
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let date = try #require(calendar.date(from: components))
 
 		let day = Period.day(date)

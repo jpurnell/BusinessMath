@@ -9,6 +9,11 @@ import Testing
 import Foundation
 @testable import BusinessMath
 
+// Dates here are built and read back through the same fixed Gregorian UTC calendar the
+// library uses. `Calendar.current` would construct one instant and read another: a period
+// created at 14:30 UTC reads back as 09:30 in New York, and the test would be asserting
+// the runner's time zone rather than the arithmetic.
+
 @Suite("Period Arithmetic Tests")
 struct PeriodArithmeticTests {
 
@@ -19,7 +24,7 @@ struct PeriodArithmeticTests {
 		let start = Period.millisecond(year: 2025, month: 1, day: 29, hour: 14, minute: 30, second: 45, millisecond: 500)
 		let end = start + 750  // Add 750 milliseconds
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.second, .nanosecond], from: end.date)
 		#expect(components.second == 46)  // Should advance to next second
 		// 500ms + 750ms = 1250ms = 1 second + 250ms
@@ -33,7 +38,7 @@ struct PeriodArithmeticTests {
 		let start = Period.second(year: 2025, month: 1, day: 29, hour: 14, minute: 30, second: 0)
 		let end = start + 1500  // Add 1500 seconds = 25 minutes
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.hour, .minute, .second], from: end.date)
 		#expect(components.hour == 14)
 		#expect(components.minute == 55)
@@ -45,7 +50,7 @@ struct PeriodArithmeticTests {
 		let start = Period.minute(year: 2025, month: 1, day: 29, hour: 14, minute: 0)
 		let end = start + 150  // Add 150 minutes = 2.5 hours
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.hour, .minute], from: end.date)
 		#expect(components.hour == 16)
 		#expect(components.minute == 30)
@@ -56,7 +61,7 @@ struct PeriodArithmeticTests {
 		let start = Period.hour(year: 2025, month: 1, day: 29, hour: 10)
 		let end = start + 5
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.hour], from: end.date)
 		#expect(components.hour == 15)
 	}
@@ -66,7 +71,7 @@ struct PeriodArithmeticTests {
 		let start = Period.hour(year: 2025, month: 1, day: 29, hour: 22)
 		let end = start + 4  // Should cross to next day
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.day, .hour], from: end.date)
 		#expect(components.day == 30)
 		#expect(components.hour == 2)
@@ -117,7 +122,7 @@ struct PeriodArithmeticTests {
 
 		#expect(feb.type == .monthly)
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.year, .month], from: feb.startDate)
 		#expect(components.year == 2025)
 		#expect(components.month == 2)
@@ -128,7 +133,7 @@ struct PeriodArithmeticTests {
 		let jan = Period.month(year: 2025, month: 1)
 		let apr = jan + 3
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.year, .month], from: apr.startDate)
 		#expect(components.year == 2025)
 		#expect(components.month == 4)
@@ -139,7 +144,7 @@ struct PeriodArithmeticTests {
 		let dec2024 = Period.month(year: 2024, month: 12)
 		let jan2025 = dec2024 + 1
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.year, .month], from: jan2025.startDate)
 		#expect(components.year == 2025)
 		#expect(components.month == 1)
@@ -150,7 +155,7 @@ struct PeriodArithmeticTests {
 		let jan2025 = Period.month(year: 2025, month: 1)
 		let jan2026 = jan2025 + 12
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.year, .month], from: jan2026.startDate)
 		#expect(components.year == 2026)
 		#expect(components.month == 1)
@@ -163,7 +168,7 @@ struct PeriodArithmeticTests {
 
 		#expect(q2.type == .quarterly)
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.month], from: q2.startDate)
 		#expect(components.month == 4) // Q2 starts in April
 	}
@@ -173,7 +178,7 @@ struct PeriodArithmeticTests {
 		let q4_2024 = Period.quarter(year: 2024, quarter: 4)
 		let q1_2025 = q4_2024 + 1
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.year, .month], from: q1_2025.startDate)
 		#expect(components.year == 2025)
 		#expect(components.month == 1)
@@ -185,7 +190,7 @@ struct PeriodArithmeticTests {
 		components.year = 2025
 		components.month = 1
 		components.day = 15
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let date = try #require(calendar.date(from: components))
 
 		let day1 = Period.day(date)
@@ -203,7 +208,7 @@ struct PeriodArithmeticTests {
 		components.year = 2025
 		components.month = 1
 		components.day = 31
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let date = try #require(calendar.date(from: components))
 
 		let jan31 = Period.day(date)
@@ -220,7 +225,7 @@ struct PeriodArithmeticTests {
 		let year2025 = Period.year(2025)
 		let year2026 = year2025 + 1
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.year], from: year2026.startDate)
 		#expect(components.year == 2026)
 	}
@@ -240,7 +245,7 @@ struct PeriodArithmeticTests {
 		let feb = Period.month(year: 2025, month: 2)
 		let jan = feb - 1
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.year, .month], from: jan.startDate)
 		#expect(components.year == 2025)
 		#expect(components.month == 1)
@@ -251,7 +256,7 @@ struct PeriodArithmeticTests {
 		let jan2025 = Period.month(year: 2025, month: 1)
 		let dec2024 = jan2025 - 1
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.year, .month], from: dec2024.startDate)
 		#expect(components.year == 2024)
 		#expect(components.month == 12)
@@ -262,7 +267,7 @@ struct PeriodArithmeticTests {
 		let jan2026 = Period.month(year: 2026, month: 1)
 		let jan2025 = jan2026 - 12
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.year, .month], from: jan2025.startDate)
 		#expect(components.year == 2025)
 		#expect(components.month == 1)
@@ -273,7 +278,7 @@ struct PeriodArithmeticTests {
 		let q2 = Period.quarter(year: 2025, quarter: 2)
 		let q1 = q2 - 1
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.month], from: q1.startDate)
 		#expect(components.month == 1) // Q1 starts in January
 	}
@@ -283,7 +288,7 @@ struct PeriodArithmeticTests {
 		let q1_2025 = Period.quarter(year: 2025, quarter: 1)
 		let q4_2024 = q1_2025 - 1
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.year, .month], from: q4_2024.startDate)
 		#expect(components.year == 2024)
 		#expect(components.month == 10)
@@ -295,7 +300,7 @@ struct PeriodArithmeticTests {
 		components.year = 2025
 		components.month = 1
 		components.day = 16
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let date = try #require(calendar.date(from: components))
 
 		let day2 = Period.day(date)
@@ -313,7 +318,7 @@ struct PeriodArithmeticTests {
 		components.year = 2025
 		components.month = 2
 		components.day = 1
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let date = try #require(calendar.date(from: components))
 
 		let feb1 = Period.day(date)
@@ -330,7 +335,7 @@ struct PeriodArithmeticTests {
 		let year2026 = Period.year(2026)
 		let year2025 = year2026 - 1
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.year], from: year2025.startDate)
 		#expect(components.year == 2025)
 	}
@@ -412,7 +417,7 @@ struct PeriodArithmeticTests {
 		components.year = 2025
 		components.month = 1
 		components.day = 1
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let date1 = try #require(calendar.date(from: components))
 
 		components.day = 10
@@ -547,7 +552,7 @@ struct PeriodArithmeticTests {
 		let jan2020 = Period.month(year: 2020, month: 1)
 		let jan2030 = jan2020 + 120 // 10 years = 120 months
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.year, .month], from: jan2030.startDate)
 		#expect(components.year == 2030)
 		#expect(components.month == 1)
@@ -558,7 +563,7 @@ struct PeriodArithmeticTests {
 		let jan2030 = Period.month(year: 2030, month: 1)
 		let jan2020 = jan2030 - 120 // 10 years = 120 months
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.year, .month], from: jan2020.startDate)
 		#expect(components.year == 2020)
 		#expect(components.month == 1)
@@ -587,7 +592,7 @@ struct PeriodArithmeticTests {
 		components.year = 2024
 		components.month = 2
 		components.day = 29
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let leapDay = try #require(calendar.date(from: components))
 
 		let feb29_2024 = Period.day(leapDay)
@@ -603,7 +608,7 @@ struct PeriodArithmeticTests {
 		let mar = Period.month(year: 2025, month: 3)
 		let jan = mar + (-2) // Same as mar - 2
 
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.month], from: jan.startDate)
 		#expect(components.month == 1)
 	}

@@ -151,7 +151,7 @@ public struct FiscalCalendar: Codable, Equatable, Sendable {
 	/// let fy = apple.fiscalYear(for: jan2025)  // 2025 (part of FY2025)
 	/// ```
 	public func fiscalYear(for date: Date) -> Int {
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.year, .month, .day], from: date)
 		let calendarYear = components.year ?? 0
 		let month = components.month ?? 0
@@ -233,7 +233,7 @@ public struct FiscalCalendar: Codable, Equatable, Sendable {
 	/// let fm = apple.fiscalMonth(for: jan2025)  // 4 (January is fiscal month 4)
 	/// ```
 	public func fiscalMonth(for date: Date) -> Int {
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.month], from: date)
 		let calendarMonth = components.month ?? 0
 

@@ -474,7 +474,7 @@ public struct CreditCurve<T: Real> where T: Sendable {
             return seconds / secondsPerYear
         case .monthly:
             // Extract year and month from date
-            let calendar = Calendar.current
+            let calendar = gregorianUTC
             let components = calendar.dateComponents([.year, .month], from: period.date)
             let yearInt = components.year ?? 0
             let monthInt = components.month ?? 1
@@ -482,7 +482,7 @@ public struct CreditCurve<T: Real> where T: Sendable {
             return T(totalMonths) / T(12)
         case .quarterly:
             // Extract year and quarter from date
-            let calendar = Calendar.current
+            let calendar = gregorianUTC
             let components = calendar.dateComponents([.year, .month], from: period.date)
             let yearInt = components.year ?? 0
             let monthInt = components.month ?? 1
@@ -491,7 +491,7 @@ public struct CreditCurve<T: Real> where T: Sendable {
             return T(totalQuarters) / T(4)
         case .semiannual:
             // Extract year and half from date
-            let calendar = Calendar.current
+            let calendar = gregorianUTC
             let components = calendar.dateComponents([.year, .month], from: period.date)
             let yearInt = components.year ?? 0
             let monthInt = components.month ?? 1
@@ -500,7 +500,7 @@ public struct CreditCurve<T: Real> where T: Sendable {
             return T(totalHalves) / T(2)
         case .annual:
             // Extract year from date
-            let calendar = Calendar.current
+            let calendar = gregorianUTC
             let components = calendar.dateComponents([.year], from: period.date)
             let yearInt = components.year ?? 0
             return T(yearInt)

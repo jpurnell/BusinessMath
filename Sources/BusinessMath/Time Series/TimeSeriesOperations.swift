@@ -319,21 +319,21 @@ extension TimeSeries {
 			switch targetType {
 			case .quarterly:
 				// Map month to quarter
-				let calendar = Calendar.current
+				let calendar = gregorianUTC
 				let components = calendar.dateComponents([.year, .month], from: period.startDate)
 				let quarter = ((components.month ?? 1) - 1) / 3 + 1
 				targetPeriod = Period.quarter(year: components.year ?? 0, quarter: quarter)
 
 			case .semiannual:
 				// Map month to half of the year
-				let calendar = Calendar.current
+				let calendar = gregorianUTC
 				let components = calendar.dateComponents([.year, .month], from: period.startDate)
 				let half = ((components.month ?? 1) - 1) / 6 + 1
 				targetPeriod = Period.semiannual(year: components.year ?? 0, half: half)
 
 			case .annual:
 				// Map any period to year
-				let calendar = Calendar.current
+				let calendar = gregorianUTC
 				let calendarYear = calendar.component(.year, from: period.startDate)
 				targetPeriod = Period.year(calendarYear)
 

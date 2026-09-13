@@ -214,7 +214,7 @@ public struct DebtInstrument {
 
     private func generatePeriods() -> [Period] {
         var periods: [Period] = []
-        let calendar = Calendar.current
+        let calendar = gregorianUTC
         var currentDate = startDate
 
         // Calculate expected number of periods based on date range

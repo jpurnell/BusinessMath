@@ -14,7 +14,24 @@ import Foundation
 /// Creating Calendar instances is expensive. This cached instance significantly
 /// improves performance for operations that require calendar calculations,
 /// such as period creation and date computations.
-private let cachedCalendar = Calendar.current
+/// The calendar every period computation goes through: Gregorian, fixed to UTC.
+///
+/// **Not `Calendar.current`.** A period is a statement about calendar dates — Q1 2025
+/// begins on 1 January in every office in the world — and `Calendar.current` makes it a
+/// statement about the machine instead. It carries the host's time zone, so
+/// `Period.quarter(year: 2025, quarter: 1).startDate` was `2025-01-01 05:00:00 +0000` in
+/// New York and midnight in London: a different instant per developer, per CI runner, and
+/// per user.
+///
+/// It was worse than a zone sweep could see. This was captured **once**, at first use, so
+/// mutating `NSTimeZone.default` afterwards could not move it — `ZoneInvariance.sweep`
+/// reported `Period` as invariant while it was in fact locked to whichever zone the
+/// process happened to start in.
+///
+/// This is the same constant, and the same reasoning, as `gregorianUTC` in
+/// `DayCountConvention.swift`, whose own note recorded that the rule "stayed in every
+/// other file that walks a schedule of dates". This is one of those files.
+private let cachedCalendar = gregorianUTC
 
 /// A type-safe representation of a time period in financial models.
 ///
@@ -638,7 +655,18 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 	/// print(period.formatted(using: formatter))  // "January 2025"
 	/// ```
 	public func formatted(using formatter: DateFormatter) -> String {
-		return formatter.string(from: startDate)
+		// A period's boundaries are UTC instants, so they are rendered in UTC. A formatter
+		// left on the ambient zone shows a period as the one before it for anyone west of
+		// Greenwich: `Period.month(year: 2025, month: 1)` formatted as "MMMM yyyy" read
+		// "December 2024" in New York.
+		//
+		// The caller's formatter is copied rather than mutated — it belongs to them, and a
+		// formatting call has no business changing it.
+		guard let inUTC = formatter.copy() as? DateFormatter else {
+			return formatter.string(from: startDate)
+		}
+		inUTC.timeZone = gregorianUTC.timeZone
+		return inUTC.string(from: startDate)
 	}
 
 	// MARK: - Subdivision

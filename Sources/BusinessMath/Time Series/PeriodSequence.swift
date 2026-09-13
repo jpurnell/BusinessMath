@@ -192,7 +192,12 @@ public struct PeriodSequence: Sequence, Sendable {
 
     /// Maps a source period to its containing target period.
     private static func mapToTargetPeriod(_ source: Period, target: PeriodType) -> Period {
-        let calendar = Calendar(identifier: .gregorian)
+        // `gregorianUTC`, not `Calendar(identifier: .gregorian)`. The latter looks fixed
+        // and is not: it carries `TimeZone.current`, so a period beginning at UTC midnight
+        // decomposes to the previous day west of Greenwich — and 1 January then reports
+        // month 12, putting January's value in the *previous* year's Q4. Measured: the
+        // monthly-to-quarterly sum lost 1000 of its 6000.
+        let calendar = gregorianUTC
         let componentSet: Set<Calendar.Component> = [.year, .month]
         let components = calendar.dateComponents(componentSet, from: source.date)
         let year = components.year ?? 2000

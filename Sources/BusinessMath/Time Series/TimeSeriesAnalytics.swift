@@ -172,7 +172,7 @@ extension TimeSeries {
 		// Calculate exact fractional years from period start dates
 		// Using startDate for both provides intuitive period-to-period calculations
 		// (e.g., "Jan 2020 to Jan 2025" = exactly 5 years)
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.day],
 												 from: start.startDate,
 												 to: end.startDate)
