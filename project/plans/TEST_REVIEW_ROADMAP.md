@@ -835,7 +835,7 @@ with this in it?"** Three answers:
 |---|---|---|
 | ~~**B1**~~ | ~~**L11** DSO / DIO / DPO **4.01×**~~ | ✅ **DONE `4b666601`.** Day count now comes from the period via `DayCountConvention.days(in:)`, with `dayCount:` selectable. Two existing tests pinned the old values; both had the error written out in their own comments. The CCC identity did not fail — the control, as predicted. |
 | ~~**B2**~~ | ~~**L7** fiscal year varies by time zone~~ | ✅ **DONE.** 17 source sites to `gregorianUTC`. Found a 17th the `Calendar.current` grep missed — `Calendar(identifier: .gregorian)` in `PeriodSequence`, which looks fixed and carries `TimeZone.current`, putting January's value in the previous year's Q4. Plus `formatted(using:)`, which rendered January 2025 as "December 2024" west of Greenwich. |
-| **B3** | **L13** `sharpeRatio` returns **0** for zero risk | Reports the best possible case — positive excess return, zero risk — as mediocre. Same family as `a * 0 → 0` |
+| ~~**B3**~~ | ~~**L13** `sharpeRatio` returns **0** for zero risk~~ | ✅ **DONE.** Guard deleted (Justin's call): `+infinity`, `-infinity` and `NaN` each answer for themselves. Blast radius was exactly one test — `sharpeFinite`, which the options review had already identified as testing the guard rather than the ratio. |
 | **B4** | **L1** `bayes` returns NaN by accident at a zero denominator | No contract. Decide NaN or throw and pin it |
 | **B5** | **Q5** whether `enableCuttingPlanes: true` is inert for closure objectives | If inert and undocumented, a caller enables a feature that does nothing. Must be settled, not necessarily fixed |
 | ~~**B6**~~ | ~~**Q6** `Period` locked to the process's launch zone~~ | ✅ **DONE** with B2 — there is no capture left to lose. Demonstrated en route: `periodStartsAtUTCMidnight` passed inside its suite and failed in isolation, because a sweep had already moved the default zone before `Period` first looked. |
@@ -865,7 +865,7 @@ make the library wrong; they make it under-tested, and that is the next release'
 
 1. ~~**B1 (L11)**~~ — ✅ **DONE `4b666601`.**
 2. ~~**B2 + B6 (L7 / L7a)**~~ — ✅ **DONE.**
-3. **B3 (L13)** and **B4 (L1)** — one guard and one contract each.
+3. ~~**B3 (L13)**~~ — ✅ **DONE.** **B4 (L1)** — one contract.
 4. **B5 (Q5)** — investigate; it may be documentation rather than code.
 5. Then the DOCUMENT set, and the two breaking API items that belong in the major.
 

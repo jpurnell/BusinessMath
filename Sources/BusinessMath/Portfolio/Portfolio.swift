@@ -174,12 +174,32 @@ public struct Portfolio<T: Real & Sendable & Codable> {
 	///
 	/// Sharpe ratio = (Return - Risk-free rate) / Risk
 	///
+	/// ## A portfolio with no risk
+	///
+	/// The division is left to IEEE arithmetic rather than guarded, so each case answers
+	/// for itself:
+	///
+	/// | excess return | risk | result |
+	/// |---|---|---|
+	/// | positive | 0 | `+infinity` — unbounded return per unit of risk |
+	/// | negative | 0 | `-infinity` |
+	/// | zero | 0 | `nan` — 0/0, genuinely undefined |
+	///
+	/// This returned `0` for all three until 2026-09-13. Zero is a plausible number and
+	/// the wrong one: a Sharpe of zero means *no excess return per unit of risk*, so a
+	/// portfolio earning a positive excess at exactly zero risk — the best case there is —
+	/// was reported as mediocre, and an equally impossible loss was reported the same way.
+	///
+	/// Callers who treat an infinite Sharpe as a modelling error should test for it. It is
+	/// a real signal: outside a genuinely risk-free instrument it usually means the
+	/// covariance estimate collapsed, which a zero is far better at hiding than an
+	/// infinity is.
+	///
 	/// - Parameter weights: Asset weights (must sum to 1).
-	/// - Returns: Sharpe ratio (higher is better).
+	/// - Returns: Sharpe ratio (higher is better). May be infinite or NaN; see above.
 	public func sharpeRatio(weights: [T]) -> T {
 		let ret = portfolioReturn(weights: weights)
 		let risk = portfolioRisk(weights: weights)
-		guard risk > T(0) else { return T(0) }
 		return (ret - riskFreeRate) / risk
 	}
 

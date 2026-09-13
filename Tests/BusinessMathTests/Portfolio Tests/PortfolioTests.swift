@@ -275,12 +275,33 @@ struct PortfolioDeterministicTests {
 							TimeSeries(periods: periods, values: b)])
 	}
 
-	@Test("Sharpe ratio is finite and non-NaN")
-	func sharpeFinite() throws {
+	/// `twoAssetConstant` has **exactly zero** variance, so this cannot be a finiteness test.
+	///
+	/// The fixture is `Array(repeating:)` — constant returns, a covariance matrix of zeros,
+	/// portfolio risk identically 0. This asserted `sharpe.isFinite`, which passed only
+	/// because `sharpeRatio` guarded its denominator and returned 0. It was testing the
+	/// guard, not the ratio, and the guard was wrong: positive excess return at zero risk
+	/// is the best case there is, not a Sharpe of nothing.
+	///
+	/// With the guard gone the honest assertion is the one below. `SharpeZeroRiskTests`
+	/// covers all three zero-risk cases; this keeps the claim attached to the fixture that
+	/// motivated it.
+	///
+	/// - Note: the fixture is still degenerate, and two neighbouring tests
+	///   (`optimizerBeatsEqualWeights`, `frontierMonotonicReturn`) remain vacuous because
+	///   of it — every weight vector gives risk 0. Replacing it with nonzero, unequal
+	///   variances is recorded in the roadmap as AFTER-bucket work.
+	@Test("Constant returns give zero risk, so the Sharpe ratio is infinite")
+	func sharpeOfAZeroRiskPortfolio() throws {
 		let (assets, rets) = twoAssetConstant()
 		let portfolio = Portfolio(assets: assets, returns: rets, riskFreeRate: 0.0)
+
+		let risk = portfolio.portfolioRisk(weights: [0.5, 0.5])
+		#expect(risk.isEqual(to: 0.0), "the fixture is meant to be riskless; got \(risk)")
+
 		let sharpe = portfolio.sharpeRatio(weights: [0.5, 0.5])
-		#expect(sharpe.isFinite, "Sharpe ratio should be finite for deterministic constant returns.")
+		#expect(sharpe.isInfinite && sharpe > 0.0,
+				"positive excess at zero risk is +infinity; got \(sharpe)")
 	}
 
 	@Test("Efficient frontier has non-decreasing expected returns (two assets, constant)")
