@@ -510,7 +510,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                     status: .nodeLimit,
                     solveTime: (clock.now - startTime).inSeconds,
                     integerSpec: integerSpec,
-                    cuttingPlaneStats: enableCuttingPlanes ? CuttingPlaneStats() : nil
+                    cuttingPlaneStats: enableCuttingPlanes ? cutStats.createStats(integerOptimum: incumbent?.value) : nil
                 )
             }
 
@@ -544,7 +544,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                     status: .timeLimit,
                     solveTime: (clock.now - startTime).inSeconds,
                     integerSpec: integerSpec,
-                    cuttingPlaneStats: enableCuttingPlanes ? CuttingPlaneStats() : nil
+                    cuttingPlaneStats: enableCuttingPlanes ? cutStats.createStats(integerOptimum: incumbent?.value) : nil
                 )
             }
 
@@ -596,7 +596,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                             status: .optimal,
                             solveTime: (clock.now - startTime).inSeconds,
                             integerSpec: integerSpec,
-                    cuttingPlaneStats: enableCuttingPlanes ? CuttingPlaneStats() : nil
+                    cuttingPlaneStats: enableCuttingPlanes ? cutStats.createStats(integerOptimum: incumbent?.value) : nil
                         )
                     }
                 }
@@ -723,7 +723,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                 status: .infeasible,
                 solveTime: (clock.now - startTime).inSeconds,
                 integerSpec: integerSpec,
-                    cuttingPlaneStats: enableCuttingPlanes ? CuttingPlaneStats() : nil
+                    cuttingPlaneStats: enableCuttingPlanes ? cutStats.createStats(integerOptimum: incumbent?.value) : nil
             )
         }
 

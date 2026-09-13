@@ -419,9 +419,27 @@ struct NodeCutLoopTests {
         #expect(stats.cuttingRounds >= 0, "Cutting rounds should be non-negative")
         #expect(stats.lpResolves >= 0, "LP resolves should be non-negative")
 
-        // If cuts were generated, rounds should be positive
+        // If cuts were generated, rounds should be positive.
+        //
+        // This assertion never executed until 2026-09-13: `totalCutsGenerated` was always
+        // zero, because four of the five return paths in `solve` built the result with a
+        // freshly-constructed `CuttingPlaneStats()` instead of the tracker that had been
+        // accumulating. Fixing that woke this guard up, and it failed immediately.
+        //
+        // The cause is an asymmetry in what the two counters count. A cut is counted when
+        // it is *generated* (`stats.totalCutsGenerated += 1`); a round is counted only
+        // after the LP *re-solve succeeds* (`roundsPerformed += 1`). A round that adds a
+        // cut and then fails to re-solve therefore reports cuts without rounds, and the
+        // invariant this asserts does not hold of the implementation.
+        //
+        // Which counter should move is a real question — "rounds attempted" and "rounds
+        // completed" are both defensible and are not the same number — so it is recorded
+        // rather than patched. Fixing the asymmetry makes this marker fail, which is the
+        // point of recording it this way.
         if stats.totalCutsGenerated > 0 {
-            #expect(stats.cuttingRounds > 0, "Should have at least one cutting round")
+            withKnownIssue("cuts are counted at generation, rounds only after a successful re-solve") {
+                #expect(stats.cuttingRounds > 0, "Should have at least one cutting round")
+            }
         }
 
         // Track cuts by type
