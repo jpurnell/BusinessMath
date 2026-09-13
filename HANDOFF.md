@@ -1,6 +1,6 @@
-# Handoff — 2026-09-12 (later still)
+# Handoff — 2026-09-12 (end of day)
 
-**`main` is `f5b4454e`. History was rewritten today — read §1 before running any git command.**
+**`main` is `e417c78b`. History was rewritten today — read §1 before running any git command.**
 **Phase 1 of `REVIEW_simulation_tests.md` §6 is complete**, all five items, in four commits. The
 next piece of work is **Phase 2, GPU test integrity**, whose first step is decision 5.2 — the Mac
 CI job must fail rather than skip when Metal is unavailable.
@@ -9,11 +9,11 @@ CI job must fail rather than skip when Metal is unavailable.
 
 | | |
 |---|---|
-| branch | `main` at `f5b4454e` |
+| branch | `main` at `e417c78b` |
 | tags | **89** (was 109). Latest `v3.0.0-alpha.4` |
-| tests | **7,727 in 691 suites**, exit 0 (was 7,700 in 689) |
-| gate | `quality-gate --no-cache --check all --continue-on-failure` → 45/45, **0 errors**, 10 warnings |
-| the 10 warnings | pre-existing `non-strict-improvement` notices in other suites. Not the skipped-test inventory, whatever older handoffs said |
+| tests | **7,731 in 691 suites**, exit 0 (was 7,700 in 689) |
+| gate | `quality-gate --no-cache --check all --continue-on-failure` → 45/45, **0 errors**, 11 warnings |
+| the 11 warnings | all pre-existing: 10 `non-strict-improvement` notices in other suites, plus `CHANGELOG has no entry for version 3.0.0-alpha.4`. Not the skipped-test inventory, whatever older handoffs said |
 | working tree | clean except `project/plans/proposals/excel_function_coverage_matrix_bak.tsv` — **your backup, deliberately untracked, leave it alone** |
 
 Always `--check all`. Plain `--no-cache` runs 40 of 45 and prints an identical PASSED line.
@@ -65,6 +65,7 @@ has a new SHA.**
 | `4df8a678` | **Phase 1 item 5** — the CPU/GPU contract |
 | `9f661666` | additive identity made sign-exact; 17 silent-pass guards removed |
 | `f5b4454e` | safe math, the per-opcode differential, and `PROPOSAL_gpu_error_parity.md` |
+| `e417c78b` | **GPU error parity** — the proposal built, §8 answered |
 
 CI green throughout up to `d3543352`. The four Phase 1 commits are local-gate-green (45/45,
 0 errors) and **have not yet been seen by CI** — watch the run after the push.
@@ -115,27 +116,27 @@ surface went green; it was twelve of twenty-nine, because fourteen `#require` si
 honestly. Review §4.6 calls those seventeen guards dead code under their suite traits — **they were
 not**: the trait rules out an absent GPU, not our own kernel failing to compile.
 
-### Open, and needing your decision
+### Settled since, and how
 
-- **Error parity — `PROPOSAL_gpu_error_parity.md` is written and its two independent steps are
-  done** (safe math, per-opcode differential). **§8 is the open question and blocks the rest:
-  what does a partially-failed batch return?** Throw on any failed iteration, return values plus
-  per-iteration errors, or a threshold. The proposal leans to throwing by default with an explicit
-  `.collect` opt-out, and says it cannot make the call.
+- **Error parity is DONE** (`e417c78b`). The kernel tests each operand *before* the operation and
+  writes a code into a per-thread buffer; `GPUError.iterationsFailed` names the count, the first
+  failing iteration and the condition. **§8 decided by Justin: throw by default,
+  `onIterationError: .collect` to opt out.** Four entry points, sync and async.
+  **Breaking in effect if not in signature** — a batch that used to return values with an `inf`
+  among them now throws unless `.collect` is passed.
+- **Why explicit guards and not result inspection.** Reading an error back out of a NaN means
+  trusting the optimizer to have preserved IEEE. Measured: the whole contract suite passes under
+  `mathMode = .fast` as well as `.safe`, so reporting no longer depends on the flag.
+- **Fast math stays off, on a narrower basis than before.** Two residues the guards do not cover:
+  a recorded failure still leaves the IEEE value in the output slot, and `inf * 0` is a NaN the
+  interpreter does not throw on so nothing guards it. ~10% at 100k iterations, on a path the same
+  benchmark clocks at 1.2–1.4× the CPU. **A performance decision now, reversible in one line
+  (`compileOptions`), with the contract suite as evidence reporting survives the flip.**
 - **A retraction worth reading before trusting any GPU measurement here.** A probe measured the
-  kernel returning `1.0` for `0 / 0` under Metal's default fast math. It was an artifact: the probe
-  wrote `v / v`, which fast math folds via `x / x → 1`; the kernel divides two stack slots at
-  runtime indices and the compiler cannot follow them. Re-measured in the kernel's real shape, fast
-  and safe math agree on every condition. Fast math is off regardless — the kernel's IEEE behaviour
-  otherwise rests on the optimizer failing to see through an array subscript, which is what
-  `factorial`'s incidental trap already taught this package not to rely on. **That one is a
-  judgement call, flagged in §2.1, and reversible.**
-- `MonteCarloCommon.h` is still a hand-maintained mirror SPM never compiles. It now disagrees with
-  nothing; nothing checks that.
-- The review's own §8 open questions are untouched: whether `MonteCarloPricingResult` should expose
-  the pair-mean estimator, and the per-family KS tolerance.
-
----
+  kernel returning `1.0` for `0 / 0` under fast math. It was an artifact: the probe wrote `v / v`,
+  which fast math folds via `x / x → 1`; the kernel divides two stack slots at runtime indices the
+  compiler cannot follow. Re-measured in the kernel's real shape, fast and safe agree on every
+  condition. **The proposal keeps the wrong version in §2.1 on purpose.**
 
 ## 3a. Next: Phase 2, GPU test integrity — partly done already
 
@@ -145,6 +146,7 @@ From §6, with what `9f661666` and `f5b4454e` already landed struck through:
   `#require`; and they were not dead.
 - ~~CPU-versus-GPU differential per opcode~~ — **done**, 22 operations, exact inputs through
   degenerate uniforms.
+- ~~error parity~~ — **done** (`e417c78b`), though it belongs to §3.7 rather than Phase 2.
 - **a CI-aware trait so the Mac job fails rather than skips** (decision 5.2). Still open, and §3
   is the concrete reason it matters.
 - **KS per kernel distribution.** Open. Review §8 question 2 — per-family tolerance or the

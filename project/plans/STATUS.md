@@ -1,6 +1,6 @@
 # Plans — what is complete, what is open, what is in progress
 
-**Last reconciled:** 2026-09-12 (later still), after Phase 1 and the first of Phase 2.
+**Last reconciled:** 2026-09-12 (end of day), after Phase 1, GPU error parity, and part of Phase 2.
 
 **History was rewritten 2026-09-12** — `git filter-repo` removed ~90 MB of third-party books.
 Every SHA quoted in this file from `ca7afd83` onward is dead; commit *subjects* still resolve.
@@ -18,10 +18,13 @@ errors, and the CPU/GPU contract. Two things came out of it that the review did 
 price for a single-path antithetic request, and `a + 0 → a` being unsound for `-0.0` — kept, with
 the reasoning written down, and flagged for confirmation.
 
-**Error parity now has a design proposal:** `proposals/PROPOSAL_gpu_error_parity.md`. Its two
-steps that need no decision are done — fast math off, and a CPU/GPU differential over all 22
-operations. **§8 blocks the rest and is a question for Justin:** what does a partially-failed batch
-return? Read §2.1 first — it retracts a measurement that the first draft was built on.
+**Error parity is COMPLETE** at `e417c78b`; `proposals/PROPOSAL_gpu_error_parity.md` is
+implemented end to end. §8 was answered by Justin — throw by default, `onIterationError: .collect`
+to opt out — and §11 records what building it changed about the fast-math argument. Read §2.1
+before trusting any GPU measurement in it: the first draft's central number was an artifact, kept
+in place on purpose.
+
+With that, **all five gaps of review §3.7 are closed** and nothing in Phase 1 remains.
 
 **Part of Phase 2 landed early** at `9f661666`, because it is what makes GPU work verifiable at
 all: seventeen `guard … else { print("Skipping"); return }` sites became `try #require`. Review
