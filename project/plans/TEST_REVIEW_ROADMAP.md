@@ -2,10 +2,25 @@
 
 **Started 2026-09-13.** A living checklist across every incoming test-suite review. Reviews arrive
 faster than they can be worked, and they repeat each other — this is where the repetition becomes a
-plan instead of eight separate documents.
+plan instead of twenty-two separate documents.
 
-**Last updated:** 2026-09-13, after intake of five reviews (operational driver, scenario analysis,
-financial ratio, Bayes, time series).
+**Last updated:** 2026-09-13. **Twenty-two reviews, ~370 test files.**
+
+---
+
+## The goal, stated once (2026-09-13)
+
+**A strong 3.0.0 — and the library has to be correct first.** Everything below is ordered against
+that, which resolves a question the first four revisions of this file left implicit.
+
+Three consequences, and the third is the one that changed the plan:
+
+1. **Correctness is the gate for 3.0.0**, not test-suite polish. A vacuous assertion matters exactly
+   as much as the defect it is hiding.
+2. **Reviews and gate rules are two different detectors**, and they find different things. Keep
+   both.
+3. **Neither detector ships a fix.** See §2b: of the ten library defects found so far, a static
+   rule catches three. The five it misses outright are the five that make the library *wrong*.
 
 ---
 
@@ -118,6 +133,43 @@ question about whether it is.
 | L8 | **`MonthDay` accepts February 30.** | UNVALIDATED | A 1–31 day range admits impossible dates. Also: what does a February 29 fiscal year-end mean in a non-leap year? Currently undefined. |
 | L9 | **`npvExcel` discounts the first element by one period.** | UNVALIDATED (behaviour), **CONFIRMED** (design) | Implementation is `flow / (1+r)^(index+1)` — correct Excel semantics. Passing an array that *begins with the initial outlay* silently misprices. Documentation, not a code change. |
 | L10 | **Mixed period types unsupported, recorded only in a commented-out test.** | UNVALIDATED | "Trigger a Strideable issue when Swift's stdlib tries to optimize." A capability recorded in a comment will be rediscovered by a user. |
+
+---
+
+## 2b. What a gate rule can and cannot catch
+
+Tested against the ten library defects this programme has found, because "build durable quality
+infrastructure" is only a correctness strategy if the infrastructure catches correctness problems.
+
+| Defect | Static rule catches it? | Why |
+|---|---|---|
+| **L2** `bayes` is `Double`-only | **yes** | structural — a public numeric free function not generic over `T: Real` |
+| **L3** `runFinancialSimulation` has no `seed:` | **yes** | the transitive-unseeded rule |
+| **L7** `Calendar.current` in `Sources` | **yes** | an ambient-time read outside a documented seam |
+| **L14** duplicate RNG in a shared helper | partial | a duplication rule flags the copy, not the closed interval |
+| **L15** three days-per-year conventions | partial | could flag bare `365` / `365.25` outside `DayCountConvention` |
+| **L1** `bayes` unguarded denominator | **no** | semantic — the divisor is zero only for particular inputs |
+| **L4** two debt definitions, undocumented | **no** | semantic — both formulas are correct |
+| **L11** DSO/DIO/DPO **4.01×** | **no** | dimensional — `365 / (per-quarter rate)` is type-correct and wrong |
+| **L12** the only outlier rule is the masking one | **no** | a capability gap; there is nothing to flag |
+| **L13** `sharpeRatio` returns 0 for zero risk | **no** | semantic — a guard returning a plausible value |
+
+**Three of ten caught outright. Five missed, and those five are the ones that make the library
+wrong.**
+
+### What follows from that
+
+- **The reviews are the semantic-defect detector, and the only one.** No rule would have found L11
+  or L13; a reader working through the code did. That is the argument for continuing intake, and it
+  is stronger than the argument I made against it.
+- **Gate rules are the shape-defect preventer.** They stop the 225-site threads regrowing behind a
+  sweep. That is real and compounding, and it is *not* a correctness mechanism.
+- **Neither ships a fix.** For the five rule-invisible defects there is no path but changing the
+  code.
+
+So the programme has three tracks, not one: **find** (reviews), **prevent** (gate rules), **fix**
+(the only one that makes the library correct). The first two have been running for a week. The third
+has not started.
 
 ---
 
@@ -760,124 +812,73 @@ optimisation checks nothing." The implementation integrates the ROC curve; the t
 
 ---
 
-## 5. Sequencing
+## 5. Sequencing — against 3.0.0
 
-**Re-prioritised 2026-09-13 (second revision)** after the seven-review batch. What changed the
-ordering this time was not the new findings but **§2a**: the corpus-wide counts are two to thirteen
-times the per-domain claims, which moves several "mechanical bulk" items from *an afternoon* to
-*a project* — and makes the gate rules that prevent regrowth more valuable than any single sweep.
+**Re-sequenced 2026-09-13 (third revision)**, after the goal was stated: a strong 3.0.0, correctness
+first. The previous revisions ordered by leverage; this one orders by **what must be true before the
+tag**.
 
-Three ordering principles now:
+### 5.0 The 3.0.0 correctness cut line
 
-1. **Library defects, then unblockers, then bulk.**
-2. **Cheap high-information moves go early**, even when they are "only" test changes. An assertion
-   that cannot fail is an *unknown*; converting it costs a line and either passes or turns the suite
-   red on a live defect.
-3. **New:** when a thread exceeds ~100 sites, **land its gate rule before its sweep.** Otherwise the
-   sweep is a one-off and the pattern regrows behind it. `?? 0` at 225 sites and ambient time at 152
-   are both past that line.
+The question for every item is no longer "how much does this improve the suite" but **"would we tag
+with this in it?"** Three answers:
 
----
+| | Meaning |
+|---|---|
+| **BLOCKS** | the library computes a wrong number, or returns a plausible value for an undefined one. Cannot ship. |
+| **DOCUMENT** | real, but defensible to ship with a stated limitation and a `withKnownIssue` recording it |
+| **AFTER** | genuine work, no bearing on whether 3.0.0 is correct |
 
-### Wave 0 — ships wrong, or tells us cheaply whether it does
+**BLOCKS — six items, and five of them are invisible to any gate rule (§2b).**
 
-**0.1 — L11: DSO / DIO / DPO, 4.01× on any non-annual statement.** Measured; DIO returns 91.25
-where the answer is 22.75. `DayCountConvention.days(in: period)` already exists and already returns
-the right 91.0.
+| | Defect | Why it blocks |
+|---|---|---|
+| **B1** | **L11** DSO / DIO / DPO **4.01×** on any non-annual statement | A wrong number, shipped, in a headline ratio. 91.25 days where the answer is 22.75 — and 91.25 is within a quarter-day of the 91 days in the quarter, so it survives a reader's sanity check |
+| **B2** | **L7** `FiscalCalendar.fiscalYear(for:)` varies by time zone | **Measured** with the package's own `ZoneInvariance.sweep`: a different fiscal year for the same instant, at the day after a fiscal year-end. A financial library that disagrees with itself about which year a transaction falls in |
+| **B3** | **L13** `sharpeRatio` returns **0** for zero risk | Reports the best possible case — positive excess return, zero risk — as mediocre. Same family as `a * 0 → 0` |
+| **B4** | **L1** `bayes` returns NaN by accident at a zero denominator | No contract. Decide NaN or throw and pin it |
+| **B5** | **Q5** whether `enableCuttingPlanes: true` is inert for closure objectives | If inert and undocumented, a caller enables a feature that does nothing. Must be settled, not necessarily fixed |
+| **B6** | **Q6** `Period` locked to the process's launch zone | The `ZoneInvariance` harness cannot see it. Same root cause as B2 and fixed by the same change |
 
-**0.2 — L7 / L7a: `Calendar.current` at ~15 *source* sites.** `gregorianUTC` and its doctrine
-already exist in the package. **Must precede all test-side calendar work** — now 152 sites, so the
-ordering matters more than when it was 93.
+**DOCUMENT — ship with a stated limitation.**
 
-**0.3 — The eleven always-true convergence disjunctions and seven `.rounded()` comparisons.**
-One line each. Either outcome is information: green converts ~18 unknowns into evidence, red exposes
-a solver defect invisible for the life of these tests. Still ahead of the gradient certificate.
+- **L4** the two debt definitions. Both formulas are correct and `BalanceSheet.swift:354` already
+  documents one side; document the other and pin both values.
+- **L12** the masking outlier rule. A z-score detector is a legitimate thing to ship; shipping it as
+  *the only* option without saying so is not.
+- **L15** three days-per-year conventions. Decide, document, and route through `DayCountConvention`
+  where a convention is genuinely at stake.
+- **L2** `bayes` being `Double`-only. Breaking to fix, so it belongs *in* 3.0.0 rather than after —
+  but it is an API shape, not a wrong answer.
+- **L3** `runFinancialSimulation` without `seed:`. Also breaking, also belongs in 3.0.0, and it
+  unblocks T3.
+- **L14** delete `StochasticTestHelpers`. Test-only; no bearing on the tag.
 
-**0.4 — L13: the zero-risk Sharpe contract.** *Promoted into Wave 0* on the same reasoning as
-`a * 0 → 0`: a guard returning a plausible number where the answer is undefined. Reporting the best
-possible case (positive excess return, zero risk) as a Sharpe of **0** inverts its meaning. One
-decision, one guard, one test.
-
-**0.45 — Restore the three stale integer-programming assertions.** Each names the exact
-expectation to write, each capability has since shipped, and each test currently asserts nothing.
-Three one-line additions that either pass — closing three recorded defects — or reveal that a
-capability shipped incomplete. Same reasoning as 0.3.
-
-**0.5 — L14: delete `StochasticTestHelpers`.** A shared helper with a closed-interval generator and
-the wrong pole guard, seeding several files at once. Deletion, not repair — `DeterministicRNG` and
-the TestSupport transform already exist.
+**AFTER — everything else**, including all of T1–T7 and every sweep. The 225 `?? 0` sites do not
+make the library wrong; they make it under-tested, and that is the next release's problem.
 
 ---
 
-### Wave 1 — decisions, unblockers, and the gate rules that protect the sweeps
+### 5.1 The three tracks, run in parallel
 
-1. **L3** — seed `runFinancialSimulation`. Gates ~15 tests and all of T3.
-2. **L1 / L2** — `bayes`: zero-denominator contract and genericity. Smallest whole-file win.
-3. **The T5 convention batch** (8 items), plus **L12** (does the library want a non-masking outlier
-   rule at all) and **L15** (365 vs 365.25). **Decide these against the marketing design answer**,
-   not one at a time: where a caller has a real choice, name the variant at the call site and there
-   is nothing left to pin; where there is a sensible default, pin it with a discriminating case.
-   Several discriminating cases are already supplied (T5).
-4. **Q5 — settle whether `enableCuttingPlanes: true` is inert for closure objectives.** It blocks
-   the `Phase1_CutValidityTests` rewrite, and if the answer is "inert and undocumented" it is a
-   library defect rather than a test one.
-5. **The three highest-volume gate rules, before their sweeps** — principle 3:
-   `?? <literal>` inside an assertion (225), ambient calendar/clock in a test target (152),
-   `#expect(true)` as a test's only assertion (75). Each is a static check; each prevents the
-   corresponding Wave 3 sweep from being a one-off.
-6. **`PerformanceOptimizationTests` behind `.benchmarkOnly`** — ~17 wall-clock assertions in the
-   regular suite, tightest 50 ms. A standing CI-flake source, and cheap: split timings from the
-   correctness assertions in the same tests.
+**Track FIX — the only one that makes 3.0.0 correct. Start here.**
 
----
+1. **B1 (L11)** — smallest, fully measured, correct values in hand, `DayCountConvention.days(in:)`
+   already exists.
+2. **B2 + B6 (L7 / L7a)** — replace `Calendar.current` with the existing `gregorianUTC` at ~15
+   source sites. **`ZoneInvariance.sweep` is already the RED test**: it reports `isInvariant = false`
+   for `FiscalCalendar` today and must report `true` after. For `Period`, the sweep is blind (Q6),
+   so the check has to be a stored-instant assertion instead.
+3. **B3 (L13)** and **B4 (L1)** — one guard and one contract each.
+4. **B5 (Q5)** — investigate; it may be documentation rather than code.
+5. Then the DOCUMENT set, and the two breaking API items that belong in the major.
 
-### Wave 2 — the structural test work, highest leverage first
+**Track FIND — keep the reviews coming.** §2b is the argument: they are the only detector that finds
+semantic defects, and four of the six blockers came from them. Validation stays mandatory —
+22 for 22 reviews contained something that changed the fix.
 
-6. **The gradient certificate** for L-BFGS, gradient descent, Newton-Raphson, multi-start. Replaces
-   ~40 distance assertions with the condition that *defines* a minimum. **Still the single
-   highest-leverage item across all seventeen reviews.** `gradientNorm < 0.1` already exists in two
-   files at the wrong tolerance — promote it and bind it to the optimizer's own tolerance.
-7. **Fix the two degenerate portfolio fixtures.** Three tests are vacuous because of the fixture
-   rather than the assertion; no assertion change can rescue them.
-8. **DEA units invariance** for SBM and super-efficiency.
-9. **The ETS exact-recovery oracle** (the phase defect is inherited-and-fixed; the parameter search
-   is what is untested).
-10. **Interval calibration** — same shape as the antithetic-SE defect.
-11. **The driver composition identities.**
-
----
-
-### Wave 3 — the mechanical bulk, behind its gate rules
-
-12. **`?? 0` → `try #require`, 225 sites.**
-13. **The fixed test calendar, ~152 sites** — after 0.2.
-14. **`#expect(true)`, 75 sites — but 53 of them are a mechanical substitution.** Those say
-    "no-throw" in their own comments and become `#expect(throws: Never.self)`, already used 11 times
-    in the corpus. That leaves `LoggerTests`' 13 (inject a recording sink) and the gate's
-    nested-scope cases, which clear themselves when the checker is fixed. **This thread is much
-    cheaper than its count suggests.**
-15. Ratio fixture deduplication; 20 `guard let` → `try #require`.
-
----
-
-### Wave 4 — exactness
-
-16. **T2, now well past 150 assertions.** Start where the *arithmetic* is wrong rather than merely
-    loose: the two `npvExcel` comment errors and the H-Model test comment.
-17. **Transcribe the operations batch's exact-value table** — it is complete, verified, and the
-    batch has no other defects, so it is the cheapest domain to finish outright.
-18. Tornado impacts, baselines, error metrics, backtest fold boundaries, bond/Merton/CDS closed
-    forms, Black-Scholes Greeks from the 120-digit generator.
-
----
-
-### Wave 5 — hygiene and coverage
-
-19. 10 `.disabled` and 30 commented-out `@Test`.
-20. **Error specificity: 530 type-only sites against 99 that pin a value.** Not an invention
-    problem — the technique is already in `KMeansTests`, the dispersion tests and the marketing
-    batch; it needs spreading. Start with `(any Error).self`, the loosest form.
-21. Per-domain coverage gaps; certificate techniques extended to K-means, KKT, cut generators.
+**Track PREVENT — gate rules, sized by §2a and carved by §7.** Not a correctness mechanism; a
+regrowth mechanism. Land the three highest-volume rules before their sweeps, which are AFTER anyway.
 
 ---
 
@@ -885,19 +886,12 @@ the TestSupport transform already exist.
 
 | Item | Was | Now | Reason |
 |---|---|---|---|
-| L13 zero-risk Sharpe | new | **0.4** | a guard returning a plausible number for an undefined answer |
-| L14 `StochasticTestHelpers` | new | **0.5** | a broken generator in a *shared* helper seeds several files |
-| Gate rules for the big three threads | Wave 5 (implicit) | **1.4, before the sweeps** | at 225 and 152 sites a sweep without a rule is a one-off |
-| `PerformanceOptimizationTests` timings | unplaced | **1.5** | standing CI-flake risk, cheap to split |
-| `?? 0` sweep | Wave 3, "103 sites" | **12, 225 sites** | corpus-wide count is 2.4× the review's |
-| Test calendar sweep | "93 sites" | **13, ~152 sites** | 2.1× |
-| Operations exact values | unplaced | **17** | complete verified table, no other defects in the batch |
-| `#expect(true)` sweep | Wave 3, "75 hard" | **14, 53 of them mechanical** | `Never.self` substitution, not a rewrite |
-| T5 convention decisions | "decide 8 things" | **1.3, against a design rule** | name the variant at the call site where the caller has a real choice |
-| L15 three days-per-year | new | **1.3** | undecided and undocumented, adjacent to L11 |
-| 3 stale IP assertions | new | **0.45** | the expectation is already written in a comment; shipped capabilities, untested |
-| Q5 cut generation | new | **1.4** | blocks a file rewrite; may be a library defect |
-| IP certificate technique | new | **6, with the gradient certificate** | same shape: assert optimality, not plausibility |
+| The whole Wave 0/1/2 structure | leverage-ordered | **cut-line ordered** | the goal is a tag, not a score |
+| 18 vacuous optimizer assertions | Wave 0.3 | **AFTER** | they hide an unknown, not a known wrong number |
+| The gradient certificate | Wave 2 item 6 | **AFTER** | highest leverage, zero bearing on correctness today |
+| `?? 0` and calendar sweeps | Waves 3 | **AFTER** | under-tested is not wrong |
+| L2 / L3 | Wave 1 | **DOCUMENT, in 3.0.0** | breaking API shapes, so the major is the moment |
+| Q5 / Q6 | open questions | **B5 / B6, blocking** | one may be an inert feature, one is a shipped defect |
 
 ---
 
