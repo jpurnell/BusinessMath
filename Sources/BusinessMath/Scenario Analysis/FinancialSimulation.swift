@@ -543,16 +543,25 @@ public func runFinancialSimulation(
 /// made the problem materially harder to solve rather than merely unrepresentative:
 /// ten convergences in sixty, against forty in forty for a real sample.
 ///
+/// The builder receives the generator, so a probabilistic driver can be sampled through
+/// `sample(for:using:)` — which has existed on every driver type all along, and was the half
+/// of this that was never missing:
+///
 /// ```swift
-/// let simulation = try runFinancialSimulation(
-///     scenario: scenario, entity: entity, periods: periods,
-///     iterations: 1_000, seed: 42
-/// ) { drivers, periods, generator in
-///     // `sample(for:using:)` has existed on every driver type all along.
-///     let revenue = try periods.map { try drivers["Revenue"]?.sample(for: $0, using: &generator) ?? 0 }
-///     return buildStatements(revenue: revenue, periods: periods)
-/// }
+/// var generator = Xoshiro256StarStar(seed: 42)
+/// let revenue = ProbabilisticDriver<Double>(
+///     name: "Revenue",
+///     distribution: DistributionNormal(1000.0, 100.0)
+/// )
+/// let q1 = Period.quarter(year: 2025, quarter: 1)
+///
+/// // Two draws from one generator differ; the same seed replays both.
+/// let first = try revenue.sample(for: q1, using: &generator)
+/// let second = try revenue.sample(for: q1, using: &generator)
+/// print(first, second)
 /// ```
+///
+/// Pass a builder of that shape to this function and the whole simulation replays.
 ///
 /// - Parameters:
 ///   - scenario: The scenario to run.
