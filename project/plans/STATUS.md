@@ -1,10 +1,17 @@
 # Plans — what is complete, what is open, what is in progress
 
-**Last reconciled:** 2026-09-12 (end of day), after Phase 1, GPU error parity, and part of Phase 2.
+**Last reconciled:** 2026-09-13, after intake of five more test reviews.
 
 **History was rewritten 2026-09-12** — `git filter-repo` removed ~90 MB of third-party books.
 Every SHA quoted in this file from `ca7afd83` onward is dead; commit *subjects* still resolve.
 See `HANDOFF.md` §1 before running any git command.
+
+**`TEST_REVIEW_ROADMAP.md` is now the work queue for all test-review work.** Eight reviews are in
+(distribution, simulation, statistics validated; operational driver, scenario analysis, financial
+ratio, Bayes, time series newly received), Justin has more coming, and they repeat each other —
+six cross-cutting shapes account for most of the volume. The roadmap organises by shape, records
+validation status per claim, and sequences the work so nothing bulk happens before its unblocker.
+Raw reviews land in `reviews/`; validated ones move to `proposals/REVIEW_*.md`.
 
 **Two validated reviews are committed and are the work queue:**
 `proposals/REVIEW_simulation_tests.md` (6 corrections, 1 escalated library bug, 6 phases) and

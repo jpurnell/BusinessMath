@@ -1,0 +1,814 @@
+EXCEL	ABS	math	implemented	FormulaEvaluator.Function	208	32	number			
+EXCEL	ACOS	math	unreviewed		0	0	number			
+EXCEL	ACOSH	math	unreviewed		0	0	number			
+EXCEL	ACOT	math	unreviewed		0	0	number			208.3333333
+EXCEL	ACOTH	math	unreviewed		0	0	number			208.3333333
+EXCEL	AGGREGATE	math	unreviewed		0	0	"function_num, options, ref1, [ref2], ..."			
+EXCEL	ARABIC	math	unreviewed		0	0	text			
+EXCEL	ASIN	math	unreviewed		0	0	number			
+EXCEL	ASINH	math	unreviewed		0	0	number			
+EXCEL	ATAN	math	unreviewed		0	0	number			
+EXCEL	ATAN2	math	unreviewed		0	0	"x_num, y_num"			
+EXCEL	ATANH	math	unreviewed		0	0	number			
+EXCEL	BASE	math	unreviewed		0	0	"Number, Radix [Min_length]"			
+EXCEL	CEILING.MATH	math	unreviewed		0	0	"number, [significance], [mode]"			
+EXCEL	CEILING.PRECISE	math	unreviewed		0	0	"number, [significance]"			
+EXCEL	COMBIN	math	bindable	combination	0	0	"number, number_chosen"			
+EXCEL	COMBINA	math	unreviewed		0	0	"number, number_chosen"			
+EXCEL	COS	math	unreviewed		0	0	number			
+EXCEL	COSH	math	unreviewed		0	0	number			
+EXCEL	COT	math	unreviewed		0	0	number			
+EXCEL	COTH	math	unreviewed		0	0	number			
+EXCEL	CSC	math	unreviewed		0	0	number			
+EXCEL	CSCH	math	unreviewed		0	0	number			
+EXCEL	DECIMAL	math	unreviewed		0	0	"text, radix"			
+EXCEL	DEGREES	math	unreviewed		0	0	angle			
+EXCEL	EVEN	math	unreviewed		0	0	number			
+EXCEL	EXP	math	unreviewed		41	2	number			
+EXCEL	FACT	math	bindable	factorial	0	0	number			
+EXCEL	FACTDOUBLE	math	unreviewed		0	0	number			
+EXCEL	FLOOR.MATH	math	unreviewed		0	0	"number, [significance], [mode]"			
+EXCEL	FLOOR.PRECISE	math	unreviewed		0	0	"number, [significance]"			
+EXCEL	GCD	math	unreviewed		0	0	"number1, [number2], ..."			
+EXCEL	INT	math	unreviewed		0	0	number			
+EXCEL	ISO.CEILING	math	unreviewed		0	0	"number, [significance]"			
+EXCEL	LCM	math	unreviewed		0	0	"number1, [number2], ..."			
+EXCEL	LN	math	unreviewed		0	0	number			
+EXCEL	LOG	math	unreviewed		41	2	"number, [base]"			
+EXCEL	LOG10	math	unreviewed		0	0	number			
+EXCEL	MDETERM	math	unreviewed		0	0	array			
+EXCEL	MINVERSE	math	bindable	choleskyInverse	0	0	array			
+EXCEL	MMULT	math	bindable	multiply	0	0	"array1, array2"			
+EXCEL	MOD	math	unreviewed		2924	3	"number, divisor"			
+EXCEL	MROUND	math	unreviewed		0	0	"number, multiple"			
+EXCEL	MULTINOMIAL	math	unreviewed		0	0	"number1, [number2], ..."			
+EXCEL	MUNIT	math	unreviewed		0	0	dimension			
+EXCEL	ODD	math	unreviewed		0	0	number			
+EXCEL	PERCENTOF	math	unreviewed		0	0	"data_subset,data_all"			
+EXCEL	PI	math	unreviewed		0	0	(no arguments)			
+EXCEL	POWER	math	unreviewed		0	0	"number, power"			
+EXCEL	PRODUCT	math	bindable	ExpressionArray.product	0	0	"number1, [number2], ..."			
+EXCEL	QUOTIENT	math	unreviewed		0	0	"numerator, denominator"			
+EXCEL	RADIANS	math	unreviewed		0	0	angle			
+EXCEL	RAND	math	bindable	uniform	44	1	(no arguments)			
+EXCEL	RANDARRAY	math	unreviewed		0	0	"[rows],[columns],[min],[max],[whole_number]"			
+EXCEL	RANDBETWEEN	math	unreviewed		150	2	"bottom, top"			
+EXCEL	ROMAN	math	unreviewed		0	0	"number, [form]"			
+EXCEL	ROUND	math	implemented	FormulaEvaluator.Function	154	24	"number, num_digits"			
+EXCEL	ROUNDDOWN	math	unreviewed		0	0	"number, num_digits"			
+EXCEL	ROUNDUP	math	unreviewed		2	2	"number, num_digits"			
+EXCEL	SEC	math	unreviewed		0	0	number			
+EXCEL	SECH	math	unreviewed		0	0	number			
+EXCEL	SERIESSUM	math	unreviewed		0	0	"x, n, m, coefficients"			
+EXCEL	SEQUENCE	math	bindable	linearSpace	0	0	"rows,[columns],[start],[step]"			
+EXCEL	SIGN	math	unreviewed		0	0	number			
+EXCEL	SIN	math	unreviewed		0	0	number			
+EXCEL	SINH	math	unreviewed		0	0	number			
+EXCEL	SQRT	math	unreviewed		153	7	number			
+EXCEL	SQRTPI	math	unreviewed		0	0	number			
+EXCEL	SUBTOTAL	math	unreviewed		0	0	"function_num,ref1,[ref2],..."			
+EXCEL	SUM	math	implemented	FormulaEvaluator.Function	69194	338	"number1,[number2],..."			
+EXCEL	SUMIF	math	unreviewed		38	4	"range, criteria, [sum_range]"			
+EXCEL	SUMIFS	math	bindable	PeriodSequence.aggregate	78816	4	"sum_range, criteria_range1, criteria1, [criteria_range2, criteria2], ..."			
+EXCEL	SUMPRODUCT	math	bindable	weightedAverage	805	134	"array1, [array2], [array3], ..."			
+EXCEL	SUMSQ	math	bindable	sigma	4	4	"number1, [number2], ..."			
+EXCEL	SUMX2MY2	math	unreviewed		0	0	"array_x, array_y"			
+EXCEL	SUMX2PY2	math	unreviewed		0	0	"array_x, array_y"			
+EXCEL	SUMXMY2	math	bindable	NelsonSiegelYieldCurve.sumSquaredErrors	0	0	"array_x, array_y"			
+EXCEL	TAN	math	unreviewed		0	0	number			
+EXCEL	TANH	math	unreviewed		0	0	number			
+EXCEL	TRUNC	math	unreviewed		0	0	"number, [num_digits]"			
+EXCEL	AVEDEV	statistical	unreviewed		0	0	"number1, [number2], ..."			
+EXCEL	AVERAGE	statistical	implemented	FormulaEvaluator.Function	67	18	"number1, [number2], ..."			
+EXCEL	AVERAGEA	statistical	unreviewed		0	0	"value1, [value2], ..."			
+EXCEL	AVERAGEIF	statistical	unreviewed		0	0	"range, criteria, [average_range]"			
+EXCEL	AVERAGEIFS	statistical	bindable	PeriodSequence.aggregate	0	0	"average_range, criteria_range1, criteria1, [criteria_range2, criteria2], ..."			
+EXCEL	BETA.DIST	statistical	bindable	betaCDF	0	0	"x,alpha,beta,cumulative,[A],[B]"			
+EXCEL	BETA.INV	statistical	unreviewed		0	0	"probability,alpha,beta,[A],[B]"			
+EXCEL	BINOM.DIST	statistical	bindable	binomialPMF	0	0	"number_s,trials,probability_s,cumulative"			
+EXCEL	BINOM.DIST.RANGE	statistical	unreviewed		0	0	"trials,probability_s,number_s,[number_s2]"			
+EXCEL	BINOM.INV	statistical	unreviewed		0	0	"trials,probability_s,alpha"			
+EXCEL	CHISQ.DIST	statistical	bindable	chi2pdf	0	0	"x,deg_freedom,cumulative"			
+EXCEL	CHISQ.DIST.RT	statistical	bindable	TimeSeries.ljungBox	0	0	"x,deg_freedom"			
+EXCEL	CHISQ.INV	statistical	unreviewed		0	0	"probability,deg_freedom"			
+EXCEL	CHISQ.INV.RT	statistical	unreviewed		0	0	"probability,deg_freedom"			
+EXCEL	CHISQ.TEST	statistical	unreviewed		0	0	"actual_range,expected_range"			
+EXCEL	CONFIDENCE.NORM	statistical	bindable	confidence	0	0	"alpha,standard_dev,size"			
+EXCEL	CONFIDENCE.T	statistical	bindable	MovingAverageModel.predictWithConfidence	0	0	"alpha,standard_dev,size"			
+EXCEL	CORREL	statistical	bindable	correlationCoefficient	0	0	"array1, array2"			
+EXCEL	COUNT	statistical	implemented	FormulaEvaluator.Function	43316	45	"value1, [value2], ..."			
+EXCEL	COUNTA	statistical	unreviewed		35	5	"value1, [value2], ..."			
+EXCEL	COUNTBLANK	statistical	unreviewed		0	0	range			
+EXCEL	COUNTIF	statistical	unreviewed		60	1	"range, criteria"			
+EXCEL	COUNTIFS	statistical	unreviewed		0	0	"criteria_range1, criteria1, [criteria_range2, criteria2]..."			
+EXCEL	COVARIANCE.P	statistical	bindable	covariance	124	4	"array1,array2"			
+EXCEL	COVARIANCE.S	statistical	bindable	covariance	0	0	"array1,array2"			
+EXCEL	DEVSQ	statistical	bindable	sumOfSquaredAvgDiff	0	0	"number1, [number2], ..."			
+EXCEL	EXPON.DIST	statistical	bindable	exponentialCDF	0	0	"x,lambda,cumulative"			
+EXCEL	F.DIST	statistical	bindable	fCDF	0	0	"x,deg_freedom1,deg_freedom2,cumulative"			
+EXCEL	F.DIST.RT	statistical	unreviewed		0	0	"x,deg_freedom1,deg_freedom2"			
+EXCEL	F.INV	statistical	bindable	fQuantile	0	0	"probability,deg_freedom1,deg_freedom2"			
+EXCEL	F.INV.RT	statistical	unreviewed		0	0	"probability,deg_freedom1,deg_freedom2"			
+EXCEL	F.TEST	statistical	unreviewed		0	0	"array1,array2"			
+EXCEL	FISHER	statistical	bindable	fisher	0	0	x			
+EXCEL	FISHERINV	statistical	bindable	rho	0	0	y			
+EXCEL	FORECAST	statistical	bindable	linearRegression	0	0	"x, known_y's, known_x's"			
+EXCEL	FORECAST.ETS	statistical	bindable	HoltWintersModel.trainedForecast	0	0	"target_date, values, timeline, [seasonality], [data_completion], [aggregation]"			
+EXCEL	FORECAST.ETS.CONFINT	statistical	bindable	HoltWintersModel.predictWithConfidence	0	0	"target_date, values, timeline, [confidence_level], [seasonality], [data_completion], [aggregation]"			
+EXCEL	FORECAST.ETS.SEASONALITY	statistical	unreviewed		0	0	"values, timeline, [data_completion], [aggregation]"			
+EXCEL	FORECAST.ETS.STAT	statistical	unreviewed		0	0	"values, timeline, statistic_type, [seasonality], [data_completion], [aggregation]"			
+EXCEL	FORECAST.LINEAR	statistical	bindable	LinearTrend.trainedForecast	0	0	"x, known_y's, known_x's"			
+EXCEL	FREQUENCY	statistical	unreviewed		0	0	"data_array, bins_array"			
+EXCEL	GAMMA	statistical	unreviewed		0	0	number			
+EXCEL	GAMMA.DIST	statistical	unreviewed		0	0	"x,alpha,beta,cumulative"			
+EXCEL	GAMMA.INV	statistical	unreviewed		0	0	"probability,alpha,beta"			
+EXCEL	GAMMALN	statistical	bindable	logFactorial	0	0	x			
+EXCEL	GAMMALN.PRECISE	statistical	unreviewed		0	0	x			
+EXCEL	GAUSS	statistical	unreviewed		0	0	z			
+EXCEL	GEOMEAN	statistical	bindable	geometricMean	0	0	"number1, [number2], ..."			
+EXCEL	GROWTH	statistical	bindable	TimeSeries.exponential	0	0	"known_y's, [known_x's], [new_x's], [const]"			
+EXCEL	HARMEAN	statistical	bindable	harmonicMean	0	0	"number1, [number2], ..."			
+EXCEL	HYPGEOM.DIST	statistical	bindable	hypergeometric	0	0	"sample_s,number_sample,population_s,number_pop,cumulative"			
+EXCEL	INTERCEPT	statistical	bindable	intercept	0	0	"known_y's, known_x's"			
+EXCEL	KURT	statistical	bindable	kurtosis	0	0	"number1, [number2], ..."			
+EXCEL	LARGE	statistical	unreviewed		0	0	"array, k"			
+EXCEL	LINEST	statistical	bindable	linearRegression	0	0	"known_y's, [known_x's], [const], [stats]"			
+EXCEL	LOGEST	statistical	bindable	ExponentialTrend	0	0	"known_y's, [known_x's], [const], [stats]"			
+EXCEL	LOGNORM.DIST	statistical	bindable	logNormalCDF	0	0	"x,mean,standard_dev,cumulative"			
+EXCEL	LOGNORM.INV	statistical	unreviewed		0	0	"probability, mean, standard_dev"			
+EXCEL	MAX	statistical	implemented	FormulaEvaluator.Function	992	114	"number1, [number2], ..."			
+EXCEL	MAXA	statistical	unreviewed		0	0	"value1,[value2],..."			
+EXCEL	MAXIFS	statistical	unreviewed		0	0	"max_range, criteria_range1, criteria1, [criteria_range2, criteria2], ..."			
+EXCEL	MEDIAN	statistical	implemented	FormulaEvaluator.Function	0	0	"number1, [number2], ..."			
+EXCEL	MIN	statistical	implemented	FormulaEvaluator.Function	1973	33	"number1, [number2], ..."			
+EXCEL	MINA	statistical	unreviewed		0	0	"value1, [value2], ..."			
+EXCEL	MINIFS	statistical	unreviewed		0	0	"min_range, criteria_range1, criteria1, [criteria_range2, criteria2], ..."			
+EXCEL	MODE.MULT	statistical	unreviewed		0	0	"number1,[number2],..."			
+EXCEL	MODE.SNGL	statistical	unreviewed		0	0	"number1,[number2],..."			
+EXCEL	NEGBINOM.DIST	statistical	unreviewed		0	0	"number_f,number_s,probability_s,cumulative"			
+EXCEL	NORM.DIST	statistical	bindable	normalCDF	0	0	"x,mean,standard_dev,cumulative"			
+EXCEL	NORM.INV	statistical	bindable	inverseNormalCDF	0	0	"probability,mean,standard_dev"			
+EXCEL	NORM.S.DIST	statistical	unreviewed		0	0	"z,cumulative"			
+EXCEL	NORM.S.INV	statistical	bindable	NewsvendorModel.optimalQuantity	2	1	probability			
+EXCEL	PEARSON	statistical	bindable	correlationCoefficient	0	0	"array1, array2"			
+EXCEL	PERCENTILE.EXC	statistical	unreviewed		0	0	"array,k"			
+EXCEL	PERCENTILE.INC	statistical	bindable	quantile	0	0	"array,k"			
+EXCEL	PERCENTRANK.EXC	statistical	unreviewed		0	0	"array,x,[significance]"			
+EXCEL	PERCENTRANK.INC	statistical	unreviewed		0	0	"array,x,[significance]"			
+EXCEL	PERMUT	statistical	bindable	permutation	0	0	"number, number_chosen"			
+EXCEL	PERMUTATIONA	statistical	unreviewed		0	0	"number, number-chosen"			
+EXCEL	PHI	statistical	unreviewed		0	0	x			
+EXCEL	POISSON.DIST	statistical	bindable	poissonCDF	0	0	"x,mean,cumulative"			
+EXCEL	PROB	statistical	unreviewed		0	0	"x_range, prob_range, [lower_limit], [upper_limit]"			
+EXCEL	QUARTILE.EXC	statistical	unreviewed		0	0	"array, quart"			
+EXCEL	QUARTILE.INC	statistical	unreviewed		0	0	"array,quart"			
+EXCEL	RANK.AVG	statistical	bindable	Array.rank	0	0	"number,ref,[order]"			
+EXCEL	RANK.EQ	statistical	unreviewed		0	0	"number,ref,[order]"			
+EXCEL	RSQ	statistical	bindable	rSquared	0	0	"known_y's,known_x's"			
+EXCEL	SKEW	statistical	bindable	skew	0	0	"number1, [number2], ..."			
+EXCEL	SKEW.P	statistical	bindable	skewP	0	0	"number 1, [number 2],..."			
+EXCEL	SLOPE	statistical	bindable	slope	0	0	"known_y's, known_x's"			
+EXCEL	SMALL	statistical	unreviewed		0	0	"array, k"			
+EXCEL	STANDARDIZE	statistical	bindable	standardize	0	0	"x, mean, standard_dev"			
+EXCEL	STDEV.P	statistical	bindable	stdDevP	0	0	"number1,[number2],..."			
+EXCEL	STDEV.S	statistical	bindable	stdDevS	86410	42	"number1,[number2],..."			
+EXCEL	STDEVA	statistical	unreviewed		0	0	"value1, [value2], ..."			
+EXCEL	STDEVPA	statistical	unreviewed		0	0	"value1, [value2], ..."			
+EXCEL	STEYX	statistical	unreviewed		0	0	"known_y's, known_x's"			
+EXCEL	T.DIST	statistical	bindable	studentTPDF	0	0	"x,deg_freedom, cumulative"			
+EXCEL	T.DIST.2T	statistical	bindable	tPValue	0	0	"x,deg_freedom"			
+EXCEL	T.DIST.RT	statistical	unreviewed		0	0	"x,deg_freedom"			
+EXCEL	T.INV	statistical	bindable	tQuantile	0	0	"probability,deg_freedom"			
+EXCEL	T.INV.2T	statistical	unreviewed		0	0	"probability,deg_freedom"			
+EXCEL	T.TEST	statistical	unreviewed		0	0	"array1,array2,tails,type"			
+EXCEL	TREND	statistical	bindable	linearRegression	0	0	"known_y's, [known_x's], [new_x's], [const]"			
+EXCEL	TRIMMEAN	statistical	unreviewed		0	0	"array, percent"			
+EXCEL	VAR.P	statistical	bindable	varianceP	0	0	"number1,[number2],..."			
+EXCEL	VAR.S	statistical	bindable	varianceS	0	0	"number1,[number2],..."			
+EXCEL	VARA	statistical	unreviewed		0	0	"value1, [value2], ..."			
+EXCEL	VARPA	statistical	unreviewed		0	0	"value1, [value2], ..."			
+EXCEL	WEIBULL.DIST	statistical	unreviewed		0	0	"x,alpha,beta,cumulative"			
+EXCEL	Z.TEST	statistical	unreviewed		0	0	"array,x,[sigma]"			
+EXCEL	ACCRINT	financial	new	verified absent	0	0	"issue, first_interest, settlement, rate, par, frequency, [basis], [calc_method]"			
+EXCEL	ACCRINTM	financial	unreviewed		0	0	"issue, settlement, rate, par, [basis]"			
+EXCEL	AMORDEGRC	financial	unreviewed		0	0	"cost, date_purchased, first_period, salvage, period, rate, [basis]"			
+EXCEL	AMORLINC	financial	unreviewed		0	0	"cost, date_purchased, first_period, salvage, period, rate, [basis]"			
+EXCEL	COUPDAYBS	financial	unreviewed		0	0	"settlement, maturity, frequency, [basis]"			
+EXCEL	COUPDAYS	financial	unreviewed		0	0	"settlement, maturity, frequency, [basis]"			
+EXCEL	COUPDAYSNC	financial	unreviewed		0	0	"settlement, maturity, frequency, [basis]"			
+EXCEL	COUPNCD	financial	unreviewed		0	0	"settlement, maturity, frequency, [basis]"			
+EXCEL	COUPNUM	financial	unreviewed		0	0	"settlement, maturity, frequency, [basis]"			
+EXCEL	COUPPCD	financial	unreviewed		0	0	"settlement, maturity, frequency, [basis]"			
+EXCEL	CUMIPMT	financial	bindable	AmortizationSchedule.totalInterest	0	0	"rate, nper, pv, start_period, end_period, type"			
+EXCEL	CUMPRINC	financial	bindable	AmortizationSchedule.totalPrincipal	0	0	"rate, nper, pv, start_period, end_period, type"			
+EXCEL	DB	financial	new	verified absent	0	0	"cost, salvage, life, period, [month]"			
+EXCEL	DDB	financial	new	verified absent	0	0	"cost, salvage, life, period, [factor]"			
+EXCEL	DISC	financial	unreviewed		0	0	"settlement, maturity, pr, redemption, [basis]"			
+EXCEL	DOLLARDE	financial	unreviewed		0	0	"fractional_dollar, fraction"			
+EXCEL	DOLLARFR	financial	unreviewed		0	0	"decimal_dollar, fraction"			
+EXCEL	DURATION	financial	bindable	macaulayDuration	0	0	"settlement, maturity, coupon, yld, frequency, [basis]"			
+EXCEL	EFFECT	financial	bindable	DebtInstrument.effectiveAnnualRate	0	0	"nominal_rate, npery"			
+EXCEL	FV	financial	unreviewed		0	0	"rate, nper, pmt, [pv], [type]"			
+EXCEL	FVSCHEDULE	financial	unreviewed		0	0	"principal, schedule"			
+EXCEL	INTRATE	financial	unreviewed		0	0	"settlement, maturity, investment, redemption, [basis]"			
+EXCEL	IPMT	financial	implemented	FormulaEvaluator.Function	0	0	"rate, per, nper, pv, [fv], [type]"			
+EXCEL	IRR	financial	implemented	FormulaEvaluator.Function	13	12	"values, [guess]"			
+EXCEL	ISPMT	financial	unreviewed		0	0	"rate, per, nper, pv"			
+EXCEL	MDURATION	financial	bindable	modifiedDuration	0	0	"settlement, maturity, coupon, yld, frequency, [basis]"			
+EXCEL	MIRR	financial	bindable	mirr	0	0	"values, finance_rate, reinvest_rate"			
+EXCEL	NOMINAL	financial	new	verified absent	0	0	"effect_rate, npery"			
+EXCEL	NPER	financial	new	verified absent	0	0	"rate, pmt, pv, [fv], [type]"			
+EXCEL	NPV	financial	implemented	FormulaEvaluator.Function	169	78	"rate, value1, [value2], ..."			
+EXCEL	ODDFPRICE	financial	unreviewed		0	0	"settlement, maturity, issue, first_coupon, rate, yld, redemption, frequency, [basis]"			
+EXCEL	ODDFYIELD	financial	unreviewed		0	0	"settlement, maturity, issue, first_coupon, rate, pr, redemption, frequency, [basis]"			
+EXCEL	ODDLPRICE	financial	unreviewed		0	0	"settlement, maturity, last_interest, rate, yld, redemption, frequency, [basis]"			
+EXCEL	ODDLYIELD	financial	unreviewed		0	0	"settlement, maturity, last_interest, rate, pr, redemption, frequency, [basis]"			
+EXCEL	PDURATION	financial	new	verified absent	0	0	"rate, pv, fv"			
+EXCEL	PMT	financial	implemented	FormulaEvaluator.Function	1352	48	"rate, nper, pv, [fv], [type]"			
+EXCEL	PPMT	financial	implemented	FormulaEvaluator.Function	0	0	"rate, per, nper, pv, [fv], [type]"			
+EXCEL	PRICE	financial	bindable	price	0	0	"settlement, maturity, rate, yld, redemption, frequency, [basis]"			
+EXCEL	PRICEDISC	financial	unreviewed		0	0	"settlement, maturity, discount, redemption, [basis]"			
+EXCEL	PRICEMAT	financial	unreviewed		0	0	"settlement, maturity, issue, rate, yld, [basis]"			
+EXCEL	PV	financial	unreviewed		39	13	"rate, nper, pmt, [fv], [type]"			
+EXCEL	RATE	financial	new	verified absent	10	2	"nper, pmt, pv, [fv], [type], [guess]"			
+EXCEL	RECEIVED	financial	unreviewed		0	0	"settlement, maturity, investment, discount, [basis]"			
+EXCEL	RRI	financial	bindable	cagr	0	0	"nper, pv, fv"			
+EXCEL	SLN	financial	bindable	RealEstateModel.annualDepreciation	0	0	"cost, salvage, life"			
+EXCEL	SYD	financial	new	verified absent	0	0	"cost, salvage, life, per"			
+EXCEL	TBILLEQ	financial	unreviewed		0	0	"settlement, maturity, discount"			
+EXCEL	TBILLPRICE	financial	unreviewed		0	0	"settlement, maturity, discount"			
+EXCEL	TBILLYIELD	financial	unreviewed		0	0	"settlement, maturity, pr"			
+EXCEL	VDB	financial	new	verified absent	0	0	"cost, salvage, life, start_period, end_period, [factor], [no_switch]"			
+EXCEL	XIRR	financial	bindable	xirr	2	2	"values, dates, [guess]"			
+EXCEL	XNPV	financial	bindable	xnpv	0	0	"rate, values, dates"			
+EXCEL	YIELD	financial	bindable	yieldToMaturity	0	0	"settlement, maturity, rate, pr, redemption, frequency, [basis]"			
+EXCEL	YIELDDISC	financial	unreviewed		0	0	"settlement, maturity, pr, redemption, [basis]"			
+EXCEL	YIELDMAT	financial	unreviewed		0	0	"settlement, maturity, issue, rate, pr, [basis]"			
+EXCEL	DATE	datetime	unreviewed		171	6	"year,month,day"			
+EXCEL	DATEDIF	datetime	unreviewed		0	0	"start_date,end_date,unit"			
+EXCEL	DATEVALUE	datetime	unreviewed		0	0	date_text			
+EXCEL	DAY	datetime	unreviewed		5906	16	serial_number			
+EXCEL	DAYS	datetime	unreviewed		0	0	"end_date, start_date"			
+EXCEL	DAYS360	datetime	bindable	DayCountConvention.days	0	0	"start_date,end_date,[method]"			
+EXCEL	EDATE	datetime	unreviewed		0	0	"start_date, months"			
+EXCEL	EOMONTH	datetime	unreviewed		1723	22	"start_date, months"			
+EXCEL	HOUR	datetime	unreviewed		0	0	serial_number			
+EXCEL	ISOWEEKNUM	datetime	unreviewed		0	0	date			
+EXCEL	MINUTE	datetime	unreviewed		0	0	serial_number			
+EXCEL	MONTH	datetime	unreviewed		9686	19	serial_number			
+EXCEL	NETWORKDAYS	datetime	unreviewed		0	0	"start_date, end_date, [holidays]"			
+EXCEL	NETWORKDAYS.INTL	datetime	unreviewed		0	0	"start_date, end_date, [weekend], [holidays]"			
+EXCEL	NOW	datetime	unreviewed		37	13	(no arguments)			
+EXCEL	SECOND	datetime	unreviewed		0	0	serial_number			
+EXCEL	TIME	datetime	unreviewed		0	0	"hour, minute, second"			
+EXCEL	TIMEVALUE	datetime	unreviewed		0	0	time_text			
+EXCEL	TODAY	datetime	unreviewed		37	7	(no arguments)			
+EXCEL	WEEKDAY	datetime	unreviewed		5477	6	"serial_number,[return_type]"			
+EXCEL	WEEKNUM	datetime	unreviewed		0	0	"serial_number,[return_type]"			
+EXCEL	WORKDAY	datetime	unreviewed		0	0	"start_date, days, [holidays]"			
+EXCEL	WORKDAY.INTL	datetime	unreviewed		0	0	"start_date, days, [weekend], [holidays]"			
+EXCEL	YEAR	datetime	unreviewed		21589	36	serial_number			
+EXCEL	YEARFRAC	datetime	bindable	DayCountConvention.yearFraction	3425	9	"start_date, end_date, [basis]"			
+EXCEL	AND	logical	implemented	FormulaEvaluator.Function	4629	50	"logical1, [logical2], ..."			
+EXCEL	BYCOL	logical	not ours	evaluator or graph	0	0	"array, lambda(column)"			
+EXCEL	BYROW	logical	not ours	evaluator or graph	0	0	"array, lambda(row)"			
+EXCEL	FALSE	logical	not ours	evaluator or graph	0	0	(no arguments)			
+EXCEL	IF	logical	implemented	FormulaEvaluator.Function	93526	239	"logical_test, value_if_true, [value_if_false]"			
+EXCEL	IFERROR	logical	not ours	evaluator or graph	168779	130	"value, value_if_error"			
+EXCEL	IFNA	logical	not ours	evaluator or graph	0	0	"value, value_if_na"			
+EXCEL	IFS	logical	not ours	evaluator or graph	0	0	"logical_test1, value_if_true1, [logical_test2, value_if_true2], [logical_test3, value_if_true3],..."			
+EXCEL	LAMBDA	logical	not ours	evaluator or graph	0	0	"[parameter1, parameter2, ...,] calculation"			
+EXCEL	LET	logical	not ours	evaluator or graph	0	0	"name1, name_value1, calculation_or_name2, [name_value2, calculation_or_name3...]"			
+EXCEL	MAKEARRAY	logical	not ours	evaluator or graph	0	0	"rows, cols, lambda(row, col)"			
+EXCEL	MAP	logical	not ours	evaluator or graph	0	0	"array1, lambda_or_array<#>"			
+EXCEL	NOT	logical	implemented	FormulaEvaluator.Function	51	6	logical			
+EXCEL	OR	logical	implemented	FormulaEvaluator.Function	21055	25	"logical1, [logical2], ..."			
+EXCEL	REDUCE	logical	not ours	evaluator or graph	0	0	"[initial_value], array, lambda(accumulator, value, body)"			
+EXCEL	SCAN	logical	not ours	evaluator or graph	0	0	"[initial_value], array, lambda(accumulator, value, body)"			
+EXCEL	SWITCH	logical	not ours	evaluator or graph	0	0	"expression, value1, result1, [default or value2, result2],...[default or value3, result3]"			
+EXCEL	TRUE	logical	not ours	evaluator or graph	0	0	(no arguments)			
+EXCEL	XOR	logical	not ours	evaluator or graph	0	0	"logical1, [logical2],..."			
+EXCEL	CELL	information	not ours	evaluator or graph	0	0	"info_type, [reference]"			
+EXCEL	ERROR.TYPE	information	not ours	evaluator or graph	0	0	error_val			
+EXCEL	INFO	information	not ours	evaluator or graph	0	0	type_text			
+EXCEL	ISBLANK	information	not ours	evaluator or graph	386	11	value			
+EXCEL	ISERR	information	not ours	evaluator or graph	3	3	value			
+EXCEL	ISERROR	information	not ours	evaluator or graph	2462	35	value			
+EXCEL	ISEVEN	information	not ours	evaluator or graph	0	0	number			
+EXCEL	ISFORMULA	information	not ours	evaluator or graph	0	0	reference			
+EXCEL	ISLOGICAL	information	not ours	evaluator or graph	0	0	value			
+EXCEL	ISNA	information	not ours	evaluator or graph	272	8	value			
+EXCEL	ISNONTEXT	information	not ours	evaluator or graph	0	0	value			
+EXCEL	ISNUMBER	information	not ours	evaluator or graph	493	1	value			
+EXCEL	ISODD	information	not ours	evaluator or graph	0	0	number			
+EXCEL	ISOMITTED	information	not ours	evaluator or graph	0	0	argument			
+EXCEL	ISREF	information	not ours	evaluator or graph	12	12	value			
+EXCEL	ISTEXT	information	not ours	evaluator or graph	35	5	value			
+EXCEL	N	information	not ours	evaluator or graph	0	0	value			
+EXCEL	NA	information	not ours	evaluator or graph	124	23	(no arguments)			
+EXCEL	SHEET	information	not ours	evaluator or graph	0	0	value			
+EXCEL	SHEETS	information	not ours	evaluator or graph	0	0	reference			
+EXCEL	STOCKHISTORY	information	not ours	evaluator or graph	0	0	"stock, start_date, [end_date], [interval], [headers], [property0], [property1], [property2], [property3], [property4], [property5]"			
+EXCEL	TYPE	information	not ours	evaluator or graph	0	0	value			
+EXCEL	ADDRESS	lookup	not ours	evaluator or graph	21017	32	"row_num, column_num, [abs_num], [a1], [sheet_text]"			
+EXCEL	AREAS	lookup	not ours	evaluator or graph	0	0	reference			
+EXCEL	CHOOSE	lookup	not ours	evaluator or graph	40	21	"index_num, value1, [value2], ..."			
+EXCEL	CHOOSECOLS	lookup	not ours	evaluator or graph	0	0	"array,col_num1,[col_num2],..."			
+EXCEL	CHOOSEROWS	lookup	not ours	evaluator or graph	0	0	"array,row_num1,[row_num2],..."			
+EXCEL	COLUMN	lookup	not ours	evaluator or graph	86620	45	[reference]			
+EXCEL	COLUMNS	lookup	not ours	evaluator or graph	0	0	array			
+EXCEL	DROP	lookup	not ours	evaluator or graph	0	0	"array, rows,[columns]"			
+EXCEL	EXPAND	lookup	not ours	evaluator or graph	0	0	"array, rows, [columns], [pad_with]"			
+EXCEL	FILTER	lookup	not ours	evaluator or graph	0	0	"array,include,[if_empty]"			
+EXCEL	FORMULATEXT	lookup	not ours	evaluator or graph	0	0	reference			
+EXCEL	GETPIVOTDATA	lookup	not ours	evaluator or graph	0	0	"data_field, pivot_table, [field1, item1, field2, item2], ..."			
+EXCEL	GROUPBY	lookup	not ours	evaluator or graph	0	0	"row_fields,values,function,[field_headers],[total_depth],[sort_order],[filter_array],[field_relationship]"			
+EXCEL	HLOOKUP	lookup	not ours	evaluator or graph	797	16	"lookup_value, table_array, row_index_num, [range_lookup]"			
+EXCEL	HSTACK	lookup	not ours	evaluator or graph	0	0	"array1,[array2],..."			
+EXCEL	HYPERLINK	lookup	not ours	evaluator or graph	0	0	"link_location, [friendly_name]"			
+EXCEL	IMAGE	lookup	not ours	evaluator or graph	0	0	"source, [alt_text], [sizing], [height], [width]"			
+EXCEL	INDEX	lookup	not ours	evaluator or graph	605	43	"array, row_num, [column_num]"			
+EXCEL	INDIRECT	lookup	not ours	evaluator or graph	21017	32	"ref_text, [a1]"			
+EXCEL	LOOKUP	lookup	not ours	evaluator or graph	8	5	"lookup_value, lookup_vector, [result_vector]"			
+EXCEL	MATCH	lookup	not ours	evaluator or graph	380	18	"lookup_value, lookup_array, [match_type]"			
+EXCEL	OFFSET	lookup	not ours	evaluator or graph	9798	32	"reference, rows, cols, [height], [width]"			
+EXCEL	PIVOTBY	lookup	not ours	evaluator or graph	0	0	"row_fields,col_fields,values,function,[field_headers],[row_total_depth],[row_sort_order],[col_total_depth],[col_sort_order],[filter_array],[relative_to]"			
+EXCEL	ROW	lookup	not ours	evaluator or graph	1222	2	[reference]			
+EXCEL	ROWS	lookup	not ours	evaluator or graph	0	0	array			
+EXCEL	RTD	lookup	not ours	evaluator or graph	0	0	"ProgID, server, topic1, [topic2], ..."			
+EXCEL	SORT	lookup	not ours	evaluator or graph	0	0	"array,[sort_index],[sort_order],[by_col]"			
+EXCEL	SORTBY	lookup	not ours	evaluator or graph	0	0	"array, by_array1, [sort_order1], [by_array2, sort_order2],..."			
+EXCEL	TAKE	lookup	not ours	evaluator or graph	0	0	"array, rows,[columns]"			
+EXCEL	TOCOL	lookup	not ours	evaluator or graph	0	0	"array, [ignore], [scan_by_column]"			
+EXCEL	TOROW	lookup	not ours	evaluator or graph	0	0	"array, [ignore], [scan_by_column]"			
+EXCEL	TRANSPOSE	lookup	not ours	evaluator or graph	1	1	array			
+EXCEL	TRIMRANGE	lookup	not ours	evaluator or graph	0	0	"range,[trim_rows],[trim_cols]"			
+EXCEL	UNIQUE	lookup	not ours	evaluator or graph	0	0	"array,[by_col],[exactly_once]"			
+EXCEL	VLOOKUP	lookup	not ours	evaluator or graph	100628	69	"lookup_value, table_array, col_index_num, [range_lookup]"			
+EXCEL	VSTACK	lookup	not ours	evaluator or graph	0	0	"array1,[array2],..."			
+EXCEL	WRAPCOLS	lookup	not ours	evaluator or graph	0	0	"vector, wrap_count, [pad_with]"			
+EXCEL	WRAPROWS	lookup	not ours	evaluator or graph	0	0	"vector, wrap_count, [pad_with]"			
+EXCEL	XLOOKUP	lookup	not ours	evaluator or graph	0	0	"lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode]"			
+EXCEL	XMATCH	lookup	not ours	evaluator or graph	0	0	"lookup_value, lookup_array, [match_mode], [search_mode]"			
+EXCEL	FIELDVALUE	lookup	not ours	evaluator or graph	0	0	"value, field_name"			
+EXCEL	ASC	text	out of scope		0	0	text			
+EXCEL	ARRAYTOTEXT	text	out of scope		0	0	"array, [format]"			
+EXCEL	BAHTTEXT	text	out of scope		0	0	number			
+EXCEL	CHAR	text	out of scope		0	0	number			
+EXCEL	CLEAN	text	out of scope		0	0	text			
+EXCEL	CODE	text	out of scope		0	0	text			
+EXCEL	CONCAT	text	out of scope		0	0	"text1, [text2],..."			
+EXCEL	CONCATENATE	text	out of scope		0	0	"text1, [text2], ..."			
+EXCEL	DBCS	text	out of scope		0	0	text			
+EXCEL	DETECTLANGUAGE	text	out of scope		0	0	text			
+EXCEL	DOLLAR	text	out of scope		0	0	"number, [decimals]"			
+EXCEL	EXACT	text	out of scope		0	0	"text1, text2"			
+EXCEL	FIND	text	out of scope		0	0	"find_text, within_text, [start_num]"			
+EXCEL	FINDB	text	out of scope		0	0	"find_text, within_text, [start_num]"			
+EXCEL	FIXED	text	out of scope		0	0	"number, [decimals], [no_commas]"			
+EXCEL	LEFT	text	out of scope		17	1	"text, [num_chars]"			
+EXCEL	LEFTB	text	out of scope		0	0	UNCONFIRMED			
+EXCEL	LEN	text	out of scope		0	0	text			
+EXCEL	LENB	text	out of scope		0	0	UNCONFIRMED			
+EXCEL	LOWER	text	out of scope		0	0	text			
+EXCEL	MID	text	out of scope		0	0	"text, start_num, num_chars"			
+EXCEL	MIDB	text	out of scope		0	0	UNCONFIRMED			
+EXCEL	NUMBERVALUE	text	out of scope		0	0	"Text, [Decimal_separator], [Group_separator]"			
+EXCEL	PHONETIC	text	out of scope		0	0	reference			
+EXCEL	PROPER	text	out of scope		0	0	text			
+EXCEL	REGEXEXTRACT	text	out of scope		0	0	"text, pattern, [return_mode], [case_sensitivity]"			
+EXCEL	REGEXREPLACE	text	out of scope		0	0	"text, pattern, replacement, [occurrence], [case_sensitivity]"			
+EXCEL	REGEXTEST	text	out of scope		0	0	"text, pattern, [case_sensitivity]"			
+EXCEL	REPLACE	text	out of scope		0	0	"old_text, start_num, num_chars, new_text"			
+EXCEL	REPLACEB	text	out of scope		0	0	UNCONFIRMED			
+EXCEL	REPT	text	out of scope		0	0	"text, number_times"			
+EXCEL	RIGHT	text	out of scope		61	13	"text,[num_chars]"			
+EXCEL	RIGHTB	text	out of scope		0	0	UNCONFIRMED			
+EXCEL	SEARCH	text	out of scope		0	0	"find_text, within_text, [start_num]"			
+EXCEL	SEARCHB	text	out of scope		0	0	UNCONFIRMED			
+EXCEL	SUBSTITUTE	text	out of scope		0	0	"text, old_text, new_text, [instance_num]"			
+EXCEL	T	text	out of scope		0	0	value			
+EXCEL	TEXT	text	out of scope		51	24	"value, format_text"			
+EXCEL	TEXTAFTER	text	out of scope		0	0	"text,delimiter,[instance_num], [match_mode], [match_end], [if_not_found]"			
+EXCEL	TEXTBEFORE	text	out of scope		0	0	"text,delimiter,[instance_num], [match_mode], [match_end], [if_not_found]"			
+EXCEL	TEXTJOIN	text	out of scope		0	0	"delimiter, ignore_empty, text1, [text2], ..."			
+EXCEL	TEXTSPLIT	text	out of scope		0	0	"text,col_delimiter,[row_delimiter],[ignore_empty], [match_mode], [pad_with]"			
+EXCEL	TRANSLATE	text	out of scope		0	0	"text, [source_language], [target_language]"			
+EXCEL	TRIM	text	out of scope		0	0	text			
+EXCEL	UNICHAR	text	out of scope		0	0	number			
+EXCEL	UNICODE	text	out of scope		0	0	text			
+EXCEL	UPPER	text	out of scope		0	0	text			
+EXCEL	VALUE	text	out of scope		0	0	text			
+EXCEL	VALUETOTEXT	text	out of scope		0	0	"value, [format]"			
+EXCEL	JIS	text	out of scope		0	0	text			
+EXCEL	DAVERAGE	database	out of scope		0	0	"database, field, criteria"			
+EXCEL	DCOUNT	database	out of scope		0	0	"database, field, criteria"			
+EXCEL	DCOUNTA	database	out of scope		0	0	"database, field, criteria"			
+EXCEL	DGET	database	out of scope		0	0	"database, field, criteria"			
+EXCEL	DMAX	database	out of scope		0	0	"database, field, criteria"			
+EXCEL	DMIN	database	out of scope		0	0	"database, field, criteria"			
+EXCEL	DPRODUCT	database	out of scope		0	0	"database, field, criteria"			
+EXCEL	DSTDEV	database	out of scope		0	0	"database, field, criteria"			
+EXCEL	DSTDEVP	database	out of scope		0	0	"database, field, criteria"			
+EXCEL	DSUM	database	out of scope		0	0	"database, field, criteria"			
+EXCEL	DVAR	database	out of scope		0	0	"database, field, criteria"			
+EXCEL	DVARP	database	out of scope		0	0	"database, field, criteria"			
+EXCEL	CUBEKPIMEMBER	cube	out of scope		0	0	"connection, kpi_name, kpi_property, [caption]"			
+EXCEL	CUBEMEMBER	cube	out of scope		0	0	"connection, member_expression, [caption]"			
+EXCEL	CUBEMEMBERPROPERTY	cube	out of scope		0	0	"connection, member_expression, property"			
+EXCEL	CUBERANKEDMEMBER	cube	out of scope		0	0	"connection, set_expression, rank, [caption]"			
+EXCEL	CUBESET	cube	out of scope		0	0	"connection, set_expression, [caption], [sort_order], [sort_by]"			
+EXCEL	CUBESETCOUNT	cube	out of scope		0	0	set			
+EXCEL	CUBEVALUE	cube	out of scope		0	0	"connection, [member_expression1], [member_expression2], ..."			
+EXCEL	ENCODEURL	web	out of scope		0	0	text			
+EXCEL	FILTERXML	web	out of scope		0	0	"xml, xpath"			
+EXCEL	WEBSERVICE	web	out of scope		0	0	url			
+EXCEL	BESSELI	engineering	unreviewed		0	0	"X, N"			
+EXCEL	BESSELJ	engineering	unreviewed		0	0	"X, N"			
+EXCEL	BESSELK	engineering	unreviewed		0	0	"X, N"			
+EXCEL	BESSELY	engineering	unreviewed		0	0	"X, N"			
+EXCEL	BIN2DEC	engineering	unreviewed		0	0	number			
+EXCEL	BIN2HEX	engineering	unreviewed		0	0	"number, [places]"			
+EXCEL	BIN2OCT	engineering	unreviewed		0	0	"number, [places]"			
+EXCEL	BITAND	engineering	unreviewed		0	0	"number1, number2"			
+EXCEL	BITLSHIFT	engineering	unreviewed		0	0	"number, shift_amount"			
+EXCEL	BITOR	engineering	unreviewed		0	0	"number1, number2"			
+EXCEL	BITRSHIFT	engineering	unreviewed		0	0	"number, shift_amount"			
+EXCEL	BITXOR	engineering	unreviewed		0	0	"number1, number2"			
+EXCEL	COMPLEX	engineering	unreviewed		0	0	"real_num, i_num, [suffix]"			
+EXCEL	CONVERT	engineering	unreviewed		0	0	"number,from_unit,to_unit"			
+EXCEL	DEC2BIN	engineering	unreviewed		0	0	"number, [places]"			
+EXCEL	DEC2HEX	engineering	unreviewed		0	0	"number, [places]"			
+EXCEL	DEC2OCT	engineering	unreviewed		0	0	"number, [places]"			
+EXCEL	DELTA	engineering	unreviewed		0	0	"number1, [number2]"			
+EXCEL	ERF	engineering	unreviewed		0	0	"lower_limit,[upper_limit]"			
+EXCEL	ERF.PRECISE	engineering	unreviewed		0	0	x			
+EXCEL	ERFC	engineering	unreviewed		0	0	x			
+EXCEL	ERFC.PRECISE	engineering	unreviewed		0	0	x			
+EXCEL	GESTEP	engineering	unreviewed		0	0	"number, [step]"			
+EXCEL	HEX2BIN	engineering	unreviewed		0	0	"number, [places]"			
+EXCEL	HEX2DEC	engineering	unreviewed		0	0	number			
+EXCEL	HEX2OCT	engineering	unreviewed		0	0	"number, [places]"			
+EXCEL	IMABS	engineering	unreviewed		0	0	inumber			
+EXCEL	IMAGINARY	engineering	unreviewed		0	0	inumber			
+EXCEL	IMARGUMENT	engineering	unreviewed		0	0	inumber			
+EXCEL	IMCONJUGATE	engineering	unreviewed		0	0	inumber			
+EXCEL	IMCOS	engineering	unreviewed		0	0	inumber			
+EXCEL	IMCOSH	engineering	unreviewed		0	0	inumber			
+EXCEL	IMCOT	engineering	unreviewed		0	0	inumber			
+EXCEL	IMCSC	engineering	unreviewed		0	0	inumber			
+EXCEL	IMCSCH	engineering	unreviewed		0	0	inumber			
+EXCEL	IMDIV	engineering	unreviewed		0	0	"inumber1, inumber2"			
+EXCEL	IMEXP	engineering	unreviewed		0	0	inumber			
+EXCEL	IMLN	engineering	unreviewed		0	0	inumber			
+EXCEL	IMLOG10	engineering	unreviewed		0	0	inumber			
+EXCEL	IMLOG2	engineering	unreviewed		0	0	inumber			
+EXCEL	IMPOWER	engineering	unreviewed		0	0	"inumber, number"			
+EXCEL	IMPRODUCT	engineering	unreviewed		0	0	"inumber1, [inumber2], ..."			
+EXCEL	IMREAL	engineering	unreviewed		0	0	inumber			
+EXCEL	IMSEC	engineering	unreviewed		0	0	inumber			
+EXCEL	IMSECH	engineering	unreviewed		0	0	inumber			
+EXCEL	IMSIN	engineering	unreviewed		0	0	inumber			
+EXCEL	IMSINH	engineering	unreviewed		0	0	inumber			
+EXCEL	IMSQRT	engineering	unreviewed		0	0	inumber			
+EXCEL	IMSUB	engineering	unreviewed		0	0	"inumber1, inumber2"			
+EXCEL	IMSUM	engineering	unreviewed		0	0	"inumber1, [inumber2], ..."			
+EXCEL	IMTAN	engineering	unreviewed		0	0	inumber			
+EXCEL	OCT2BIN	engineering	unreviewed		0	0	"number, [places]"			
+EXCEL	OCT2DEC	engineering	unreviewed		0	0	number			
+EXCEL	OCT2HEX	engineering	unreviewed		0	0	"number, [places]"			
+EXCEL	BETADIST	compatibility	unreviewed		0	0	"x,alpha,beta,[A],[B]"			
+EXCEL	BETAINV	compatibility	unreviewed		0	0	"probability,alpha,beta,[A],[B]"			
+EXCEL	BINOMDIST	compatibility	unreviewed		0	0	"number_s,trials,probability_s,cumulative"			
+EXCEL	CEILING	compatibility	bindable	ceiling	2	2	"number, significance"			
+EXCEL	CHIDIST	compatibility	unreviewed		0	0	"x,deg_freedom"			
+EXCEL	CHIINV	compatibility	unreviewed		0	0	"probability,deg_freedom"			
+EXCEL	CHITEST	compatibility	unreviewed		0	0	"actual_range,expected_range"			
+EXCEL	CONFIDENCE	compatibility	unreviewed		0	0	"alpha,standard_dev,size"			
+EXCEL	COVAR	compatibility	bindable	covarianceP	25	1	"array1,array2"			
+EXCEL	CRITBINOM	compatibility	unreviewed		0	0	"trials,probability_s,alpha"			
+EXCEL	EXPONDIST	compatibility	unreviewed		0	0	"x,lambda,cumulative"			
+EXCEL	FDIST	compatibility	unreviewed		0	0	"x,deg_freedom1,deg_freedom2"			
+EXCEL	FINV	compatibility	unreviewed		0	0	"probability,deg_freedom1,deg_freedom2"			
+EXCEL	FLOOR	compatibility	bindable	floored	0	0	"number, significance"			
+EXCEL	FTEST	compatibility	unreviewed		0	0	"array1,array2"			
+EXCEL	GAMMADIST	compatibility	unreviewed		0	0	"x,alpha,beta,cumulative"			
+EXCEL	GAMMAINV	compatibility	unreviewed		0	0	"probability,alpha,beta"			
+EXCEL	HYPGEOMDIST	compatibility	unreviewed		0	0	"sample_s,number_sample,population_s,number_pop"			
+EXCEL	LOGINV	compatibility	unreviewed		0	0	"probability, mean, standard_dev"			
+EXCEL	LOGNORMDIST	compatibility	unreviewed		0	0	"x,mean,standard_dev"			
+EXCEL	MODE	compatibility	bindable	mode	0	0	"number1,[number2],..."			
+EXCEL	NEGBINOMDIST	compatibility	unreviewed		0	0	"number_f,number_s,probability_s"			
+EXCEL	NORMDIST	compatibility	bindable	normDist	0	0	"x,mean,standard_dev,cumulative"			
+EXCEL	NORMINV	compatibility	bindable	normInv	0	0	"probability,mean,standard_dev"			
+EXCEL	NORMSDIST	compatibility	bindable	normSDist	0	0	z			
+EXCEL	NORMSINV	compatibility	bindable	normSInv	0	0	probability			
+EXCEL	PERCENTILE	compatibility	bindable	PercentileLocation	0	0	"array,k"			
+EXCEL	PERCENTRANK	compatibility	unreviewed		0	0	"array,x,[significance]"			
+EXCEL	POISSON	compatibility	unreviewed		0	0	"x,mean,cumulative"			
+EXCEL	QUARTILE	compatibility	unreviewed		0	0	"array,quart"			
+EXCEL	RANK	compatibility	bindable	ConsolidatedStatements.ranked	0	0	"number,ref,[order]"			
+EXCEL	STDEV	compatibility	implemented	FormulaEvaluator.Function	5	1	"number1,[number2],..."			
+EXCEL	STDEVP	compatibility	implemented	FormulaEvaluator.Function	0	0	"number1,[number2],..."			
+EXCEL	TDIST	compatibility	unreviewed		0	0	"x,deg_freedom,tails"			
+EXCEL	TINV	compatibility	unreviewed		0	0	"probability,deg_freedom"			
+EXCEL	TTEST	compatibility	unreviewed		0	0	"array1,array2,tails,type"			
+EXCEL	VAR	compatibility	implemented	FormulaEvaluator.Function	0	0	"number1,[number2],..."			
+EXCEL	VARP	compatibility	implemented	FormulaEvaluator.Function	0	0	"number1,[number2],..."			
+EXCEL	WEIBULL	compatibility	unreviewed		0	0	"x,alpha,beta,cumulative"			
+EXCEL	ZTEST	compatibility	unreviewed		0	0	"array,x,[sigma]"			
+PSI	PsiAbsDev	statistic	unreviewed		0	0	"cell, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiAPARCH11	distribution	unreviewed		0	0	"mean, volatility, delta, gamma, err_coef, ar_coef, val0, stdev0|confirmed"			
+PSI	PsiAR1	distribution	unreviewed		0	0	"mean, volatility, coef1, val0|confirmed"			
+PSI	PsiAR2	distribution	unreviewed		0	0	"mean, volatility, coef1, coef2, val0, val1|confirmed"			
+PSI	PsiARCH1	distribution	unreviewed		0	0	"mean, volatility, err_coef, val0|confirmed"			
+PSI	PsiARMA11	distribution	unreviewed		0	0	"mean, volatility, ar_coef, ma_coef, val0, err0|confirmed"			
+PSI	PsiBaseCase	property	unreviewed		95	7	value|confirmed			
+PSI	PsiBernoulli	distribution	unreviewed		45	2	p|confirmed			
+PSI	PsiBeta	distribution	bindable	DistributionBeta	0	0	"alpha1, alpha2|confirmed"			
+PSI	PsiBetaGen	distribution	bindable	DistributionBeta	0	0	"alpha1, alpha2, a, b|confirmed"			
+PSI	PsiBetaGenAlt	distribution	bindable	DistributionBeta	0	0	"4 name/value or percentile/value pairs, chosen from: percentile1, percentile2, percentile3, percentile4, shape1, shape2, min, max|confirmed"			
+PSI	PsiBetaSubj	distribution	bindable	DistributionBeta	0	0	"a (min), c (likely), mean, b (max)|confirmed"			
+PSI	PsiBinomial	distribution	unreviewed		0	0	"n, p|confirmed"			
+PSI	PsiBoxFunction	other	unreviewed		0	0	"table_range, Arg1, Arg2|confirmed"			
+PSI	PsiBoxIterator	other	unreviewed		0	0	table_range|confirmed			
+PSI	PsiBurr12	distribution	unreviewed		0	0	"loc, scale, shape1, shape2|confirmed"			
+PSI	PsiBVar	statistic	unreviewed		1	1	"cell, percentile, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiCalcParam	other	unreviewed		0	0	"values_or_lower, upper, base_case|confirmed"			
+PSI	PsiCalcValue	other	unreviewed		0	0	"Output_cell, paramidx|confirmed"			
+PSI	PsiCategory	property	unreviewed		0	0	string|confirmed			
+PSI	PsiCauchy	distribution	unreviewed		0	0	"loc, lambda|confirmed"			
+PSI	PsiCauchyAlt	distribution	unreviewed		0	0	"2 percentile/value pairs: percentile1, value1, percentile2, value2|confirmed"			
+PSI	PsiCensor	property	unreviewed		0	0	"min, max, type|confirmed"			
+PSI	PsiCertified	distribution	unreviewed		0	0	"name, sipname|confirmed"			
+PSI	PsiCertify	property	unreviewed		0	0	"name, default_value, short_description, full_description, version, author, copyright, trademark, history|confirmed"			
+PSI	PsiChiSquare	distribution	bindable	DistributionChiSquared	0	0	df|confirmed			
+PSI	PsiChiSquareAlt	distribution	bindable	DistributionChiSquared	0	0	"1 parameter, chosen from: percentile or var|confirmed"			
+PSI	PsiCITrials	statistic	unreviewed		0	0	"cell, confidence_level, tolerance, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiClassifyCT	other	unreviewed		0	0	UNCONFIRMED|confirmed			
+PSI	PsiClassifyCTEnsemble	other	unreviewed		0	0	UNCONFIRMED|confirmed			
+PSI	PsiClassifyDA	other	unreviewed		0	0	UNCONFIRMED|confirmed			
+PSI	PsiClassifyLR	other	unreviewed		0	0	UNCONFIRMED|confirmed			
+PSI	PsiClassifyNB	other	unreviewed		0	0	UNCONFIRMED|confirmed			
+PSI	PsiClassifyNN	other	unreviewed		0	0	UNCONFIRMED|confirmed			
+PSI	PsiClassifyNNEnsemble	other	unreviewed		0	0	UNCONFIRMED|confirmed			
+PSI	PsiCoeffVar	statistic	unreviewed		0	0	"cell, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiCollect	property	unreviewed		0	0	UNCONFIRMED|inferred			
+PSI	PsiCompound	property	unreviewed		0	0	"number_cell, deduction, limit|confirmed"			
+PSI	PsiCon	annotation	not ours	"role declaration, belongs with solver_adj"	0	0	"LHS, relation, RHS, active, chance_type, chance_measure, comment, model_name, critical|confirmed"			
+PSI	PsiConverged	statistic	unreviewed		0	0	"output_cell, [simulation]|confirmed"			
+PSI	PsiConvergence	property	unreviewed		0	0	"tol, type, level, mean, stdev, perc, val|confirmed"			
+PSI	PsiCopula	property	unreviewed		0	0	"type, param, reflection, instance|confirmed"			
+PSI	PsiCopulaGauss	property	unreviewed		0	0	"number_range, position, instance|confirmed"			
+PSI	PsiCopulaStudent	property	unreviewed		0	0	"number_range, position, df, instance|confirmed"			
+PSI	PsiCorrDepen	property	unreviewed		0	0	"corrname, coefficient|confirmed"			
+PSI	PsiCorrelation	statistic	unreviewed		0	0	"cell1, cell2, simulation|confirmed"			
+PSI	PsiCorrIndep	property	unreviewed		0	0	corrname|confirmed			
+PSI	PsiCorrMatrix	property	bindable	isValidCorrelationMatrix	0	0	"matrix_cell_range, position, instance|confirmed"			
+PSI	PsiCount	statistic	unreviewed		0	0	"cell, type, simulation|confirmed"			
+PSI	PsiCube	other	unreviewed		0	0	"range_with_values, dim1, dim2, dim3|confirmed"			
+PSI	PsiCubeData	other	unreviewed		0	0	"output_cell, struc_format|confirmed"			
+PSI	PsiCubeOutput	other	unreviewed		0	0	output_cell|confirmed			
+PSI	PsiCumul	distribution	unreviewed		0	0	"a, b, {x1..xn}, {p1..pn}|confirmed"			
+PSI	PsiCumulD	distribution	unreviewed		0	0	"min, max, {x1..xn}, {p1..pn}|confirmed"			
+PSI	PsiCurrentOpt	other	unreviewed		0	0	(none)|inferred			
+PSI	PsiCVaR	statistic	unreviewed		1	1	"cell, percentile, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiDagum	distribution	unreviewed		0	0	"loc, scale, shape1, shape2|confirmed"			
+PSI	PsiData	statistic	unreviewed		0	0	"cell, trial, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiDataSrc	other	unreviewed		0	0	"src_name, val_col_names, data, idx1_name, idx1_elem, idx2_name, idx2_elem|confirmed"			
+PSI	PsiDblTriang	distribution	unreviewed		0	0	"min, likely, max, p|confirmed"			
+PSI	PsiDecTable	other	unreviewed		0	0	"table_range, output, ret_header, input_val1, input_val2|confirmed"			
+PSI	PsiDim	other	unreviewed		0	0	"name, range_or_array|confirmed"			
+PSI	PsiDimActive	property	unreviewed		0	0	"opt, sim, sen|confirmed"			
+PSI	PsiDimLock	property	unreviewed		0	0	elem_or_index|confirmed			
+PSI	PsiDiscrete	distribution	unreviewed		20	8	"{x1..xn}, {p1..pn}|confirmed"			
+PSI	PsiDistInfo	statistic	unreviewed		0	0	"cell, [info]|confirmed"			
+PSI	PsiDisUniform	distribution	unreviewed		0	0	{x1..xn}|confirmed			
+PSI	PsiDualLower	other	unreviewed		0	0	"cell, optimization|confirmed"			
+PSI	PsiDualUpper	other	unreviewed		0	0	"cell, optimization|confirmed"			
+PSI	PsiDualValue	other	unreviewed		0	0	"cell, optimization, upper|confirmed"			
+PSI	PsiEGARCH11	distribution	unreviewed		0	0	"mean, volatility, theta, gamma, err_coef, ar_coef, val0, stdev0|confirmed"			
+PSI	PsiEngine	annotation	not ours	"role declaration, belongs with solver_adj"	0	0	"engine_name, model_name|confirmed"			
+PSI	PsiErf	distribution	unreviewed		0	0	h|confirmed			
+PSI	PsiErfAlt	distribution	unreviewed		0	0	"1 parameter, chosen from: percentile or var|confirmed"			
+PSI	PsiErlang	distribution	unreviewed		0	0	"k, beta|confirmed"			
+PSI	PsiExpGain	statistic	unreviewed		0	0	"cell, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiExpGainRatio	statistic	unreviewed		0	0	"cell, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiExpLoss	statistic	unreviewed		0	0	"cell, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiExpLossRatio	statistic	unreviewed		0	0	"cell, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiExponential	distribution	bindable	DistributionExponential	0	0	beta|confirmed			
+PSI	PsiExponentialAlt	distribution	bindable	DistributionExponential	0	0	"1 parameter, chosen from: percentile or var|confirmed"			
+PSI	PsiExport	other	unreviewed		0	0	"src_name, src_type, connection, data_range, result|confirmed"			
+PSI	PsiExpValMargin	statistic	unreviewed		0	0	"cell, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiFatigueLife	distribution	unreviewed		0	0	"loc, scale, shape|confirmed"			
+PSI	PsiFatigueLifeAlt	distribution	unreviewed		0	0	"3 name/value pairs, names chosen from: loc, scale, shape, or a percentile (0-1); e.g. PsiFatigueLifeAlt(5%, 1.5, 50%, 2.5, 95%, 4.5)|confirmed"			
+PSI	PsiFDist	distribution	unreviewed		0	0	"df1, df2|confirmed"			
+PSI	PsiFinalValue	other	unreviewed		0	0	"cell, optimization|confirmed"			
+PSI	PsiFit	distribution	unreviewed		0	0	data|confirmed			
+PSI	PsiFitInfo	property	unreviewed		0	0	"name, criterion|confirmed"			
+PSI	PsiForecast	other	bindable	linearRegression	0	0	"Model, Input_Data, Simulate, Num_Forecasts, Header|confirmed"			
+PSI	PsiForecastARIMA	other	unreviewed		0	0	UNCONFIRMED|confirmed			
+PSI	PsiForecastDoubleExp	other	unreviewed		0	0	UNCONFIRMED|confirmed			
+PSI	PsiForecastETS	other	unreviewed		0	0	"target_date, values, timeline, seasonality, data_completion, aggregation, simulate|confirmed"			
+PSI	PsiForecastExp	other	unreviewed		0	0	UNCONFIRMED|confirmed			
+PSI	PsiForecastHoltWinters	other	unreviewed		0	0	UNCONFIRMED|confirmed			
+PSI	PsiForecastLinear	other	unreviewed		0	0	"X, known_ys, known_xs, simulate|confirmed"			
+PSI	PsiForecastMovingAvg	other	unreviewed		0	0	UNCONFIRMED|confirmed			
+PSI	PsiFrechet	distribution	unreviewed		0	0	"loc, scale, shape|confirmed"			
+PSI	PsiFrechetAlt	distribution	unreviewed		0	0	"3 name/value pairs, names chosen from: loc, scale, shape, or a percentile (0-1)|confirmed"			
+PSI	PsiFrequency	statistic	unreviewed		0	0	"cell, freq_type, bin_bounds, simulation|confirmed"			
+PSI	PsiGamma	distribution	bindable	DistributionGamma	0	0	"alpha, beta|confirmed"			
+PSI	PsiGammaAlt	distribution	bindable	DistributionGamma	0	0	"2 parameters, chosen from: percentile1, percentile2, mean, var, shape, scale|confirmed"			
+PSI	PsiGARCH11	distribution	unreviewed		0	0	"mean, volatility, err_coef, ar_coef, val0, stdev0|confirmed"			
+PSI	PsiGeneral	distribution	unreviewed		0	0	"a, b, {x1..xn}, {w1..wn}|confirmed"			
+PSI	PsiGeometric	distribution	bindable	DistributionGeometric	0	0	p|confirmed			
+PSI	PsiHistogram	distribution	unreviewed		0	0	"a, b, {w1..wn}|confirmed"			
+PSI	PsiHyperGeo	distribution	unreviewed		0	0	"n, D, M|confirmed"			
+PSI	PsiHypSecant	distribution	unreviewed		0	0	"loc, scale|confirmed"			
+PSI	PsiHypSecantAlt	distribution	unreviewed		0	0	"2 parameters: two different percentiles, or percentile and loc, or percentile and scale|confirmed"			
+PSI	PsiInitialValue	other	unreviewed		0	0	"cell, optimization|confirmed"			
+PSI	PsiInput	annotation	not ours	"role declaration, belongs with solver_adj"	0	0	cell_or_name|confirmed			
+PSI	PsiIntUniform	distribution	unreviewed		6	1	"a, b|confirmed"			
+PSI	PsiInvNormal	distribution	unreviewed		0	0	"mu, lambda|confirmed"			
+PSI	PsiInvNormalAlt	distribution	unreviewed		0	0	"2 parameters, chosen from: two different percentiles, mean, var, scale|confirmed"			
+PSI	PsiJohnsonSB	distribution	unreviewed		0	0	"shape1, shape2, min, max|confirmed"			
+PSI	PsiJohnsonSU	distribution	unreviewed		0	0	"shape1, shape2, loc, scale|confirmed"			
+PSI	PsiJoin	other	unreviewed		0	0	"Table1, Table2, Clause, Return_table|confirmed"			
+PSI	PsiKendallTau	statistic	unreviewed		0	0	"cell1, cell2|confirmed"			
+PSI	PsiKumaraswamy	distribution	unreviewed		0	0	"shape1, shape2, min, max|confirmed"			
+PSI	PsiKurtosis	statistic	unreviewed		0	0	"cell, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiLaplace	distribution	unreviewed		0	0	"loc, beta (scale)|confirmed"			
+PSI	PsiLaplaceAlt	distribution	unreviewed		0	0	"2 parameters, chosen from: two different percentiles or the standard deviation|confirmed"			
+PSI	PsiLevy	distribution	unreviewed		0	0	"loc, scale|confirmed"			
+PSI	PsiLevyAlt	distribution	unreviewed		0	0	"2 parameters: two different percentiles, or percentile and loc, or percentile and scale|confirmed"			
+PSI	PsiLock	property	unreviewed		0	0	value|confirmed			
+PSI	PsiLogarithmic	distribution	unreviewed		0	0	p|confirmed			
+PSI	PsiLogistic	distribution	bindable	DistributionLogistic	0	0	"mu, s|confirmed"			
+PSI	PsiLogisticAlt	distribution	bindable	DistributionLogistic	0	0	"2 parameters, chosen from: 2 different percentiles, mean, var, scale|confirmed"			
+PSI	PsiLogLogistic	distribution	unreviewed		0	0	"gamma, beta, alpha|confirmed"			
+PSI	PsiLogLogisticAlt	distribution	unreviewed		0	0	"3 parameters, chosen from: 3 different percentiles, loc, scale, shape|confirmed"			
+PSI	PsiLogNorm2	distribution	bindable	DistributionLogNormal	0	0	"mu, sigma (log-scale: mean/stdev of the underlying Normal)|confirmed"			
+PSI	PsiLogNormal	distribution	bindable	DistributionLogNormal	40	1	"mu, sigma (arithmetic mean/stdev of the lognormal itself)|confirmed"			
+PSI	PsiLogNormalAlt	distribution	bindable	DistributionLogNormal	0	0	"2 parameters: 2 different percentiles, or percentile and mean, or percentile and stdev|confirmed"			
+PSI	PsiMA1	distribution	unreviewed		0	0	"mean, volatility, coef1, err0|confirmed"			
+PSI	PsiMA2	distribution	unreviewed		0	0	"mean, volatility, coef1, coef2, err0, err1|confirmed"			
+PSI	PsiMakeInput	distribution	unreviewed		0	0	"freq, expr, deduct, limit|confirmed"			
+PSI	PsiMax	statistic	bindable	ScenarioSet.range	0	0	"cell, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiMaxExtreme	distribution	unreviewed		0	0	"m, s|confirmed"			
+PSI	PsiMaxExtremeAlt	distribution	unreviewed		0	0	"2 parameters, chosen from: 2 different percentiles, mean, var, mode, scale|confirmed"			
+PSI	PsiMean	statistic	bindable	FinancialSimulation.mean	31	13	"cell, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiMeanCI	statistic	bindable	FinancialSimulation.mean	0	0	"cell, confidence_level, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiMeanCIB	statistic	bindable	FinancialSimulation.mean	0	0	"cell, confidence_level, [lowerbound], [simulation], [strucformat], [paramslice]|confirmed"			
+PSI	PsiMedian	statistic	bindable	median	0	0	"cell, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiMetalog	distribution	unreviewed		0	0	"min, max, coefficients, prop_fcns|confirmed"			
+PSI	PsiMetalog2	distribution	unreviewed		0	0	coefficients|confirmed			
+PSI	PsiMetalog2Fit	distribution	unreviewed		0	0	"num_coef, x_values, y_values|confirmed"			
+PSI	PsiMetalogFit	distribution	unreviewed		0	0	"num_coef, x_values, y_values|confirmed"			
+PSI	PsiMetalogSPT	distribution	unreviewed		0	0	"min, max, quantiles, prob, prop_fcns|confirmed"			
+PSI	PsiMin	statistic	bindable	ScenarioSet.range	0	0	"cell, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiMinExtreme	distribution	unreviewed		0	0	"m, s|confirmed"			
+PSI	PsiMinExtremeAlt	distribution	unreviewed		0	0	"2 parameters, chosen from: 2 different percentiles, mean, var, mode, scale|confirmed"			
+PSI	PsiMode	statistic	bindable	mode	0	0	"cell, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiModel	annotation	not ours	"role declaration, belongs with solver_adj"	0	0	"option_name, value, model_name|confirmed"			
+PSI	PsiModelDesc	annotation	not ours	"role declaration, belongs with solver_adj"	0	0	cell_or_name|confirmed			
+PSI	PsiModelSrc	other	unreviewed		0	0	"src_name, data_name|confirmed"			
+PSI	PsiMomentFit	distribution	unreviewed		0	0	"mean, stdev, skew, kurtosis|confirmed"			
+PSI	PsiMVLogNormal	distribution	unreviewed		0	0	"mu, sigma|confirmed"			
+PSI	PsiMVNormal	distribution	unreviewed		0	0	"mu, sigma|confirmed"			
+PSI	PsiMVResample	distribution	unreviewed		0	0	data|confirmed			
+PSI	PsiMVShuffle	distribution	unreviewed		0	0	data|confirmed			
+PSI	PsiMyerson	distribution	unreviewed		0	0	"a, b, c, t|confirmed"			
+PSI	PsiName	property	unreviewed		25	7	name|confirmed			
+PSI	PsiNegBinomial	distribution	unreviewed		0	0	"s, p|confirmed"			
+PSI	PsiNormal	distribution	bindable	boxMuller	12	4	"mu (mean), sigma (stdev)|confirmed"			
+PSI	PsiNormalAlt	distribution	bindable	boxMuller	0	0	"2 parameters: 2 different percentiles, or percentile and mean, or percentile and stdev|confirmed"			
+PSI	PsiNormalSkew	distribution	bindable	boxMuller	0	0	"a (lower bound), b (upper bound), c (skew)|confirmed"			
+PSI	PsiObj	annotation	not ours	"role declaration, belongs with solver_adj"	0	0	"objective_cell, sense, valueof, chance_type, chance_measure, comment, model_name, critical|confirmed"			
+PSI	PsiOptData	other	unreviewed		0	0	"output_cell, optimization, struc_format, param_slice|confirmed"			
+PSI	PsiOption	annotation	not ours	"role declaration, belongs with solver_adj"	0	0	"option_name, value, model_name|confirmed"			
+PSI	PsiOptParam	annotation	not ours	"role declaration, belongs with solver_adj"	14	11	"values_or_lower, upper, base_case|confirmed"			
+PSI	PsiOptStatus	other	unreviewed		0	0	UNCONFIRMED|inferred			
+PSI	PsiOptValue	other	unreviewed		0	0	"cell_or_name, optimization, model|confirmed"			
+PSI	PsiOutput	annotation	not ours	"role declaration, belongs with solver_adj"	24	11	"cell_or_name, [instance], [PsiSixSigma]|confirmed"			
+PSI	PsiParamDim	other	unreviewed		0	0	"name, range_or_array|confirmed"			
+PSI	PsiPareto	distribution	bindable	DistributionPareto	0	0	"theta, a|confirmed"			
+PSI	PsiPareto2	distribution	bindable	DistributionPareto	0	0	"b, q|confirmed"			
+PSI	PsiPareto2Alt	distribution	bindable	DistributionPareto	0	0	"2 parameters, chosen from: 2 different percentiles, scale, shape|confirmed"			
+PSI	PsiParetoAlt	distribution	bindable	DistributionPareto	0	0	"2 parameters, chosen from: 2 different percentiles, shape, scale|confirmed"			
+PSI	PsiPearson5	distribution	unreviewed		0	0	"alpha, beta|confirmed"			
+PSI	PsiPearson5Alt	distribution	unreviewed		0	0	"2 parameters, chosen from: 2 different percentiles, shape, scale|confirmed"			
+PSI	PsiPearson6	distribution	unreviewed		0	0	"alpha1, alpha2, beta|confirmed"			
+PSI	PsiPearson6Alt	distribution	unreviewed		0	0	"2 parameters, chosen from: 2 different percentiles, shape, scale|confirmed"			
+PSI	PsiPercentile	statistic	bindable	FinancialSimulation.percentile	28	4	"cell, percentile, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiPercentileCI	statistic	bindable	FinancialSimulation.percentile	0	0	"cell, percentile, confidence_level, [simulation]|confirmed"			
+PSI	PsiPercentileD	statistic	bindable	FinancialSimulation.percentile	0	0	"cell, percentile, simulation|confirmed"			
+PSI	PsiPercentiles	statistic	bindable	FinancialSimulation.percentile	0	0	"cell, [simulation], [struc_format], [param_slice]|confirmed"			
+PSI	PsiPert	distribution	unreviewed		0	0	"a (min), c (likely), b (max)|confirmed"			
+PSI	PsiPertAlt	distribution	unreviewed		0	0	"3 parameters, chosen from: 3 different percentiles, mean, var, min, likely, max|confirmed"			
+PSI	PsiPivotCube	other	unreviewed		0	0	cell_within_pivot|confirmed			
+PSI	PsiPivotDim	other	unreviewed		0	0	"cell_within_pivot, dim_name, dim_type|confirmed"			
+PSI	PsiPoisson	distribution	unreviewed		0	0	lambda|confirmed			
+PSI	PsiPosteriors	other	unreviewed		0	0	"Model, Input_Data, Header|confirmed"			
+PSI	PsiPredict	other	unreviewed		0	0	"Model, Input_Data, Header|confirmed"			
+PSI	PsiPredictMLR	other	unreviewed		0	0	UNCONFIRMED|confirmed			
+PSI	PsiPredictNN	other	unreviewed		0	0	UNCONFIRMED|confirmed			
+PSI	PsiPredictNNEnsemble	other	unreviewed		0	0	UNCONFIRMED|confirmed			
+PSI	PsiPredictRT	other	unreviewed		0	0	UNCONFIRMED|confirmed			
+PSI	PsiPredictRTEnsemble	other	unreviewed		0	0	UNCONFIRMED|confirmed			
+PSI	PsiPtoX	statistic	unreviewed		0	0	"cell, percentile, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiQtoX	statistic	unreviewed		0	0	"cell, percentile, simulation|confirmed"			
+PSI	PsiRange	statistic	unreviewed		0	0	"cell, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiRayleigh	distribution	bindable	DistributionRayleigh	0	0	beta|confirmed			
+PSI	PsiRayleighAlt	distribution	bindable	DistributionRayleigh	0	0	"1 parameter, chosen from: percentile, var, mean|confirmed"			
+PSI	PsiReciprocal	distribution	unreviewed		0	0	"min, max|confirmed"			
+PSI	PsiReduce	other	unreviewed		0	0	"cube_expression, aggregation, dimension|confirmed"			
+PSI	PsiResample	distribution	unreviewed		0	0	data|confirmed			
+PSI	PsiSample	property	unreviewed		0	0	array_or_dist|confirmed			
+PSI	PsiSeed	property	unreviewed		0	0	value|confirmed			
+PSI	PsiSemiDev	statistic	unreviewed		0	0	"cell, q, target, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiSemiDev2	statistic	unreviewed		0	0	"cell, [lowerdata], [simulation], [strucformat], [paramslice]|confirmed"			
+PSI	PsiSemiVar	statistic	unreviewed		0	0	"cell, q, target, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiSemiVar2	statistic	unreviewed		0	0	"cell, [lowerdata], [simulation], [strucformat], [paramslice]|confirmed"			
+PSI	PsiSenParam	annotation	not ours	"role declaration, belongs with solver_adj"	15	9	"values_or_lower, upper, base_case|confirmed"			
+PSI	PsiSenValue	other	unreviewed		0	0	cell_or_name|confirmed			
+PSI	PsiShift	property	unreviewed		0	0	shift|confirmed			
+PSI	PsiShuffle	distribution	unreviewed		0	0	data|confirmed			
+PSI	PsiSigmaCP	statistic	unreviewed		0	0	"cell, lower_limit, upper_limit, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiSigmaCPK	statistic	unreviewed		0	0	"cell, lower_limit, upper_limit, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiSigmaCPKLower	statistic	unreviewed		0	0	"cell, lower_limit, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiSigmaCPKUpper	statistic	unreviewed		0	0	"cell, upper_limit, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiSigmaCPM	statistic	unreviewed		0	0	"cell, lower_limit, upper_limit, target, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiSigmaDefectPPM	statistic	unreviewed		0	0	"cell, lower_limit, upper_limit, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiSigmaDefectShiftPPM	statistic	unreviewed		0	0	"cell, lower_limit, upper_limit, shift, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiSigmaDefectShiftPPMLower	statistic	unreviewed		0	0	"cell, lower_limit, shift, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiSigmaDefectShiftPPMUpper	statistic	unreviewed		0	0	"cell, upper_limit, shift, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiSigmaK	statistic	unreviewed		0	0	"cell, lower_limit, upper_limit, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiSigmaLowerBound	statistic	unreviewed		0	0	"cell, number_stdev, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiSigmaProbDefectShift	statistic	unreviewed		0	0	"cell, lower_limit, upper_limit, shift, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiSigmaProbDefectShiftLower	statistic	unreviewed		0	0	"cell, lower_limit, shift, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiSigmaProbDefectShiftUpper	statistic	unreviewed		0	0	"cell, upper_limit, shift, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiSigmaSigmaLevel	statistic	unreviewed		0	0	"cell, lower_limit, upper_limit, shift, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiSigmaUpperBound	statistic	unreviewed		0	0	"cell, number_stdev, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiSigmaYield	statistic	unreviewed		0	0	"cell, lower_limit, upper_limit, shift, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiSigmaZLower	statistic	unreviewed		0	0	"cell, lower_limit, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiSigmaZMin	statistic	unreviewed		0	0	"cell, lower_limit, upper_limit, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiSigmaZUpper	statistic	unreviewed		0	0	"cell, upper_limit, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiSimData	statistic	unreviewed		0	0	"cell, trial, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiSimOutput	annotation	not ours	"role declaration, belongs with solver_adj"	0	0	[cell_range]|confirmed			
+PSI	PsiSimParam	annotation	not ours	"role declaration, belongs with solver_adj"	5	2	"values, upper, base_case|confirmed"			
+PSI	PsiSip	distribution	unreviewed		0	0	sip|confirmed			
+PSI	PsiSixSigma	property	unreviewed		0	0	"p1, p2, p3, p4, p5|confirmed"			
+PSI	PsiSkewness	statistic	unreviewed		0	0	"cell, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiSlackValue	other	unreviewed		0	0	"cell, optimization, upper|confirmed"			
+PSI	PsiSlurp	distribution	unreviewed		0	0	"slurp, j|confirmed"			
+PSI	PsiSpearmanRho	statistic	unreviewed		0	0	"cell1, cell2|confirmed"			
+PSI	PsiStatic	property	unreviewed		0	0	static_val|confirmed			
+PSI	PsiStdDev	statistic	unreviewed		4	3	"cell, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiStdDevCI	statistic	unreviewed		0	0	"cell, confidence_level, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiStdErr	statistic	unreviewed		0	0	"cell, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiStudent	distribution	bindable	DistributionT	0	0	df|confirmed			
+PSI	PsiStudentAlt	distribution	bindable	DistributionT	0	0	1 percentile parameter|confirmed			
+PSI	PsiTableCube	other	unreviewed		0	0	"table_description, table_values|confirmed"			
+PSI	PsiTarget	statistic	bindable	FinancialSimulation.probabilityAbove	5	2	"cell, target_value, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiTargetCI	statistic	bindable	FinancialSimulation.probabilityAbove	0	0	"cell, target_value, confidence_level, [simulation]|confirmed"			
+PSI	PsiTargetD	statistic	bindable	FinancialSimulation.probabilityAbove	0	0	"cell_or_name, target_value, simulation|confirmed"			
+PSI	PsiTheoKurtosis	statistic	unreviewed		0	0	cell_or_name|confirmed			
+PSI	PsiTheoMax	statistic	unreviewed		0	0	cell_or_name|confirmed			
+PSI	PsiTheoMean	statistic	unreviewed		0	0	cell_or_name|confirmed			
+PSI	PsiTheoMedian	statistic	unreviewed		0	0	cell_or_name|confirmed			
+PSI	PsiTheoMin	statistic	unreviewed		0	0	cell_or_name|confirmed			
+PSI	PsiTheoMode	statistic	unreviewed		0	0	cell_or_name|confirmed			
+PSI	PsiTheoPercentile	statistic	unreviewed		0	0	"cell_or_name, percentile|confirmed"			
+PSI	PsiTheoPercentileD	statistic	unreviewed		0	0	"cell_or_name, percentile|confirmed"			
+PSI	PsiTheoPtoX	statistic	unreviewed		0	0	"cell_or_name, percentile|confirmed"			
+PSI	PsiTheoQtoX	statistic	unreviewed		0	0	"cell_or_name, percentile|confirmed"			
+PSI	PsiTheoRange	statistic	unreviewed		0	0	cell_or_name|confirmed			
+PSI	PsiTheoSkewness	statistic	unreviewed		0	0	cell_or_name|confirmed			
+PSI	PsiTheoStdDev	statistic	unreviewed		0	0	cell_or_name|confirmed			
+PSI	PsiTheoTarget	statistic	unreviewed		0	0	"cell_or_name, target|confirmed"			
+PSI	PsiTheoTargetD	statistic	unreviewed		0	0	"cell_or_name, target|confirmed"			
+PSI	PsiTheoVariance	statistic	unreviewed		0	0	cell_or_name|confirmed			
+PSI	PsiTheoXtoP	statistic	unreviewed		0	0	"cell_or_name, target|confirmed"			
+PSI	PsiTheoXtoQ	statistic	unreviewed		0	0	"cell_or_name, target|confirmed"			
+PSI	PsiTheoXtoY	statistic	unreviewed		0	0	"cell_or_name, value|confirmed"			
+PSI	PsiTransform	other	unreviewed		0	0	"Model, Input_Data, Header|confirmed"			
+PSI	PsiTriangGen	distribution	bindable	DistributionTriangular	0	0	"ap, m, br, p, r|confirmed"			
+PSI	PsiTriangular	distribution	bindable	DistributionTriangular	60	17	"a (min), c (likely), b (max)|confirmed"			
+PSI	PsiTriangularAlt	distribution	bindable	DistributionTriangular	0	0	"3 parameters combining native args (min, likely, max) with percentiles, e.g. (min, percentile1, percentile2) or (percentile1, likely, percentile2)|confirmed"			
+PSI	PsiTruncate	property	unreviewed		0	0	"[min], [max], [type]|confirmed"			
+PSI	PsiTruncateP	property	unreviewed		0	0	"[min], [max]|confirmed"			
+PSI	PsiTSIntegrate	property	unreviewed		0	0	"order, c1, c2|confirmed"			
+PSI	PsiTSLen	property	unreviewed		0	0	length|confirmed			
+PSI	PsiTSSeasonality	property	unreviewed		0	0	"order, period, terms, index|confirmed"			
+PSI	PsiTSSip	distribution	unreviewed		0	0	tssip|confirmed			
+PSI	PsiTSTransform	property	unreviewed		0	0	"type, shift|confirmed"			
+PSI	PsiUniform	distribution	bindable	DistributionUniform	24	16	"a (min), b (max)|confirmed"			
+PSI	PsiUniformAlt	distribution	bindable	DistributionUniform	0	0	"2 parameters combining native args (lower, upper) with percentiles, e.g. (lower, percentile1) or (percentile1, upper) or (percentile1, percentile2)|confirmed"			
+PSI	PsiUnits	property	unreviewed		0	0	string|confirmed			
+PSI	PsiVar	annotation	not ours	"role declaration, belongs with solver_adj"	0	0	"cell_range, type, active, comment, model_name, critical|confirmed"			
+PSI	PsiVariance	statistic	unreviewed		0	0	"cell, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiVary	distribution	unreviewed		0	0	"base, min, max, [range_type], [dist_name]|confirmed"			
+PSI	PsiWeibull	distribution	bindable	DistributionWeibull	0	0	"alpha, beta|confirmed"			
+PSI	PsiWeibullAlt	distribution	bindable	DistributionWeibull	0	0	1 percentile parameter|confirmed			
+PSI	PsiXtoP	statistic	unreviewed		0	0	"cell, target_value, simulation, struc_format, param_slice|confirmed"			
+PSI	PsiXtoQ	statistic	unreviewed		0	0	"cell_or_name, target_value, simulation|confirmed"			
