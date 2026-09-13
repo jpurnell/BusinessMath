@@ -381,6 +381,36 @@ public func inventoryTurnover<T: Real & Sendable>(
 	return cogsTimeSeries / averageInventory
 }
 
+/// Converts a per-period turnover rate into days outstanding.
+///
+/// The day count and the turnover must describe the **same period**, and this is the
+/// only place that is enforced. `inventoryTurnover` and its siblings divide a flow by a
+/// balance without annualising either, so on a quarterly statement they are turns *per
+/// quarter*; the numerator has to be the days in that quarter.
+///
+/// Using a fixed 365 against a per-quarter rate — which is what this code did until
+/// 2026-09-13 — asks "how many days would this take if the quarter's turns were a
+/// year's turns". On the quarterly documentation fixture that reported inventory sitting
+/// for **91.25 days** in a **91-day** quarter at 4.0 turns, where the answer is 22.75.
+/// A factor of 4.01, and shaped like the right answer: 91.25 is a quarter of a day from
+/// the length of the quarter, so it survives the obvious sanity check.
+///
+/// - Parameters:
+///   - turnover: Turns per period, as the turnover ratios produce them.
+///   - convention: The day count. Only its **numerator** is used — `days(in:)` — so
+///     `.actual365` and `.actual360` agree here and `.thirty360` gives a 90-day quarter.
+/// - Returns: Days outstanding, period by period.
+private func daysOutstanding<T: Real & Sendable>(
+	from turnover: TimeSeries<T>,
+	convention: DayCountConvention
+) -> TimeSeries<T> {
+	let values = zip(turnover.periods, turnover.valuesArray).map { period, turns -> T in
+		let days = T(Int(convention.days(in: period)))
+		return days / turns
+	}
+	return TimeSeries(periods: turnover.periods, values: values, metadata: turnover.metadata)
+}
+
 /// Days Inventory Outstanding (DIO) - average number of days inventory is held.
 ///
 /// DIO measures how many days, on average, it takes to sell through inventory.
@@ -389,12 +419,12 @@ public func inventoryTurnover<T: Real & Sendable>(
 /// ## Formula
 ///
 /// ```
-/// DIO = 365 / Inventory Turnover
+/// DIO = (days in the period) / Inventory Turnover
 /// ```
 ///
 /// Alternatively:
 /// ```
-/// DIO = (Average Inventory / COGS) × 365
+/// DIO = (Average Inventory / COGS) × (days in the period)
 /// ```
 ///
 /// ## Interpretation
@@ -431,18 +461,29 @@ public func inventoryTurnover<T: Real & Sendable>(
 ///   - balanceSheet: Balance sheet containing inventory account
 /// - Returns: Time series of days inventory outstanding
 /// - Throws: ``FinancialRatioError`` if required accounts not found
+///
+/// - Important: The day count comes from the **period**, not from a fixed year. The
+///   turnover beneath it is a per-period rate — COGS or revenue for that quarter over a
+///   balance — so an annual day count over a quarterly rate overstates the answer by
+///   365/91. Until 2026-09-13 this used a hardcoded 365 and reported 91.25 days for
+///   inventory that turned 4.0 times in a 91-day quarter, where the answer is 22.75.
+///
+/// - Parameter dayCount: The convention supplying the day count. Only its numerator is
+///   used, so `.actual365` and `.actual360` agree; `.thirty360` gives a 90-day quarter.
+///   An annual period counts 366 days in a leap year, which is the correct reading for
+///   an activity ratio.
 public func daysInventoryOutstanding<T: Real & Sendable>(
 	incomeStatement: IncomeStatement<T>,
-	balanceSheet: BalanceSheet<T>
+	balanceSheet: BalanceSheet<T>,
+	dayCount: DayCountConvention = .actual365
 ) throws -> TimeSeries<T> {
 	let turnover = try inventoryTurnover(
 		incomeStatement: incomeStatement,
 		balanceSheet: balanceSheet
 	)
 
-	// DIO = 365 / Inventory Turnover
-	let daysPerYear = T(365)
-	return turnover.mapValues { daysPerYear / $0 }
+	// DIO = (days in the period) / Inventory Turnover, so the day count matches the flow beneath it.
+	return daysOutstanding(from: turnover, convention: dayCount)
 }
 
 /// Receivables Turnover - how quickly receivables are collected.
@@ -515,12 +556,12 @@ public func receivablesTurnover<T: Real & Sendable>(
 /// ## Formula
 ///
 /// ```
-/// DSO = 365 / Receivables Turnover
+/// DSO = (days in the period) / Receivables Turnover
 /// ```
 ///
 /// Alternatively:
 /// ```
-/// DSO = (Average Receivables / Revenue) × 365
+/// DSO = (Average Receivables / Revenue) × (days in the period)
 /// ```
 ///
 /// ## Interpretation
@@ -556,18 +597,29 @@ public func receivablesTurnover<T: Real & Sendable>(
 ///   - balanceSheet: Balance sheet containing receivables account
 /// - Returns: Time series of days sales outstanding
 /// - Throws: ``FinancialRatioError`` if required accounts not found
+///
+/// - Important: The day count comes from the **period**, not from a fixed year. The
+///   turnover beneath it is a per-period rate — COGS or revenue for that quarter over a
+///   balance — so an annual day count over a quarterly rate overstates the answer by
+///   365/91. Until 2026-09-13 this used a hardcoded 365 and reported 91.25 days for
+///   inventory that turned 4.0 times in a 91-day quarter, where the answer is 22.75.
+///
+/// - Parameter dayCount: The convention supplying the day count. Only its numerator is
+///   used, so `.actual365` and `.actual360` agree; `.thirty360` gives a 90-day quarter.
+///   An annual period counts 366 days in a leap year, which is the correct reading for
+///   an activity ratio.
 public func daysSalesOutstanding<T: Real & Sendable>(
 	incomeStatement: IncomeStatement<T>,
-	balanceSheet: BalanceSheet<T>
+	balanceSheet: BalanceSheet<T>,
+	dayCount: DayCountConvention = .actual365
 ) throws -> TimeSeries<T> {
 	let turnover = try receivablesTurnover(
 		incomeStatement: incomeStatement,
 		balanceSheet: balanceSheet
 	)
 
-	// DSO = 365 / Receivables Turnover
-	let daysPerYear = T(365)
-	return turnover.mapValues { daysPerYear / $0 }
+	// DSO = (days in the period) / Receivables Turnover, so the day count matches the flow beneath it.
+	return daysOutstanding(from: turnover, convention: dayCount)
 }
 
 /// Days Payable Outstanding (DPO) - average number of days to pay suppliers.
@@ -578,7 +630,7 @@ public func daysSalesOutstanding<T: Real & Sendable>(
 /// ## Formula
 ///
 /// ```
-/// DPO = (Average Accounts Payable / COGS) × 365
+/// DPO = (Average Accounts Payable / COGS) × (days in the period)
 /// ```
 ///
 /// ## Interpretation
@@ -620,9 +672,21 @@ public func daysSalesOutstanding<T: Real & Sendable>(
 ///   - balanceSheet: Balance sheet containing accounts payable
 /// - Returns: Time series of days payable outstanding
 /// - Throws: ``FinancialRatioError`` if required accounts not found
+///
+/// - Important: The day count comes from the **period**, not from a fixed year. The
+///   turnover beneath it is a per-period rate — COGS or revenue for that quarter over a
+///   balance — so an annual day count over a quarterly rate overstates the answer by
+///   365/91. Until 2026-09-13 this used a hardcoded 365 and reported 91.25 days for
+///   inventory that turned 4.0 times in a 91-day quarter, where the answer is 22.75.
+///
+/// - Parameter dayCount: The convention supplying the day count. Only its numerator is
+///   used, so `.actual365` and `.actual360` agree; `.thirty360` gives a 90-day quarter.
+///   An annual period counts 366 days in a leap year, which is the correct reading for
+///   an activity ratio.
 public func daysPayableOutstanding<T: Real & Sendable>(
 	incomeStatement: IncomeStatement<T>,
-	balanceSheet: BalanceSheet<T>
+	balanceSheet: BalanceSheet<T>,
+	dayCount: DayCountConvention = .actual365
 ) throws -> TimeSeries<T> {
 	// Find COGS in income statement
 	guard let cogs = incomeStatement.expenseAccounts.first(where: {
@@ -645,9 +709,14 @@ public func daysPayableOutstanding<T: Real & Sendable>(
 	// Calculate average payables for each period
 	let averagePayables = averageTimeSeries(payablesTimeSeries)
 
-	// DPO = (Average Payables / COGS) × 365
-	let daysPerYear = T(365)
-	return (averagePayables / cogsTimeSeries).mapValues { $0 * daysPerYear }
+	// DPO = (Average Payables / COGS) × (days in the period). Written as a multiply
+	// rather than `days / turnover`, but the same quantity and the same requirement:
+	// COGS is a per-period flow, so the day count must be that period's.
+	let ratio = averagePayables / cogsTimeSeries
+	let values = zip(ratio.periods, ratio.valuesArray).map { period, r -> T in
+		r * T(Int(dayCount.days(in: period)))
+	}
+	return TimeSeries(periods: ratio.periods, values: values, metadata: ratio.metadata)
 }
 
 // MARK: - Leverage Ratios (Debt Coverage)

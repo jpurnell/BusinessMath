@@ -616,16 +616,25 @@ struct FinancialRatiosTests {
 			balanceSheet: balanceSheet
 		)
 
-		// Q1: COGS = 400k, Inventory = 50k
-		//     Turnover = 400k / 50k = 8
-		//     DIO = 365 / 8 = 45.625 days
+		// Q1 2025: COGS = 400k, Inventory = 50k
+		//     Turnover = 400k / 50k = 8 turns **in the quarter**
+		//     Q1 2025 is 31 + 28 + 31 = 90 days
+		//     DIO = 90 / 8 = 11.25 days exactly
+		//
+		// This read `365 / 8 = 45.625` until 2026-09-13. The turnover is per quarter, so
+		// dividing it into an annual day count overstated the answer by 365/90 — a
+		// four-fold error that the ±1.0 window could not have caught either way.
 		let q1DIO = try #require(dio[quarters[0]])
-		#expect(abs(q1DIO - 45.625) < 1.0, "Q1 DIO should be ~45.6 days")
+		#expect(abs(q1DIO - 11.25) < 1e-9, "Q1 DIO is 90 days / 8 turns; got \(q1DIO)")
 
 		// Lower DIO is better (faster inventory movement)
 		for quarter in quarters {
 			#expect(try #require(dio[quarter]) > 0, "DIO should be positive")
-			#expect(try #require(dio[quarter]) < 365, "DIO should be less than a year")
+			// Days outstanding cannot exceed the period it is measured over — the
+			// invariant the annual day count violated.
+			let quarterDays = DayCountConvention.actual365.days(in: quarter)
+			#expect(try #require(dio[quarter]) <= quarterDays,
+					"DIO exceeds the \(quarterDays) days of its own quarter")
 		}
 	}
 
@@ -748,16 +757,25 @@ struct FinancialRatiosTests {
 			balanceSheet: balanceSheet
 		)
 
-		// Q1: Revenue = 365k, Receivables = 30k
-		//     Turnover = 365k / 30k ≈ 12.17
-		//     DSO = 365 / 12.17 ≈ 30 days
+		// Q1 2025: Revenue = 365k, Receivables = 30k
+		//     Turnover = 365k / 30k = 12.166… turns **in the quarter**
+		//     Q1 2025 is 90 days
+		//     DSO = 90 / (365/30) = 7.397260273972603
+		//
+		// The old expectation of 30 days came from 365 / 12.166…, which is the answer to
+		// a different question: how long collection would take if a quarter's turns were
+		// a year's. The fixture's revenue of 365k per quarter made the arithmetic look
+		// tidy, which did not help.
 		let q1DSO = try #require(dso[quarters[0]])
-		#expect(abs(q1DSO - 30.0) < 1.0, "Q1 DSO should be ~30 days")
+		#expect(abs(q1DSO - 7.397260273972603) < 1e-9,
+				"Q1 DSO is 90 days / 12.166… turns; got \(q1DSO)")
 
 		// DSO should be reasonable (< 120 days for most businesses)
 		for quarter in quarters {
 			#expect(try #require(dso[quarter]) > 0, "DSO should be positive")
-			#expect(try #require(dso[quarter]) < 120, "DSO should be reasonable")
+			let quarterDays = DayCountConvention.actual365.days(in: quarter)
+			#expect(try #require(dso[quarter]) <= quarterDays,
+					"DSO exceeds the \(quarterDays) days of its own quarter")
 		}
 	}
 
