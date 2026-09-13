@@ -8,6 +8,7 @@
 import Foundation
 import Testing
 import Numerics
+import TestSupport  // identical(_:_:)
 @testable import BusinessMath
 
 @Suite("Bayes' Theorem Tests")
@@ -79,5 +80,97 @@ struct BayesTests {
 
 		// With equal prior and symmetric test, posterior should be 0.8
 		#expect(abs(result - 0.80) < 1e-9)
+	}
+}
+
+/// The contract at the boundaries, and the property that catches a transposition.
+///
+/// The original five tests covered the ordinary cases and none of the ones that can
+/// actually break. Two gaps in particular:
+///
+/// - **The zero denominator was never reached.** `perfectTestAccuracy` is named for the
+///   degenerate case and exercises none of it: prior 0.10, sensitivity 1.0, FPR 0.0 gives
+///   `P(T) = 0.1`, a perfectly ordinary number.
+/// - **Nothing could detect a transposed sensitivity and false-positive rate.**
+///   `symmetricCase` looks designed for it and is *invariant* under the swap — at prior
+///   0.5 with s = 0.8 and f = 0.2 both orders give 0.8.
+@Suite("Bayes' Theorem: contract and properties")
+struct BayesContractTests {
+
+	/// `P(T) = 0` only when no pathway to the observation exists.
+	@Test("An impossible observation has no posterior")
+	func degenerateDenominator() {
+		// Prior 0 with no false positives, and a certain non-event: both give 0/0.
+		#expect(bayes(0.0, 0.99, 0.0).isNaN)
+		#expect(bayes(1.0, 0.0, 0.5).isNaN)
+
+		// Neither of these is degenerate: the denominator is f·(1−p) and s·p respectively.
+		#expect(identical(bayes(0.0, 0.99, 0.02), 0.0))
+		#expect(identical(bayes(1.0, 0.99, 0.02), 1.0))
+	}
+
+	@Test("The checked form throws where the free form returns NaN")
+	func checkedFormThrows() throws {
+		#expect(throws: BusinessMathError.self) { _ = try bayesChecked(0.0, 0.99, 0.0) }
+		#expect(throws: BusinessMathError.self) { _ = try bayesChecked(1.0, 0.0, 0.5) }
+
+		// And it rejects arguments that are not probabilities at all.
+		#expect(throws: BusinessMathError.self) { _ = try bayesChecked(1.5, 0.99, 0.02) }
+		#expect(throws: BusinessMathError.self) { _ = try bayesChecked(0.01, -0.1, 0.02) }
+		#expect(throws: BusinessMathError.self) { _ = try bayesChecked(Double.nan, 0.99, 0.02) }
+
+		// Where both agree, they agree exactly.
+		let checked = try bayesChecked(0.01, 0.99, 0.02)
+		#expect(identical(checked, bayes(0.01, 0.99, 0.02)))
+	}
+
+	/// Posterior odds are prior odds times the likelihood ratio.
+	///
+	/// An algebraically distinct route to the same quantity, and — unlike the formula as
+	/// written — **asymmetric in sensitivity and FPR**, so it fails at every point if the
+	/// two are transposed. That is the property no existing test could check.
+	@Test("Posterior odds are prior odds times the likelihood ratio")
+	func posteriorOddsIdentity() {
+		for (prior, sensitivity, fpr) in [(0.01, 0.99, 0.02), (0.3, 0.8, 0.15), (0.75, 0.6, 0.4)] {
+			let posterior = bayes(prior, sensitivity, fpr)
+			let priorOdds = prior / (1.0 - prior)
+			let expected = priorOdds * (sensitivity / fpr)
+			let posteriorOdds = posterior / (1.0 - posterior)
+			let relative = abs(posteriorOdds - expected) / expected
+			#expect(relative < 1e-13,
+					"prior \(prior), s \(sensitivity), f \(fpr): odds \(posteriorOdds) against \(expected)")
+		}
+	}
+
+	/// A test that carries no information returns the prior, for any prior.
+	@Test("An uninformative test returns the prior")
+	func uninformativeTestReturnsPrior() {
+		for prior in [0.001, 0.05, 0.2, 0.5, 0.8, 0.999] {
+			for rate in [0.1, 0.5, 0.9] {
+				let posterior = bayes(prior, rate, rate)
+				#expect(abs(posterior - prior) < 1e-15,
+						"prior \(prior) with s = f = \(rate) gave \(posterior)")
+			}
+		}
+	}
+
+	/// With a test worth taking, a higher prior gives a higher posterior.
+	@Test("The posterior increases with the prior when the test is informative")
+	func monotoneInPrior() {
+		let priors = stride(from: 0.05, through: 0.95, by: 0.05).map { $0 }
+		var previous = -1.0
+		for prior in priors {
+			let posterior = bayes(prior, 0.9, 0.1)
+			#expect(posterior > previous, "prior \(prior) gave \(posterior), not above \(previous)")
+			previous = posterior
+		}
+	}
+
+	/// The function is generic now, so the constraint has to hold at another width.
+	@Test("The same identities hold in Float")
+	func holdsInFloat() {
+		let posterior: Float = bayes(Float(0.5), Float(0.8), Float(0.2))
+		#expect(abs(posterior - 0.8) < 1e-6, "Float gave \(posterior)")
+		#expect(bayes(Float(0.0), Float(0.99), Float(0.0)).isNaN)
 	}
 }
