@@ -831,7 +831,9 @@ with this in it?"** Three answers:
 | **DOCUMENT** | real, but defensible to ship with a stated limitation and a `withKnownIssue` recording it |
 | **AFTER** | genuine work, no bearing on whether 3.0.0 is correct |
 
-**BLOCKS — six items, and five of them are invisible to any gate rule (§2b).**
+**BLOCKS — ✅ ALL SIX CLEARED, shipped as `v3.0.0-alpha.5` (`82bff1ee`).** Five were invisible to
+any gate rule (§2b), which is the whole argument for the review programme. Two further defects were
+found *by fixing* rather than by reviewing — L16, fixed, and L17, recorded.
 
 | | Defect | Why it blocks |
 |---|---|---|
@@ -855,8 +857,101 @@ with this in it?"** Three answers:
   unblocks T3.
 - **L14** delete `StochasticTestHelpers`. Test-only; no bearing on the tag.
 
-**AFTER — everything else**, including all of T1–T7 and every sweep. The 225 `?? 0` sites do not
-make the library wrong; they make it under-tested, and that is the next release's problem.
+**AFTER — everything else**, ordered in §5.2. The 225 `?? 0` sites do not make the library wrong;
+they make it under-tested. That is the next release's problem, but it is a *sequenced* problem.
+
+---
+
+### 5.2 The ordered remainder
+
+**Written 2026-09-13, after the six blockers closed.** Until now "AFTER" was one sentence covering
+89 checklist items and 17 proposed gate rules, which is a bucket and not a plan. This is the order.
+
+A fourth ordering principle joins the three above, and it was learned by doing rather than
+planning:
+
+4. **An enabling fix can wake dormant assertions, so it goes before the sweep that depends on it.**
+   Fixing the discarded cut statistics (L16) made a guarded assertion execute for the first time,
+   and it immediately failed (L17). Six such guards exist in the integer-programming suite alone.
+   Sweeping first would have meant sweeping past whatever they had to say.
+
+Each item below carries a **done when** so implementation needs no further decision.
+
+---
+
+#### Phase A — finish 3.0.0 (the DOCUMENT set)
+
+Small, release-relevant, and two of them are breaking so they belong in the major.
+
+| | Item | Done when |
+|---|---|---|
+| **A1** | **L3** — `seed:` on `runFinancialSimulation` and `ScenarioRunner` sampling. **Breaking.** | The parameter exists, a fixed seed reproduces bit-for-bit via `identical`, and two seeds diverge. Unblocks T3 and every statistical bound in the scenario suite. |
+| **A2** | **L14** — delete `StochasticTestHelpers`. | The file is gone, its users take `DeterministicRNG` and the TestSupport Box-Muller, and no test constructs its own uniform. |
+| **A3** | **L4** — document the debt asymmetry. | `debtToAssets` says it uses total liabilities, as `interestBearingDebt` already says it uses interest-bearing debt, and both values are pinned on the shared fixture. |
+| **A4** | **L15** — decide 365 vs 365.25. | One convention stated per call site, documented, and routed through `DayCountConvention` wherever a convention is genuinely at stake. |
+| **A5** | **L12** — decide the outlier rule. | Either a modified-z or IQR rule exists, or the z-score's masking limitation is documented at `AnomalyDetection.detect` with the worked example. |
+| **A6** | **L17** — decide the counter asymmetry. | Either `cuttingRounds` counts rounds that added cuts, or the two counters' different meanings are documented and the `withKnownIssue` marker removed. |
+
+#### Phase B — the enabling fixes
+
+Cheap, high-information, and each may expose something. Principles 2 and 4.
+
+| | Item | Done when |
+|---|---|---|
+| **B1** | The **18 vacuous optimizer assertions** — 7 `.rounded()` comparisons, 11 always-true convergence disjunctions. | Each asserts the real bound. Either the suite stays green — ~18 unknowns become evidence — or it turns red on a solver defect. **Do not sweep past a red here.** |
+| **B2** | The **3 stale integer-programming assertions**, each of which names its own expectation in a comment and tests nothing. | The assertions are written. All three capabilities have shipped, so they should pass; if one does not, that is the finding. |
+| **B3** | **`Phase1_CutValidityTests`** — flip 16 of 17 to `minimize: false`. **Now genuinely unblocked**: the counters work, so cut assertions can mean something. | The file's fixtures are fractional at the root, `totalCutsGenerated > 0` is asserted rather than `>= 0`, and the three deduplication tests read the cut pool. |
+| **B4** | **`PerformanceOptimizationTests`** — ~17 wall-clock assertions in the regular suite, tightest 50 ms. | Timing assertions behind `.benchmarkOnly`; the correctness assertions in the same tests stay in the regular suite. A standing CI-flake source removed. |
+
+#### Phase C — gate rules, before their sweeps
+
+Principle 3: past ~100 sites, a sweep without a rule is a one-off.
+
+| | Rule | Done when |
+|---|---|---|
+| **C1** | Nil-coalescing inside an assertion — `?? <literal>` in `#expect`. **225 sites.** | Blocking rule lands; the existing 225 are recorded as the baseline to burn down. |
+| **C2** | Ambient calendar or clock in a test target. **152 sites.** | Blocking rule lands **with the bracketing carve-out**: two `Date()` readings bracketing a call assert *ordering* and are correct; flag a reading used in an arithmetic comparison. Without it the rule flags nine correct tests in `WallClockAdoptionTests`. |
+| **C3** | `#expect(true)` as a test's only assertion. **75 sites.** | Blocking rule lands. |
+| **C4** | **Fix the checker's nested-scope bug** — it misses assertions after a local `func` *and* inside nested `struct` suites. | Both forms are handled; the `// TEST-QUALITY: checker workaround` markers come out with it. Three files are the fixtures for the second form. |
+
+#### Phase D — the sweeps
+
+Mechanical, high-volume, and safe once C is in.
+
+| | Item | Done when |
+|---|---|---|
+| **D1** | **53 of the 75 `#expect(true)`** → `#expect(throws: Never.self)`. They say "no-throw" in their own comments; the form is already used 11 times here. | Substituted. `LoggerTests`' 13 need a recording sink and are the remainder. |
+| **D2** | **225 `?? 0`** → `try #require`. The highest-volume single item in the corpus. | Swept; C1 keeps it swept. |
+| **D3** | **~152 ambient-time sites** → the shared fixed calendar. Unblocked: the source fix landed in alpha.5. | Swept; C2 keeps it swept, and ~200 lines of `DateComponents` boilerplate go with it. |
+| **D4** | Ratio fixture deduplication (~115 lines × 2) and its 20 `guard let` → `try #require`. | One fixture, one value table beside it, ~60 lines lighter. |
+
+#### Phase E — the structural test work
+
+Highest leverage in the corpus. No dependencies beyond B.
+
+| | Item | Done when |
+|---|---|---|
+| **E1** | **The gradient certificate** for L-BFGS, gradient descent, Newton-Raphson, multi-start. Replaces ~40 distance-to-known-minimum assertions with `‖∇f(x*)‖ < tol` — the condition that *defines* a minimum, and one that extends to problems with no known answer. | Every smooth problem asserts the gradient norm against the optimizer's own tolerance. `gradientNorm < 0.1` already exists in two files at the wrong bound — promote it. |
+| **E2** | **The two degenerate portfolio fixtures.** Three tests are vacuous *because of the fixture*; no assertion change rescues them. | Nonzero, unequal variances and a known covariance, so the Sharpe ratio and the frontier both exist. |
+| **E3** | **DEA units invariance** for SBM and super-efficiency. CCR and BCC have it. | All four models covered. Cheapest high-value addition in that domain: a scaling error breaks it while leaving every score plausible. |
+| **E4** | **ETS exact-recovery oracle.** Not the phase defect — ETS delegates to `HoltWintersModel` and inherits that fix — but the parameter *search* is untested. | A noiseless series in the model's span is recovered exactly by the fitted parameters. |
+| **E5** | **Interval calibration** for `EmpiricalIntervalsTests`. Same shape as the antithetic-SE defect: a reported uncertainty nothing measures against realised spread. | An 80% interval contains the truth about 80% of the time over a seeded synthetic series, bounded by the binomial standard error. |
+| **E6** | **Driver composition identities.** The seeding contract already makes them cheap. | `identical(composite.sample(seed:), a.sample(seed:) op b.sample(seed:))` — catches a composite that re-draws its operands, which no band assertion can. |
+
+#### Phase F — exactness
+
+| | Item | Done when |
+|---|---|---|
+| **F1** | **The operations/inventory batch.** No defects, tolerance-only findings, and a complete verified value table. **The cheapest domain to finish outright.** | Its table is transcribed; the EOQ optimality identity is asserted at 1e-12 rather than ±1.0, and the 0.5 stockout probability exactly. |
+| **F2** | **The five comment-arithmetic errors**, where the code is right and the comment is wrong: `npvExcel` ×2, the H-model test, `TVMReferenceTests`' header, `ClassifierEvaluationTests`' tie values. | Each comment states the value the code produces, verified independently. |
+| **F3** | **T2's remainder**, ~150 band assertions with verified reference values already supplied. | Bands become exact; binary-exact cases use `identical`, rationals a tight relative bound, statistics a standard-error multiple. |
+
+#### Phase G — hygiene
+
+| | Item | Done when |
+|---|---|---|
+| **G1** | 10 `.disabled` and 30 commented-out `@Test`. | Each is fixed and re-enabled, converted to `withKnownIssue` with a `.bug(…)`, or deleted. None is left with no record of why. |
+| **G2** | **530 type-only error assertions** against 99 that pin a value. Not an invention problem — the technique is already in `KMeansTests`, the dispersion tests and the marketing batch. | The `(any Error).self` sites go first; the rest assert the case, and the associated values where they carry information. |
 
 ---
 
