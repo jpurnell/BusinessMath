@@ -38,6 +38,13 @@ struct MultivariateGradientDescentTests {
 
 		// Should converge to origin
 		#expect(result.converged, "Should converge")
+		// The gradient certificate: |grad f(x*)| is the condition that *defines* a
+		// stationary point, and it is what the optimizer claims to stop on. A
+		// distance-to-known-minimum assertion cannot be written for a problem whose
+		// answer nobody knows; this one can.
+		let norm: Double = result.gradientNorm
+		#expect(norm < optimizer.tolerance,
+		        "gradient norm \(norm) exceeds the optimizer's own tolerance \(optimizer.tolerance)")
 		#expect(abs(result.solution[0]) < 0.01, "x should be near 0")
 		#expect(abs(result.solution[1]) < 0.01, "y should be near 0")
 		#expect(abs(result.value) < 0.01, "Function value should be near 0")
@@ -66,6 +73,13 @@ struct MultivariateGradientDescentTests {
 		)
 
 		// Rosenbrock is challenging - allow larger tolerance
+		// The gradient certificate: |grad f(x*)| is the condition that *defines* a
+		// stationary point, and it is what the optimizer claims to stop on. A
+		// distance-to-known-minimum assertion cannot be written for a problem whose
+		// answer nobody knows; this one can.
+		let norm: Double = result.gradientNorm
+		#expect(norm < optimizer.tolerance,
+		        "gradient norm \(norm) exceeds the optimizer's own tolerance \(optimizer.tolerance)")
 		#expect(abs(result.solution[0] - 1.0) < 0.1, "x should be near 1")
 		#expect(abs(result.solution[1] - 1.0) < 0.1, "y should be near 1")
 		#expect(result.value < 0.5, "Function value should be small")
@@ -93,6 +107,13 @@ struct MultivariateGradientDescentTests {
 		)
 
 		#expect(result.converged, "Should converge")
+		// The gradient certificate: |grad f(x*)| is the condition that *defines* a
+		// stationary point, and it is what the optimizer claims to stop on. A
+		// distance-to-known-minimum assertion cannot be written for a problem whose
+		// answer nobody knows; this one can.
+		let norm: Double = result.gradientNorm
+		#expect(norm < optimizer.tolerance,
+		        "gradient norm \(norm) exceeds the optimizer's own tolerance \(optimizer.tolerance)")
 		#expect(abs(result.solution[0]) < 0.01, "x should be near 0")
 		#expect(abs(result.solution[1]) < 0.01, "y should be near 0")
 		#expect(abs(result.solution[2]) < 0.01, "z should be near 0")
@@ -121,6 +142,13 @@ struct MultivariateGradientDescentTests {
 
 		#expect(result.converged, "Should converge")
 		for i in 0..<dimensions {
+			// The gradient certificate: |grad f(x*)| is the condition that *defines* a
+			// stationary point, and it is what the optimizer claims to stop on. A
+			// distance-to-known-minimum assertion cannot be written for a problem whose
+			// answer nobody knows; this one can.
+			let norm: Double = result.gradientNorm
+			#expect(norm < optimizer.tolerance,
+			        "gradient norm \(norm) exceeds the optimizer's own tolerance \(optimizer.tolerance)")
 			#expect(abs(result.solution[i]) < 0.1, "Component \(i) should be near 0")
 		}
 	}
@@ -149,6 +177,13 @@ struct MultivariateGradientDescentTests {
 		)
 
 		#expect(result.converged, "Should converge with momentum")
+		// The gradient certificate: |grad f(x*)| is the condition that *defines* a
+		// stationary point, and it is what the optimizer claims to stop on. A
+		// distance-to-known-minimum assertion cannot be written for a problem whose
+		// answer nobody knows; this one can.
+		let norm: Double = result.gradientNorm
+		#expect(norm < optimizerWithMomentum.tolerance,
+		        "gradient norm \(norm) exceeds the optimizer's own tolerance \(optimizerWithMomentum.tolerance)")
 		#expect(abs(result.solution[0]) < 0.01, "x should be near 0")
 		#expect(abs(result.solution[1]) < 0.01, "y should be near 0")
 		#expect(result.iterations < 500, "Should converge in fewer iterations")
@@ -176,6 +211,13 @@ struct MultivariateGradientDescentTests {
 		)
 
 		#expect(result.converged, "Adam should converge")
+		// The gradient certificate: |grad f(x*)| is the condition that *defines* a
+		// stationary point, and it is what the optimizer claims to stop on. A
+		// distance-to-known-minimum assertion cannot be written for a problem whose
+		// answer nobody knows; this one can.
+		let norm: Double = result.gradientNorm
+		#expect(norm < optimizer.tolerance,
+		        "gradient norm \(norm) exceeds the optimizer's own tolerance \(optimizer.tolerance)")
 		#expect(abs(result.solution[0]) < 0.1, "x should be near 0")
 		#expect(abs(result.solution[1]) < 0.1, "y should be near 0")
 	}
@@ -201,6 +243,13 @@ struct MultivariateGradientDescentTests {
 		)
 
 		// Adam should get reasonably close
+		// The gradient certificate: |grad f(x*)| is the condition that *defines* a
+		// stationary point, and it is what the optimizer claims to stop on. A
+		// distance-to-known-minimum assertion cannot be written for a problem whose
+		// answer nobody knows; this one can.
+		let norm: Double = result.gradientNorm
+		#expect(norm < optimizer.tolerance,
+		        "gradient norm \(norm) exceeds the optimizer's own tolerance \(optimizer.tolerance)")
 		#expect(abs(result.solution[0] - 1.0) < 0.2, "x should be near 1")
 		#expect(abs(result.solution[1] - 1.0) < 0.2, "y should be near 1")
 	}
@@ -228,6 +277,13 @@ struct MultivariateGradientDescentTests {
 		)
 
 		#expect(result.converged, "Should converge with line search")
+		// The gradient certificate: |grad f(x*)| is the condition that *defines* a
+		// stationary point, and it is what the optimizer claims to stop on. A
+		// distance-to-known-minimum assertion cannot be written for a problem whose
+		// answer nobody knows; this one can.
+		let norm: Double = result.gradientNorm
+		#expect(norm < optimizerWithLineSearch.tolerance,
+		        "gradient norm \(norm) exceeds the optimizer's own tolerance \(optimizerWithLineSearch.tolerance)")
 		#expect(abs(result.solution[0]) < 0.01, "x should be near 0")
 		#expect(abs(result.solution[1]) < 0.01, "y should be near 0")
 	}
@@ -339,6 +395,13 @@ struct MultivariateGradientDescentTests {
 		)
 
 		#expect(result.converged, "Should converge")
+		// The gradient certificate: |grad f(x*)| is the condition that *defines* a
+		// stationary point, and it is what the optimizer claims to stop on. A
+		// distance-to-known-minimum assertion cannot be written for a problem whose
+		// answer nobody knows; this one can.
+		let norm: Double = result.gradientNorm
+		#expect(norm < optimizer.tolerance,
+		        "gradient norm \(norm) exceeds the optimizer's own tolerance \(optimizer.tolerance)")
 		#expect(abs(result.solution.x) < 0.01, "x should be near 0")
 		#expect(abs(result.solution.y) < 0.01, "y should be near 0")
 	}
@@ -449,6 +512,13 @@ struct MultivariateGradientDescentTests {
 
 		// Should converge to origin
 		#expect(result.converged, "Should converge with auto gradient")
+		// The gradient certificate: |grad f(x*)| is the condition that *defines* a
+		// stationary point, and it is what the optimizer claims to stop on. A
+		// distance-to-known-minimum assertion cannot be written for a problem whose
+		// answer nobody knows; this one can.
+		let norm: Double = result.gradientNorm
+		#expect(norm < optimizer.tolerance,
+		        "gradient norm \(norm) exceeds the optimizer's own tolerance \(optimizer.tolerance)")
 		#expect(abs(result.solution[0]) < 0.01, "x should be near 0")
 		#expect(abs(result.solution[1]) < 0.01, "y should be near 0")
 		#expect(abs(result.value) < 0.01, "Function value should be near 0")
@@ -477,6 +547,13 @@ struct MultivariateGradientDescentTests {
 		)
 
 		// Adam should handle Rosenbrock reasonably well
+		// The gradient certificate: |grad f(x*)| is the condition that *defines* a
+		// stationary point, and it is what the optimizer claims to stop on. A
+		// distance-to-known-minimum assertion cannot be written for a problem whose
+		// answer nobody knows; this one can.
+		let norm: Double = result.gradientNorm
+		#expect(norm < optimizer.tolerance,
+		        "gradient norm \(norm) exceeds the optimizer's own tolerance \(optimizer.tolerance)")
 		#expect(abs(result.solution[0] - 1.0) < 0.2, "x should be near 1")
 		#expect(abs(result.solution[1] - 1.0) < 0.2, "y should be near 1")
 		#expect(result.value < 1.0, "Function value should be small")

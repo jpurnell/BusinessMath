@@ -205,6 +205,67 @@ struct SeededDriverSamplingTests {
 		}
 	}
 
+	/// The composition identity, which reproducibility cannot detect.
+	///
+	/// `compositesReproduce` above asserts that the same seed gives the same values, and a
+	/// composite that **re-draws its operands** passes it: re-drawing from a seeded
+	/// generator is still deterministic, so the stream repeats perfectly while being the
+	/// wrong stream. Reproducibility tests a composite against itself, which is the one
+	/// comparison that cannot catch this.
+	///
+	/// The identity compares it against its parts instead. Drawing the composite from one
+	/// generator must consume exactly what drawing `lhs` then `rhs` consumes from an
+	/// identically-seeded one, and produce exactly their sum or product. Bit-for-bit, not
+	/// to a tolerance — an operand re-drawn from a different position in the stream gives a
+	/// plausible number, never the same number.
+	@Test("A composite equals its operands drawn in order from the same stream")
+	func compositeEqualsItsOperands() throws {
+		let quantity = ProbabilisticDriver<Double>.normal(name: "Quantity", mean: 1_000.0, stdDev: 100.0)
+		let price = ProbabilisticDriver<Double>.triangular(name: "Price", low: 95.0, high: 105.0, base: 100.0)
+
+		let sum = SumDriver(name: "Total", lhs: quantity, rhs: price)
+		let product = ProductDriver(name: "Revenue", lhs: quantity, rhs: price)
+
+		// Several draws, because a composite that re-seeds per call can coincide on the
+		// first and diverge afterwards.
+		for draw in 0..<16 {
+			var composite = Xoshiro256StarStar(seed: 4_242)
+			var parts = Xoshiro256StarStar(seed: 4_242)
+
+			// Advance both streams identically to reach draw `draw`.
+			for _ in 0..<draw {
+				_ = try sum.sample(for: q1, using: &composite)
+				_ = try quantity.sample(for: q1, using: &parts)
+				_ = try price.sample(for: q1, using: &parts)
+			}
+
+			let whole: Double = try sum.sample(for: q1, using: &composite)
+			let left: Double = try quantity.sample(for: q1, using: &parts)
+			let right: Double = try price.sample(for: q1, using: &parts)
+
+			#expect(identical(whole, left + right),
+					"draw \(draw): sum gave \(whole), operands gave \(left) + \(right) = \(left + right)")
+		}
+
+		for draw in 0..<16 {
+			var composite = Xoshiro256StarStar(seed: 9_001)
+			var parts = Xoshiro256StarStar(seed: 9_001)
+
+			for _ in 0..<draw {
+				_ = try product.sample(for: q1, using: &composite)
+				_ = try quantity.sample(for: q1, using: &parts)
+				_ = try price.sample(for: q1, using: &parts)
+			}
+
+			let whole: Double = try product.sample(for: q1, using: &composite)
+			let left: Double = try quantity.sample(for: q1, using: &parts)
+			let right: Double = try price.sample(for: q1, using: &parts)
+
+			#expect(identical(whole, left * right),
+					"draw \(draw): product gave \(whole), operands gave \(left) * \(right) = \(left * right)")
+		}
+	}
+
 	@Test("A composite mixing a deterministic and a probabilistic operand reproduces")
 	func mixedCompositeReproduces() throws {
 		let fixedCost = DeterministicDriver(name: "Fixed", value: 10_000.0)

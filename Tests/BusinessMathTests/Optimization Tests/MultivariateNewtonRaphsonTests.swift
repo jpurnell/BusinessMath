@@ -39,6 +39,13 @@ struct MultivariateNewtonRaphsonTests {
 		// Should converge extremely fast for quadratic
 		#expect(result.converged, "Should converge")
 		#expect(result.iterations <= 3, "Should converge in very few iterations")
+		// The gradient certificate: |grad f(x*)| is the condition that *defines* a
+		// stationary point, and it is what the optimizer claims to stop on. A
+		// distance-to-known-minimum assertion cannot be written for a problem whose
+		// answer nobody knows; this one can.
+		let norm: Double = result.gradientNorm
+		#expect(norm < optimizer.tolerance,
+		        "gradient norm \(norm) exceeds the optimizer's own tolerance \(optimizer.tolerance)")
 		#expect(abs(result.solution[0]) < 0.01, "x should be near 0")
 		#expect(abs(result.solution[1]) < 0.01, "y should be near 0")
 	}
@@ -64,6 +71,13 @@ struct MultivariateNewtonRaphsonTests {
 		)
 
 		// Newton-Raphson should converge to the minimum
+		// The gradient certificate: |grad f(x*)| is the condition that *defines* a
+		// stationary point, and it is what the optimizer claims to stop on. A
+		// distance-to-known-minimum assertion cannot be written for a problem whose
+		// answer nobody knows; this one can.
+		let norm: Double = result.gradientNorm
+		#expect(norm < optimizer.tolerance,
+		        "gradient norm \(norm) exceeds the optimizer's own tolerance \(optimizer.tolerance)")
 		#expect(abs(result.solution[0] - 1.0) < 0.1, "x should be near 1")
 		#expect(abs(result.solution[1] - 1.0) < 0.1, "y should be near 1")
 		#expect(result.value < 0.1, "Function value should be small")
@@ -89,6 +103,13 @@ struct MultivariateNewtonRaphsonTests {
 		)
 
 		#expect(result.converged, "Should converge")
+		// The gradient certificate: |grad f(x*)| is the condition that *defines* a
+		// stationary point, and it is what the optimizer claims to stop on. A
+		// distance-to-known-minimum assertion cannot be written for a problem whose
+		// answer nobody knows; this one can.
+		let norm: Double = result.gradientNorm
+		#expect(norm < optimizer.tolerance,
+		        "gradient norm \(norm) exceeds the optimizer's own tolerance \(optimizer.tolerance)")
 		#expect(abs(result.solution[0]) < 0.01, "x should be near 0")
 		#expect(abs(result.solution[1]) < 0.01, "y should be near 0")
 		#expect(abs(result.solution[2]) < 0.01, "z should be near 0")
@@ -115,6 +136,13 @@ struct MultivariateNewtonRaphsonTests {
 		)
 
 		#expect(result.converged, "BFGS should converge")
+		// The gradient certificate: |grad f(x*)| is the condition that *defines* a
+		// stationary point, and it is what the optimizer claims to stop on. A
+		// distance-to-known-minimum assertion cannot be written for a problem whose
+		// answer nobody knows; this one can.
+		let norm: Double = result.gradientNorm
+		#expect(norm < optimizer.tolerance,
+		        "gradient norm \(norm) exceeds the optimizer's own tolerance \(optimizer.tolerance)")
 		#expect(abs(result.solution[0]) < 0.1, "x should be near 0")
 		#expect(abs(result.solution[1]) < 0.1, "y should be near 0")
 	}
@@ -139,6 +167,13 @@ struct MultivariateNewtonRaphsonTests {
 		)
 
 		// BFGS should get reasonably close
+		// The gradient certificate: |grad f(x*)| is the condition that *defines* a
+		// stationary point, and it is what the optimizer claims to stop on. A
+		// distance-to-known-minimum assertion cannot be written for a problem whose
+		// answer nobody knows; this one can.
+		let norm: Double = result.gradientNorm
+		#expect(norm < optimizer.tolerance,
+		        "gradient norm \(norm) exceeds the optimizer's own tolerance \(optimizer.tolerance)")
 		#expect(abs(result.solution[0] - 1.0) < 0.2, "x should be near 1")
 		#expect(abs(result.solution[1] - 1.0) < 0.2, "y should be near 1")
 	}
@@ -164,6 +199,13 @@ struct MultivariateNewtonRaphsonTests {
 
 		#expect(result.converged, "Should converge")
 		for i in 0..<dimensions {
+			// The gradient certificate: |grad f(x*)| is the condition that *defines* a
+			// stationary point, and it is what the optimizer claims to stop on. A
+			// distance-to-known-minimum assertion cannot be written for a problem whose
+			// answer nobody knows; this one can.
+			let norm: Double = result.gradientNorm
+			#expect(norm < optimizer.tolerance,
+			        "gradient norm \(norm) exceeds the optimizer's own tolerance \(optimizer.tolerance)")
 			#expect(abs(result.solution[i]) < 0.1, "Component \(i) should be near 0")
 		}
 	}
@@ -232,6 +274,13 @@ struct MultivariateNewtonRaphsonTests {
 		)
 
 		#expect(result.converged, "Should converge with line search")
+		// The gradient certificate: |grad f(x*)| is the condition that *defines* a
+		// stationary point, and it is what the optimizer claims to stop on. A
+		// distance-to-known-minimum assertion cannot be written for a problem whose
+		// answer nobody knows; this one can.
+		let norm: Double = result.gradientNorm
+		#expect(norm < optimizerWithLS.tolerance,
+		        "gradient norm \(norm) exceeds the optimizer's own tolerance \(optimizerWithLS.tolerance)")
 		#expect(abs(result.solution[0]) < 0.1, "x should be near 0")
 		#expect(abs(result.solution[1]) < 0.1, "y should be near 0")
 	}
@@ -258,6 +307,13 @@ struct MultivariateNewtonRaphsonTests {
 		)
 
 		#expect(result.converged, "Should converge")
+		// The gradient certificate: |grad f(x*)| is the condition that *defines* a
+		// stationary point, and it is what the optimizer claims to stop on. A
+		// distance-to-known-minimum assertion cannot be written for a problem whose
+		// answer nobody knows; this one can.
+		let norm: Double = result.gradientNorm
+		#expect(norm < optimizer.tolerance,
+		        "gradient norm \(norm) exceeds the optimizer's own tolerance \(optimizer.tolerance)")
 		#expect(abs(result.solution.x) < 0.01, "x should be near 0")
 		#expect(abs(result.solution.y) < 0.01, "y should be near 0")
 	}
@@ -281,6 +337,13 @@ struct MultivariateNewtonRaphsonTests {
 		)
 
 		#expect(result.converged, "BFGS should converge")
+		// The gradient certificate: |grad f(x*)| is the condition that *defines* a
+		// stationary point, and it is what the optimizer claims to stop on. A
+		// distance-to-known-minimum assertion cannot be written for a problem whose
+		// answer nobody knows; this one can.
+		let norm: Double = result.gradientNorm
+		#expect(norm < optimizer.tolerance,
+		        "gradient norm \(norm) exceeds the optimizer's own tolerance \(optimizer.tolerance)")
 		#expect(abs(result.solution.x) < 0.1, "x should be near 0")
 		#expect(abs(result.solution.y) < 0.1, "y should be near 0")
 	}
@@ -405,6 +468,13 @@ struct MultivariateNewtonRaphsonTests {
 		#expect(result.converged, "Should converge to minimum")
 
 		// Check solution accuracy (should be near [1, 1])
+		// The gradient certificate: |grad f(x*)| is the condition that *defines* a
+		// stationary point, and it is what the optimizer claims to stop on. A
+		// distance-to-known-minimum assertion cannot be written for a problem whose
+		// answer nobody knows; this one can.
+		let norm: Double = result.gradientNorm
+		#expect(norm < optimizer.tolerance,
+		        "gradient norm \(norm) exceeds the optimizer's own tolerance \(optimizer.tolerance)")
 		#expect(abs(result.solution[0] - 1.0) < 0.001, "x should be near 1.0")
 		#expect(abs(result.solution[1] - 1.0) < 0.001, "y should be near 1.0")
 
@@ -479,6 +549,13 @@ struct MultivariateNewtonRaphsonTests {
 		)
 
 		// Check solution (should be near [1, 1])
+		// The gradient certificate: |grad f(x*)| is the condition that *defines* a
+		// stationary point, and it is what the optimizer claims to stop on. A
+		// distance-to-known-minimum assertion cannot be written for a problem whose
+		// answer nobody knows; this one can.
+		let norm: Double = result.gradientNorm
+		#expect(norm < optimizer.tolerance,
+		        "gradient norm \(norm) exceeds the optimizer's own tolerance \(optimizer.tolerance)")
 		#expect(abs(result.solution[0] - 1.0) < 0.1, "x should be near 1.0")
 		#expect(abs(result.solution[1] - 1.0) < 0.1, "y should be near 1.0")
 

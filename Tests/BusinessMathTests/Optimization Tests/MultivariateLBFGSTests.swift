@@ -44,6 +44,13 @@ struct MultivariateLBFGSTests {
 
 		#expect(result.converged, "Should converge")
 		#expect(result.iterations < 50, "Should converge quickly")
+		// The gradient certificate: |grad f(x*)| is the condition that *defines* a
+		// stationary point, and it is what the optimizer claims to stop on. A
+		// distance-to-known-minimum assertion cannot be written for a problem whose
+		// answer nobody knows; this one can.
+		let norm: Double = result.gradientNorm
+		#expect(norm < optimizer.tolerance,
+		        "gradient norm \(norm) exceeds the optimizer's own tolerance \(optimizer.tolerance)")
 		#expect(abs(result.solution[0]) < 0.01, "x should be near 0")
 		#expect(abs(result.solution[1]) < 0.01, "y should be near 0")
 		#expect(result.value < 0.001, "Function value should be near 0")
@@ -69,6 +76,13 @@ struct MultivariateLBFGSTests {
 		)
 
 		// Rosenbrock is challenging, check we get close to (1,1)
+		// The gradient certificate: |grad f(x*)| is the condition that *defines* a
+		// stationary point, and it is what the optimizer claims to stop on. A
+		// distance-to-known-minimum assertion cannot be written for a problem whose
+		// answer nobody knows; this one can.
+		let norm: Double = result.gradientNorm
+		#expect(norm < optimizer.tolerance,
+		        "gradient norm \(norm) exceeds the optimizer's own tolerance \(optimizer.tolerance)")
 		#expect(abs(result.solution[0] - 1.0) < 0.1, "x should be near 1")
 		#expect(abs(result.solution[1] - 1.0) < 0.1, "y should be near 1")
 		#expect(result.value < 0.1, "Function value should be small")
@@ -88,6 +102,13 @@ struct MultivariateLBFGSTests {
 		)
 
 		#expect(result.converged, "Should converge")
+		// The gradient certificate: |grad f(x*)| is the condition that *defines* a
+		// stationary point, and it is what the optimizer claims to stop on. A
+		// distance-to-known-minimum assertion cannot be written for a problem whose
+		// answer nobody knows; this one can.
+		let norm: Double = result.gradientNorm
+		#expect(norm < optimizer.tolerance,
+		        "gradient norm \(norm) exceeds the optimizer's own tolerance \(optimizer.tolerance)")
 		#expect(abs(result.solution[0]) < 0.01, "x should be near 0")
 		#expect(abs(result.solution[1]) < 0.01, "y should be near 0")
 		#expect(abs(result.solution[2]) < 0.01, "z should be near 0")

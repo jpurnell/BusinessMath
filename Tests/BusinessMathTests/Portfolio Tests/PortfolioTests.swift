@@ -38,14 +38,47 @@ struct PortfolioTests {
 		)
 	}
 
+	/// Two assets with **nonzero, unequal variances and a covariance known in closed form**.
+	///
+	/// This fixture used to be `Array(repeating:)` for both assets — constant returns, so
+	/// **both variances were exactly zero**. Every risk quantity derived from it was
+	/// therefore degenerate: the covariance matrix was all zeros, the Sharpe ratio divided
+	/// by zero, and the efficient frontier had no frontier because every portfolio had
+	/// identical (zero) risk. Three tests were vacuous *because of the fixture*, and no
+	/// change to their assertions could have rescued them.
+	///
+	/// The replacement is deterministic and analytic rather than sampled, so the moments
+	/// are exact rather than approximate:
+	///
+	/// ```
+	/// A_i = 0.10/12 + 0.02 · s_i        s_i = +1 on even i, -1 on odd i
+	/// B_i = 0.05/12 + 0.01 · t_i        t_i = s_i for i < 42, -s_i thereafter
+	/// ```
+	///
+	/// The flip point is 42 rather than any convenient round number, and that is the whole
+	/// design. Flipping at 42 turns exactly **9 even and 9 odd** indices, so `t` stays
+	/// balanced at 30 of each sign — which is what makes B's mean exactly `0.05/12` rather
+	/// than merely close to it. Flipping at 45 would give a tidier-looking 0.5 correlation
+	/// and an unbalanced `t`, and B's mean would come out at 0.0045 against an intended
+	/// 0.0041667. Measured, before the flip point was corrected.
+	///
+	/// So: the two series agree on 42 of 60 periods and disagree on 18, giving
+	/// `(1/n)·Σ sᵢtᵢ = (42 − 18)/60 = 0.4` and a correlation of **exactly 0.4**. Population
+	/// variances are 4e-4 and 1e-4; the library reports the sample form, 60/59 of each.
+	/// Unequal variances are what make the frontier a curve rather than a point.
 	func makeTwoAssetReturns() -> (assets: [String], returns: [TimeSeries<Double>]) {
 		let periods = (0..<60).map { Period.month(year: 2020 + $0 / 12, month: $0 % 12 + 1) }
 
-		// Asset A: 10% avg return
-		let returnsA = Array(repeating: 0.10 / 12.0, count: 60)
+		let returnsA = (0..<60).map { i -> Double in
+			let sign: Double = i % 2 == 0 ? 1.0 : -1.0
+			return 0.10 / 12.0 + 0.02 * sign
+		}
 
-		// Asset B: 5% avg return
-		let returnsB = Array(repeating: 0.05 / 12.0, count: 60)
+		let returnsB = (0..<60).map { i -> Double in
+			let sign: Double = i % 2 == 0 ? 1.0 : -1.0
+			let agree: Double = i < 42 ? 1.0 : -1.0
+			return 0.05 / 12.0 + 0.01 * sign * agree
+		}
 
 		return (
 			assets: ["A", "B"],
@@ -152,9 +185,32 @@ struct PortfolioTests {
 		let weights = [0.5, 0.5]
 		let sharpe = portfolio.sharpeRatio(weights: weights)
 
-		// Sharpe = (Return - RiskFree) / Risk
-		// Should be positive for reasonable portfolios
-		#expect(sharpe >= 0.0 || sharpe < 0.0)  // Just check it calculates
+		// This asserted `sharpe >= 0.0 || sharpe < 0.0` — a tautology satisfied by every
+		// real number. It could not have been written otherwise against the old fixture:
+		// both assets had constant returns, so portfolio risk was exactly zero and the
+		// Sharpe ratio was a division by it.
+		//
+		// With unequal variances and a known covariance there is a number to check, and
+		// two things worth checking about it.
+
+		// The identity the ratio is defined by, against the portfolio's own reported
+		// moments — so it holds whatever the fixture becomes.
+		let ret: Double = portfolio.portfolioReturn(weights: weights)
+		let risk: Double = portfolio.portfolioRisk(weights: weights)
+		let expected: Double = (ret - 0.03) / risk
+		#expect(abs(sharpe - expected) < 1e-12,
+				"sharpe \(sharpe) should equal (\(ret) - 0.03) / \(risk) = \(expected)")
+
+		// And the value itself. Equal weights give a return of exactly 0.00625 and a risk
+		// of 0.0129536…, where the old fixture gave 0.0 — which is the whole point of
+		// replacing it.
+		#expect(abs(ret - 0.00625) < 1e-15, "equal-weight return was \(ret)")
+		#expect(abs(risk - 0.012953633087651186) < 1e-15, "equal-weight risk was \(risk)")
+		#expect(risk > 0.0, "a portfolio of two imperfectly correlated risky assets has risk")
+
+		// Note the units: `riskFreeRate: 0.03` is annual while these returns are monthly,
+		// so the ratio is negative. That mismatch predates this change and is left as it
+		// was found; the identity above holds either way.
 	}
 
 	// MARK: - Portfolio Optimization Tests
@@ -219,15 +275,34 @@ struct PortfolioTests {
 
 		let frontier = portfolio.efficientFrontier(points: 10)
 
-		// Returns should generally increase along frontier
-		// (though numerical optimization may have some noise)
-		if frontier.count >= 2 {
-			let firstReturn = frontier.first?.expectedReturn ?? 0.0
-			let lastReturn = frontier.last?.expectedReturn ?? 0.0
-			// Just check they're both positive
-			#expect(firstReturn >= 0.0)
-			#expect(lastReturn >= 0.0)
+		// The test is named for increasing return and used to assert only that two numbers
+		// were non-negative — which the old fixture forced, since every portfolio on a
+		// zero-variance frontier has the same return and there is no frontier to traverse.
+		//
+		// Now the frontier is a curve, so monotonicity is checkable. Measured on this
+		// fixture it is weakly increasing with repeated points at both ends, where the
+		// optimiser lands on the same corner for several target returns — so the pairwise
+		// claim is non-decreasing, and the end-to-end claim is strictly increasing.
+		let frontierReturns = frontier.map { $0.expectedReturn }
+		#expect(frontierReturns.count >= 2, "a two-asset frontier should have at least two points")
+
+		for index in 1..<frontierReturns.count {
+			#expect(frontierReturns[index] >= frontierReturns[index - 1] - 1e-12,
+					"frontier return fell at point \(index): \(frontierReturns[index - 1]) -> \(frontierReturns[index])")
 		}
+
+		let first: Double = try #require(frontierReturns.first)
+		let last: Double = try #require(frontierReturns.last)
+		#expect(last > first,
+				"the frontier should span a range of returns, got \(first) to \(last)")
+
+		// And risk should rise with it: that ordering is what makes it a frontier rather
+		// than a list.
+		let risks = frontier.map { $0.risk }
+		let firstRisk: Double = try #require(risks.first)
+		let lastRisk: Double = try #require(risks.last)
+		#expect(lastRisk > firstRisk,
+				"higher return should cost risk, got \(firstRisk) to \(lastRisk)")
 	}
 
 	// MARK: - Two Asset Portfolio Tests
@@ -235,13 +310,39 @@ struct PortfolioTests {
 	@Test("Two asset portfolio can allocate to both")
 	func twoAssetAllocation() throws {
 		let (assets, returns) = makeTwoAssetReturns()
-		let portfolio = Portfolio(assets: assets, returns: returns)
+		// The monthly risk-free rate, not the annual default.
+		//
+		// `Portfolio`'s default is 3% **annual** while these returns are **monthly**, so
+		// every excess return is negative — and maximising a negative Sharpe ratio inverts
+		// the usual preference: dividing a negative numerator by a smaller risk makes the
+		// ratio *worse*, so the optimiser seeks the riskiest asset it can find. Measured
+		// with the default, the "optimum" is 100% of asset A: the single riskiest holding,
+		// which is the opposite of what this test is named for and not a claim about
+		// diversification at all.
+		//
+		// Matching the units makes the question well-posed. It is a property of the Sharpe
+		// ratio rather than a defect in the optimiser, but it is worth stating where
+		// someone will meet it.
+		let portfolio = Portfolio(assets: assets, returns: returns, riskFreeRate: 0.03 / 12.0)
 
 		let optimal = portfolio.optimizePortfolio()
 
 		#expect(optimal.weights.count == 2)
 		let sum = optimal.weights.reduce(0.0, +)
 		#expect(abs(sum - 1.0) < 0.01)
+
+		// The test is named "can allocate to both" and did not check that it did. Against
+		// the old zero-variance fixture it could not: with no risk to trade off, any
+		// allocation is as good as any other and the optimiser's answer carries no
+		// information. Measured on the new fixture the optimum is roughly (0.334, 0.666) —
+		// genuinely mixed, which is the claim the name makes.
+		for (index, weight) in optimal.weights.enumerated() {
+			#expect(weight > 0.01,
+					"asset \(index) got \(weight); a diversifying optimum should hold both")
+		}
+		#expect(optimal.risk > 0.0, "a mixed portfolio of risky assets has nonzero risk")
+		#expect(optimal.risk < portfolio.portfolioRisk(weights: [1.0, 0.0]),
+				"the optimum should be less risky than the riskier asset alone")
 	}
 
 	// MARK: - Edge Cases

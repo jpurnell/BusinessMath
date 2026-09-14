@@ -69,4 +69,68 @@ struct EmpiricalIntervalsTests {
         }
         #expect(abs(ci.confidenceLevel - 0.90) < 1e-9)
     }
+
+    // MARK: - Calibration
+
+    /// The property these intervals exist to have, and the one nothing here measured.
+    ///
+    /// The tests above check the *shape* of an interval — that it is symmetric about the
+    /// point forecast, that it widens with horizon, that 99% is wider than 80%. Every one
+    /// of those passes for an interval of the wrong size. A band twice too wide is
+    /// symmetric, widens, and orders correctly by confidence level; it is simply not an
+    /// 80% interval.
+    ///
+    /// Calibration is the claim the number 0.80 actually makes: **over repeated draws, the
+    /// interval contains the truth about 80% of the time.** It is the same shape of gap as
+    /// the antithetic standard-error defect — a reported uncertainty that nothing measures
+    /// against realised spread.
+    ///
+    /// The construction here tests the interval machinery rather than any forecaster. The
+    /// residual buckets are a seeded sample from a known distribution; the interval is
+    /// built from their quantiles; and coverage is measured against *fresh* draws from the
+    /// same distribution. If the quantile arithmetic is right, coverage lands on the
+    /// nominal level to within sampling error.
+    ///
+    /// The bound is the binomial standard error, not a guess: with `n` fresh draws at a
+    /// nominal level `p`, the standard error of the observed proportion is
+    /// `sqrt(p(1-p)/n)`, and three of those is a 99.7% envelope. At n = 4000 and p = 0.8
+    /// that is about 0.019, so the test allows roughly 0.781 to 0.819. A tolerance chosen
+    /// by eye would either pass a miscalibrated interval or flake on a correct one.
+    @Test("An 80% interval contains about 80% of fresh draws, within binomial error",
+          arguments: [0.80, 0.90, 0.95])
+    func intervalsAreCalibrated(nominal: Double) throws {
+        var rng = DeterministicRNG(seed: 20260914)
+
+        // The residual sample the interval is built from.
+        let residualCount = 2_000
+        var residuals: [Double] = []
+        residuals.reserveCapacity(residualCount)
+        for _ in 0..<(residualCount / 2) {
+            let (a, b): (Double, Double) = boxMullerSeed(using: &rng)
+            residuals.append(a)
+            residuals.append(b)
+        }
+
+        let backtest = report(residuals: [residuals], horizon: 1)
+        let interval = try backtest.empiricalIntervals(around: series([0.0]),
+                                                       confidenceLevel: nominal)
+        let lower: Double = interval.lowerBound.valuesArray[0]
+        let upper: Double = interval.upperBound.valuesArray[0]
+        #expect(upper > lower, "degenerate interval [\(lower), \(upper)]")
+
+        // Fresh draws from the same distribution the residuals came from.
+        let trials = 4_000
+        var covered = 0
+        for _ in 0..<(trials / 2) {
+            let (a, b): (Double, Double) = boxMullerSeed(using: &rng)
+            if a >= lower && a <= upper { covered += 1 }
+            if b >= lower && b <= upper { covered += 1 }
+        }
+
+        let coverage: Double = Double(covered) / Double(trials)
+        let standardError: Double = (nominal * (1.0 - nominal) / Double(trials)).squareRoot()
+        let allowed: Double = 3.0 * standardError
+        #expect(abs(coverage - nominal) < allowed,
+                "nominal \(nominal), observed coverage \(coverage), allowed +/- \(allowed)")
+    }
 }

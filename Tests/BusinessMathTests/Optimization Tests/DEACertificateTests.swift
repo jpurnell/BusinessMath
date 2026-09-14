@@ -336,11 +336,31 @@ struct DEACertificateTests {
 
 	// MARK: - Invariance
 
-	@Test("Efficiency does not depend on the units inputs and outputs are measured in")
-	func efficiencyIsUnitsInvariant() throws {
+	/// Units invariance, for **every** model this package ships — not only CCR.
+	///
+	/// This covered `.ccr` alone, which is the one model whose invariance is easiest to
+	/// believe without checking: it is a pure ratio of a ratio. BCC adds a convexity
+	/// constraint, super-efficiency removes the evaluated unit from its own reference set,
+	/// and SBM optimises input and output slacks simultaneously — each of which touches
+	/// the scaling in a different place, and any of which could lose invariance while
+	/// leaving every score inside its expected range and every ranking plausible. That is
+	/// the failure this test exists to catch, and it was watching one of four doors.
+	static let allModels: [(label: String, model: DEAModelType)] = [
+		("ccr", .ccr),
+		("bcc", .bcc),
+		("superEfficiency(ccr)", .superEfficiency(base: .ccr)),
+		("superEfficiency(bcc)", .superEfficiency(base: .bcc)),
+		("sbm(crs)", .sbm(returnsToScale: .constant)),
+		("sbm(vrs)", .sbm(returnsToScale: .variable)),
+	]
+
+	@Test("Efficiency does not depend on the units inputs and outputs are measured in",
+		  arguments: DEACertificateTests.allModels.map(\.label))
+	func efficiencyIsUnitsInvariant(modelLabel: String) throws {
+		let model = try #require(Self.allModels.first { $0.label == modelLabel }).model
 		let factors: [Double] = [0.001, 0.5, 7.0, 1000.0]
 		for dataset in Self.corpus {
-			let baseline = try Self.solve(dataset, model: .ccr)
+			let baseline = try Self.solve(dataset, model: model)
 			let baselineScores = Dictionary(uniqueKeysWithValues: baseline.scores.map { ($0.name, $0.efficiency) })
 
 			let inputCount = dataset.dmus[0].inputs.count
@@ -363,14 +383,25 @@ struct DEACertificateTests {
 					return DMU(name: dmu.name, inputs: inputs, outputs: outputs)
 				}
 
-				let moved = try DEASolver().solve(dmus: rescaled, model: .ccr, orientation: .inputOriented)
+				let moved = try DEASolver().solve(dmus: rescaled, model: model, orientation: .inputOriented)
 				for score in moved.scores {
 					guard let before = baselineScores[score.name] else { continue }
 					// Units invariance is the property DEA is chosen for. Breaking it
 					// leaves every score inside [0, 1] and every ranking plausible.
-					#expect(abs(score.efficiency - before) < 1e-6,
+					//
+					// The comparison is equality-**or**-closeness, not closeness alone,
+					// because a super-efficiency score can legitimately be `+infinity`.
+					// Andersen-Petersen removes the evaluated unit from its own reference
+					// set, and under variable returns to scale that can leave no frontier
+					// to project onto — a documented property of the model, not a defect.
+					// Measured: only `superEfficiency(bcc)` reaches it, on `P4` and `U6`,
+					// which is the configuration theory predicts. `abs(inf - inf)` is NaN
+					// and fails every bound, so a closeness-only test reports a violation
+					// exactly where the property holds perfectly. `inf == inf` does not.
+					let invariant = score.efficiency == before || abs(score.efficiency - before) < 1e-6
+					#expect(invariant,
 							"""
-							\(dataset.name)/\(score.name): \(before) became \(score.efficiency) \
+							\(modelLabel) \(dataset.name)/\(score.name): \(before) became \(score.efficiency) \
 							after scaling \(scaleInput ? "input" : "output") \(dimension) by \(factor)
 							""")
 				}

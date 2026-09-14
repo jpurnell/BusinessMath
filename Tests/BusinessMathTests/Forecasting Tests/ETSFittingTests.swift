@@ -296,4 +296,96 @@ struct ETSFittingTests {
 		#expect(unbounded.lowerBound > 0.0)
 		#expect(unbounded.upperBound < 1.0)
 	}
+
+	// MARK: - Exact recovery
+
+	/// The oracle the fitting tests were missing: a series the model can represent exactly.
+	///
+	/// Every other test here compares the fit to something else — a grid, the library
+	/// defaults, seasonal-naive. Those answer "is the search doing better than a baseline",
+	/// which a broken search can still pass by being broken in the same direction as the
+	/// baseline. None of them answers "does the fit recover a signal it is capable of
+	/// representing", and that is the question with a known answer.
+	///
+	/// Additive Holt-Winters is exactly `level + trend·t + seasonal[t mod m]`, so a
+	/// noiseless series of that form lies in the model's span. **Recovery is asymptotic,
+	/// not immediate** — the state is seeded from the first cycles and converges from
+	/// there, which is what exponential smoothing does — so the assertion is that the
+	/// residuals *decay to nothing*, not that they start there.
+	///
+	/// Measured on the series below, maximum |residual| by block of eight:
+	///
+	/// ```
+	/// 0-7    4.698
+	/// 8-15   0.979
+	/// 16-23  0.173
+	/// 24-31  0.0204
+	/// 32-39  0.00279
+	/// ```
+	///
+	/// Roughly a factor of six per block, over five blocks. A fit that merely tracked the
+	/// series would hold a constant error; one that diverged would grow. Geometric decay
+	/// is the signature of the state converging on the truth, and it is checkable without
+	/// knowing the parameters the search will land on — which matters, because a
+	/// deterministic series does not have unique parameters.
+	@Test("A noiseless series inside the model's span is recovered, and the error decays geometrically")
+	func noiselessSeriesIsRecovered() throws {
+		let season: [Double] = [10.0, -5.0, 3.0, -8.0]
+		let count = 40
+		let values = (0..<count).map { t -> Double in
+			let level: Double = 100.0
+			let trend: Double = 2.0 * Double(t)
+			return level + trend + season[t % 4]
+		}
+		let periods = (0..<count).map { Period.month(year: 2020 + $0 / 12, month: $0 % 12 + 1) }
+		let series = TimeSeries(periods: periods, values: values)
+
+		let fit = try series.fitETS(seasonality: .periods(4))
+		#expect(fit.convergence.converged, "the search should converge on a noiseless series")
+
+		let residuals = fit.model.residuals
+		#expect(residuals.count == count, "expected one residual per observation")
+
+		// Block maxima, which must fall monotonically.
+		var blockMaxima: [Double] = []
+		for start in stride(from: 0, to: residuals.count, by: 8) {
+			let end = Swift.min(start + 8, residuals.count)
+			let peak = residuals[start..<end].map { Swift.abs($0) }.max() ?? 0
+			blockMaxima.append(peak)
+		}
+		#expect(blockMaxima.count == 5, "expected five blocks of eight")
+
+		for index in 1..<blockMaxima.count {
+			#expect(blockMaxima[index] < blockMaxima[index - 1],
+					"block \(index) peaked at \(blockMaxima[index]), no better than \(blockMaxima[index - 1])")
+		}
+
+		// And the tail is negligible against a series whose seasonal amplitude is 10 and
+		// whose trend moves 2 per period.
+		let finalPeak: Double = try #require(blockMaxima.last)
+		#expect(finalPeak < 0.01,
+				"the last eight residuals peaked at \(finalPeak) on a noiseless series")
+
+		// The decay is geometric rather than merely downward: each block improves on the
+		// last by a wide margin, so a fit that crept toward the answer would not pass.
+		let firstPeak: Double = try #require(blockMaxima.first)
+		#expect(firstPeak / finalPeak > 100.0,
+				"error fell only from \(firstPeak) to \(finalPeak); expected orders of magnitude")
+	}
+
+	/// The same property without seasonality, so a failure separates the two mechanisms.
+	@Test("A noiseless linear trend is recovered to a negligible tail error")
+	func noiselessTrendIsRecovered() throws {
+		let count = 30
+		let values = (0..<count).map { 50.0 + 1.5 * Double($0) }
+		let periods = (0..<count).map { Period.month(year: 2020 + $0 / 12, month: $0 % 12 + 1) }
+		let series = TimeSeries(periods: periods, values: values)
+
+		let fit = try series.fitETS(seasonality: .periods(1))
+		let residuals = fit.model.residuals
+		let tail = Array(residuals.suffix(10))
+		let peak: Double = tail.map { Swift.abs($0) }.max() ?? .infinity
+		#expect(peak < 0.05,
+				"the last ten residuals of a perfect line peaked at \(peak)")
+	}
 }
