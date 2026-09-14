@@ -479,26 +479,40 @@ struct TimeSeriesTests {
 		#expect(abs(measured2 - 100.0) < 1e-6)
 	}
 
-	// NOTE: Mixed period types are supported, but currently trigger a Strideable
-	// issue when Swift's stdlib tries to optimize operations.
-	// For now, users should use time series with consistent period types.
-	//
-	// @Test("Time series with different period types")
-	// func mixedPeriodTypes() {
-	// 	let day = Period.day(Date())
-	// 	let month = Period.month(year: 2025, month: 1)
-	// 	let quarter = Period.quarter(year: 2025, quarter: 1)
-	//
-	// 	let ts = TimeSeries(
-	// 		periods: [day, month, quarter],
-	// 		values: [1.0, 2.0, 3.0]
-	// 	)
-	//
-	// 	#expect(ts.count == 3)
-	// 	#expect(ts[day] == 1.0)
-	// 	#expect(ts[month] == 2.0)
-	// 	#expect(ts[quarter] == 3.0)
-	// }
+	/// Mixed period types in one series — restored 2026-09-14 after the reason for
+	/// commenting it out was checked and found not to apply.
+	///
+	/// The note read: *"Mixed period types are supported, but currently trigger a Strideable
+	/// issue when Swift's stdlib tries to optimize operations. For now, users should use time
+	/// series with consistent period types."* A capability disclaimed in a comment is one a
+	/// user will rediscover, so it was worth checking rather than inheriting.
+	///
+	/// **`Period` does not conform to `Strideable`, and deliberately cannot** —
+	/// `PeriodArithmetic` says so where `PeriodRange` is defined: *"Since `distance(to:)`
+	/// throws and we can't conform to Strideable with a throwing method, we provide a custom
+	/// sequence."* There is no conformance for the standard library to optimise through, so
+	/// the failure the note describes has no mechanism. A live test in
+	/// `TimeSeriesBuilderTests` has been exercising mixed types through the builder
+	/// throughout.
+	///
+	/// The date is fixed rather than `Date()`, which the original used: a series keyed on
+	/// "now" is a different series on every run.
+	@Test("Time series with different period types")
+	func mixedPeriodTypes() throws {
+		let day = Period.day(Date(timeIntervalSince1970: 1_767_225_600))  // 2026-01-01T00:00:00Z
+		let month = Period.month(year: 2025, month: 1)
+		let quarter = Period.quarter(year: 2025, quarter: 1)
+
+		let ts = TimeSeries(
+			periods: [day, month, quarter],
+			values: [1.0, 2.0, 3.0]
+		)
+
+		#expect(ts.count == 3)
+		#expect(try #require(ts[day]).isEqual(to: 1.0))
+		#expect(try #require(ts[month]).isEqual(to: 2.0))
+		#expect(try #require(ts[quarter]).isEqual(to: 3.0))
+	}
 
 	@Test("Time series works with Float type")
 	func floatTimeSeries() throws {

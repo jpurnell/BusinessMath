@@ -71,7 +71,7 @@ struct CalendarZoneInvarianceTests {
     ])
     func septemberFiscalYearIsZoneInvariant(date: (Int, Int, Int)) throws {
         let (y, m, d) = date
-        let yearEnd = try MonthDay(month: 9, day: 30)
+        let yearEnd = MonthDay(month: 9, day: 30)
         let calendar = FiscalCalendar(yearEnd: yearEnd)
         let sweep = ZoneInvariance.sweep(input: ZoneInvariance.utc(y, m, d)) { instant in
             calendar.fiscalYear(for: instant)

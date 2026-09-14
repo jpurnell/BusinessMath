@@ -35,7 +35,8 @@ public struct MonthDay: Codable, Equatable, Hashable, Sendable {
 	///   - day: The day (1-31).
 	///
 	/// - Precondition: `month` must be between 1 and 12 inclusive.
-	/// - Precondition: `day` must be between 1 and 31 inclusive.
+	/// - Precondition: `day` must exist in `month` — 1 to 31, 30 or 29 as the month allows.
+	///   February admits 29, so a leap-day fiscal year-end is expressible.
 	///
 	/// ## Example
 	/// ```swift
@@ -45,8 +46,25 @@ public struct MonthDay: Codable, Equatable, Hashable, Sendable {
 		guard month >= 1, month <= 12 else {
 			preconditionFailure("Month must be between 1 and 12")
 		}
-		guard day >= 1, day <= 31 else {
-			preconditionFailure("Day must be between 1 and 31")
+		// The day must exist **in its month**, not merely in 1...31.
+		//
+		// These two guards used to be independent, so every impossible date in the
+		// 12 x 31 box constructed silently: `MonthDay(month: 2, day: 30)` and
+		// `MonthDay(month: 4, day: 31)` both succeeded. Worse, nothing downstream caught
+		// it — a February-30 year-end produced a *plausible* fiscal year, because
+		// `FiscalCalendar` orders on (month, day) rather than resolving a date, so
+		// 15 March 2025 came back as fiscal 2026 exactly as a February-28 year-end would.
+		// The caller had no way to learn their configured year-end does not exist.
+		//
+		// February admits **29**. A leap-day year-end is unusual and not impossible, and
+		// because the comparison is an ordering rather than a date lookup it behaves
+		// consistently in common years — measured, 15 March 2024 gives fiscal 2025 and
+		// 15 March 2025 gives fiscal 2026, the same answers a February-28 year-end gives.
+		// Rejecting 29 would refuse a configuration that works.
+		let daysInMonth = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+		let longestDay = daysInMonth[month - 1]
+		guard day >= 1, day <= longestDay else {
+			preconditionFailure("Day must be between 1 and \(longestDay) for month \(month)")
 		}
 		self.month = month
 		self.day = day
@@ -72,17 +90,17 @@ public struct MonthDay: Codable, Equatable, Hashable, Sendable {
 /// let standard = FiscalCalendar.standard
 ///
 /// // Apple fiscal year (Sep 30 year-end)
-/// let apple = FiscalCalendar(yearEnd: try MonthDay(month: 9, day: 30))
+/// let apple = FiscalCalendar(yearEnd: MonthDay(month: 9, day: 30))
 ///
 /// // Australian government (Jun 30 year-end)
-/// let australia = FiscalCalendar(yearEnd: try MonthDay(month: 6, day: 30))
+/// let australia = FiscalCalendar(yearEnd: MonthDay(month: 6, day: 30))
 /// ```
 ///
 /// ## Using Fiscal Calendars
 ///
 /// ```swift
 /// let periods = Period.documentationQuarters
-/// let apple = FiscalCalendar(yearEnd: try MonthDay(month: 9, day: 30))
+/// let apple = FiscalCalendar(yearEnd: MonthDay(month: 9, day: 30))
 ///
 /// // January 15, 2025 is in Apple's FY2025
 /// let jan2025 = Calendar.current.date(from: DateComponents(year: 2025, month: 1, day: 15))!
@@ -111,7 +129,7 @@ public struct FiscalCalendar: Codable, Equatable, Sendable {
 	/// ## Example
 	/// ```swift
 	/// // Apple's fiscal year ends September 30
-	/// let apple = FiscalCalendar(yearEnd: try MonthDay(month: 9, day: 30))
+	/// let apple = FiscalCalendar(yearEnd: MonthDay(month: 9, day: 30))
 	/// ```
 	public init(yearEnd: MonthDay) {
 		self.yearEnd = yearEnd
@@ -146,7 +164,7 @@ public struct FiscalCalendar: Codable, Equatable, Sendable {
 	///
 	/// ## Example
 	/// ```swift
-	/// let apple = FiscalCalendar(yearEnd: try MonthDay(month: 9, day: 30))
+	/// let apple = FiscalCalendar(yearEnd: MonthDay(month: 9, day: 30))
 	/// let jan2025 = Calendar.current.date(from: DateComponents(year: 2025, month: 1, day: 15))!
 	/// let fy = apple.fiscalYear(for: jan2025)  // 2025 (part of FY2025)
 	/// ```
@@ -181,7 +199,7 @@ public struct FiscalCalendar: Codable, Equatable, Sendable {
 	///
 	/// ## Example
 	/// ```swift
-	/// let apple = FiscalCalendar(yearEnd: try MonthDay(month: 9, day: 30))
+	/// let apple = FiscalCalendar(yearEnd: MonthDay(month: 9, day: 30))
 	/// let jan2025 = Calendar.current.date(from: DateComponents(year: 2025, month: 1, day: 15))!
 	/// let fq = apple.fiscalQuarter(for: jan2025)  // 2 (Jan-Mar is Q2)
 	/// ```
@@ -228,7 +246,7 @@ public struct FiscalCalendar: Codable, Equatable, Sendable {
 	///
 	/// ## Example
 	/// ```swift
-	/// let apple = FiscalCalendar(yearEnd: try MonthDay(month: 9, day: 30))
+	/// let apple = FiscalCalendar(yearEnd: MonthDay(month: 9, day: 30))
 	/// let jan2025 = Calendar.current.date(from: DateComponents(year: 2025, month: 1, day: 15))!
 	/// let fm = apple.fiscalMonth(for: jan2025)  // 4 (January is fiscal month 4)
 	/// ```
@@ -272,7 +290,7 @@ public struct FiscalCalendar: Codable, Equatable, Sendable {
 	///
 	/// ## Example
 	/// ```swift
-	/// let apple = FiscalCalendar(yearEnd: try MonthDay(month: 9, day: 30))
+	/// let apple = FiscalCalendar(yearEnd: MonthDay(month: 9, day: 30))
 	///
 	/// // Calendar January is fiscal month 4
 	/// let jan = Period.month(year: 2025, month: 1)

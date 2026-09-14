@@ -209,6 +209,35 @@ extension Driver where Value: BinaryFloatingPoint {
 	///   - maxValue: The maximum allowed value (optional).
 	/// - Returns: A constrained driver with values in the specified range.
 	///
+	/// ## This censors the distribution; it does not truncate it
+	///
+	/// Out-of-range draws are **moved to the boundary**, not rejected and redrawn. Those are
+	/// different distributions and the difference is large, so a caller reading percentiles
+	/// or a standard deviation off a clamped driver needs to know which one they have.
+	///
+	/// Measured on `Normal(1000, 100)` clamped to ±1σ, over 200,000 seeded draws:
+	///
+	/// | | Standard deviation | Mass exactly on a boundary |
+	/// |---|---|---|
+	/// | **Clamped — what this does** | **71.86** (closed form 71.837) | **31.7%** (closed form 0.317311) |
+	/// | Truncated — what this is not | 53.96 | 0% |
+	///
+	/// Nearly a third of the mass sits on the two boundary values as point masses. The
+	/// result is not a normal distribution of any kind, and a percentile taken from it near
+	/// the bounds is a statement about the clamp rather than about the model.
+	///
+	/// ## Why censoring rather than rejection
+	///
+	/// Rejection sampling consumes an **unpredictable number of draws** per value. That
+	/// breaks the contract every seeded composite depends on: `SumDriver` and
+	/// `ProductDriver` interleave their operands on one generator, so a driver that
+	/// sometimes takes two draws and sometimes twenty makes the whole stream irreproducible
+	/// in aggregate. Clamping advances the generator exactly once, always — the same
+	/// reasoning that governs ``openUnitUniform(_:using:)``.
+	///
+	/// If you need a genuinely truncated distribution, draw from one directly rather than
+	/// clamping a wider one.
+	///
 	/// ## Example
 	/// ```swift
 	/// let baseUtilization = DeterministicDriver(name: "baseUtilization", value: 100.0)

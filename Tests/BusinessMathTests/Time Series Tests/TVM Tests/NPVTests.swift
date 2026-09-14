@@ -606,4 +606,77 @@ struct NPVTests {
 		// PI = PV_positive / 0 = infinity (or very large)
 		#expect(pi.isInfinite || pi > 1000.0)
 	}
+
+	// MARK: - The two conventions, stated executably
+
+	/// `npv` and `npvExcel` differ by exactly one period of discounting, and the difference
+	/// is a trap the documentation cannot close on its own.
+	///
+	/// `npvExcel` discounts **every** element from t = 1, which is Excel's behaviour and the
+	/// reason the function is named for it. `npv` treats the first element as t = 0,
+	/// undiscounted, which is the textbook definition. The doc comment on `npvExcel` says
+	/// this at length — a comparison table, a when-to-use for each, a worked Method 1 versus
+	/// Method 2 example, and an explicit "**do not** include the initial investment in the
+	/// cashFlows array".
+	///
+	/// **It was still got wrong twice in this repository**, both found on 2026-09-14:
+	/// `TVMReferenceTests`' header cited `NPV(10%, 3000, 4200, 6800) - 10000 = 1188.44`, an
+	/// expression that evaluates to 1307.29 because it subtracts the outlay *outside* the
+	/// call and therefore undiscounted; and `npvExcelDocumentationExample` carried an
+	/// intermediate term that was wrong by 1.373, which propagated into its expected value.
+	///
+	/// Prose that thorough failing twice is the argument for making the distinction
+	/// executable. These assertions state the relationship rather than describing it.
+	@Test("npvExcel is npv with every flow pushed one period later")
+	func theTwoConventionsDifferByOnePeriod() {
+		let flows: [Double] = [-10_000, 3_000, 4_200, 6_800]
+		let rate = 0.10
+
+		let textbook = npv(discountRate: rate, cashFlows: flows)
+		let excel = npvExcel(rate: rate, cashFlows: flows)
+
+		// Both are real, both are documented, and they are not the same number.
+		#expect(abs(textbook - 1307.287753568743) < 1e-9, "npv was \(textbook)")
+		#expect(abs(excel - 1188.4434123352216) < 1e-9, "npvExcel was \(excel)")
+
+		// The relationship, which holds for any flows and any rate: discounting everything
+		// one period further is the same as dividing the whole sum by (1 + r).
+		let pushed: Double = textbook / (1.0 + rate)
+		#expect(abs(excel - pushed) < 1e-9,
+				"npvExcel \(excel) should equal npv/(1+r) = \(pushed)")
+	}
+
+	/// The idiom the documentation recommends, and the one it warns against, side by side.
+	@Test("Holding the outlay outside the call is not the same as putting it inside")
+	func theOutlayMustBeHeldOutside() {
+		let rate = 0.10
+		let outlay: Double = -10_000
+		let returns: [Double] = [3_000, 4_200, 6_800]
+
+		// Recommended: future flows through `npvExcel`, outlay added after — so it is not
+		// discounted, which is what "at t = 0" means.
+		let recommended: Double = npvExcel(rate: rate, cashFlows: returns) + outlay
+
+		// Warned against: the outlay inside the array, where it is discounted one period
+		// like everything else.
+		let inside: Double = npvExcel(rate: rate, cashFlows: [outlay] + returns)
+
+		#expect(abs(recommended - 1307.287753568744) < 1e-9, "recommended was \(recommended)")
+		#expect(abs(inside - 1188.4434123352216) < 1e-9, "inside was \(inside)")
+
+		// The relationship is not a difference but a *factor*, and working it out is worth
+		// the three lines because it is what makes the trap precise.
+		//
+		//   inside = outlay/(1+r) + Σ returns[i]/(1+r)^(i+2)
+		//          = [ outlay + Σ returns[i]/(1+r)^(i+1) ] / (1+r)
+		//          = recommended / (1+r)
+		//
+		// So putting the outlay inside the array does not shift the answer by one term —
+		// it discounts the **entire** NPV by one further period. On these flows that is
+		// 1307.29 becoming 1188.44, a 9% understatement of the project's value, and
+		// nothing in the result says so.
+		let pushed: Double = recommended / (1.0 + rate)
+		#expect(abs(inside - pushed) < 1e-9,
+				"inside \(inside) should equal recommended/(1+r) = \(pushed)")
+	}
 }
