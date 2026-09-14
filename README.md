@@ -11,7 +11,7 @@ Build DCF models, optimize portfolios, run Monte Carlo simulations, and value se
 
 ---
 
-## Pre-release: 3.0.0-alpha.3
+## Pre-release: 3.0.0-alpha.5
 
 **The breaking set, and only the breaking set.** Three items that have been waiting for a
 major since August, shipped together as a pre-release.
@@ -20,7 +20,7 @@ major since August, shipped together as a pre-release.
 `from: "2.7.0"` you stay on 2.18.0 and nothing changes. To try the alpha, ask for it by name:
 
 ```swift
-.package(url: "https://github.com/jpurnell/BusinessMath.git", exact: "3.0.0-alpha.3")
+.package(url: "https://github.com/jpurnell/BusinessMath.git", exact: "3.0.0-alpha.5")
 ```
 
 What breaks:
@@ -50,12 +50,20 @@ per arm where the answer is 1,565. Use `Experiment.sampleSizePerArm(power:alpha:
 **This completes the breaking set.** All four items the scope document named as forcing a
 major have shipped. 3.0.0 final is this code with the pre-release suffix dropped.
 
-**alpha.3 adds no API.** One behavioural fix — `CouponPeriod` and `ACCRINT` walked the coupon
-schedule with `Calendar.current`, so a maturity given as a UTC midnight shifted the whole grid
-anywhere west of Greenwich, and `PRICE` came out about 0.017 per 100 of face off Microsoft's
-own worked example. Plus a sweep of the test suite: forty-one tests that reported *passed*
-without asserting anything now either assert or report *skipped*, and eight tests that were
-disabled for reasons that no longer held are running again.
+**alpha.4 and alpha.5 add no API and fix six correctness defects**, five of them breaking.
+Days outstanding divided an annual day count by a per-period turnover rate and was wrong by
+**4.01×** on any non-annual statement; `Period` and the fiscal calendar read `Calendar.current`,
+so the same instant fell in different fiscal years depending on where the process ran; a
+riskless portfolio's Sharpe ratio was reported as **0** rather than unbounded; and `bayes`
+returned `nan` at a zero denominator by accident rather than by decision. Each is described in
+the CHANGELOG with the measurement that found it.
+
+**alpha.6 is written but not yet tagged.** It is breaking in one place — bonds now state the
+day-count convention they are quoted on, which moves prices by cents — and fixes two more
+defects that produced wrong answers: a negative lower bound written as a closure was silently
+truncated to zero, and `EOQModel` overflowed to a non-finite order quantity with no error. It
+also adds `ModifiedZScoreAnomalyDetector` and `IQRAnomalyDetector`, and a `seed:` on
+`runFinancialSimulation`.
 
 ### Latest stable: 2.18.0
 
@@ -209,7 +217,7 @@ before you upgrade rather than after:
 
 | | |
 |---|---|
-| tests | 6,716 in 592 suites, all passing under strict concurrency |
+| tests | 7,800 in 701 suites, all passing under strict concurrency |
 | build | 0 warnings, library and test target |
 | documentation coverage | 100% — 6,530 of 6,530 public APIs documented |
 | DocC catalogue | 73 articles, every code block compiled against the module |
@@ -223,7 +231,7 @@ before you upgrade rather than after:
 
 **Type-Safe & Concurrent**: Full Swift 6 compliance with generics (`TimeSeries<T: Real & Sendable>`) and strict concurrency for thread safety. Model closures are `@Sendable`. As of 2.6.0 the vector and optimizer types require `Real & BinaryFloatingPoint` rather than `Real` alone — the conversion that constraint supplies used to be faked with a runtime-cast ladder that answered `0.0` when it failed.
 
-**Complete**: 73 comprehensive guides, 6,716 tests, and production implementations of valuation models, optimization algorithms, and risk analytics. **Every code block in the guides is compiled against the module** by the `doc-code` auditor (`quality-gate --check doc-code`), so an example that no longer matches the API fails the check rather than the reader.
+**Complete**: 73 comprehensive guides, 7,800 tests, and production implementations of valuation models, optimization algorithms, and risk analytics. **Every code block in the guides is compiled against the module** by the `doc-code` auditor (`quality-gate --check doc-code`), so an example that no longer matches the API fails the check rather than the reader.
 
 **Accurate**: Calendar-aware calculations (365.25 days/year), industry-standard formulas (ISDA CDS pricing, Black-Scholes), and — where a result is an approximation — a measured accuracy recorded in the doc comment rather than an assurance. `inverseNormalCDF` is 2 ulp over `1e-12 ≤ p ≤ 1 − 1e-12`; `normalCDF` holds ~1e-14 relative down to `x = −37`. Numbers that changed in 2.6.0 are tabulated in the CHANGELOG with the measurement that found them.
 

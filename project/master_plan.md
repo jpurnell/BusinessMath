@@ -418,8 +418,11 @@ The honest list. Sources: `project/plans/TrustPlan.md`, and the gate's own outpu
 
 **In the gate**
 
-The gate is at **0 errors, 0 warnings across 44 of 45 checkers** (2026-08-24). What follows is
-not currently firing.
+The gate is at **0 errors and 10 warnings across 42 checkers** (2026-09-14,
+`--no-cache --check all`). The ten are a single `[test-quality]` class — a test *claims* an
+improvement but asserts `<=` or `>=`, which an unchanged implementation also satisfies — spread
+across ten directories. They are not drift: they are the population a rule would burn down, and
+they have not moved while the rest of the suite was swept. What follows is not currently firing.
 
 - **Nothing was running the gate between June and August 2026.** This repository had no
   pre-commit hook, and CI could not supply one: `.github/workflows/quality-gate.yml` failed at
@@ -522,11 +525,35 @@ not currently firing.
 
 ## Current Priorities
 
-1. ~~**Finish the marketing leg — stages 5 and 6.**~~ Both done. Stage 5 shipped in 2.17.0;
+1. **The test-review programme — `project/plans/TEST_REVIEW_ROADMAP.md`.** This has been the
+   live work since 2026-09-13 and nothing in this section mentioned it until now. Phases
+   **A, B, D, E and F are complete**; **C** is specified and handed to
+   `quality-gate-swift-project/plans/upcoming/`; **G** is all that remains of the roadmap.
+
+   It has found **four library defects that ship**, none of which any linter would catch:
+
+   - **L11** DSO/DIO/DPO off by a factor of 4.01 on any non-annual statement (alpha.5).
+   - **L18** every Gomory cut infeasible by construction — emitted over tableau columns,
+     imposed over structural ones. Failed safe, so answers were always right and the feature
+     simply did nothing.
+   - **L19** a negative lower bound written as a closure silently truncated to zero, while the
+     identical bound written structurally returned the right answer.
+   - **EOQ** overflowing to a non-finite order quantity with no error, found by writing the
+     overflow test a review had only *suggested*.
+
+   Plus a day-count convention that was not a convention (`365.25` applied to a seconds
+   interval, at ten sites) and **six instances of "the code is right and the comment is wrong"**.
+
+   The method that produced these is worth stating: **every review claim is validated against a
+   running program before it is acted on.** Four of five roadmap entries turned out to be
+   materially wrong about their own subject, and one claim was refuted outright — the reviews
+   point at the right file, they are not an oracle for what is in it.
+
+2. ~~**Finish the marketing leg — stages 5 and 6.**~~ Both done. Stage 5 shipped in 2.17.0;
    stage 6 is written and parked on `feature/stage-6-template-delegation`, breaking by design.
    **The marketing leg is complete.** What is left of it is a merge, not development.
 
-2. ~~**The three items that actually force 3.0.0**, none of them started: `optimizeDetailed`
+3. ~~**The three items that actually force 3.0.0**, none of them started: `optimizeDetailed`
    gaining `throws` so DE and PSO can refuse a seeded CPU fallback; deleting `sampleSize`,
    deprecated since 2.7.0; and the stage 6 delegation.~~ **All shipped**, in `3.0.0-alpha.1`
    and `3.0.0-alpha.2`; Current Status above has carried that since 2026-09-09 while this
@@ -534,13 +561,13 @@ not currently firing.
    shipped additively, which was the point of shipping it that way. **What remains is dropping
    the pre-release suffix, which is docs-only.**
 
-3. **Bessel is done; the Excel engineering block needs nothing further from this package.**
+4. **Bessel is done; the Excel engineering block needs nothing further from this package.**
    `PROPOSAL_bessel_functions.md` steps 1-5 are complete. Step 6, the SwiftExcelFunctions
    binding, belongs to that session and is mechanical. §2.3's framing still holds — all four
    measure zero calls across the 79-workbook corpus, so this was completeness work and was
    sized as such.
 
-4. **The six absent optimization algorithms** in
+5. **The six absent optimization algorithms** in
    `project/plans/proposals/PROPOSAL_advanced_optimization_gap.md` — SQP, Interior Point,
    GRG, Network Flow, Convexity and ADMM. Verified as real gaps 2026-09-08, with one
    correction: Interior Point was written and removed, not never written. Network Flow can
@@ -699,114 +726,8 @@ The earlier table was about *scope*; this one is about *what is being measured*.
 
 ---
 
-**Last Updated:** 2026-09-11 — added the Bessel family to Current Status and recorded why its method departs from the proposal's §5.3. Struck Priority 2, which still read "none of them started" for three items Current Status has listed as shipped since 2026-09-09.
-
-**Previously:** 2026-09-09 (evening) — reconciled for 3.0.0-alpha.1. Current Status leads
-with both branches merged and the reason the release is a pre-release rather than a minor:
-`from:` ranges exclude pre-releases, so this reaches only callers who name it. Records that
-deleting `sampleSize` is the one breaking item left and belongs in 3.0.0 final rather than
-after it.
-
-Two facts worth carrying forward. Neither branch had been tested *with the other* until the
-merge — each was green alone, and the combination is what actually ships, so it was built,
-tested and gated as a combination before anything was tagged. And a clean textual merge over
-the same functions is exactly when to check the semantic one: 2.18.0's batch-conversion fix
-and the GPU branch's throwing signature both touched the same two read-back functions,
-merged without conflict, and both were verified present afterwards rather than assumed.
-
-**Previously:** 2026-09-09 (later) — reconciled for 2.18.0. Current Status leads with the
-ETS fitter, the complex codec, the GPU read-back fix and chapter 7, and records that the two
-parked branches together constitute 3.0.0 with the `sampleSize` deletion still to do. The
-sequence agreed with the user is: review both branches for feature-completeness, then cut
-**v3.0.0a**.
-
-Also reconciled this round: `project/plans/` had 130 files and no account of which were
-done. Fifteen moved to `completed/`, each checked against `Sources/` rather than trusted —
-`SWIFT_6_CONCURRENCY_MIGRATION.md` had read "COMPLETED February 2026" while sitting in
-`upcoming/` for seven months. New `project/plans/STATUS.md` is the ledger that did not exist.
-And the Excel work list was 45 rows wrong about its own library: it was generated by matching
-*Excel's* names against the tree, and this package names functions for what they compute, so
-a name-matched audit reported a complete library as missing. `PDURATION` is `periodsToGrow`.
-
-**Previously:** 2026-09-09 — reconciled for 2.17.0. Current Status leads with stage 5
-shipped and stage 6 written-and-parked, which completes the marketing leg as development;
-what remains of it is a merge. Priorities item 1 struck through accordingly. Records the
-constraint penalty weight as a shipped defect found and fixed — the literal `100` in five
-heuristics, unreachable by any caller — and notes that 3.0.0 is deliberately not close,
-wanting more than one sweep of its scope.
-
-Two facts worth carrying forward from the day this covers, both about evidence rather than
-code. A coverage matrix column labelled `books` counts **sheets**, and two sessions produced
-four wrong explanations for the resulting discrepancies before either read the generator that
-writes it — which lives in a *sibling repository* named in this project's own README. The
-rule that would have replaced all four: **read the generator before reasoning about the
-data**. And a `doc-run` article timeout appeared at machine load 41 and vanished at 10.8 on an
-untouched tree; under a zero-warnings policy a load artefact invites a permanent wrong edit,
-so establish that a finding is real before fixing it.
-
-**Previously:** 2026-09-08 (late) — reconciled for the unreleased marketing leg. Current
-Status now leads with it: twenty-eight additive files across four new `Statistics/` areas, a
-new `Network/` and a new `Marketing/`, with nothing removed and no signature changed, which
-is what makes the largest additive surface in the project's history a minor release. Current
-Priorities was nine minor releases stale — it still opened on cutting 2.6.0 and quoted
-`doc-comment-code` at 420 — so the live work now leads and the 2.6.0 material is kept below
-it as history rather than deleted, because the argument for holding a release until the
-codebase is clean under its own new checkers is the same argument that applies next time.
-One fact worth carrying forward: the pre-commit hook runs a forty-checker gate and takes
-three to five minutes, so a commit needs a long command budget — and must still not be
-backgrounded, because backgrounding is what lets another session's staged work into the
-index.
-
-**Previously:** 2026-09-08 — reconciled for 2.15.0: Current Status leads with the Risk
-Solver surface finished at 52 landed and 5 excluded, the three rows that were blocked on a
-narrow wrapper rather than on missing mathematics, the two closed forms that replaced
-quadrature exact only at its test point, and the `PsiNormalSkew` map settled by measuring
-Excel rather than by argument. The Roadmap's "then the 33 distributions and the AR/GARCH
-family" is marked done across 2.13.0 and 2.15.0, with the note that Phase 0's distribution
-contract is what made the `Psi*Alt` forms cheap — the sequencing recorded there was right.
-Two facts worth carrying forward: `git commit` after `git add` takes whatever *any* session
-has staged, so in a shared tree commit with an explicit pathspec — `git commit -- <paths>` —
-because foreground versus background was never the mechanism; and the codebase's
-`// stochastic:exempt` and `// fp-safety:disable` markers exist for genuine unseeded and
-constant-divisor paths, but each one this release turned out to be avoidable by reusing a
-free function or an identity that already existed.
-
-**Previously:** 2026-09-07 — reconciled for 2.14.0: Current Status leads with the closed
-oracle audit and the six defects fixed under it (Tukey's degrees of freedom, the simplex
-duals, the branch-and-bound root short-circuit, the BFGS stall, the unenforceable
-`timeLimit`, the two CVaR definitions). `CURRENT_OracleAudit.md` marks all three tiers
-complete. Two facts worth carrying forward: `quality-gate --no-cache` runs only the default
-profile and says so in one line — `doc-claims` and `doc-run` were both failing while every
-local run reported PASSED, including the runs that cleared 2.13.0 — so use `--check all`;
-and the `Scripts/reference-fixtures/` generators had never been tracked, because
-`.gitignore`'s `scripts/` matches `Scripts/` on a case-insensitive filesystem.
-
-**Previously:** 2026-09-06 — reconciled for 2.13.0: Current Status leads with the Risk
-Solver surface, the `irr`/`xirr` scale defect and the oracle audit. Checklists tidied —
-four completed ones archived (`ExcelFinancialTen`, `VerifyBindables`,
-`MonteCarloDeterminismAndAsync`, `quality_gate_remediation`, the last with its four stale
-open items verified closed against a 45/45 gate run), `CURRENT_RiskSolver.md` renamed and
-retitled, and `CURRENT_OracleAudit.md` added for the active programme. Phase 0's checklist
-now says plainly which three items are still open. Prior entry: 2026-09-06 — reconciled
-for 2.12.1: Current Status leads with the Linux
-type-check failure and what it taught about local verification; the `irr`/`xirr` absolute
-tolerance is recorded as a known issue in CHANGELOG rather than silently carried. Prior
-entry: 2026-09-05 — reconciled for 2.12.0: Current Status leads with the
-bindable verification and the four defects it found, and names the Risk Solver surface as
-next. `project/checklists/CURRENT_VerifyBindables.md` carries the detail. Counts refreshed
-to 6,898 tests / 611 suites.
-
-**Previously:** 2026-09-05 — reconciled for the 2.11.0 release: Current Status leads
-with the financial ten and the `thirty360` February defect, and names "computed but never
-compared" as the next category. `project/checklists/CURRENT_ExcelFinancialTen.md` carries
-the detail, including why `ACCRINT` is the one function not verified by the reference
-workbook. Counts refreshed to 6,867 tests / 607 suites.
-
-**Previously:** 2026-09-04 — reconciled for the 2.10.0 release: Current Status leads with the
-distribution contract and quasi-random sampling, the Roadmap gains a Phase 0 section for the Excel
-coverage work with the financial ten named as next, and five ADRs (001–005) were written into
-`project/decisions/architecture_decisions.md`, which had no entries before. `4.6-QuasiRandomSamplingGuide.md`
-is written and indexed in `Part4-Simulation.md`. README's "Latest release" was three versions
-stale at 2.7.0 and now reads 2.10.0. Counts refreshed to 6,818 tests / 602 suites.
-
-**Previously:** 2026-09-03 — reconciled for the 2.9.0 release: Current Status leads with the typed authoring layer and `validateUnits()`, `project/capability_map.md` gains a Typed Model Authoring section, and `1.10-TypedModelAuthoring.md` is written and indexed. Recorded that Phase 3's compile-time gate was measured and passed, and that three name collisions were found by compiling rather than by review. Counts refreshed to 6760 tests.
+**Last Updated:** 2026-09-14 — reconciled against the test-review programme, which had run for
+two days without appearing in Current Priorities at all. Added it as priority 1 with the four
+library defects it has found, and renumbered the rest. Corrected the gate line, which read
+"0 errors, 0 warnings across 44 of 45 checkers (2026-08-24)" and is now 0 errors and 10 warnings
+across 42 — the ten being one `[test-quality]` class rather than drift.

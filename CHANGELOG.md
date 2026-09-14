@@ -9,6 +9,103 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [3.0.0-alpha.6] - 2026-09-14
+
+**Three wrong answers, one breaking convention, and two new detectors.** Everything here came
+out of working `project/plans/TEST_REVIEW_ROADMAP.md`; the three defects were found by writing
+the test, not by reading the code.
+
+#### Breaking
+
+- **A bond states the basis it is quoted on.** `Bond`, `ZeroCouponBond` and `AmortizingBond`
+  take a `dayCount: DayCountConvention`, defaulting to `.actual365`. Ten sites previously built
+  a year fraction from a `365.25` constant applied to a raw seconds interval — and **365.25 is
+  not a day-count convention.** ACT/365, ACT/360, 30/360 and ACT/ACT are conventions, each with
+  a standard behind it; 365.25 is the mean length of a Gregorian year, which no counterparty
+  settles on. Measuring in seconds is separately wrong: `Date.timeIntervalSince` absorbs
+  daylight-saving shifts into a figure meant to count calendar days.
+
+  **Prices move**, by cents rather than dollars: measured on a 5% semiannual bond priced at a
+  5% yield, **12¢ at two years, 31¢ at ten, 55¢ at thirty**, per 1,000 of face. Source
+  compatibility is unchanged — `dayCount:` is defaulted at every call site.
+
+  If you are checking this library against a textbook, pass `dayCount: .thirty360`. The
+  whole-period formula textbooks print *assumes* 30/360 without saying so, because assuming it
+  is what makes "five years" mean exactly ten periods — and under it the library reproduces the
+  closed form to ten significant figures.
+
+#### Fixed
+
+- **A negative lower bound written as a closure is no longer silently truncated to zero.**
+  `minimize x` subject to `x ≥ -3` returned **0** when the bound was an `.inequality` carrying a
+  closure, and the correct **-3** when the identical bound was a `.linearInequality` — the same
+  problem, the same solver, a different answer depending on how the caller spelled it, with no
+  error either way. `extractVariableShift` now recovers the bound by *evaluating* the closure
+  rather than inspecting it: the constant from the origin, each coefficient from a unit step,
+  and affinity confirmed at witness points away from both. It declines anything it cannot
+  verify — non-affine, non-finite where probed, more than one variable, or a coefficient that
+  bounds from above. `transformConstraint` shifts a closure by composition instead of refusing
+  it.
+
+- **`EOQModel.calculate` no longer overflows to infinity on large inputs.** It formed
+  `2 · orderingCost · annualDemand` directly; at `S = D = 1e200` that product is `2e400`, which
+  is `+infinity` in a `Double`, and the square root of infinity is infinity. **The caller
+  received a non-finite order quantity with no error.** Now factored as
+  `√(2SD/H) = √(2S/H) · √D`, identical for positive inputs, with each factor staying near the
+  square root of the magnitude the product would have reached. Textbook answers are unchanged
+  to the last bit.
+
+#### Added
+
+- **`runFinancialSimulation` takes a `seed:`.** Additively, not breaking — the randomness was
+  never in `runFinancialSimulation`; it is in the caller's builder closure, which had nowhere to
+  put a generator. A `SeededStatementBuilder` and a `ScenarioRunner.run(…using:builder:)`
+  overload thread one through, and existing builders compile unchanged. One generator is
+  advanced across iterations rather than reseeded per iteration, which would collapse the sample
+  to a point.
+
+- **Two anomaly detectors that contamination cannot hide behind.**
+  `ModifiedZScoreAnomalyDetector` (median and MAD, Iglewicz–Hoaglin's 3.5) and
+  `IQRAnomalyDetector` (Tukey's 1.5 fences). Both rest on order statistics, so moving one
+  observation to infinity moves the median by at most one position and the MAD hardly at all —
+  an outlier cannot inflate the scale it is then judged against. Both examine every point,
+  including the first `windowSize`, which `ZScoreAnomalyDetector`'s trailing window never
+  reaches. Use the existing detector when the level genuinely moves; a whole-sample rule will
+  call the drift itself an anomaly.
+
+- **`SimplexTableau.projectToStructuralSpace(coefficients:rhs:)`** and
+  `structuralVariableCount`, for rewriting a cut expressed over tableau columns as one over the
+  caller's variables.
+
+#### Documentation
+
+- **Two doc comments stated a formula the code does not implement.**
+  `SolvencyRatios.debtToEquity` was documented "Total Liabilities / Total Equity" while being
+  fed `BalanceSheet.debtToEquity`, whose numerator is **interest-bearing debt**;
+  `BalanceSheet.debtRatio`'s "Related Metrics" repeated it. The trap is that the sentence is
+  true of the *other* one — the free function `debtToEquity(totalLiabilities:shareholderEquity:)`
+  really does divide total liabilities. Both now name their numerator and cross-reference each
+  other, and the asymmetry is deliberate: the debt ratio asks what share of the asset base is
+  owed to *anyone*, leverage asks what is owed to *lenders*.
+
+- **`3.10-BondValuationGuide.md`** carries a four-row day-count table and the reason its figure
+  moved from $1,043.82 to $1,043.66. The old number came from the `365.25` constant and was
+  never canonical.
+
+- The day-count convention is now stated at every site that picks one, including the seven where
+  no standard governs the choice — a growth rate is not an accrual, a compounding frequency is a
+  period count rather than a day count, and a vesting cliff is a date in a contract.
+
+#### Not recorded here, deliberately
+
+Cutting-plane generation had a defect for the life of the feature — cuts were emitted over
+tableau columns and imposed over structural ones, so every one was infeasible by construction
+and every re-solve failed. **It failed safe:** the infeasible re-solve discarded the round and
+branch-and-bound continued unaided, so no caller ever received a wrong answer. It is fixed, and
+the tree on the reference problem goes from 17 nodes to 5, but there is nothing here for a
+consumer to act on.
+
+
 ### [3.0.0-alpha.5] - 2026-09-13
 
 **Six correctness defects, five of them breaking.** Every one was found by working the
