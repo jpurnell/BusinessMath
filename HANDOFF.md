@@ -1,34 +1,44 @@
-# Handoff — 2026-09-13
+# Handoff — 2026-09-13 (Phase A complete)
 
-**`main` is `43aaba32`, pushed and verified by `ls-remote`. `v3.0.0-alpha.5` is tagged and
+**`main` is `06d997ad`, pushed and verified by `ls-remote`. `v3.0.0-alpha.5` is tagged and
 CI-green.** The work queue is **`project/plans/TEST_REVIEW_ROADMAP.md`** — read that before
 anything else; this file is the state and the traps, that file is the plan.
 
-The next piece of work is **Phase A3**, and it needs no decisions.
+**Phase A is complete.** The next piece of work is **B1**, and it needs no decisions.
 
 ## State
 
 | | |
 |---|---|
-| branch | `main` at `3c979828`, local == remote by `ls-remote` |
+| branch | `main` at `06d997ad`, local == remote by `ls-remote` |
 | tags | latest `v3.0.0-alpha.5` = `82bff1ee`, verified on remote by `ls-remote` |
-| tests | **7,757 in 696 suites**, exit 0, **1 known issue** (L17, deliberate) |
-| gate | `quality-gate --no-cache --check all --continue-on-failure` → 0 errors |
+| tests | **7,781 in 700 suites**, exit 0, **0 known issues** |
+| gate | `quality-gate --no-cache --check all --continue-on-failure` → 0 errors, 10 warnings |
 | working tree | clean |
-| CI | green on `82bff1ee` (all jobs, 21m52s) |
+| CI | green on `82bff1ee`; nothing since has been CI-verified |
 
-Nothing is unpushed. `v3.0.0-alpha.5` = `82bff1ee`; A1 and the roadmap ordering sit above it and
-will go into alpha.6.
+Nothing is unpushed. Everything above `82bff1ee` goes into alpha.6.
+
+**The known-issue count is 0 for the first time in this programme** — L17's marker came out when
+L18 was fixed. If a run reports a known issue, something regressed; it is no longer the
+steady state.
+
+**The 10 gate warnings are the standing set** — all `[test-quality]`, all one class ("claims an
+improvement but asserts `<=`/`>=`, which an unchanged implementation also satisfies"), in ten
+directories. They are **B1's material**. They have not moved all session; treat any change in that
+count as yours.
 
 Always `--check all`. Plain `--no-cache` runs a subset and prints an identical PASSED line.
 `--check` takes **one** checker per flag; `--check a,b,c` prints *"No checkers enabled"* and exits 0.
 
 ---
 
-## 1. What this session was
+## 1. How we got here
 
 Twenty-two incoming test-suite reviews were validated against the code, a roadmap was built from
-them, and then **the six defects blocking 3.0.0 were fixed and shipped as `v3.0.0-alpha.5`**.
+them, and **the six defects blocking 3.0.0 were fixed and shipped as `v3.0.0-alpha.5`**. Since the
+tag, **Phase A has been completed in full** — six items, five commits, one new defect found and
+fixed along the way.
 
 ### Shipped in alpha.5 — the six blockers
 
@@ -43,44 +53,80 @@ them, and then **the six defects blocking 3.0.0 were fixed and shipped as `v3.0.
 Earlier in the session, Phase 1 of `REVIEW_simulation_tests.md` and the GPU error-parity work also
 shipped into the same tag.
 
-### And A1 and A2, since the tag
+### Phase A, since the tag — all six done
 
-**A1** — `runFinancialSimulation` gained a seed, **additively, not breaking**, because the
-randomness was never there. See §4.
+| | Item | Commit | What it turned out to be |
+|---|---|---|---|
+| A1 | `seed:` on `runFinancialSimulation` | pre-session | Additive, not breaking — the randomness was in the caller's builder closure. See §4 |
+| A2 | delete `StochasticTestHelpers` | `43aaba32` | 13 sites across 6 suites onto `DeterministicRNG` + `boxMullerSeed(using:)` |
+| A3 | document the debt asymmetry | `f49472c8` | **Two shipped doc comments stated a formula the code does not implement** |
+| A4 | decide 365 vs 365.25 | `03220a61` | **Not a convention at all**, applied to a seconds interval, at ten sites |
+| A5 | decide the outlier rule | `e3f69aa2` | **The review's claim was refuted**; a sharper defect found in its place |
+| A6 | decide the counter asymmetry | `06d997ad` | **A solver feature that had never once worked** (L18) |
 
-**A2** (`43aaba32`) — `StochasticTestHelpers` is deleted; its 13 call sites across 6 process
-suites take `DeterministicRNG` and the library's `boxMullerSeed(using:)`. Two corrections worth
-carrying: the roadmap said users should take "the TestSupport Box-Muller" and **there isn't one** —
-TestSupport has no normal transform, and the library's is the right target because its
-`openUnitUniform` is open *by construction*. And the helper's contract bugs were *reproduced*, not
-taken on the review's word: its recurrence is a **full-period** LCG (modulus 2⁶⁴, increment 1,
-multiplier ≡ 1 mod 4), so Hull-Dobell makes both endpoints **guaranteed** rather than unlikely, and
-inverting it gives the seeds. `4568919932995229531` → `u == 0.0`, where the `max(u1, 1e-15)` guard
-yields **z = 8.31**, an 8.3σ normal delivered deterministically; `9137839865990459062` → `u == 1.0`,
-unguarded, where `log(1) = 0` collapses the draw to **exactly 0.0**. At one hit per 2⁶⁴ draws both
-were latent — the live defect was that it was *shared*.
+**The one finding worth carrying forward is L18.** Gomory cuts were emitted over tableau columns —
+structural variables *and slacks* — and imposed over the structural variables alone. On
+`max x+y` s.t. `x+2y ≤ 7`, `2x+y ≤ 7`, the cut was `[0, 0, -0.7071, -0.7071] · x ≤ -0.7071`: both
+non-zeros on slack columns, so over `(x, y)` the left side is identically zero and the constraint
+reads `0 ≤ -0.7071` — **false at every point**, including all three integer optima. The LP went
+infeasible on the first cut, every time.
+
+**It failed safe, which is why it lasted.** The infeasible re-solve breaks the loop, the node-local
+constraints are discarded, branch-and-bound continues unaided. Answers were always right —
+`enableCuttingPlanes: true` simply bought nothing and cost the work. Measured before: cuts on and
+cuts off both gave 4.0 at (3,1) in 3 nodes. After: **1 node**. **Deliberately not in the CHANGELOG**
+— no caller ever got a wrong answer, and the only user is Justin.
+
+**A2's detail worth keeping**, because it is the shape of proof this programme wants: the deleted
+helper's recurrence is a **full-period** LCG (modulus 2⁶⁴, increment 1, multiplier ≡ 1 mod 4), so
+Hull-Dobell makes both endpoints **guaranteed** rather than unlikely, and inverting it gives exact
+seeds. `4568919932995229531` → `u == 0.0`, where the `max(u1, 1e-15)` guard yields **z = 8.31**, an
+8.3σ normal delivered deterministically; `9137839865990459062` → `u == 1.0`, unguarded, where
+`log(1) = 0` collapses the draw to **exactly 0.0**. Both latent at one hit per 2⁶⁴ — the live
+defect was that the helper was *shared*. Also: the roadmap said to use "the TestSupport
+Box-Muller" and **there isn't one**; the library's is the right target because its
+`openUnitUniform` is open *by construction*.
 
 ---
 
-## 2. Next: Phase A3, then the rest of Phase A
+## 2. Next: B1, then the rest of Phase B
 
 `TEST_REVIEW_ROADMAP.md` §5.2 is the order. Every item carries a **done when**, so no further
 decisions are needed to proceed.
 
-**A3 — document the debt asymmetry (L4).** `debtToAssets` should say it uses total liabilities, as
-`interestBearingDebt` already says it uses interest-bearing debt, and both values pinned on the
-shared fixture.
+**B1 — the 18 vacuous optimizer assertions.** Seven `.rounded()` comparisons and eleven
+always-true convergence disjunctions. Each must assert the real bound.
 
-**Done when:** both are documented and both values are pinned on the shared fixture.
+**Done when:** each asserts the bound it claims to. Either the suite stays green — ~18 unknowns
+become evidence — or it turns red on a solver defect. **Do not sweep past a red here.**
 
-Then A4 (365 vs 365.25), A5 (the outlier rule), A6 (the counter asymmetry — closing it would clear
-the one known issue). Then Phase B.
+**The 10 standing gate warnings are the same material**, and they name their own tests: a test
+*claims* an improvement but asserts `<=` or `>=`, which an unchanged implementation also satisfies.
+`noCombinationBeatsTheReportedScore`, `seasonalBeatsGrid`, `nonSeasonalBeatsGrid`,
+`testDuPontImprovementStrategies`, `testMultiStartImprovement`, `optimalBetterThanEqual`,
+`optimizerBeatsEqualWeights`, `cvarIsNeverBetterThanVaR`, `testCutsImproveDualBound`,
+`tighterConstraintsDontImprove`. Closing B1 should take that count down.
 
-**On the gate's 10 warnings.** `--no-cache --check all` reports 0 errors and **10 warnings**, all
-from `[test-quality]` and all one class: a test *claims* an improvement but asserts `<=` or `>=`,
-which an unchanged implementation also satisfies. They sit in ten different directories, none of
-them touched by A1 or A2. This is **Phase B1's material**, not drift — leave them until B, where
-the roadmap says not to sweep past a red.
+**Take the warning about a red seriously.** A6 was filed as a naming decision and the subsystem
+next door turned out to contain a feature that had never worked. Two of B1's eleven are in
+optimization and one — `testCutsImproveDualBound` — is in the cutting-plane code that L18 just
+changed, so it is now asserting against a solver that behaves differently.
+
+Then B2 (3 stale integer-programming assertions), B3 (`Phase1_CutValidityTests` — **note L18
+changed the cut path underneath it**), B4 (wall-clock assertions behind `.benchmarkOnly`).
+Then Phase C.
+
+---
+
+## 2a. Doc debt, deliberately deferred
+
+**No CHANGELOG entry exists for any of Phase A.** The convention here is roadmap-at-the-time,
+CHANGELOG-at-release, which is how A1 was handled. At release, alpha.6 needs:
+
+- **A4 is breaking.** Bond prices move — measured 12¢ / 31¢ / 55¢ at 2 / 10 / 30 years per 1,000 of
+  face. Source compatibility is unchanged (`dayCount:` is defaulted everywhere).
+- **A5 adds public API** — `ModifiedZScoreAnomalyDetector`, `IQRAnomalyDetector`.
+- **A3 and A6 are documentation and tests**; L18 is deliberately omitted, per above.
 
 ---
 
@@ -94,16 +140,41 @@ the roadmap says not to sweep past a red.
 | `bayes` zero denominator: **`nan` from the free function**, throw from `bayesChecked` — the `factorial`/`factorialChecked` shape | convention from the statistics review |
 | Activity-ratio day count: **actual days**, so a leap year counts 366 | stated in the API docs |
 | **ISDA is the right standard for accrual**, and the library already implements a subset. It is **not** the standard for DSO/DIO/DPO — that is dimensional, not conventional | §5a |
+| Day counts: **a convention is at stake where a counterparty settles on the number; everywhere else 365 or 365.25 is a modelling choice and has to say so.** Bonds route through `DayCountConvention` (default `.actual365`); CAGR keeps 365.25 *because* it is not a day count | A4 |
+| L18 gets **no CHANGELOG entry** — no caller ever received a wrong answer, and the only user is Justin | Justin |
+| Anomaly detection keeps **all three rules**. The rolling z-score tracks a moving level; the two robust rules assume a stable level and resist contamination. Neither replaces the other | A5 |
 
 ---
 
 ## 4. What the work taught, that the reviews did not
 
+**The reviews are a detector, not an oracle — and that is the sharpest thing Phase A taught.**
+Every one of A2 through A6 differed materially from its roadmap entry. A3 was filed as "document one
+property" and was two shipped doc comments stating a formula the code does not implement. A4 was
+filed as "pick 365 or 365.25" and was a *non-convention* applied to a seconds interval at ten sites.
+A5's premise was **refuted outright**. A6 was filed as a naming decision and was a solver feature
+that had never once worked.
+
+So §2b's claim survives but its mechanism changes. The reviews are not valuable because they are
+right — four of five were wrong in some material way. They are valuable because they **point at the
+right file with enough specificity that someone runs the code**. The engine of this programme is the
+rule that every claim gets validated against a running program, and the reviews are what aim it.
+
+**A corollary worth acting on:** two roadmap rows have now recorded a claim as "verified" when only
+the *arithmetic* had been checked and the code path never run (L12 most recently). When a row says
+verified, check what was verified.
+
 **Gate rules cannot deliver correctness.** Tested against the ten library defects found: a static
 rule catches three, partially catches two, **misses five outright — and those five are the ones
 that make the library wrong.** L11's 4.01× is type-correct and dimensionally wrong; no linter finds
-that. This is §2b, and it is why intake stays open: the reviews are the only detector that finds
-semantic defects, and four of the six blockers came from them.
+that. L18 is the same shape: a cut in the wrong vector space is type-correct and arithmetically
+meaningless, and no linter finds that either.
+
+**A `withKnownIssue` can be a tripwire pointing forward at its own resolution, and should be.**
+L17's marker carried the note "fixing the asymmetry makes this marker fail, which is the point of
+recording it this way" — and after L18 was fixed, the *only* failure in 7,781 tests was
+`Known issue was not recorded`. Record markers so that fixing the cause breaks the build. A
+suppressed expectation that stays quiet forever is just a deleted test.
 
 **Every review count is a lower bound** (§2a). Measured corpus-wide against the best single-review
 claim: `?? 0` 93 → **225**; `Calendar.current` in tests 73 → **152**; `Date()` 16 → **210**;
@@ -172,6 +243,23 @@ changed" where you expected eight is the whole tell.
 **The gate rejects `==` on floating-point operands** against a non-zero literal. Use `isEqual(to:)`
 where the comparison is deliberate; `== 0.0` is permitted. Auditor justification comments must be
 **single-line, on the line immediately above**.
+
+**A gate failure can be the machine, not the code.** A commit was blocked by the pre-commit hook
+immediately after a full suite plus a full gate had just run, and the identical command passed a
+minute later with nothing changed. Load-sensitive checkers time out. **Re-run quiet before
+believing a gate failure**, and check `git log` — the commit had not landed.
+
+**Inserting a stored property above a `public init` steals the init's documentation.** `doc-coverage`
+dropped to 99% with "Public initializer 'init' is missing documentation" ×3 after `dayCount` was
+declared between each init's doc block and the init. The declaration goes *above* the doc block,
+and the new parameter needs its own `- Parameters:` entry.
+
+**Doc-comment fences must be self-contained.** Two new examples referenced a `periods` they never
+bound; `doc-comment-code` rejected both. The preamble is Foundation plus this module, on purpose —
+whatever the fence needs to compile is what a reader copying it out of Quick Help has to type.
+
+**Swift Testing's message parameter is a `Comment`, not a `String`.** A `"literal" + interpolation`
+concatenation does not compile there. Bind the values first, then use one interpolated literal.
 
 **`doc-claims` will block a push** when a documented number drifts. Its advice is right: find out
 which one is wrong before changing either. A bond price moved two cents because the old figure was
