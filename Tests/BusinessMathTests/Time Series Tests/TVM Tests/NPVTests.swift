@@ -452,10 +452,23 @@ struct NPVTests {
 
 		let npv = npvExcel(rate: rate, cashFlows: futureCashFlows) + initialInvestment
 
-		// 8000/1.08 + 9200/1.08^2 + 10000/1.08^3 = 7407.41 + 7888.89 + 7938.32
-		// = 23234.62
-		// Then add initial investment: 23234.62 + (-10000) = 13234.62
-		#expect(abs(npv - 13234.62) < 2.0)
+		// 8000/1.08     = 7407.407407407407
+		// 9200/1.08^2   = 7887.517146776406
+		// 10000/1.08^3  = 7938.322410201696
+		//               = 23233.246964385507
+		// Then add the initial investment: 23233.2470 - 10000 = 13233.246964385507
+		//
+		// **The middle term used to read 7888.89, and the error propagated.** The three
+		// rounded figures in the old comment do sum to the 23234.62 it claimed, so the
+		// arithmetic was self-consistent — but 9200/1.08² is 7887.52, not 7888.89, and the
+		// 1.373 difference is exactly the gap between the old expected value of 13234.62
+		// and the true 13233.25. A tolerance of ±2.0 was wide enough to hold a wrong
+		// expected value, so the test passed while asserting the wrong number.
+		//
+		// The implementation was right throughout. `TVMReferenceTests` independently pins
+		// `npvExcel` against Microsoft's published example, which is what makes it safe to
+		// conclude the comment was wrong rather than the function.
+		#expect(abs(npv - 13233.246964385507) < 1e-9, "npv was \(npv)")
 	}
 
 	// MARK: - Real-World Scenarios

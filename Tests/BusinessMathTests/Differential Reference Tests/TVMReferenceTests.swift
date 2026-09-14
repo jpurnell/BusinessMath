@@ -23,7 +23,16 @@ import TestSupport  // identical, exactlyEqual, approximatelyEqual
 ///   right references for this library because three of the functions here name
 ///   Excel compatibility in their own doc comments, so Excel's published answer is
 ///   the specification, not a second opinion.
-///   - `NPV(10%, 3000, 4200, 6800) - 10000 = 1188.44`
+///   - `NPV(10%, -10000, 3000, 4200, 6800) = 1188.44`
+///     — **the outlay is inside the NPV call, discounted from t = 1 like every other
+///     flow.** This line used to read `NPV(10%, 3000, 4200, 6800) - 10000`, subtracting
+///     the outlay outside the call and therefore *undiscounted*. That expression
+///     evaluates to **1307.28775356875**, not 1188.44: the test body was right, its
+///     inline comment was right, and the provenance record — the part a reader consults
+///     to reproduce the value — was the one thing that was wrong.
+///
+///     The convention matters beyond this line. `npvExcel` discounts every element from
+///     t = 1, which is Excel's behaviour and the reason the function is named for it.
 ///   - `PMT(8%/12, 10, 10000) = -1037.03`
 ///   - `XNPV(9%, …) = 2086.6476`, `XIRR(…) = 0.373362535`
 /// - **The standard finance-textbook IRR example** — cash flows

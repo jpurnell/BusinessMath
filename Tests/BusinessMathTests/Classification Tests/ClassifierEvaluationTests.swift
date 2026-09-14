@@ -14,8 +14,21 @@
 //  Ties are where AUC implementations go wrong, and where the identity earns its keep.
 //  A tied pair contributes one half to the U statistic, and on the ROC that same tie is
 //  a diagonal segment whose trapezoidal area is also one half. Both must handle it, and
-//  case B exists to make them prove it: eight observations, three distinct scores, AUC
-//  0.875 rather than the 0.8125 or 0.9375 that dropping or full-crediting ties gives.
+//  case B exists to make them prove it.
+//
+//  The `withTies` fixture has 4 positives and 4 negatives, so 16 pairs: 12 strict wins
+//  and 4 ties. Counted directly, the conventions separate cleanly:
+//
+//      half-credit (correct)   (12 + 4/2) / 16  = 0.875
+//      strict wins only              12 / 16    = 0.75
+//      ties counted as wins          16 / 16    = 1.0
+//      tied pairs dropped            12 / 12    = 1.0
+//
+//  **This comment used to cite 0.8125 and 0.9375 as the alternatives**, which are 13/16
+//  and 15/16 — 14/16 off by one pair in each direction. No tie convention produces
+//  either. The asserted 0.875 was right and the Mann-Whitney identity is the right
+//  oracle; only the motivating arithmetic was wrong, and it is the part a reader would
+//  reproduce to convince themselves the fixture discriminates.
 //
 
 import Testing

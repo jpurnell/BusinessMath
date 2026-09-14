@@ -14,7 +14,9 @@ struct NewsvendorModelTests {
 			underageCost: 5.0,
 			overageCost: 2.0
 		)
-		#expect(abs(pc - 5.0 / 7.0) < 0.001, "p_c = c_u/(c_u+c_o) = 5/7")
+		// 5/7 is an exact rational the Double cannot hold exactly, so the bound is the
+		// representation error, not a tolerance on the arithmetic.
+		#expect(abs(pc - 0.7142857142857143) < 1e-15, "critical fractile was \(pc)")
 	}
 
 	@Test("Critical fractile with equal costs → 0.5")
@@ -23,7 +25,9 @@ struct NewsvendorModelTests {
 			underageCost: 10.0,
 			overageCost: 10.0
 		)
-		#expect(abs(pc - 0.5) < 0.001, "Equal costs → p_c = 0.5")
+		// Equal underage and overage costs give c_u/(c_u + c_o) = 1/2, which *is*
+		// representable exactly.
+		#expect(pc.isEqual(to: 0.5), "critical fractile was \(pc)")
 	}
 
 	@Test("Critical fractile always in (0, 1)")
@@ -83,8 +87,10 @@ struct NewsvendorModelTests {
 			underageCost: 1.0,
 			overageCost: 0.5
 		)
-		#expect(abs(result.optimalQuantity - 47.75) < 1.0, "Q* should be approximately 48")
-		#expect(abs(result.criticalFractile - 0.667) < 0.01)
+		#expect(abs(result.optimalQuantity - 47.753091387318236) < 1e-9,
+				"Q* was \(result.optimalQuantity)")
+		#expect(abs(result.criticalFractile - 2.0 / 3.0) < 1e-15,
+				"critical fractile was \(result.criticalFractile)")
 	}
 
 	@Test("High-margin item: c_u >> c_o → stock more")
@@ -123,7 +129,8 @@ struct NewsvendorModelTests {
 		)
 		// p_c = 5/6 ≈ 0.8333, z* = NORMSINV(0.8333) ≈ 0.9674
 		// Q* = 100 + 0.9674 × 25 ≈ 124.18
-		#expect(abs(result.optimalQuantity - 124.18) < 1.0)
+		#expect(abs(result.optimalQuantity - 124.18553915254253) < 1e-9,
+				"Q* was \(result.optimalQuantity)")
 	}
 
 	// MARK: - Expected profit

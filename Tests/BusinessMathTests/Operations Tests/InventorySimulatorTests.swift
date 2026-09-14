@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import TestSupport  // identical(_:_:) — bit-for-bit comparison
 @testable import BusinessMath
 
 @Suite("InventorySimulator")
@@ -42,7 +43,10 @@ struct InventorySimulatorTests {
 			iterations: 5_000,
 			seed: 42
 		)
-		#expect(result1.reorderPoint == result2.reorderPoint,
+		// `identical`, not `==`: two runs that have both gone NaN are the same failure and
+		// `==` calls them different, which is the one case a reproducibility test exists
+		// to catch.
+		#expect(identical(result1.reorderPoint, result2.reorderPoint),
 			"Same seed should produce identical results")
 	}
 
@@ -65,7 +69,11 @@ struct InventorySimulatorTests {
 			iterations: 5_000,
 			seed: 99
 		)
-		#expect(result1.reorderPoint != result2.reorderPoint,
+		// `!=` passes for free once a stream has gone non-finite, so the divergence claim
+		// needs both a finiteness guard and `!identical`.
+		#expect(result1.reorderPoint.isFinite && result2.reorderPoint.isFinite,
+			"a non-finite reorder point is a failure, not a difference")
+		#expect(!identical(result1.reorderPoint, result2.reorderPoint),
 			"Different seeds should produce different results")
 	}
 
@@ -76,13 +84,18 @@ struct InventorySimulatorTests {
 		let leadTime = 7.0
 		let serviceLevel = 0.95
 
+		// The library's transform, not another inline copy.
+		//
+		// The version that stood here was *correct* — `Double(raw >> 11) * 0x1.0p-53`
+		// cannot reach 1.0, and the `leastNonzeroMagnitude` guard handled 0 — which is
+		// worth saying because most inline copies in this corpus are not: the one deleted
+		// from `StochasticTestHelpers` was closed on both ends and left u₁ = 1.0
+		// unguarded, where `log(1) = 0` collapses the draw to exactly zero. Correct or
+		// not, a transform maintained in two places drifts, and `openUnitUniform` is open
+		// *by construction* rather than by a guard someone has to remember.
 		var rng = DeterministicRNG(seed: 1)
 		let demand = (0..<1000).map { _ -> Double in
-			let raw1 = rng.next()
-			let u1 = Swift.max(Double(raw1 >> 11) * 0x1.0p-53, Double.leastNonzeroMagnitude)
-			let raw2 = rng.next()
-			let u2 = Double(raw2 >> 11) * 0x1.0p-53
-			let z = Foundation.sqrt(-2.0 * Foundation.log(u1)) * Foundation.cos(2.0 * .pi * u2)
+			let (z, _): (Double, Double) = boxMullerSeed(using: &rng)
 			return 10.0 + 3.0 * z
 		}
 

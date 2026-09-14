@@ -9,20 +9,30 @@ struct ReorderPointModelTests {
 
 	@Test("Reorder point: r = d̄ × L + SS")
 	func reorderPointGoldenPath() throws {
-		// d̄=10, L=7, z(0.95)=1.6449, σ_d=5
-		// SS = 1.6449 × 5 × √7 ≈ 21.76
-		// r = 10×7 + 21.76 = 91.76
+		// **Constant demand, so σ_d is exactly zero and the safety-stock term vanishes.**
+		//
+		// The comment that stood here derived `SS = 1.6449 × 5 × √7 ≈ 21.76` and
+		// `r = 91.76` from a σ_d of 5 — and then the test passed
+		// `Array(repeating: 10.0, count: 30)`, whose σ_d is 0, and asserted r ≈ 70. The
+		// assertions were right for the fixture; the arithmetic above them belonged to a
+		// series that appears nowhere in this file. A reader met "r = 91.76" directly above
+		// an assertion of 70.
+		//
+		// The degenerate case is worth keeping on its own terms: with no demand
+		// variability there is nothing to buffer against, so `r = d̄ · L` and `SS = 0`
+		// **exactly**, not approximately. `reorderPointVariableDemand` below carries the
+		// variable case.
 		let result = try ReorderPointModel<Double>.calculate(
 			demandHistory: Array(repeating: 10.0, count: 30),
 			leadTime: 7.0,
 			serviceLevel: 0.95
 		)
-		// With constant demand, σ_d ≈ 0, so reorder point ≈ d̄ × L = 70
-		#expect(abs(result.reorderPoint - 70.0) < 1.0,
-			"Constant demand → reorder point ≈ d̄ × L")
-		#expect(abs(result.safetyStock) < 1.0,
-			"Constant demand → safety stock ≈ 0")
-		#expect(abs(result.averageDailyDemand - 10.0) < 0.01)
+		#expect(result.reorderPoint.isEqual(to: 70.0),
+			"constant demand gives r = d̄ · L exactly, got \(result.reorderPoint)")
+		#expect(result.safetyStock.isEqual(to: 0.0),
+			"zero variability leaves no safety stock, got \(result.safetyStock)")
+		#expect(result.averageDailyDemand.isEqual(to: 10.0),
+			"average daily demand was \(result.averageDailyDemand)")
 	}
 
 	@Test("Reorder point with variable demand")
@@ -35,11 +45,29 @@ struct ReorderPointModelTests {
 			leadTime: 7.0,
 			serviceLevel: 0.95
 		)
+		// The ordering claims are real — a service level above 0.5 must put the reorder
+		// point above expected lead-time demand — and they are kept. They are also true of
+		// a safety stock that is wrong by a factor of ten, so the values are pinned too.
 		#expect(result.reorderPoint > result.demandDuringLeadTime,
 			"Reorder point should exceed expected demand during lead time (service level > 0.5)")
 		#expect(result.safetyStock > 0,
 			"Variable demand should produce positive safety stock")
 		#expect(result.method == .demandOnly)
+
+		// Measured on this series: d̄ = 10 exactly, demand during lead time 70 exactly, and
+		// a safety stock of 8.8525… from its own σ_d of about 2.04.
+		//
+		// Note this is **not** the 91.76 the golden-path comment used to quote: that figure
+		// comes from σ_d = 5, and no fixture in this file has one. The number was carried
+		// from a scenario that was never written down.
+		#expect(result.averageDailyDemand.isEqual(to: 10.0),
+			"average daily demand was \(result.averageDailyDemand)")
+		#expect(result.demandDuringLeadTime.isEqual(to: 70.0),
+			"demand during lead time was \(result.demandDuringLeadTime)")
+		#expect(abs(result.safetyStock - 8.852540062993311) < 1e-12,
+			"safety stock was \(result.safetyStock)")
+		#expect(abs(result.reorderPoint - 78.85254006299331) < 1e-12,
+			"reorder point was \(result.reorderPoint)")
 	}
 
 	@Test("Reorder point with lead time variability")

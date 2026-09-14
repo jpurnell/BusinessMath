@@ -10,19 +10,22 @@ struct SafetyStockModelTests {
 	@Test("z-score for 95% service level matches NORMSINV(0.95)")
 	func zScoreAt95Percent() throws {
 		let z = try SafetyStockModel<Double>.zScore(for: 0.95)
-		#expect(abs(z - 1.6449) < 0.001, "NORMSINV(0.95) = 1.6449")
+		// Excel's NORMSINV(0.95), to the last bit a Double carries.
+		#expect(abs(z - 1.6448536269514722) < 1e-12, "z was \(z)")
 	}
 
 	@Test("z-score for 99% service level matches NORMSINV(0.99)")
 	func zScoreAt99Percent() throws {
 		let z = try SafetyStockModel<Double>.zScore(for: 0.99)
-		#expect(abs(z - 2.3263) < 0.001, "NORMSINV(0.99) = 2.3263")
+		#expect(abs(z - 2.3263478740408408) < 1e-12, "z was \(z)")
 	}
 
 	@Test("z-score for 50% service level is approximately zero")
 	func zScoreAt50Percent() throws {
 		let z = try SafetyStockModel<Double>.zScore(for: 0.50)
-		#expect(abs(z) < 0.01, "NORMSINV(0.50) = 0")
+		// The median of a symmetric distribution is its mean, so this is an identity and
+		// not an approximation — the ±0.01 window admitted a z that was simply small.
+		#expect(abs(z) < 1e-12, "z at the median was \(z)")
 	}
 
 	@Test("z-score rejects invalid service levels")
@@ -54,7 +57,7 @@ struct SafetyStockModelTests {
 			demandStdDev: 5.0,
 			leadTime: 7.0
 		)
-		#expect(abs(ss - 21.76) < 0.1, "SS should be approximately 21.76")
+		#expect(abs(ss - 21.759368200081024) < 1e-12, "safety stock was \(ss)")
 	}
 
 	@Test("Demand-only safety stock increases with service level")
@@ -99,7 +102,7 @@ struct SafetyStockModelTests {
 			leadTime: 7.0,
 			leadTimeStdDev: 2.0
 		)
-		#expect(abs(ss - 39.44) < 0.5, "SS should be approximately 39.44")
+		#expect(abs(ss - 39.44220437684565) < 1e-12, "safety stock was \(ss)")
 	}
 
 	@Test("Demand+LT degenerates to demand-only when σ_L = 0")
@@ -158,7 +161,7 @@ struct SafetyStockModelTests {
 			leadTime: 7.0,
 			forecastRMSE: 3.0
 		)
-		#expect(abs(ss - 13.06) < 0.1, "SS should be approximately 13.06")
+		#expect(abs(ss - 13.055620920048614) < 1e-12, "safety stock was \(ss)")
 	}
 
 	@Test("Forecast error method requires forecastRMSE parameter")

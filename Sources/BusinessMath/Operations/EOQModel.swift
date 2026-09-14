@@ -61,9 +61,21 @@ public struct EOQModel<T: Real & Sendable & Codable>: Sendable {
 			throw OperationsError.negativeCost
 		}
 
-		// Q* = √(2SD/H)
-		let numerator = T(2) * orderingCost * annualDemand
-		let q = T.sqrt(numerator / holdingCostPerUnit)
+		// Q* = √(2SD/H), factored so that `2SD` is never formed at full magnitude.
+		//
+		// The direct reading builds `2 · S · D` first. For a large order cost against a
+		// large demand that product overflows while the answer does not: at
+		// `S = D = 1e200` it is `2e400`, which is `+infinity` in a `Double`, and the square
+		// root of infinity is infinity. The caller receives a non-finite order quantity
+		// with no error — a plausible-looking result that is not a number, which is the
+		// shape this package's fail-silent principle forbids.
+		//
+		// `√(2SD/H) = √(2S/H) · √D` is the same value for positive S, D and H, and each
+		// factor stays near the square root of the magnitude the product would have
+		// reached. Measured: the overflowing case now returns `√2 · 1e200`, and the
+		// textbook fixtures are unchanged to the last bit.
+		let scaledOrderingCost: T = T(2) * orderingCost / holdingCostPerUnit
+		let q: T = T.sqrt(scaledOrderingCost) * T.sqrt(annualDemand)
 
 		// Cost decomposition
 		let annualOrderingCost = orderingCost * annualDemand / q

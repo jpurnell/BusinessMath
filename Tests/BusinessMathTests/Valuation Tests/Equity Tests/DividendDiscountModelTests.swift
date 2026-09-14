@@ -369,12 +369,12 @@ struct DividendDiscountModelTests {
 
     @Test("H-Model - linearly declining growth")
     func hModelBasic() throws {
-        // Given: Company with growth declining from 12% to 4% over 10 years
+        // Given: growth declining from 12% to 4% over **20** years.
         let model = HModel(
             currentDividend: 2.0,
             initialGrowthRate: 0.12,
             terminalGrowthRate: 0.04,
-            halfLife: 10,  // Takes 10 years for growth to decline
+            halfLife: 10,  // H = 10, so the full decline takes 2H = 20 years
             requiredReturn: 0.10
         )
 
@@ -386,10 +386,20 @@ struct DividendDiscountModelTests {
         // Gordon at 12%: Would be negative (invalid)
         // H-Model includes value from declining growth premium
         // Formula: D₀(1+gₗ)/(r-gₗ) + D₀×H×(gₛ-gₗ)/(r-gₗ)
-        // = 2*1.04/0.06 + 2*10*0.08/0.06 = 34.67 + 26.67 = 61.33
-        #expect(value > 60.0)
-        #expect(value < 62.0)
-        #expect(abs(value - 61.33) < 0.5)  // Should be approximately 61.33
+        // = 2*1.04/0.06 + 2*10*0.08/0.06 = 34.666666… + 26.666666… = 61.33333…
+        //
+        // **The comments above used to say "declining over 10 years", and a review read
+        // that as a possible off-by-two in the implementation.** It is not. `HModel`
+        // documents its own parameter — *"Half-life: number of years for growth rate to
+        // reach midpoint… The full transition period is 2H years"* — so `halfLife: 10`
+        // means a twenty-year decline, and using 10 directly as H is correct. The
+        // arithmetic and the asserted value were right; only the prose describing the
+        // fixture was wrong, and it was wrong in a way that made the code look wrong.
+        //
+        // The distinction is worth 13.33 per share: had H been 5, the premium would be
+        // 13.333… and the total exactly 48.0. The old ±0.5 band could not tell the two
+        // readings apart on its own — it only agreed with whichever the code produced.
+        #expect(abs(value - 61.33333333333333) < 1e-12, "value was \(value)")
     }
 
     @Test("H-Model - reduces to Gordon Growth when initial = terminal")
