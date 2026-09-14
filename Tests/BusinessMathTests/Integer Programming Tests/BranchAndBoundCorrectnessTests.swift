@@ -23,8 +23,8 @@ struct BranchAndBoundCorrectnessTests {
 
         @Test("Detects quadratic objective")
         func detectsQuadraticObjective() throws {
-            #expect(true) // TEST-QUALITY: checker workaround for nested struct scope
             let solver = BranchAndBoundSolver<VectorN<Double>>()
+            let checkingSolver = BranchAndBoundSolver<VectorN<Double>>(validateLinearity: true)
 
             // x² is nonlinear
             let objective: @Sendable (VectorN<Double>) -> Double = { v in
@@ -34,37 +34,45 @@ struct BranchAndBoundCorrectnessTests {
 
             let spec = IntegerProgramSpecification.allBinary(dimension: 1)
 
-            // TODO: This test should FAIL until we implement linearity checking
-            // For now, we document that nonlinear objectives are unsupported
-            // When implemented, uncomment:
-            // #expect(throws: OptimizationError.nonlinearModel) {
-            //     try solver.solve(
-            //         objective: objective,
-            //         from: VectorN([0.5]),
-            //         subjectTo: [],
-            //         integerSpec: spec,
-            //         minimize: true
-            //     )
-            // }
+            // The capability this was waiting for has shipped: `validateLinearity` is a
+            // construction-time flag, and `validateLinearModel` throws
+            // `.nonlinearModel` when the objective fails a linearity probe. The flag
+            // defaults to **false**, which is why the plain solver above still accepts
+            // this objective — so both behaviours are asserted rather than one.
+            let thrown = #expect(throws: OptimizationError.self) {
+                _ = try checkingSolver.solve(
+                    objective: objective,
+                    from: VectorN([0.5]),
+                    subjectTo: [],
+                    integerSpec: spec,
+                    minimize: true
+                )
+            }
+            guard case .nonlinearModel(let message)? = thrown else {
+                Issue.record("expected .nonlinearModel, got \(String(describing: thrown))")
+                return
+            }
+            #expect(!message.isEmpty, "the rejection should say what was nonlinear")
 
-            // TEMPORARY: Document that nonlinear objectives produce incorrect results
-            let result = try solver.solve(
+            // And the documented default: without the flag, x² is accepted and the answer
+            // is whatever a single linearisation produces. That is the behaviour the
+            // original comment described, and it is a contract worth pinning rather than
+            // printing.
+            let unchecked = try solver.solve(
                 objective: objective,
                 from: VectorN([0.5]),
                 subjectTo: [],
                 integerSpec: spec,
                 minimize: true
             )
-
-            // This will give wrong answer because linearization happens once
-            print("WARNING: Nonlinear objective accepted (should be rejected)")
-            print("Result: \(result.solution.toArray()[0])")
+            #expect(unchecked.solution.toArray()[0].isFinite,
+                    "the unchecked path should still return a finite answer, not diverge")
         }
 
         @Test("Detects bilinear constraint")
         func detectsBilinearConstraint() throws {
-            #expect(true) // TEST-QUALITY: checker workaround for nested struct scope
             let solver = BranchAndBoundSolver<VectorN<Double>>()
+            let checkingSolver = BranchAndBoundSolver<VectorN<Double>>(validateLinearity: true)
 
             // x*y ≤ 1 is nonlinear
             let constraint = MultivariateConstraint<VectorN<Double>>.inequality(
@@ -77,28 +85,33 @@ struct BranchAndBoundCorrectnessTests {
 
             let spec = IntegerProgramSpecification.allBinary(dimension: 2)
 
-            // TODO: Should reject nonlinear constraints
-            // #expect(throws: OptimizationError.nonlinearModel) {
-            //     try solver.solve(
-            //         objective: { v in v.toArray()[0] },
-            //         from: VectorN([0.5, 0.5]),
-            //         subjectTo: [constraint],
-            //         integerSpec: spec,
-            //         minimize: true
-            //     )
-            // }
+            // Same shape as the quadratic-objective case: the capability shipped, and it
+            // is opt-in. `x·y` is bilinear, so a linearity probe at any point disagrees
+            // with the plane through it.
+            let thrown = #expect(throws: OptimizationError.self) {
+                _ = try checkingSolver.solve(
+                    objective: { v in v.toArray()[0] },
+                    from: VectorN([0.5, 0.5]),
+                    subjectTo: [constraint],
+                    integerSpec: spec,
+                    minimize: true
+                )
+            }
+            guard case .nonlinearModel(let message)? = thrown else {
+                Issue.record("expected .nonlinearModel, got \(String(describing: thrown))")
+                return
+            }
+            #expect(!message.isEmpty, "the rejection should say what was nonlinear")
 
-            // TEMPORARY: Document incorrect behavior
-            let result = try solver.solve(
+            let unchecked = try solver.solve(
                 objective: { v in v.toArray()[0] },
                 from: VectorN([0.5, 0.5]),
                 subjectTo: [constraint],
                 integerSpec: spec,
                 minimize: true
             )
-
-            print("WARNING: Nonlinear constraint accepted (should be rejected)")
-            print("Result: \(result.solution.toArray())")
+            #expect(unchecked.solution.toArray()[0].isFinite,
+                    "the unchecked path should still return a finite answer, not diverge")
         }
 
         @Test("Accepts truly linear objective")
@@ -211,9 +224,6 @@ struct BranchAndBoundCorrectnessTests {
 
         @Test("Handles negative lower bounds")
         func handlesNegativeLowerBounds() throws {
-            #expect(true) // TEST-QUALITY: checker workaround for nested struct scope
-            // NOTE: SimplexSolver assumes x ≥ 0, so this test WILL FAIL
-            // until we implement variable shifting for negative bounds
             let solver = BranchAndBoundSolver<VectorN<Double>>()
 
             // x ≥ -3 (negative lower bound)
@@ -227,10 +237,7 @@ struct BranchAndBoundCorrectnessTests {
                 binaryVariables: Set()
             )
 
-            // Minimize x subject to x ≥ -3, x ≤ 5
-            // TODO: This test WILL FAIL because SimplexSolver assumes x ≥ 0
-            // Need to implement variable shifting: x' = x + 3, then x = x' - 3
-
+            // Minimize x subject to x ≥ -3, x ≤ 5. The optimum is -3.
             let result = try solver.solve(
                 objective: { v in v.toArray()[0] },
                 from: VectorN([0.0]),
@@ -242,12 +249,55 @@ struct BranchAndBoundCorrectnessTests {
                 minimize: true
             )
 
-            // Should find x = -3, but will likely find x = 0 due to SimplexSolver assumption
-            print("WARNING: Negative lower bound test")
-            print("Expected: x = -3, Got: x = \(result.integerSolution[0])")
+            // The capability shipped as `enableVariableShifting`, and it works — but only
+            // for bounds it can *see*. Measured, all three cases:
+            //
+            //   default solver, closure bound      -> 0   (wrong; optimum is -3)
+            //   enableVariableShifting, closure    -> 0   (wrong)
+            //   enableVariableShifting, structural -> -3  (correct)
+            //
+            // `extractVariableShift` reads the constraint list looking for bounds. A
+            // `.linearInequality` states its coefficients, so the shift is detectable. An
+            // `.inequality` carrying an opaque closure states nothing, so nothing is
+            // detected, no shift is applied, and the simplex's implicit `x ≥ 0` truncates
+            // the answer to 0 — **silently**, which is the part that matters. Filed as L19.
 
-            // TEMPORARY: Accept x = 0 (SimplexSolver assumption)
-            // When fixed, should be: #expect(result.integerSolution[0] == -3)
+            // 1. The default. Documented behaviour, and the reason the flag exists.
+            #expect(result.integerSolution[0] == 0,
+                    "without shifting the simplex truncates at its implicit x >= 0, got \(result.integerSolution[0])")
+
+            let shifting = BranchAndBoundSolver<VectorN<Double>>(enableVariableShifting: true)
+
+            // 2. Shifting on, bound hidden in a closure. This is L19, recorded as an
+            //    executable expectation so that fixing shift detection breaks the build
+            //    rather than passing unnoticed.
+            let shifted = try shifting.solve(
+                objective: { v in v.toArray()[0] },
+                from: VectorN([0.0]),
+                subjectTo: [
+                    constraint,
+                    .inequality { v in v.toArray()[0] - 5.0 }
+                ],
+                integerSpec: spec,
+                minimize: true
+            )
+            withKnownIssue("L19: an opaque inequality closure hides the bound from extractVariableShift") {
+                #expect(shifted.integerSolution[0] == -3)
+            }
+
+            // 3. Shifting on, the same bound stated structurally. The capability works.
+            let structural = try shifting.solve(
+                objective: { v in v.toArray()[0] },
+                from: VectorN([0.0]),
+                subjectTo: [
+                    .linearInequality(coefficients: [-1.0], rhs: 3.0, sense: .lessOrEqual),
+                    .linearInequality(coefficients: [1.0], rhs: 5.0, sense: .lessOrEqual)
+                ],
+                integerSpec: spec,
+                minimize: true
+            )
+            #expect(structural.integerSolution[0] == -3,
+                    "a structurally stated bound should shift, got \(structural.integerSolution[0])")
         }
 
         @Test("Binary variables auto-bounded to [0,1]")

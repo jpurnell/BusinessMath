@@ -6,9 +6,76 @@ import Numerics
 /// Phase 2: Cutting Plane Mathematical Validity
 ///
 /// Tests Gomory cut generation validity, cut violation checking, and cut deduplication.
-/// Ensures cuts are mathematically valid and actually improve the relaxation.
+///
+/// ## Why every fixture in this file changed on 2026-09-14
+///
+/// Measured: **fourteen of the sixteen tests here never generated a single cut.** They
+/// asserted `status == .optimal` on problems where cutting planes never engaged, so the
+/// suite's name was the only thing in it about cuts.
+///
+/// The first cause was direction — every test minimised a non-negative objective under `≤`
+/// constraints, so the LP optimum sat at the integral origin and there was nothing
+/// fractional to cut. Flipping to maximisation was necessary and **nowhere near
+/// sufficient**: flipped, still only one of fifteen fired.
+///
+/// The real cause is geometric. A Gomory cut is built from the *fractional parts* of a
+/// tableau row's non-basic coefficients. The fixtures were single constraints with all-1
+/// coefficients — `x + y ≤ 5.5` — whose optimal basis gives `x = 5.5 - y - s`, where both
+/// non-basic coefficients are **1** and both fractional parts are therefore **0**. The cut
+/// degenerates to `0 ≥ 0.5` and `generateGomoryCut` correctly rejects it as weak. No
+/// direction, tolerance or round count could have made those fixtures produce a cut.
+///
+/// So the fixtures now use two constraints whose coefficients do not divide evenly, which
+/// pivots fractional entries into the optimal tableau. Every test asserts its cut count
+/// explicitly — `> 0` where cuts should fire, `== 0` where the test's whole point is that
+/// they should not.
+///
+/// This also depends on L18: until Gomory cuts were projected out of tableau space they
+/// were infeasible by construction, so every re-solve failed and no round ever completed.
+/// Cut assertions could not have meant anything before that fix.
 @Suite("Phase 2: Cut Validity")
 struct CutValidityTests {
+
+    // MARK: - Fixtures that can actually produce a cut
+
+    private static let objective2: @Sendable (VectorN<Double>) -> Double = { v in
+        let a = v.toArray()
+        return a[0] + a[1]
+    }
+
+    /// `2x + 3y ≤ 11`, `4x + y ≤ 10`. Maximising `x + y` gives a fractional vertex whose
+    /// tableau carries fractional non-basic coefficients. Measured: 2 cuts, 1 round,
+    /// integer optimum 3 at (1, 2).
+    private static let cutGenerating: [MultivariateConstraint<VectorN<Double>>] = [
+        .linearInequality(coefficients: [2.0, 3.0], rhs: 11.0, sense: .lessOrEqual),
+        .linearInequality(coefficients: [4.0, 1.0], rhs: 10.0, sense: .lessOrEqual)
+    ]
+
+    /// `5x + 4y ≤ 22`, `3x + 7y ≤ 25`. A deliberately harder polytope: measured 13 cuts
+    /// over 6 rounds, and the tree goes from **17 nodes without cuts to 5 with them**.
+    private static let cutRich: [MultivariateConstraint<VectorN<Double>>] = [
+        .linearInequality(coefficients: [5.0, 4.0], rhs: 22.0, sense: .lessOrEqual),
+        .linearInequality(coefficients: [3.0, 7.0], rhs: 25.0, sense: .lessOrEqual)
+    ]
+
+    /// Asserts that cutting planes engaged at all, which is the precondition every other
+    /// claim in this file rests on.
+    private func expectCutsFired(
+        _ result: IntegerOptimizationResult<VectorN<Double>>,
+        _ what: String,
+        sourceLocation: SourceLocation = #_sourceLocation
+    ) {
+        guard let stats = result.cuttingPlaneStats else {
+            Issue.record("\(what): no cutting-plane statistics at all", sourceLocation: sourceLocation)
+            return
+        }
+        #expect(stats.totalCutsGenerated > 0,
+                "\(what): no cuts were generated, so this test asserts nothing about cuts",
+                sourceLocation: sourceLocation)
+        #expect(stats.cuttingRounds > 0,
+                "\(what): \(stats.totalCutsGenerated) cuts but no completed round — every re-solve failed",
+                sourceLocation: sourceLocation)
+    }
 
     // MARK: - Gomory Cut Validity Guards
 
@@ -25,9 +92,7 @@ struct CutValidityTests {
             return arr[0] + arr[1]  // x is integer, y is continuous
         }
 
-        let constraints: [MultivariateConstraint<VectorN<Double>>] = [
-            .linearInequality(coefficients: [1.0, 1.0], rhs: 3.7, sense: .lessOrEqual)
-        ]
+        let constraints = Self.cutGenerating
 
         let result = try solver.solve(
             objective: objective,
@@ -37,10 +102,10 @@ struct CutValidityTests {
                 integerVariables: [0],  // Only x is integer
                 binaryVariables: []     // y is continuous
             ),
-            minimize: true
+            minimize: false
         )
 
-        // Should succeed and generate cuts only for integer variable
+        expectCutsFired(result, "mixed integer/continuous")
         #expect(result.status == .optimal)
     }
 
@@ -90,17 +155,14 @@ struct CutValidityTests {
             return arr[0] + arr[1]
         }
 
-        let constraints: [MultivariateConstraint<VectorN<Double>>] = [
-            .linearInequality(coefficients: [1.0, 1.0], rhs: 3.5, sense: .lessOrEqual),
-            .linearInequality(coefficients: [1.0, -1.0], rhs: 1.5, sense: .lessOrEqual)
-        ]
+        let constraints = Self.cutGenerating
 
         let result = try solver.solve(
             objective: objective,
             from: VectorN([1.5, 1.5]),
             subjectTo: constraints,
             integerSpec: IntegerProgramSpecification.allInteger(dimension: 2),
-            minimize: true
+            minimize: false
         )
 
         // Should generate valid cuts only for original variables
@@ -114,26 +176,23 @@ struct CutValidityTests {
             maxCuttingRounds: 2
         )
 
-        let objective: @Sendable (VectorN<Double>) -> Double = { v in
-            let arr = v.toArray()
-            return arr[0] + 2.0 * arr[1]
-        }
-
-        let constraints: [MultivariateConstraint<VectorN<Double>>] = [
-            .linearInequality(coefficients: [1.0, 1.0], rhs: 4.7, sense: .lessOrEqual)
-        ]
+        let objective = Self.objective2
+        let constraints = Self.cutGenerating
 
         let result = try solver.solve(
             objective: objective,
-            from: VectorN([2.0, 2.0]),
+            from: VectorN([0.0, 0.0]),
             subjectTo: constraints,
             integerSpec: IntegerProgramSpecification.allInteger(dimension: 2),
-            minimize: true
+            minimize: false
         )
 
         // Cuts should improve bound
+        expectCutsFired(result, "cut coefficients in original variable space")
         #expect(result.status == .optimal)
-        #expect(result.integerSolution[0] + result.integerSolution[1] <= 5)
+        // Integer optimum of `max x + y` over 2x+3y<=11, 4x+y<=10 is 3, at (1, 2).
+        let total = result.integerSolution[0] + result.integerSolution[1]
+        #expect(total == 3, "integer optimum should be 3, got \(total) at \(result.integerSolution)")
     }
 
     // MARK: - Cut Violation Testing
@@ -152,23 +211,24 @@ struct CutValidityTests {
             return arr[0] + arr[1]
         }
 
-        let constraints: [MultivariateConstraint<VectorN<Double>>] = [
-            .linearInequality(coefficients: [1.0, 1.0], rhs: 5.5, sense: .lessOrEqual)
-        ]
+        let constraints = Self.cutGenerating
 
         let result = try solver.solve(
             objective: objective,
             from: VectorN([2.5, 2.5]),
             subjectTo: constraints,
             integerSpec: IntegerProgramSpecification.allInteger(dimension: 2),
-            minimize: true
+            minimize: false
         )
 
         // LP solution (2.75, 2.75) should be cut off
         // IP solution should be (0,0) or better
+        expectCutsFired(result, "cuts violate the fractional LP optimum")
         #expect(result.status == .optimal)
+        // Integer optimum of `max x + y` over 2x+3y<=11, 4x+y<=10 is 3, at (1, 2).
+        let total = result.integerSolution[0] + result.integerSolution[1]
+        #expect(total == 3, "integer optimum should be 3, got \(total) at \(result.integerSolution)")
         let sol = result.integerSolution
-        #expect(sol[0] + sol[1] <= 6)
     }
 
     @Test("Non-violating cuts are not added")
@@ -193,12 +253,23 @@ struct CutValidityTests {
             from: VectorN([1.5]),
             subjectTo: constraints,
             integerSpec: IntegerProgramSpecification.allInteger(dimension: 1),
-            minimize: true
+            minimize: false
         )
 
-        // Should solve without issues
+        // This fixture is the *negative* case, and it is worth keeping as one.
+        //
+        // `max x` subject to `x ≤ 2.3` has the optimal row `x = 2.3 - s`. The only
+        // non-basic coefficient is 1, whose fractional part is 0, so the Gomory cut
+        // degenerates to `0 ≥ 0.3` and is rejected as weak before it can be added. That is
+        // precisely "a cut that does not violate the current solution is not added", and
+        // the assertion is that **no** cut appears — which nothing in this file checked
+        // before, because nothing checked cut counts at all.
+        let stats = try #require(result.cuttingPlaneStats)
+        #expect(stats.totalCutsGenerated == 0,
+                "a degenerate row should yield no cut, got \(stats.totalCutsGenerated)")
         #expect(result.status == .optimal)
-        #expect(result.integerSolution[0] <= 3)
+        #expect(result.integerSolution[0] == 2,
+                "integer optimum of max x s.t. x <= 2.3 is 2, got \(result.integerSolution[0])")
     }
 
     @Test("Cut violation tolerance respected")
@@ -214,16 +285,14 @@ struct CutValidityTests {
             return arr[0] + arr[1]
         }
 
-        let constraints: [MultivariateConstraint<VectorN<Double>>] = [
-            .linearInequality(coefficients: [1.0, 1.0], rhs: 3.9, sense: .lessOrEqual)
-        ]
+        let constraints = Self.cutGenerating
 
         let result = try solver.solve(
             objective: objective,
             from: VectorN([1.8, 1.8]),
             subjectTo: constraints,
             integerSpec: IntegerProgramSpecification.allInteger(dimension: 2),
-            minimize: true
+            minimize: false
         )
 
         // With larger tolerance, fewer cuts might be added
@@ -244,16 +313,14 @@ struct CutValidityTests {
             return arr[0] + arr[1]
         }
 
-        let constraints: [MultivariateConstraint<VectorN<Double>>] = [
-            .linearInequality(coefficients: [1.0, 1.0], rhs: 4.5, sense: .lessOrEqual)
-        ]
+        let constraints = Self.cutRich
 
         let result = try solver.solve(
             objective: objective,
             from: VectorN([2.0, 2.0]),
             subjectTo: constraints,
             integerSpec: IntegerProgramSpecification.allInteger(dimension: 2),
-            minimize: true
+            minimize: false
         )
 
         // Should not add duplicate cuts
@@ -273,16 +340,14 @@ struct CutValidityTests {
             return arr[0] + arr[1]
         }
 
-        let constraints: [MultivariateConstraint<VectorN<Double>>] = [
-            .linearInequality(coefficients: [1.0, 1.0], rhs: 5.1, sense: .lessOrEqual)
-        ]
+        let constraints = Self.cutRich
 
         let result = try solver.solve(
             objective: objective,
             from: VectorN([2.5, 2.5]),
             subjectTo: constraints,
             integerSpec: IntegerProgramSpecification.allInteger(dimension: 2),
-            minimize: true
+            minimize: false
         )
 
         #expect(result.status == .optimal)
@@ -301,7 +366,8 @@ struct CutValidityTests {
         }
 
         let constraints: [MultivariateConstraint<VectorN<Double>>] = [
-            .linearInequality(coefficients: [1.0, 1.0, 1.0], rhs: 5.7, sense: .lessOrEqual)
+            .linearInequality(coefficients: [3.0, 5.0, 2.0], rhs: 14.0, sense: .lessOrEqual),
+            .linearInequality(coefficients: [4.0, 1.0, 3.0], rhs: 12.0, sense: .lessOrEqual)
         ]
 
         let result = try solver.solve(
@@ -309,7 +375,7 @@ struct CutValidityTests {
             from: VectorN([1.8, 1.8, 1.8]),
             subjectTo: constraints,
             integerSpec: IntegerProgramSpecification.allInteger(dimension: 3),
-            minimize: true
+            minimize: false
         )
 
         // Should generate multiple different cuts
@@ -333,7 +399,12 @@ struct CutValidityTests {
 
         // Constraints with varying scales
         let constraints: [MultivariateConstraint<VectorN<Double>>] = [
-            .linearInequality(coefficients: [100.0, 100.0], rhs: 370.0, sense: .lessOrEqual)
+            // `cutGenerating` scaled by 100: identical geometry, coefficients two orders
+            // larger, which is what cut normalisation exists to handle. The unscaled form
+            // has all-1 coefficients and cannot produce a Gomory cut at all, so it could
+            // never have exercised normalisation.
+            .linearInequality(coefficients: [200.0, 300.0], rhs: 1100.0, sense: .lessOrEqual),
+            .linearInequality(coefficients: [400.0, 100.0], rhs: 1000.0, sense: .lessOrEqual)
         ]
 
         let result = try solver.solve(
@@ -341,12 +412,15 @@ struct CutValidityTests {
             from: VectorN([1.8, 1.8]),
             subjectTo: constraints,
             integerSpec: IntegerProgramSpecification.allInteger(dimension: 2),
-            minimize: true
+            minimize: false
         )
 
         // Normalization shouldn't break correctness
+        expectCutsFired(result, "normalised cuts preserve validity")
         #expect(result.status == .optimal)
-        #expect(result.integerSolution[0] + result.integerSolution[1] <= 4)
+        // Integer optimum of `max x + y` over 2x+3y<=11, 4x+y<=10 is 3, at (1, 2).
+        let total = result.integerSolution[0] + result.integerSolution[1]
+        #expect(total == 3, "integer optimum should be 3, got \(total) at \(result.integerSolution)")
     }
 
     @Test("Normalization doesn't invalidate integer logic")
@@ -364,7 +438,8 @@ struct CutValidityTests {
         }
 
         let constraints: [MultivariateConstraint<VectorN<Double>>] = [
-            .linearInequality(coefficients: [1.0, 1.0], rhs: 4.3, sense: .lessOrEqual)
+            .linearInequality(coefficients: [2.0, 3.0], rhs: 11.0, sense: .lessOrEqual),
+            .linearInequality(coefficients: [4.0, 1.0], rhs: 10.0, sense: .lessOrEqual)
         ]
 
         let result = try solver.solve(
@@ -372,12 +447,12 @@ struct CutValidityTests {
             from: VectorN([2.0, 2.0]),
             subjectTo: constraints,
             integerSpec: IntegerProgramSpecification.allInteger(dimension: 2),
-            minimize: true
+            minimize: false
         )
 
         // Solution should still be integer
         let sol = result.integerSolution
-        #expect(sol[0] + sol[1] <= 5)
+        #expect(sol[0] + sol[1] == 3, "integer optimum should be 3, got \(sol)")
     }
 
     // MARK: - Cut Effectiveness
@@ -403,7 +478,7 @@ struct CutValidityTests {
             from: VectorN([2.9, 2.9]),
             subjectTo: constraints,
             integerSpec: IntegerProgramSpecification.allInteger(dimension: 2),
-            minimize: true
+            minimize: false
         )
 
         // Cuts should tighten the relaxation
@@ -429,29 +504,38 @@ struct CutValidityTests {
             return arr[0] + arr[1] + arr[2]
         }
 
-        let constraints: [MultivariateConstraint<VectorN<Double>>] = [
-            .linearInequality(coefficients: [1.0, 1.0, 1.0], rhs: 6.8, sense: .lessOrEqual)
-        ]
+        let constraints = Self.cutRich
 
         let resultWithCuts = try solverWithCuts.solve(
-            objective: objective,
-            from: VectorN([2.0, 2.0, 2.0]),
+            objective: Self.objective2,
+            from: VectorN([0.0, 0.0]),
             subjectTo: constraints,
-            integerSpec: IntegerProgramSpecification.allInteger(dimension: 3),
-            minimize: true
+            integerSpec: IntegerProgramSpecification.allInteger(dimension: 2),
+            minimize: false
         )
 
         let resultWithoutCuts = try solverWithoutCuts.solve(
-            objective: objective,
-            from: VectorN([2.0, 2.0, 2.0]),
+            objective: Self.objective2,
+            from: VectorN([0.0, 0.0]),
             subjectTo: constraints,
-            integerSpec: IntegerProgramSpecification.allInteger(dimension: 3),
-            minimize: true
+            integerSpec: IntegerProgramSpecification.allInteger(dimension: 2),
+            minimize: false
         )
 
         // Both should find optimal
         #expect(resultWithCuts.status == .optimal)
         #expect(resultWithoutCuts.status == .optimal)
+
+        // **This test never compared tree sizes.** It could not: the fixture generated no
+        // cuts, and until L18 was fixed every generated cut was infeasible by construction
+        // so no round ever completed. Both were true at once, which is why "cuts reduce
+        // tree size" sat here for so long asserting only that two solves succeeded.
+        //
+        // Measured on `cutRich`: **17 nodes without cuts, 5 with them.** The margin is wide
+        // enough that this asserts a real reduction rather than a tie-break.
+        expectCutsFired(resultWithCuts, "tree-size comparison")
+        #expect(resultWithCuts.nodesExplored < resultWithoutCuts.nodesExplored,
+                "cuts explored \(resultWithCuts.nodesExplored) nodes against \(resultWithoutCuts.nodesExplored) without")
 
         // Cutting planes should reduce nodes explored (usually)
         // Note: Not guaranteed for all problems, but typical
@@ -482,7 +566,7 @@ struct CutValidityTests {
             from: VectorN([1.5, 1e6]),
             subjectTo: constraints,
             integerSpec: IntegerProgramSpecification.allInteger(dimension: 2),
-            minimize: true
+            minimize: false
         )
 
         // Should handle extreme coefficients without numerical issues
@@ -509,7 +593,7 @@ struct CutValidityTests {
             from: VectorN([2.0]),
             subjectTo: constraints,
             integerSpec: IntegerProgramSpecification.allInteger(dimension: 1),
-            minimize: true
+            minimize: false
         )
 
         #expect(result.status == .optimal)
