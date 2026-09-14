@@ -101,16 +101,19 @@ struct TimeSeriesAnalyticsTests {
 	}
 	
 	@Test("movingAverage with window 1 returns original")
-	func movingAverageWindow1() {
+	func movingAverageWindow1() throws {
 		let periods = (1...3).map { Period.month(year: 2025, month: $0) }
 		let ts = TimeSeries(periods: periods, values: [100.0, 110.0, 120.0])
 		
 		let ma = ts.movingAverage(window: 1)
 		
 		#expect(ma.count == 3)
-		#expect(abs((ma[periods[0]] ?? 0) - 100.0) < 1e-6)
-		#expect(abs((ma[periods[1]] ?? 0) - 110.0) < 1e-6)
-		#expect(abs((ma[periods[2]] ?? 0) - 120.0) < 1e-6)
+		let measured0 = try #require(ma[periods[0]])
+		#expect(abs(measured0 - 100.0) < 1e-6)
+		let measured1 = try #require(ma[periods[1]])
+		#expect(abs(measured1 - 110.0) < 1e-6)
+		let measured2 = try #require(ma[periods[2]])
+		#expect(abs(measured2 - 120.0) < 1e-6)
 	}
 	
 		// MARK: - Exponential Moving Average Tests
@@ -123,7 +126,8 @@ struct TimeSeriesAnalyticsTests {
 		let ema = ts.exponentialMovingAverage(alpha: 0.5)
 		
 		#expect(ema.count == 4)
-		#expect(abs((ema[periods[0]] ?? 0) - 100.0) < 1e-6)  // First value unchanged
+		let measured0 = try #require(ema[periods[0]])
+		#expect(abs(measured0 - 100.0) < 1e-6)  // First value unchanged
 										   // EMA = alpha * current + (1-alpha) * previous_EMA
 		#expect(abs(try #require(ema[periods[1]]) - 105.0) < tolerance)  // 0.5*110 + 0.5*100 = 105
 		#expect(abs(try #require(ema[periods[2]]) - 105.0) < tolerance)  // 0.5*105 + 0.5*105 = 105
@@ -131,61 +135,76 @@ struct TimeSeriesAnalyticsTests {
 	}
 	
 	@Test("exponentialMovingAverage with alpha 1.0 equals original")
-	func emaAlpha1() {
+	func emaAlpha1() throws {
 		let periods = (1...3).map { Period.month(year: 2025, month: $0) }
 		let ts = TimeSeries(periods: periods, values: [100.0, 110.0, 120.0])
 		
 		let ema = ts.exponentialMovingAverage(alpha: 1.0)
 		
 		#expect(ema.count == 3)
-		#expect(abs((ema[periods[0]] ?? 0) - 100.0) < 1e-6)
-		#expect(abs((ema[periods[1]] ?? 0) - 110.0) < 1e-6)
-		#expect(abs((ema[periods[2]] ?? 0) - 120.0) < 1e-6)
+		let measured0 = try #require(ema[periods[0]])
+		#expect(abs(measured0 - 100.0) < 1e-6)
+		let measured1 = try #require(ema[periods[1]])
+		#expect(abs(measured1 - 110.0) < 1e-6)
+		let measured2 = try #require(ema[periods[2]])
+		#expect(abs(measured2 - 120.0) < 1e-6)
 	}
 	
 		// MARK: - Cumulative Tests
 	
 	@Test("cumulative calculates running sum")
-	func cumulativeSum() {
+	func cumulativeSum() throws {
 		let periods = (1...5).map { Period.month(year: 2025, month: $0) }
 		let ts = TimeSeries(periods: periods, values: [10.0, 20.0, 30.0, 40.0, 50.0])
 		
 		let cumulative = ts.cumulative()
 		
 		#expect(cumulative.count == 5)
-		#expect(abs((cumulative[periods[0]] ?? 0) - 10.0) < 1e-6)
-		#expect(abs((cumulative[periods[1]] ?? 0) - 30.0) < 1e-6)   // 10 + 20
-		#expect(abs((cumulative[periods[2]] ?? 0) - 60.0) < 1e-6)   // 10 + 20 + 30
-		#expect(abs((cumulative[periods[3]] ?? 0) - 100.0) < 1e-6)  // 10 + 20 + 30 + 40
-		#expect(abs((cumulative[periods[4]] ?? 0) - 150.0) < 1e-6)  // 10 + 20 + 30 + 40 + 50
+		let measured0 = try #require(cumulative[periods[0]])
+		#expect(abs(measured0 - 10.0) < 1e-6)
+		let measured1 = try #require(cumulative[periods[1]])
+		#expect(abs(measured1 - 30.0) < 1e-6)   // 10 + 20
+		let measured2 = try #require(cumulative[periods[2]])
+		#expect(abs(measured2 - 60.0) < 1e-6)   // 10 + 20 + 30
+		let measured3 = try #require(cumulative[periods[3]])
+		#expect(abs(measured3 - 100.0) < 1e-6)  // 10 + 20 + 30 + 40
+		let measured4 = try #require(cumulative[periods[4]])
+		#expect(abs(measured4 - 150.0) < 1e-6)  // 10 + 20 + 30 + 40 + 50
 	}
 	
 	@Test("cumulative with negative values")
-	func cumulativeNegative() {
+	func cumulativeNegative() throws {
 		let periods = (1...4).map { Period.month(year: 2025, month: $0) }
 		let ts = TimeSeries(periods: periods, values: [100.0, -20.0, 30.0, -40.0])
 		
 		let cumulative = ts.cumulative()
 		
-		#expect(abs((cumulative[periods[0]] ?? 0) - 100.0) < 1e-6)
-		#expect(abs((cumulative[periods[1]] ?? 0) - 80.0) < 1e-6)   // 100 - 20
-		#expect(abs((cumulative[periods[2]] ?? 0) - 110.0) < 1e-6)  // 100 - 20 + 30
-		#expect(abs((cumulative[periods[3]] ?? 0) - 70.0) < 1e-6)   // 100 - 20 + 30 - 40
+		let measured0 = try #require(cumulative[periods[0]])
+		#expect(abs(measured0 - 100.0) < 1e-6)
+		let measured1 = try #require(cumulative[periods[1]])
+		#expect(abs(measured1 - 80.0) < 1e-6)   // 100 - 20
+		let measured2 = try #require(cumulative[periods[2]])
+		#expect(abs(measured2 - 110.0) < 1e-6)  // 100 - 20 + 30
+		let measured3 = try #require(cumulative[periods[3]])
+		#expect(abs(measured3 - 70.0) < 1e-6)   // 100 - 20 + 30 - 40
 	}
 	
 		// MARK: - Difference Tests
 	
 	@Test("diff with lag 1")
-	func diffLag1() {
+	func diffLag1() throws {
 		let periods = (1...4).map { Period.month(year: 2025, month: $0) }
 		let ts = TimeSeries(periods: periods, values: [100.0, 110.0, 105.0, 115.0])
 		
 		let diff = ts.diff(lag: 1)
 		
 		#expect(diff.count == 3)
-		#expect(abs((diff[periods[1]] ?? 0) - 10.0) < 1e-6)   // 110 - 100
-		#expect(abs((diff[periods[2]] ?? 0) - (-5.0)) < 1e-6)   // 105 - 110
-		#expect(abs((diff[periods[3]] ?? 0) - 10.0) < 1e-6)   // 115 - 105
+		let measured0 = try #require(diff[periods[1]])
+		#expect(abs(measured0 - 10.0) < 1e-6)   // 110 - 100
+		let measured1 = try #require(diff[periods[2]])
+		#expect(abs(measured1 - (-5.0)) < 1e-6)   // 105 - 110
+		let measured2 = try #require(diff[periods[3]])
+		#expect(abs(measured2 - 10.0) < 1e-6)   // 115 - 105
 	}
 	
 	@Test("diff with lag 2")
@@ -230,46 +249,55 @@ struct TimeSeriesAnalyticsTests {
 		// MARK: - Rolling Sum Tests
 	
 	@Test("rollingSum with window 3")
-	func rollingSumWindow3() {
+	func rollingSumWindow3() throws {
 		let periods = (1...5).map { Period.month(year: 2025, month: $0) }
 		let ts = TimeSeries(periods: periods, values: [10.0, 20.0, 30.0, 40.0, 50.0])
 		
 		let rolling = ts.rollingSum(window: 3)
 		
 		#expect(rolling.count == 3)
-		#expect(abs((rolling[periods[2]] ?? 0) - 60.0) < 1e-6)   // 10 + 20 + 30
-		#expect(abs((rolling[periods[3]] ?? 0) - 90.0) < 1e-6)   // 20 + 30 + 40
-		#expect(abs((rolling[periods[4]] ?? 0) - 120.0) < 1e-6)  // 30 + 40 + 50
+		let measured0 = try #require(rolling[periods[2]])
+		#expect(abs(measured0 - 60.0) < 1e-6)   // 10 + 20 + 30
+		let measured1 = try #require(rolling[periods[3]])
+		#expect(abs(measured1 - 90.0) < 1e-6)   // 20 + 30 + 40
+		let measured2 = try #require(rolling[periods[4]])
+		#expect(abs(measured2 - 120.0) < 1e-6)  // 30 + 40 + 50
 	}
 	
 		// MARK: - Rolling Min Tests
 	
 	@Test("rollingMin with window 3")
-	func rollingMinWindow3() {
+	func rollingMinWindow3() throws {
 		let periods = (1...5).map { Period.month(year: 2025, month: $0) }
 		let ts = TimeSeries(periods: periods, values: [30.0, 10.0, 50.0, 20.0, 40.0])
 		
 		let rolling = ts.rollingMin(window: 3)
 		
 		#expect(rolling.count == 3)
-		#expect(abs((rolling[periods[2]] ?? 0) - 10.0) < 1e-6)  // min(30, 10, 50)
-		#expect(abs((rolling[periods[3]] ?? 0) - 10.0) < 1e-6)  // min(10, 50, 20)
-		#expect(abs((rolling[periods[4]] ?? 0) - 20.0) < 1e-6)  // min(50, 20, 40)
+		let measured0 = try #require(rolling[periods[2]])
+		#expect(abs(measured0 - 10.0) < 1e-6)  // min(30, 10, 50)
+		let measured1 = try #require(rolling[periods[3]])
+		#expect(abs(measured1 - 10.0) < 1e-6)  // min(10, 50, 20)
+		let measured2 = try #require(rolling[periods[4]])
+		#expect(abs(measured2 - 20.0) < 1e-6)  // min(50, 20, 40)
 	}
 	
 		// MARK: - Rolling Max Tests
 	
 	@Test("rollingMax with window 3")
-	func rollingMaxWindow3() {
+	func rollingMaxWindow3() throws {
 		let periods = (1...5).map { Period.month(year: 2025, month: $0) }
 		let ts = TimeSeries(periods: periods, values: [30.0, 10.0, 50.0, 20.0, 40.0])
 		
 		let rolling = ts.rollingMax(window: 3)
 		
 		#expect(rolling.count == 3)
-		#expect(abs((rolling[periods[2]] ?? 0) - 50.0) < 1e-6)  // max(30, 10, 50)
-		#expect(abs((rolling[periods[3]] ?? 0) - 50.0) < 1e-6)  // max(10, 50, 20)
-		#expect(abs((rolling[periods[4]] ?? 0) - 50.0) < 1e-6)  // max(50, 20, 40)
+		let measured0 = try #require(rolling[periods[2]])
+		#expect(abs(measured0 - 50.0) < 1e-6)  // max(30, 10, 50)
+		let measured1 = try #require(rolling[periods[3]])
+		#expect(abs(measured1 - 50.0) < 1e-6)  // max(10, 50, 20)
+		let measured2 = try #require(rolling[periods[4]])
+		#expect(abs(measured2 - 50.0) < 1e-6)  // max(50, 20, 40)
 	}
 	
 		// MARK: - Edge Cases
@@ -299,7 +327,7 @@ struct TimeSeriesAnalyticsTests {
 	}
 	
 	@Test("diff with lag 0 should handle gracefully")
-	func diffLag0() {
+	func diffLag0() throws {
 		let periods = (1...3).map { Period.month(year: 2025, month: $0) }
 		let ts = TimeSeries(periods: periods, values: [100.0, 110.0, 120.0])
 		
@@ -307,9 +335,12 @@ struct TimeSeriesAnalyticsTests {
 		
 			// Lag 0 means difference from itself = 0
 		#expect(diff.count == 3)
-		#expect(abs((diff[periods[0]] ?? 0) - 0.0) < 1e-6)
-		#expect(abs((diff[periods[1]] ?? 0) - 0.0) < 1e-6)
-		#expect(abs((diff[periods[2]] ?? 0) - 0.0) < 1e-6)
+		let measured0 = try #require(diff[periods[0]])
+		#expect(abs(measured0 - 0.0) < 1e-6)
+		let measured1 = try #require(diff[periods[1]])
+		#expect(abs(measured1 - 0.0) < 1e-6)
+		let measured2 = try #require(diff[periods[2]])
+		#expect(abs(measured2 - 0.0) < 1e-6)
 	}
 	
 		// MARK: - Real-World Scenarios
@@ -354,15 +385,17 @@ struct TimeSeriesAnalyticsTests {
 	}
 	
 	@Test("Year-to-date cumulative revenue")
-	func ytdCumulativeRevenue() {
+	func ytdCumulativeRevenue() throws {
 		let periods = (1...12).map { Period.month(year: 2025, month: $0) }
 		let monthlyRevenue = Array(repeating: 100_000.0, count: 12)
 		
 		let ts = TimeSeries(periods: periods, values: monthlyRevenue)
 		let ytd = ts.cumulative()
 		
-		#expect(abs((ytd[periods[11]] ?? 0) - 1_200_000.0) < 1e-2)  // Full year total
-		#expect(abs((ytd[periods[5]] ?? 0) - 600_000.0) < 1e-6)     // First 6 months
+		let measured0 = try #require(ytd[periods[11]])
+		#expect(abs(measured0 - 1_200_000.0) < 1e-2)  // Full year total
+		let measured1 = try #require(ytd[periods[5]])
+		#expect(abs(measured1 - 600_000.0) < 1e-6)     // First 6 months
 	}
 		// EMA edge case
 			@Test("EMA with alpha = 0.0 equals flat line at first value")

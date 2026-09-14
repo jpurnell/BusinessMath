@@ -37,11 +37,11 @@ struct HoltWintersTests {
 		var model = HoltWintersModel<Double>(seasonalPeriods: 12)
 		let data = makeTrendSeasonalData()
 
-		try model.train(on: data)
-
-		// Model should have initialized level, trend, and seasonality
-		// (Actual values depend on implementation)
-	    #expect(true) // TEST-QUALITY: validates no-throw execution
+		// Training is the claim, so training is what gets asserted. `#expect(true)` held
+		// whether or not `train` threw, which is the one thing this test is about.
+		#expect(throws: Never.self) {
+			try model.train(on: data)
+		}
 	}
 
 	@Test("Insufficient data throws error")

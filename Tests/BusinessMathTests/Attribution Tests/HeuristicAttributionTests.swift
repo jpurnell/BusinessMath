@@ -96,8 +96,10 @@ struct HeuristicAttributionTests {
 	@Test("First touch credits the channel that opened the journey")
 	func firstTouch() throws {
 		let credit = try Self.credit(.firstTouch)
-		#expect(Swift.abs((credit["A"] ?? 0) - 100) < 1e-9, "A \(credit["A"] ?? 0)")
-		#expect(Swift.abs((credit["B"] ?? 0) - 50) < 1e-9, "B \(credit["B"] ?? 0)")
+		let credited0 = try #require(credit["A"], "A has no credit at all")
+		#expect(Swift.abs(credited0 - 100) < 1e-9, "A \(credited0)")
+		let credited1 = try #require(credit["B"], "B has no credit at all")
+		#expect(Swift.abs(credited1 - 50) < 1e-9, "B \(credited1)")
 		// C was touched in both converting journeys and opened neither, so it is
 		// measured at zero rather than missing.
 		let c = try #require(credit["C"])
@@ -107,8 +109,10 @@ struct HeuristicAttributionTests {
 	@Test("Last touch credits the channel that closed it")
 	func lastTouch() throws {
 		let credit = try Self.credit(.lastTouch)
-		#expect(Swift.abs((credit["B"] ?? 0) - 100) < 1e-9, "B \(credit["B"] ?? 0)")
-		#expect(Swift.abs((credit["C"] ?? 0) - 50) < 1e-9, "C \(credit["C"] ?? 0)")
+		let credited0 = try #require(credit["B"], "B has no credit at all")
+		#expect(Swift.abs(credited0 - 100) < 1e-9, "B \(credited0)")
+		let credited1 = try #require(credit["C"], "C has no credit at all")
+		#expect(Swift.abs(credited1 - 50) < 1e-9, "C \(credited1)")
 		let a = try #require(credit["A"])
 		#expect(Swift.abs(a) < 1e-12, "A closed nothing, so it is zero, not absent — got \(a)")
 	}
@@ -117,9 +121,12 @@ struct HeuristicAttributionTests {
 	func linear() throws {
 		// Journey 1 has four touches at 25 each and B appears in two of them.
 		let credit = try Self.credit(.linear)
-		#expect(Swift.abs((credit["A"] ?? 0) - 25) < 1e-9, "A \(credit["A"] ?? 0)")
-		#expect(Swift.abs((credit["B"] ?? 0) - 75) < 1e-9, "B \(credit["B"] ?? 0)")
-		#expect(Swift.abs((credit["C"] ?? 0) - 50) < 1e-9, "C \(credit["C"] ?? 0)")
+		let credited0 = try #require(credit["A"], "A has no credit at all")
+		#expect(Swift.abs(credited0 - 25) < 1e-9, "A \(credited0)")
+		let credited1 = try #require(credit["B"], "B has no credit at all")
+		#expect(Swift.abs(credited1 - 75) < 1e-9, "B \(credited1)")
+		let credited2 = try #require(credit["C"], "C has no credit at all")
+		#expect(Swift.abs(credited2 - 50) < 1e-9, "C \(credited2)")
 	}
 
 	@Test("Position based gives the ends their weight and the middle what is left")
@@ -127,9 +134,12 @@ struct HeuristicAttributionTests {
 		// Journey 1: A 40, B 40 as the closer, and 20 shared by the two middle touches.
 		// Journey 3 has no middle, so 0.4/0.4 renormalises to an even split.
 		let credit = try Self.credit(.positionBased(first: 0.4, last: 0.4))
-		#expect(Swift.abs((credit["A"] ?? 0) - 40) < 1e-9, "A \(credit["A"] ?? 0)")
-		#expect(Swift.abs((credit["B"] ?? 0) - 75) < 1e-9, "B \(credit["B"] ?? 0)")
-		#expect(Swift.abs((credit["C"] ?? 0) - 35) < 1e-9, "C \(credit["C"] ?? 0)")
+		let credited0 = try #require(credit["A"], "A has no credit at all")
+		#expect(Swift.abs(credited0 - 40) < 1e-9, "A \(credited0)")
+		let credited1 = try #require(credit["B"], "B has no credit at all")
+		#expect(Swift.abs(credited1 - 75) < 1e-9, "B \(credited1)")
+		let credited2 = try #require(credit["C"], "C has no credit at all")
+		#expect(Swift.abs(credited2 - 35) < 1e-9, "C \(credited2)")
 	}
 
 	@Test("Time decay halves a touch's weight every half-life")
@@ -137,9 +147,12 @@ struct HeuristicAttributionTests {
 		// Journey 1's ages are 30, 20, 10 and 0 days against a ten-day half-life, so the
 		// raw weights are 1/8, 1/4, 1/2 and 1, normalised over 15/8.
 		let credit = try Self.credit(.timeDecay(halfLife: 10))
-		#expect(Swift.abs((credit["A"] ?? 0) - 6.666666666666667) < 1e-9, "A \(credit["A"] ?? 0)")
-		#expect(Swift.abs((credit["B"] ?? 0) - 85.71787973316069) < 1e-9, "B \(credit["B"] ?? 0)")
-		#expect(Swift.abs((credit["C"] ?? 0) - 57.61545360017266) < 1e-9, "C \(credit["C"] ?? 0)")
+		let credited0 = try #require(credit["A"], "A has no credit at all")
+		#expect(Swift.abs(credited0 - 6.666666666666667) < 1e-9, "A \(credited0)")
+		let credited1 = try #require(credit["B"], "B has no credit at all")
+		#expect(Swift.abs(credited1 - 85.71787973316069) < 1e-9, "B \(credited1)")
+		let credited2 = try #require(credit["C"], "C has no credit at all")
+		#expect(Swift.abs(credited2 - 57.61545360017266) < 1e-9, "C \(credited2)")
 	}
 
 	@Test("A single-touch journey gives that touch everything under every rule")
@@ -173,7 +186,8 @@ struct HeuristicAttributionTests {
 		let credit = try HeuristicAttribution.lastTouch.attribute(journeys: funnel)
 		let awareness = try #require(credit["Awareness"])
 		#expect(Swift.abs(awareness) < 1e-12, "last touch scores the opener at \(awareness)")
-		#expect(Swift.abs((credit["Close"] ?? 0) - 5) < 1e-9, "Close \(credit["Close"] ?? 0)")
+		let credited0 = try #require(credit["Close"], "Close has no credit at all")
+		#expect(Swift.abs(credited0 - 5) < 1e-9, "Close \(credited0)")
 
 		// First touch inverts the error rather than fixing it.
 		let opening = try HeuristicAttribution.firstTouch.attribute(journeys: funnel)

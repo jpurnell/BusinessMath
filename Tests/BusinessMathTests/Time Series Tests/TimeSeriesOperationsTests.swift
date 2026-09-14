@@ -17,16 +17,19 @@ struct TimeSeriesOperationsTests {
 	// MARK: - Map Tests
 
 	@Test("map transforms all values")
-	func mapTransform() {
+	func mapTransform() throws {
 		let periods = (1...3).map { Period.month(year: 2025, month: $0) }
 		let ts = TimeSeries(periods: periods, values: [100.0, 200.0, 300.0])
 
 		let doubled = ts.mapValues { $0 * 2.0 }
 
 		#expect(doubled.count == 3)
-		#expect(abs((doubled[periods[0]] ?? 0) - 200.0) < 1e-6)
-		#expect(abs((doubled[periods[1]] ?? 0) - 400.0) < 1e-6)
-		#expect(abs((doubled[periods[2]] ?? 0) - 600.0) < 1e-6)
+		let measured0 = try #require(doubled[periods[0]])
+		#expect(abs(measured0 - 200.0) < 1e-6)
+		let measured1 = try #require(doubled[periods[1]])
+		#expect(abs(measured1 - 400.0) < 1e-6)
+		let measured2 = try #require(doubled[periods[2]])
+		#expect(abs(measured2 - 600.0) < 1e-6)
 	}
 
 	@Test("map preserves periods and metadata")
@@ -45,16 +48,19 @@ struct TimeSeriesOperationsTests {
 	// MARK: - Filter Tests
 
 	@Test("filterValues keeps matching values")
-	func filterMatching() {
+	func filterMatching() throws {
 		let periods = (1...5).map { Period.month(year: 2025, month: $0) }
 		let ts = TimeSeries(periods: periods, values: [100.0, 200.0, 150.0, 300.0, 175.0])
 
 		let filtered = ts.filterValues { $0 > 150.0 }
 
 		#expect(filtered.count == 3)
-		#expect(abs((filtered[periods[1]] ?? 0) - 200.0) < 1e-6)
-		#expect(abs((filtered[periods[3]] ?? 0) - 300.0) < 1e-6)
-		#expect(abs((filtered[periods[4]] ?? 0) - 175.0) < 1e-6)
+		let measured0 = try #require(filtered[periods[1]])
+		#expect(abs(measured0 - 200.0) < 1e-6)
+		let measured1 = try #require(filtered[periods[3]])
+		#expect(abs(measured1 - 300.0) < 1e-6)
+		let measured2 = try #require(filtered[periods[4]])
+		#expect(abs(measured2 - 175.0) < 1e-6)
 	}
 
 	@Test("filterValues preserves metadata")
@@ -71,7 +77,7 @@ struct TimeSeriesOperationsTests {
 	// MARK: - Zip Tests
 
 	@Test("zip combines two time series with matching periods")
-	func zipMatching() {
+	func zipMatching() throws {
 		let periods = (1...3).map { Period.month(year: 2025, month: $0) }
 		let ts1 = TimeSeries(periods: periods, values: [100.0, 200.0, 300.0])
 		let ts2 = TimeSeries(periods: periods, values: [10.0, 20.0, 30.0])
@@ -79,13 +85,16 @@ struct TimeSeriesOperationsTests {
 		let combined = ts1.zip(with: ts2) { $0 + $1 }
 
 		#expect(combined.count == 3)
-		#expect(abs((combined[periods[0]] ?? 0) - 110.0) < 1e-6)
-		#expect(abs((combined[periods[1]] ?? 0) - 220.0) < 1e-6)
-		#expect(abs((combined[periods[2]] ?? 0) - 330.0) < 1e-6)
+		let measured0 = try #require(combined[periods[0]])
+		#expect(abs(measured0 - 110.0) < 1e-6)
+		let measured1 = try #require(combined[periods[1]])
+		#expect(abs(measured1 - 220.0) < 1e-6)
+		let measured2 = try #require(combined[periods[2]])
+		#expect(abs(measured2 - 330.0) < 1e-6)
 	}
 
 	@Test("zip handles misaligned periods by keeping intersection")
-	func zipMisaligned() {
+	func zipMisaligned() throws {
 		let periods1 = (1...4).map { Period.month(year: 2025, month: $0) }
 		let periods2 = (2...5).map { Period.month(year: 2025, month: $0) }
 
@@ -96,9 +105,12 @@ struct TimeSeriesOperationsTests {
 
 		// Should only include Feb, Mar, Apr (periods in both)
 		#expect(combined.count == 3)
-		#expect(abs((combined[Period.month(year: 2025, month: 2)] ?? 0) - 220.0) < 1e-6)  // 200 + 20
-		#expect(abs((combined[Period.month(year: 2025, month: 3)] ?? 0) - 330.0) < 1e-6)  // 300 + 30
-		#expect(abs((combined[Period.month(year: 2025, month: 4)] ?? 0) - 440.0) < 1e-6)  // 400 + 40
+		let measured0 = try #require(combined[Period.month(year: 2025, month: 2)])
+		#expect(abs(measured0 - 220.0) < 1e-6)  // 200 + 20
+		let measured1 = try #require(combined[Period.month(year: 2025, month: 3)])
+		#expect(abs(measured1 - 330.0) < 1e-6)  // 300 + 30
+		let measured2 = try #require(combined[Period.month(year: 2025, month: 4)])
+		#expect(abs(measured2 - 440.0) < 1e-6)  // 400 + 40
 	}
 
 	@Test("zip with empty series returns empty")
@@ -115,7 +127,7 @@ struct TimeSeriesOperationsTests {
 	// MARK: - Fill Forward Tests
 
 	@Test("fillForward propagates last known value")
-	func fillForwardPropagation() {
+	func fillForwardPropagation() throws {
 		let jan = Period.month(year: 2025, month: 1)
 		let feb = Period.month(year: 2025, month: 2)
 		let mar = Period.month(year: 2025, month: 3)
@@ -131,14 +143,18 @@ struct TimeSeriesOperationsTests {
 		let sparse = TimeSeries(data: data)
 		let filled = sparse.fillForward(over: allPeriods)
 
-		#expect(abs((filled[jan] ?? 0) - 100.0) < 1e-6)
-		#expect(abs((filled[feb] ?? 0) - 100.0) < 1e-6)  // Forward filled from Jan
-		#expect(abs((filled[mar] ?? 0) - 300.0) < 1e-6)
-		#expect(abs((filled[apr] ?? 0) - 300.0) < 1e-6)  // Forward filled from Mar
+		let measured0 = try #require(filled[jan])
+		#expect(abs(measured0 - 100.0) < 1e-6)
+		let measured1 = try #require(filled[feb])
+		#expect(abs(measured1 - 100.0) < 1e-6)  // Forward filled from Jan
+		let measured2 = try #require(filled[mar])
+		#expect(abs(measured2 - 300.0) < 1e-6)
+		let measured3 = try #require(filled[apr])
+		#expect(abs(measured3 - 300.0) < 1e-6)  // Forward filled from Mar
 	}
 
 	@Test("fillForward with no initial value leaves gaps")
-	func fillForwardNoInitial() {
+	func fillForwardNoInitial() throws {
 		let jan = Period.month(year: 2025, month: 1)
 		let feb = Period.month(year: 2025, month: 2)
 		let mar = Period.month(year: 2025, month: 3)
@@ -153,14 +169,16 @@ struct TimeSeriesOperationsTests {
 		let filled = sparse.fillForward(over: allPeriods)
 
 		#expect(filled[jan] == nil)  // No value to fill from
-		#expect(abs((filled[feb] ?? 0) - 200.0) < 1e-6)
-		#expect(abs((filled[mar] ?? 0) - 300.0) < 1e-6)
+		let measured0 = try #require(filled[feb])
+		#expect(abs(measured0 - 200.0) < 1e-6)
+		let measured1 = try #require(filled[mar])
+		#expect(abs(measured1 - 300.0) < 1e-6)
 	}
 
 	// MARK: - Fill Backward Tests
 
 	@Test("fillBackward propagates next known value")
-	func fillBackwardPropagation() {
+	func fillBackwardPropagation() throws {
 		let jan = Period.month(year: 2025, month: 1)
 		let feb = Period.month(year: 2025, month: 2)
 		let mar = Period.month(year: 2025, month: 3)
@@ -176,16 +194,20 @@ struct TimeSeriesOperationsTests {
 		let sparse = TimeSeries(data: data)
 		let filled = sparse.fillBackward(over: allPeriods)
 
-		#expect(abs((filled[jan] ?? 0) - 200.0) < 1e-6)  // Backward filled from Feb
-		#expect(abs((filled[feb] ?? 0) - 200.0) < 1e-6)
-		#expect(abs((filled[mar] ?? 0) - 400.0) < 1e-6)  // Backward filled from Apr
-		#expect(abs((filled[apr] ?? 0) - 400.0) < 1e-6)
+		let measured0 = try #require(filled[jan])
+		#expect(abs(measured0 - 200.0) < 1e-6)  // Backward filled from Feb
+		let measured1 = try #require(filled[feb])
+		#expect(abs(measured1 - 200.0) < 1e-6)
+		let measured2 = try #require(filled[mar])
+		#expect(abs(measured2 - 400.0) < 1e-6)  // Backward filled from Apr
+		let measured3 = try #require(filled[apr])
+		#expect(abs(measured3 - 400.0) < 1e-6)
 	}
 
 	// MARK: - Fill Missing Tests
 
 	@Test("fillMissing replaces gaps with constant")
-	func fillMissingConstant() {
+	func fillMissingConstant() throws {
 		let jan = Period.month(year: 2025, month: 1)
 		let feb = Period.month(year: 2025, month: 2)
 		let mar = Period.month(year: 2025, month: 3)
@@ -199,9 +221,12 @@ struct TimeSeriesOperationsTests {
 		let sparse = TimeSeries(data: data)
 		let filled = sparse.fillMissing(with: 0.0, over: allPeriods)
 
-		#expect(abs((filled[jan] ?? 0) - 100.0) < 1e-6)
-		#expect(abs((filled[feb] ?? 0) - 0.0) < 1e-6)  // Filled with constant
-		#expect(abs((filled[mar] ?? 0) - 300.0) < 1e-6)
+		let measured0 = try #require(filled[jan])
+		#expect(abs(measured0 - 100.0) < 1e-6)
+		let measured1 = try #require(filled[feb])
+		#expect(abs(measured1 - 0.0) < 1e-6)  // Filled with constant
+		let measured2 = try #require(filled[mar])
+		#expect(abs(measured2 - 300.0) < 1e-6)
 	}
 
 	// MARK: - Interpolate Tests
@@ -222,10 +247,12 @@ struct TimeSeriesOperationsTests {
 		let sparse = TimeSeries(data: data)
 		let interpolated = sparse.interpolate(over: allPeriods)
 
-		#expect(abs((interpolated[jan] ?? 0) - 100.0) < 1e-6)
+		let measured0 = try #require(interpolated[jan])
+		#expect(abs(measured0 - 100.0) < 1e-6)
 		#expect(abs(try #require(interpolated[feb]) - 200.0) < tolerance)  // Linear: 100 + (400-100)/3 * 1
 		#expect(abs(try #require(interpolated[mar]) - 300.0) < tolerance)  // Linear: 100 + (400-100)/3 * 2
-		#expect(abs((interpolated[apr] ?? 0) - 400.0) < 1e-6)
+		let measured1 = try #require(interpolated[apr])
+		#expect(abs(measured1 - 400.0) < 1e-6)
 	}
 
 	@Test("interpolate with no endpoints leaves gaps")
@@ -248,7 +275,7 @@ struct TimeSeriesOperationsTests {
 	// MARK: - Aggregate Tests
 
 	@Test("aggregate monthly to quarterly using sum")
-	func aggregateMonthlyToQuarterlySum() {
+	func aggregateMonthlyToQuarterlySum() throws {
 		let jan = Period.month(year: 2025, month: 1)
 		let feb = Period.month(year: 2025, month: 2)
 		let mar = Period.month(year: 2025, month: 3)
@@ -265,8 +292,10 @@ struct TimeSeriesOperationsTests {
 		let q2 = Period.quarter(year: 2025, quarter: 2)
 
 		#expect(quarterly.count == 2)
-		#expect(abs((quarterly[q1] ?? 0) - 600.0) < 1e-6)  // Jan + Feb + Mar
-		#expect(abs((quarterly[q2] ?? 0) - 400.0) < 1e-6)  // Apr only (incomplete quarter)
+		let measured0 = try #require(quarterly[q1])
+		#expect(abs(measured0 - 600.0) < 1e-6)  // Jan + Feb + Mar
+		let measured1 = try #require(quarterly[q2])
+		#expect(abs(measured1 - 400.0) < 1e-6)  // Apr only (incomplete quarter)
 	}
 
 	@Test("aggregate monthly to quarterly using average")
@@ -289,7 +318,7 @@ struct TimeSeriesOperationsTests {
 	}
 
 	@Test("aggregate monthly to annual")
-	func aggregateMonthlyToAnnual() {
+	func aggregateMonthlyToAnnual() throws {
 		let periods = (1...12).map { Period.month(year: 2025, month: $0) }
 		let values = Array(repeating: 100.0, count: 12)
 
@@ -299,11 +328,12 @@ struct TimeSeriesOperationsTests {
 		let year2025 = Period.year(2025)
 
 		#expect(annual.count == 1)
-		#expect(abs((annual[year2025] ?? 0) - 1200.0) < 1e-6)  // 12 * 100
+		let measured0 = try #require(annual[year2025])
+		#expect(abs(measured0 - 1200.0) < 1e-6)  // 12 * 100
 	}
 
 	@Test("aggregate using first method")
-	func aggregateFirst() {
+	func aggregateFirst() throws {
 		let jan = Period.month(year: 2025, month: 1)
 		let feb = Period.month(year: 2025, month: 2)
 		let mar = Period.month(year: 2025, month: 3)
@@ -317,11 +347,12 @@ struct TimeSeriesOperationsTests {
 
 		let q1 = Period.quarter(year: 2025, quarter: 1)
 
-		#expect(abs((quarterly[q1] ?? 0) - 100.0) < 1e-6)  // First value in Q1
+		let measured0 = try #require(quarterly[q1])
+		#expect(abs(measured0 - 100.0) < 1e-6)  // First value in Q1
 	}
 
 	@Test("aggregate using last method")
-	func aggregateLast() {
+	func aggregateLast() throws {
 		let jan = Period.month(year: 2025, month: 1)
 		let feb = Period.month(year: 2025, month: 2)
 		let mar = Period.month(year: 2025, month: 3)
@@ -335,11 +366,12 @@ struct TimeSeriesOperationsTests {
 
 		let q1 = Period.quarter(year: 2025, quarter: 1)
 
-		#expect(abs((quarterly[q1] ?? 0) - 300.0) < 1e-6)  // Last value in Q1
+		let measured0 = try #require(quarterly[q1])
+		#expect(abs(measured0 - 300.0) < 1e-6)  // Last value in Q1
 	}
 
 	@Test("aggregate using min method")
-	func aggregateMin() {
+	func aggregateMin() throws {
 		let jan = Period.month(year: 2025, month: 1)
 		let feb = Period.month(year: 2025, month: 2)
 		let mar = Period.month(year: 2025, month: 3)
@@ -353,11 +385,12 @@ struct TimeSeriesOperationsTests {
 
 		let q1 = Period.quarter(year: 2025, quarter: 1)
 
-		#expect(abs((quarterly[q1] ?? 0) - 50.0) < 1e-6)  // Min value in Q1
+		let measured0 = try #require(quarterly[q1])
+		#expect(abs(measured0 - 50.0) < 1e-6)  // Min value in Q1
 	}
 
 	@Test("aggregate using max method")
-	func aggregateMax() {
+	func aggregateMax() throws {
 		let jan = Period.month(year: 2025, month: 1)
 		let feb = Period.month(year: 2025, month: 2)
 		let mar = Period.month(year: 2025, month: 3)
@@ -371,7 +404,8 @@ struct TimeSeriesOperationsTests {
 
 		let q1 = Period.quarter(year: 2025, quarter: 1)
 
-		#expect(abs((quarterly[q1] ?? 0) - 300.0) < 1e-6)  // Max value in Q1
+		let measured0 = try #require(quarterly[q1])
+		#expect(abs(measured0 - 300.0) < 1e-6)  // Max value in Q1
 	}
 
 	// MARK: - Edge Cases

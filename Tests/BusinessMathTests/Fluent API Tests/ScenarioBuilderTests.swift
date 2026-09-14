@@ -26,7 +26,7 @@ struct ScenarioBuilderTests {
     // MARK: - Basic Scenario Creation
 
     @Test("Baseline scenario creation")
-    func baselineScenario() {
+    func baselineScenario() throws {
         let scenario = Baseline {
             revenue(1_000_000)
             growth(0.10)
@@ -34,11 +34,12 @@ struct ScenarioBuilderTests {
 
         #expect(scenario.name == "Baseline")
         #expect(scenario.parameters["revenue"] == 1_000_000)
-        #expect(abs((scenario.parameters["growth"] ?? 0) - 0.10) < 1e-6)
+        let measured0 = try #require(scenario.parameters["growth"])
+        #expect(abs(measured0 - 0.10) < 1e-6)
     }
 
     @Test("Pessimistic scenario creation")
-    func pessimisticScenario() {
+    func pessimisticScenario() throws {
         let scenario = Pessimistic {
             revenue(800_000)
             growth(0.05)
@@ -46,11 +47,12 @@ struct ScenarioBuilderTests {
 
         #expect(scenario.name == "Pessimistic")
         #expect(scenario.parameters["revenue"] == 800_000)
-        #expect(abs((scenario.parameters["growth"] ?? 0) - 0.05) < 1e-6)
+        let measured0 = try #require(scenario.parameters["growth"])
+        #expect(abs(measured0 - 0.05) < 1e-6)
     }
 
     @Test("Optimistic scenario creation")
-    func optimisticScenario() {
+    func optimisticScenario() throws {
         let scenario = Optimistic {
             revenue(1_200_000)
             growth(0.15)
@@ -58,11 +60,12 @@ struct ScenarioBuilderTests {
 
         #expect(scenario.name == "Optimistic")
         #expect(scenario.parameters["revenue"] == 1_200_000)
-        #expect(abs((scenario.parameters["growth"] ?? 0) - 0.15) < 1e-6)
+        let measured0 = try #require(scenario.parameters["growth"])
+        #expect(abs(measured0 - 0.15) < 1e-6)
     }
 
     @Test("Custom named scenario")
-    func customNamedScenario() {
+    func customNamedScenario() throws {
         let scenario = ScenarioNamed("Conservative Growth") {
             revenue(900_000)
             growth(0.07)
@@ -71,7 +74,8 @@ struct ScenarioBuilderTests {
 
         #expect(scenario.name == "Conservative Growth")
         #expect(scenario.parameters["revenue"] == 900_000)
-        #expect(abs((scenario.parameters["growth"] ?? 0) - 0.07) < 1e-6)
+        let measured0 = try #require(scenario.parameters["growth"])
+        #expect(abs(measured0 - 0.07) < 1e-6)
         #expect(scenario.parameters["costs"] == 600_000)
     }
 
@@ -89,7 +93,7 @@ struct ScenarioBuilderTests {
     // MARK: - Parameter Setting
 
     @Test("All parameter types")
-    func allParameterTypes() {
+    func allParameterTypes() throws {
         let scenario = Baseline {
             revenue(1_000_000)
             growth(0.10)
@@ -99,71 +103,83 @@ struct ScenarioBuilderTests {
         }
 
         #expect(scenario.parameters["revenue"] == 1_000_000)
-        #expect(abs((scenario.parameters["growth"] ?? 0) - 0.10) < 1e-6)
+        let measured0 = try #require(scenario.parameters["growth"])
+        #expect(abs(measured0 - 0.10) < 1e-6)
         #expect(scenario.parameters["costs"] == 700_000)
-        #expect(abs((scenario.parameters["margin"] ?? 0) - 0.30) < 1e-6)
-        #expect(abs((scenario.parameters["discountRate"] ?? 0) - 0.08) < 1e-6)
+        let measured1 = try #require(scenario.parameters["margin"])
+        #expect(abs(measured1 - 0.30) < 1e-6)
+        let measured2 = try #require(scenario.parameters["discountRate"])
+        #expect(abs(measured2 - 0.08) < 1e-6)
     }
 
     @Test("Custom parameter")
-    func customParameter() {
+    func customParameter() throws {
         let scenario = Baseline {
             parameter("churnRate", value: 0.05)
             parameter("customerCount", value: 10_000)
             parameter("averageRevenue", value: 99.99)
         }
 
-        #expect(abs((scenario.parameters["churnRate"] ?? 0) - 0.05) < 1e-6)
+        let measured0 = try #require(scenario.parameters["churnRate"])
+        #expect(abs(measured0 - 0.05) < 1e-6)
         #expect(scenario.parameters["customerCount"] == 10_000)
-        #expect(abs((scenario.parameters["averageRevenue"] ?? 0) - 99.99) < 1e-6)
+        let measured1 = try #require(scenario.parameters["averageRevenue"])
+        #expect(abs(measured1 - 99.99) < 1e-6)
     }
 
     // MARK: - Adjustments
 
     @Test("Revenue adjustments")
-    func revenueAdjustments() {
+    func revenueAdjustments() throws {
         let scenario = Pessimistic {
             adjustRevenue(by: -0.20)
         }
 
-        #expect(abs((scenario.adjustments["revenue"] ?? 0) - (-0.20)) < 1e-6)
+        let measured0 = try #require(scenario.adjustments["revenue"])
+        #expect(abs(measured0 - (-0.20)) < 1e-6)
     }
 
     @Test("Cost adjustments")
-    func costAdjustments() {
+    func costAdjustments() throws {
         let scenario = Pessimistic {
             adjustCosts(by: 0.15)
         }
 
-        #expect(abs((scenario.adjustments["costs"] ?? 0) - 0.15) < 1e-6)
+        let measured0 = try #require(scenario.adjustments["costs"])
+        #expect(abs(measured0 - 0.15) < 1e-6)
     }
 
     @Test("Multiple adjustments")
-    func multipleAdjustments() {
+    func multipleAdjustments() throws {
         let scenario = Pessimistic {
             adjustRevenue(by: -0.20)
             adjustCosts(by: 0.10)
             adjustGrowth(by: -0.30)
         }
 
-        #expect(abs((scenario.adjustments["revenue"] ?? 0) - (-0.20)) < 1e-6)
-        #expect(abs((scenario.adjustments["costs"] ?? 0) - 0.10) < 1e-6)
-        #expect(abs((scenario.adjustments["growth"] ?? 0) - (-0.30)) < 1e-6)
+        let measured0 = try #require(scenario.adjustments["revenue"])
+        #expect(abs(measured0 - (-0.20)) < 1e-6)
+        let measured1 = try #require(scenario.adjustments["costs"])
+        #expect(abs(measured1 - 0.10) < 1e-6)
+        let measured2 = try #require(scenario.adjustments["growth"])
+        #expect(abs(measured2 - (-0.30)) < 1e-6)
     }
 
     @Test("Custom parameter adjustments")
-    func customParameterAdjustments() {
+    func customParameterAdjustments() throws {
         let scenario = Optimistic {
             adjust("customerAcquisition", by: 0.25)
             adjust("conversionRate", by: 0.10)
         }
 
-        #expect(abs((scenario.adjustments["customerAcquisition"] ?? 0) - 0.25) < 1e-6)
-        #expect(abs((scenario.adjustments["conversionRate"] ?? 0) - 0.10) < 1e-6)
+        let measured0 = try #require(scenario.adjustments["customerAcquisition"])
+        #expect(abs(measured0 - 0.25) < 1e-6)
+        let measured1 = try #require(scenario.adjustments["conversionRate"])
+        #expect(abs(measured1 - 0.10) < 1e-6)
     }
 
     @Test("Mixed parameters and adjustments")
-    func mixedParametersAndAdjustments() {
+    func mixedParametersAndAdjustments() throws {
         let scenario = Baseline {
             revenue(1_000_000)
             adjustCosts(by: -0.05)
@@ -172,9 +188,12 @@ struct ScenarioBuilderTests {
         }
 
         #expect(scenario.parameters["revenue"] == 1_000_000)
-        #expect(abs((scenario.parameters["growth"] ?? 0) - 0.10) < 1e-6)
-        #expect(abs((scenario.adjustments["costs"] ?? 0) - (-0.05)) < 1e-6)
-        #expect(abs((scenario.adjustments["revenue"] ?? 0) - 0.15) < 1e-6)
+        let measured0 = try #require(scenario.parameters["growth"])
+        #expect(abs(measured0 - 0.10) < 1e-6)
+        let measured1 = try #require(scenario.adjustments["costs"])
+        #expect(abs(measured1 - (-0.05)) < 1e-6)
+        let measured2 = try #require(scenario.adjustments["revenue"])
+        #expect(abs(measured2 - 0.15) < 1e-6)
     }
 
     // MARK: - ScenarioSet Builder
@@ -287,13 +306,14 @@ struct ScenarioBuilderTests {
     // MARK: - Probability and Description
 
     @Test("Scenario with probability")
-    func scenarioWithProbability() {
+    func scenarioWithProbability() throws {
         let scenario = Baseline {
             revenue(1_000_000)
         }
         .withProbability(0.50)
 
-        #expect(abs((scenario.probability ?? 0) - 0.50) < 1e-6)
+        let measured0 = try #require(scenario.probability)
+        #expect(abs(measured0 - 0.50) < 1e-6)
     }
 
     @Test("Scenario with description")
@@ -307,7 +327,7 @@ struct ScenarioBuilderTests {
     }
 
     @Test("Scenario with probability and description")
-    func scenarioWithProbabilityAndDescription() {
+    func scenarioWithProbabilityAndDescription() throws {
         let scenario = Pessimistic {
             revenue(800_000)
             growth(0.05)
@@ -315,7 +335,8 @@ struct ScenarioBuilderTests {
         .withProbability(0.25)
         .withDescription("Economic downturn scenario")
 
-        #expect(abs((scenario.probability ?? 0) - 0.25) < 1e-6)
+        let measured0 = try #require(scenario.probability)
+        #expect(abs(measured0 - 0.25) < 1e-6)
         #expect(scenario.description == "Economic downturn scenario")
     }
 
@@ -472,8 +493,10 @@ struct ScenarioBuilderTests {
 
         // Check baseline values
         #expect(baseline.parameters["revenue"] == 1_000_000)
-        #expect(abs((baseline.parameters["growth"] ?? 0) - 0.10) < 1e-6)
-        #expect(abs((baseline.probability ?? 0) - 0.50) < 1e-6)
+        let measured0 = try #require(baseline.parameters["growth"])
+        #expect(abs(measured0 - 0.10) < 1e-6)
+        let measured1 = try #require(baseline.probability)
+        #expect(abs(measured1 - 0.50) < 1e-6)
     }
 
     @Test("Standard three-way with custom variability")
@@ -515,7 +538,8 @@ struct ScenarioBuilderTests {
         #expect(abs(totalProb - 1.0) < 0.001)
 
         // Check baseline is most probable
-        #expect(abs((baseline.probability ?? 0) - 0.40) < 1e-6)
+        let measured0 = try #require(baseline.probability)
+        #expect(abs(measured0 - 0.40) < 1e-6)
     }
 
     @Test("Standard five-way with custom variability")
@@ -540,25 +564,29 @@ struct ScenarioBuilderTests {
     // MARK: - Edge Cases
 
     @Test("Extreme positive adjustments")
-    func extremePositiveAdjustments() {
+    func extremePositiveAdjustments() throws {
         let scenario = Optimistic {
             adjustRevenue(by: 2.0) // 200% increase
             adjustGrowth(by: 1.5)  // 150% increase
         }
 
-        #expect(abs((scenario.adjustments["revenue"] ?? 0) - 2.0) < 1e-6)
-        #expect(abs((scenario.adjustments["growth"] ?? 0) - 1.5) < 1e-6)
+        let measured0 = try #require(scenario.adjustments["revenue"])
+        #expect(abs(measured0 - 2.0) < 1e-6)
+        let measured1 = try #require(scenario.adjustments["growth"])
+        #expect(abs(measured1 - 1.5) < 1e-6)
     }
 
     @Test("Extreme negative adjustments")
-    func extremeNegativeAdjustments() {
+    func extremeNegativeAdjustments() throws {
         let scenario = Pessimistic {
             adjustRevenue(by: -0.90) // 90% decrease
             adjustCosts(by: -0.50)    // 50% decrease
         }
 
-        #expect(abs((scenario.adjustments["revenue"] ?? 0) - (-0.90)) < 1e-6)
-        #expect(abs((scenario.adjustments["costs"] ?? 0) - (-0.50)) < 1e-6)
+        let measured0 = try #require(scenario.adjustments["revenue"])
+        #expect(abs(measured0 - (-0.90)) < 1e-6)
+        let measured1 = try #require(scenario.adjustments["costs"])
+        #expect(abs(measured1 - (-0.50)) < 1e-6)
     }
 
     @Test("Zero values")
@@ -575,14 +603,15 @@ struct ScenarioBuilderTests {
     }
 
     @Test("Negative parameter values")
-    func negativeParameterValues() {
+    func negativeParameterValues() throws {
         let scenario = Baseline {
             revenue(-100_000) // Loss scenario
             growth(-0.05)      // Negative growth
         }
 
         #expect(scenario.parameters["revenue"] == -100_000)
-        #expect(abs((scenario.parameters["growth"] ?? 0) - (-0.05)) < 1e-6)
+        let measured0 = try #require(scenario.parameters["growth"])
+        #expect(abs(measured0 - (-0.05)) < 1e-6)
     }
 
     @Test("Very large numbers")
@@ -597,14 +626,16 @@ struct ScenarioBuilderTests {
     }
 
     @Test("Very small fractional values")
-    func verySmallFractionalValues() {
+    func verySmallFractionalValues() throws {
         let scenario = Baseline {
             growth(0.0001)  // 0.01%
             margin(0.0005)  // 0.05%
         }
 
-        #expect(abs((scenario.parameters["growth"] ?? 0) - 0.0001) < 1e-6)
-        #expect(abs((scenario.parameters["margin"] ?? 0) - 0.0005) < 1e-6)
+        let measured0 = try #require(scenario.parameters["growth"])
+        #expect(abs(measured0 - 0.0001) < 1e-6)
+        let measured1 = try #require(scenario.parameters["margin"])
+        #expect(abs(measured1 - 0.0005) < 1e-6)
     }
 
     @Test("Probability sum validation in expected value")

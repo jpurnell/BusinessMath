@@ -154,26 +154,11 @@ struct RatioConvenienceFunctionsTests {
 				let q1 = periods[0]
 
 				// Verify all metrics are present and reasonable
-				guard let grossMargin = profitability.grossMargin[q1] else {
-						Issue.record("Gross margin should be present for Q1")
-						return
-				}
-				guard let netMargin = profitability.netMargin[q1] else {
-						Issue.record("Net margin should be present for Q1")
-						return
-				}
-				guard let roa = profitability.roa[q1] else {
-						Issue.record("ROA should be present for Q1")
-						return
-				}
-				guard let roe = profitability.roe[q1] else {
-						Issue.record("ROE should be present for Q1")
-						return
-				}
-				guard let roic = profitability.roic[q1] else {
-						Issue.record("ROIC should be present for Q1")
-						return
-				}
+				let grossMargin = try #require(profitability.grossMargin[q1], "Gross margin should be present for Q1")
+				let netMargin = try #require(profitability.netMargin[q1], "Net margin should be present for Q1")
+				let roa = try #require(profitability.roa[q1], "ROA should be present for Q1")
+				let roe = try #require(profitability.roe[q1], "ROE should be present for Q1")
+				let roic = try #require(profitability.roic[q1], "ROIC should be present for Q1")
 
 				#expect(grossMargin > 0.5) // 60% gross margin
 				#expect(grossMargin < 0.7)
@@ -212,30 +197,12 @@ struct RatioConvenienceFunctionsTests {
 				#expect(efficiency.cashConversionCycle?[q1]?.isFinite == true)
 
 				// Verify values are reasonable
-				guard let inventoryTurnover = efficiency.inventoryTurnover?[q1] else {
-						Issue.record("Inventory turnover should be present for Q1")
-						return
-				}
-				guard let receivablesTurnover = efficiency.receivablesTurnover?[q1] else {
-						Issue.record("Receivables turnover should be present for Q1")
-						return
-				}
-				guard let dso = efficiency.daysSalesOutstanding?[q1] else {
-						Issue.record("Days sales outstanding should be present for Q1")
-						return
-				}
-				guard let dio = efficiency.daysInventoryOutstanding?[q1] else {
-						Issue.record("Days inventory outstanding should be present for Q1")
-						return
-				}
-				guard let dpo = efficiency.daysPayableOutstanding?[q1] else {
-						Issue.record("Days payable outstanding should be present for Q1")
-						return
-				}
-				guard let ccc = efficiency.cashConversionCycle?[q1] else {
-						Issue.record("Cash conversion cycle should be present for Q1")
-						return
-				}
+				let inventoryTurnover = try #require(efficiency.inventoryTurnover?[q1], "Inventory turnover should be present for Q1")
+				let receivablesTurnover = try #require(efficiency.receivablesTurnover?[q1], "Receivables turnover should be present for Q1")
+				let dso = try #require(efficiency.daysSalesOutstanding?[q1], "Days sales outstanding should be present for Q1")
+				let dio = try #require(efficiency.daysInventoryOutstanding?[q1], "Days inventory outstanding should be present for Q1")
+				let dpo = try #require(efficiency.daysPayableOutstanding?[q1], "Days payable outstanding should be present for Q1")
+				let ccc = try #require(efficiency.cashConversionCycle?[q1], "Cash conversion cycle should be present for Q1")
 
 				#expect(inventoryTurnover > 0.0)
 				#expect(receivablesTurnover > 0.0)
@@ -257,22 +224,10 @@ struct RatioConvenienceFunctionsTests {
 				let q1 = periods[0]
 
 				// Verify all metrics are present and reasonable
-				guard let currentRatio = liquidity.currentRatio[q1] else {
-						Issue.record("Current ratio should be present for Q1")
-						return
-				}
-				guard let quickRatio = liquidity.quickRatio[q1] else {
-						Issue.record("Quick ratio should be present for Q1")
-						return
-				}
-				guard let cashRatio = liquidity.cashRatio[q1] else {
-						Issue.record("Cash ratio should be present for Q1")
-						return
-				}
-				guard let workingCapital = liquidity.workingCapital[q1] else {
-						Issue.record("Working capital should be present for Q1")
-						return
-				}
+				let currentRatio = try #require(liquidity.currentRatio[q1], "Current ratio should be present for Q1")
+				let quickRatio = try #require(liquidity.quickRatio[q1], "Quick ratio should be present for Q1")
+				let cashRatio = try #require(liquidity.cashRatio[q1], "Cash ratio should be present for Q1")
+				let workingCapital = try #require(liquidity.workingCapital[q1], "Working capital should be present for Q1")
 
 				#expect(currentRatio > 1.0) // Should be > 1 for healthy company
 				#expect(quickRatio > 0.0)
@@ -298,18 +253,9 @@ struct RatioConvenienceFunctionsTests {
 				let q1 = periods[0]
 
 				// Leverage ratios are always available
-				guard let debtToEquity = solvency.debtToEquity[q1] else {
-						Issue.record("Debt-to-equity should be present for Q1")
-						return
-				}
-				guard let debtToAssets = solvency.debtToAssets[q1] else {
-						Issue.record("Debt-to-assets should be present for Q1")
-						return
-				}
-				guard let equityRatio = solvency.equityRatio[q1] else {
-						Issue.record("Equity ratio should be present for Q1")
-						return
-				}
+				let debtToEquity = try #require(solvency.debtToEquity[q1], "Debt-to-equity should be present for Q1")
+				let debtToAssets = try #require(solvency.debtToAssets[q1], "Debt-to-assets should be present for Q1")
+				let equityRatio = try #require(solvency.equityRatio[q1], "Equity ratio should be present for Q1")
 
 				#expect(debtToEquity > 0.0)
 				#expect(debtToAssets > 0.0)
@@ -319,10 +265,7 @@ struct RatioConvenienceFunctionsTests {
 
 				// With our test data, interest coverage should be present
 				#expect(solvency.interestCoverage?[q1]?.isFinite == true)
-				guard let interestCoverage = solvency.interestCoverage?[q1] else {
-						Issue.record("Interest coverage should be present for Q1")
-						return
-				}
+				let interestCoverage = try #require(solvency.interestCoverage?[q1], "Interest coverage should be present for Q1")
 				#expect(interestCoverage > 1.0) // Should cover interest
 
 				// Debt-to-assets + equity ratio should equal 1.0
@@ -351,10 +294,7 @@ struct RatioConvenienceFunctionsTests {
 
 				// DSCR should be calculated
 				#expect(solvency.debtServiceCoverage?[q1]?.isFinite == true)
-				guard let dscr = solvency.debtServiceCoverage?[q1] else {
-						Issue.record("DSCR should be present for Q1")
-						return
-				}
+				let dscr = try #require(solvency.debtServiceCoverage?[q1], "DSCR should be present for Q1")
 				#expect(dscr > 1.0) // Should cover debt service
 		}
 

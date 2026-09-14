@@ -4,8 +4,8 @@
 CI-green.** The work queue is **`project/plans/TEST_REVIEW_ROADMAP.md`** — read that before
 anything else; this file is the state and the traps, that file is the plan.
 
-**Phase A is complete, and B1 with it.** The next piece of work is **B2**, and it needs no
-decisions.
+**Phases A, B and E are complete.** D is partly done. The next piece of work is **C**, and it
+needs a decision from Justin — see §2.
 
 ## State
 
@@ -54,7 +54,30 @@ fixed along the way.
 Earlier in the session, Phase 1 of `REVIEW_simulation_tests.md` and the GPU error-parity work also
 shipped into the same tag.
 
-### Phase A, since the tag — all six done
+### Phases A, B and E — complete; D partial
+
+| Phase | Commit(s) | Outcome |
+|---|---|---|
+| **A** | `43aaba32` `f49472c8` `03220a61` `e3f69aa2` `06d997ad` | Six items; **two library defects** (L18, the day-count non-convention), two false doc formulas, one review claim refuted |
+| **B** | `aa61d6e4` `b4bd8761` | Four items; **L19 found**; a cut-validity suite where 14 of 16 tests never cut |
+| **E** | `e89457ea` | Six structural oracles, each holding where a band assertion cannot |
+| **D** | (with E and after) | Partial: D2 158/211, D1 27/52, D4 half, **D3 not started** |
+
+**Three new defects were filed across the night**, all recorded in the roadmap with measurements:
+
+- **L18 — every Gomory cut was infeasible by construction** (fixed). Emitted over tableau columns,
+  imposed over structural ones, so the cut read `0 ≤ -0.7071`: false at every point. It failed
+  *safe* — the infeasible re-solve discarded the round — so answers were always right and
+  `enableCuttingPlanes: true` simply bought nothing. Node count on the test problem: 3 → 1.
+- **L19 — a negative lower bound in an opaque closure is silently truncated to zero** (open,
+  recorded as `withKnownIssue`). `minimize x` s.t. `x ≥ -3` returns **0**, not -3, when the bound is
+  an `.inequality` closure; **-3** when it is a `.linearInequality`. `extractVariableShift` reads
+  the constraint list for bounds it can *recognise*, and a closure states nothing.
+- **The Sharpe inversion** (documented, not a defect). `Portfolio`'s default 3% *annual* risk-free
+  rate against *monthly* returns makes every excess return negative — and maximising a negative
+  Sharpe ratio prefers **more** risk, so the "optimum" is 100% of the single riskiest asset.
+
+### Phase A detail — all six done
 
 | | Item | Commit | What it turned out to be |
 |---|---|---|---|
@@ -90,47 +113,31 @@ Box-Muller" and **there isn't one**; the library's is the right target because i
 
 ---
 
-## 2. Next: B2, then the rest of Phase B
+## 2. Next: Phase C — and it needs your call first
 
-`TEST_REVIEW_ROADMAP.md` §5.2 is the order. Every item carries a **done when**, so no further
-decisions are needed to proceed.
+`TEST_REVIEW_ROADMAP.md` §5.2 is the order.
 
-**B1 is done.** Its answer was the first branch: 18 unknowns became evidence and **no solver defect
-was found**. Worst real constraint violation across the seven `.rounded()` sites is −5.07e-5 against
-a form that admitted 0.5; ten of the eleven optimizers genuinely converge. The one that does not —
-`GeneticAlgorithmTests.testGPUAcceleration` — is *right* not to: its config sets `generations: 10`,
-so the run finishes its budget, and finishing a budget is not converging.
+**Phase C is the one thing I stopped short of, on purpose.** Its four items are *gate rules*, and
+landing a rule means editing **`/Users/jpurnell/Dropbox/Computer/Development/Swift/Tools/quality-gate-swift`**
+— a different repository, shared with other projects, whose output is **blocking**. Adding a
+blocking rule unattended could break your gate and stop your next commit in a repo I was not asked
+to touch. The source is there and the work is tractable; it wants you awake.
 
-**Two things B1 taught that apply to the rest of Phase D's sweeps.** *Measure per site before
-choosing a bound* — bisecting showed only two of seven needed the loose tolerance, and one blanket
-value would have left five assertions 100,000× weaker than the code warrants. And *a vacuous
-assertion sometimes hides a correct answer the test is asking for wrongly*, not a defect: the honest
-fix at the GA site was a different assertion, not a stricter one.
+The four: **C1** `?? <literal>` in `#expect` (211 sites measured, not 225) · **C2** ambient
+calendar/clock in tests, **with the bracketing carve-out** or it flags nine correct tests in
+`WallClockAdoptionTests` · **C3** `#expect(true)` as a test's only assertion · **C4** fix the
+checker's nested-scope bug, which is why 18 `#expect(true) // checker workaround` markers exist and
+cannot be removed until it is fixed.
 
-**B2 — the 3 stale integer-programming assertions**, each of which names its own expectation in a
-comment and tests nothing.
+**D is partly swept, and the remainder is recorded per item in the roadmap** rather than left as a
+number. D2 is 158 of 211; D1 is 27 of 52; D4's `guard let` half is done and its fixture
+deduplication is not; **D3 is not started**.
 
-**Done when:** the assertions are written. All three capabilities have shipped, so they should
-pass; if one does not, that is the finding.
-
-**The 10 standing gate warnings are the same material**, and they name their own tests: a test
-*claims* an improvement but asserts `<=` or `>=`, which an unchanged implementation also satisfies.
-`noCombinationBeatsTheReportedScore`, `seasonalBeatsGrid`, `nonSeasonalBeatsGrid`,
-`testDuPontImprovementStrategies`, `testMultiStartImprovement`, `optimalBetterThanEqual`,
-`optimizerBeatsEqualWeights`, `cvarIsNeverBetterThanVaR`, `testCutsImproveDualBound`,
-`tighterConstraintsDontImprove`.
-
-**They are a different population from B1's 18, and closing B1 did not move them** — verified, the
-gate still reports 10. Same species of defect, different tests. Whoever takes them should treat
-them as their own sweep.
-
-**`testCutsImproveDualBound` is still open and now matters more.** It is one of the ten standing
-gate warnings, it lives in the cutting-plane code that L18 changed, and it is therefore asserting
-against a solver that behaves differently than when it was written. B1 did not touch it.
-
-Then B3 (`Phase1_CutValidityTests` — **note L18 changed the cut path underneath it**, and its
-`totalCutsGenerated > 0` assertions can now mean something), B4 (wall-clock assertions behind
-`.benchmarkOnly`). Then Phase C.
+**Why D was not finished by regex.** The shapes vary more than the roadmap's counts suggest, and a
+sweeping substitution across 24 files unattended risks silent damage. Each file was transformed and
+run before the next. One concrete trap worth keeping: **`try #require` cannot be inlined into
+`#expect`** — `#expect(abs(try #require(x) - v) < t)` fails to compile with "errors thrown from here
+are not handled", so every site needs a real binding and its enclosing function needs `throws`.
 
 ---
 

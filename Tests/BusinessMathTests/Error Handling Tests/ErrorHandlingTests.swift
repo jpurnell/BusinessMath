@@ -544,9 +544,12 @@ struct ErrorHandlingAdditionalTests {
 
 	@Test("Discount rate boundary values accepted (0 and 1 inclusive)")
 	func discountRate_BoundaryValuesAccepted() throws {
-		_ = try createInvestmentWithDiscountRate(0.0)
-		_ = try createInvestmentWithDiscountRate(1.0)
-	    #expect(true) // TEST-QUALITY: validates no-throw execution
+		// The test's name is "boundary values accepted", and `#expect(true)` accepted
+		// everything. Wrapping the calls makes the acceptance the assertion.
+		#expect(throws: Never.self) {
+			_ = try createInvestmentWithDiscountRate(0.0)
+			_ = try createInvestmentWithDiscountRate(1.0)
+		}
 	}
 
 	@Test("Initial cost of zero is invalid and reports value")
@@ -767,9 +770,10 @@ struct ErrorHandlingAdditionalTests {
 
 	@Test("Valid inputs do not throw")
 	func validInvestment_NoThrow() throws {
-		_ = try createInvestmentWithInitialCost(1_000.0)
-		_ = try createInvestmentWithDiscountRate(0.10)
-	    #expect(true) // TEST-QUALITY: validates no-throw execution
+		#expect(throws: Never.self) {
+			_ = try createInvestmentWithInitialCost(1_000.0)
+			_ = try createInvestmentWithDiscountRate(0.10)
+		}
 	}
 
 	fileprivate func createInvestmentWithDiscountRate(_ rate: Double) throws -> Investment {

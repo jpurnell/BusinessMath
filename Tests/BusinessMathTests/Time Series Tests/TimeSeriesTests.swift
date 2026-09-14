@@ -39,7 +39,7 @@ struct TimeSeriesTests {
 	// MARK: - Initialization from Arrays
 
 	@Test("Create time series from arrays")
-	func initFromArrays() {
+	func initFromArrays() throws {
 		let periods = [
 			Period.month(year: 2025, month: 1),
 			Period.month(year: 2025, month: 2),
@@ -50,9 +50,12 @@ struct TimeSeriesTests {
 		let ts = TimeSeries(periods: periods, values: values)
 
 		#expect(ts.count == 3)
-		#expect(abs((ts[periods[0]] ?? 0) - 100.0) < 1e-6)
-		#expect(abs((ts[periods[1]] ?? 0) - 200.0) < 1e-6)
-		#expect(abs((ts[periods[2]] ?? 0) - 300.0) < 1e-6)
+		let measured0 = try #require(ts[periods[0]])
+		#expect(abs(measured0 - 100.0) < 1e-6)
+		let measured1 = try #require(ts[periods[1]])
+		#expect(abs(measured1 - 200.0) < 1e-6)
+		let measured2 = try #require(ts[periods[2]])
+		#expect(abs(measured2 - 300.0) < 1e-6)
 	}
 
 	@Test("Create time series with metadata")
@@ -70,7 +73,7 @@ struct TimeSeriesTests {
 	// MARK: - Sub-Daily Period Integration
 
 	@Test("TimeSeries works with hourly data")
-	func timeSeriesWithHourlyData() {
+	func timeSeriesWithHourlyData() throws {
 		let hours = (0..<24).map { hour in
 			Period.hour(year: 2025, month: 1, day: 29, hour: hour)
 		}
@@ -78,11 +81,12 @@ struct TimeSeriesTests {
 
 		let timeSeries = TimeSeries(periods: hours, values: values)
 		#expect(timeSeries.count == 24)
-		#expect(abs((timeSeries[hours[12]] ?? 0) - 120.0) < 1e-6)
+		let measured0 = try #require(timeSeries[hours[12]])
+		#expect(abs(measured0 - 120.0) < 1e-6)
 	}
 
 	@Test("TimeSeries works with minute data")
-	func timeSeriesWithMinuteData() {
+	func timeSeriesWithMinuteData() throws {
 		let minutes = (0..<60).map { minute in
 			Period.minute(year: 2025, month: 1, day: 29, hour: 14, minute: minute)
 		}
@@ -90,11 +94,12 @@ struct TimeSeriesTests {
 
 		let timeSeries = TimeSeries(periods: minutes, values: values)
 		#expect(timeSeries.count == 60)
-		#expect(abs((timeSeries[minutes[30]] ?? 0) - 30.0) < 1e-6)
+		let measured0 = try #require(timeSeries[minutes[30]])
+		#expect(abs(measured0 - 30.0) < 1e-6)
 	}
 
 	@Test("TimeSeries works with second data")
-	func timeSeriesWithSecondData() {
+	func timeSeriesWithSecondData() throws {
 		let seconds = (0..<60).map { second in
 			Period.second(year: 2025, month: 1, day: 29, hour: 14, minute: 30, second: second)
 		}
@@ -102,11 +107,12 @@ struct TimeSeriesTests {
 
 		let timeSeries = TimeSeries(periods: seconds, values: values)
 		#expect(timeSeries.count == 60)
-		#expect(abs((timeSeries[seconds[45]] ?? 0) - 45.0) < 1e-6)
+		let measured0 = try #require(timeSeries[seconds[45]])
+		#expect(abs(measured0 - 45.0) < 1e-6)
 	}
 
 	@Test("TimeSeries works with millisecond data")
-	func timeSeriesWithMillisecondData() {
+	func timeSeriesWithMillisecondData() throws {
 		// Just test a subset (100 milliseconds) to avoid performance issues
 		let milliseconds = (0..<100).map { ms in
 			Period.millisecond(
@@ -119,11 +125,12 @@ struct TimeSeriesTests {
 
 		let timeSeries = TimeSeries(periods: milliseconds, values: values)
 		#expect(timeSeries.count == 100)
-		#expect(abs((timeSeries[milliseconds[50]] ?? 0) - 50.0) < 1e-6)
+		let measured0 = try #require(timeSeries[milliseconds[50]])
+		#expect(abs(measured0 - 50.0) < 1e-6)
 	}
 
 	@Test("Create time series from dictionary")
-	func initFromDictionary() {
+	func initFromDictionary() throws {
 		let jan = Period.month(year: 2025, month: 1)
 		let feb = Period.month(year: 2025, month: 2)
 		let data: [Period: Double] = [
@@ -134,8 +141,10 @@ struct TimeSeriesTests {
 		let ts = TimeSeries(data: data)
 
 		#expect(ts.count == 2)
-		#expect(abs((ts[jan] ?? 0) - 100.0) < 1e-6)
-		#expect(abs((ts[feb] ?? 0) - 200.0) < 1e-6)
+		let measured0 = try #require(ts[jan])
+		#expect(abs(measured0 - 100.0) < 1e-6)
+		let measured1 = try #require(ts[feb])
+		#expect(abs(measured1 - 200.0) < 1e-6)
 	}
 
 	@Test("Initialization sorts periods chronologically")
@@ -157,7 +166,7 @@ struct TimeSeriesTests {
 	}
 
 	@Test("Initialization handles duplicate periods by keeping last value")
-	func initDuplicatePeriods() {
+	func initDuplicatePeriods() throws {
 		let jan = Period.month(year: 2025, month: 1)
 		let periods = [jan, jan]
 		let values: [Double] = [100.0, 200.0]
@@ -166,18 +175,20 @@ struct TimeSeriesTests {
 
 		// Should keep the last value
 		#expect(ts.count == 1)
-		#expect(abs((ts[jan] ?? 0) - 200.0) < 1e-6)
+		let measured0 = try #require(ts[jan])
+		#expect(abs(measured0 - 200.0) < 1e-6)
 	}
 
 	// MARK: - Subscript Access
 
 	@Test("Subscript returns value for existing period")
-	func subscriptExistingPeriod() {
+	func subscriptExistingPeriod() throws {
 		let jan = Period.month(year: 2025, month: 1)
 		let ts = TimeSeries(periods: [jan], values: [100.0])
 
 		let value = ts[jan]
-		#expect(abs((value ?? 0) - 100.0) < 1e-6)
+		let measured0 = try #require(value)
+		#expect(abs(measured0 - 100.0) < 1e-6)
 	}
 
 	@Test("Subscript returns nil for missing period")
@@ -242,7 +253,7 @@ struct TimeSeriesTests {
 	}
 
 	@Test("first returns first value")
-	func firstValue() {
+	func firstValue() throws {
 		let periods = [
 			Period.month(year: 2025, month: 1),
 			Period.month(year: 2025, month: 2)
@@ -250,11 +261,12 @@ struct TimeSeriesTests {
 		let values: [Double] = [100.0, 200.0]
 		let ts = TimeSeries(periods: periods, values: values)
 
-		#expect(abs((ts.first ?? 0) - 100.0) < 1e-6)
+		let measured0 = try #require(ts.first)
+		#expect(abs(measured0 - 100.0) < 1e-6)
 	}
 
 	@Test("last returns last value")
-	func lastValue() {
+	func lastValue() throws {
 		let periods = [
 			Period.month(year: 2025, month: 1),
 			Period.month(year: 2025, month: 2)
@@ -262,7 +274,8 @@ struct TimeSeriesTests {
 		let values: [Double] = [100.0, 200.0]
 		let ts = TimeSeries(periods: periods, values: values)
 
-		#expect(abs((ts.last ?? 0) - 200.0) < 1e-6)
+		let measured0 = try #require(ts.last)
+		#expect(abs(measured0 - 200.0) < 1e-6)
 	}
 
 	@Test("first returns nil for empty time series")
@@ -297,7 +310,7 @@ struct TimeSeriesTests {
 	// MARK: - Range Extraction
 
 	@Test("range extracts subset of time series")
-	func rangeExtraction() {
+	func rangeExtraction() throws {
 		let jan = Period.month(year: 2025, month: 1)
 		let feb = Period.month(year: 2025, month: 2)
 		let mar = Period.month(year: 2025, month: 3)
@@ -311,14 +324,16 @@ struct TimeSeriesTests {
 		let subset = ts.range(from: feb, to: mar)
 
 		#expect(subset.count == 2)
-		#expect(abs((subset[feb] ?? 0) - 200.0) < 1e-6)
-		#expect(abs((subset[mar] ?? 0) - 300.0) < 1e-6)
+		let measured0 = try #require(subset[feb])
+		#expect(abs(measured0 - 200.0) < 1e-6)
+		let measured1 = try #require(subset[mar])
+		#expect(abs(measured1 - 300.0) < 1e-6)
 		#expect(subset[jan] == nil)
 		#expect(subset[apr] == nil)
 	}
 
 	@Test("range includes both endpoints")
-	func rangeIncludesEndpoints() {
+	func rangeIncludesEndpoints() throws {
 		let jan = Period.month(year: 2025, month: 1)
 		let feb = Period.month(year: 2025, month: 2)
 		let mar = Period.month(year: 2025, month: 3)
@@ -331,12 +346,14 @@ struct TimeSeriesTests {
 		let subset = ts.range(from: jan, to: mar)
 
 		#expect(subset.count == 3)
-		#expect(abs((subset[jan] ?? 0) - 100.0) < 1e-6)
-		#expect(abs((subset[mar] ?? 0) - 300.0) < 1e-6)
+		let measured0 = try #require(subset[jan])
+		#expect(abs(measured0 - 100.0) < 1e-6)
+		let measured1 = try #require(subset[mar])
+		#expect(abs(measured1 - 300.0) < 1e-6)
 	}
 
 	@Test("range with same start and end returns single period")
-	func rangeSinglePeriod() {
+	func rangeSinglePeriod() throws {
 		let jan = Period.month(year: 2025, month: 1)
 		let feb = Period.month(year: 2025, month: 2)
 
@@ -348,7 +365,8 @@ struct TimeSeriesTests {
 		let subset = ts.range(from: feb, to: feb)
 
 		#expect(subset.count == 1)
-		#expect(abs((subset[feb] ?? 0) - 200.0) < 1e-6)
+		let measured0 = try #require(subset[feb])
+		#expect(abs(measured0 - 200.0) < 1e-6)
 	}
 
 	@Test("range preserves metadata")
@@ -448,14 +466,17 @@ struct TimeSeriesTests {
 	}
 
 	@Test("Single period time series")
-	func singlePeriodTimeSeries() {
+	func singlePeriodTimeSeries() throws {
 		let jan = Period.month(year: 2025, month: 1)
 		let ts = TimeSeries(periods: [jan], values: [100.0])
 
 		#expect(ts.count == 1)
-		#expect(abs((ts.first ?? 0) - 100.0) < 1e-6)
-		#expect(abs((ts.last ?? 0) - 100.0) < 1e-6)
-		#expect(abs((ts[jan] ?? 0) - 100.0) < 1e-6)
+		let measured0 = try #require(ts.first)
+		#expect(abs(measured0 - 100.0) < 1e-6)
+		let measured1 = try #require(ts.last)
+		#expect(abs(measured1 - 100.0) < 1e-6)
+		let measured2 = try #require(ts[jan])
+		#expect(abs(measured2 - 100.0) < 1e-6)
 	}
 
 	// NOTE: Mixed period types are supported, but currently trigger a Strideable
@@ -480,38 +501,43 @@ struct TimeSeriesTests {
 	// }
 
 	@Test("Time series works with Float type")
-	func floatTimeSeries() {
+	func floatTimeSeries() throws {
 		let jan = Period.month(year: 2025, month: 1)
 		let ts = TimeSeries<Float>(periods: [jan], values: [100.0])
 
-		#expect(abs((ts[jan] ?? 0) - 100.0) < 1e-6)
+		let measured0 = try #require(ts[jan])
+		#expect(abs(measured0 - 100.0) < 1e-6)
 	}
 
 	@Test("Time series with zero values")
-	func zeroValues() {
+	func zeroValues() throws {
 		let jan = Period.month(year: 2025, month: 1)
 		let feb = Period.month(year: 2025, month: 2)
 		let ts = TimeSeries(periods: [jan, feb], values: [0.0, 0.0])
 
 		#expect(ts.count == 2)
-		#expect(abs((ts[jan] ?? 0) - 0.0) < 1e-6)
-		#expect(abs((ts[feb] ?? 0) - 0.0) < 1e-6)
+		let measured0 = try #require(ts[jan])
+		#expect(abs(measured0 - 0.0) < 1e-6)
+		let measured1 = try #require(ts[feb])
+		#expect(abs(measured1 - 0.0) < 1e-6)
 	}
 
 	@Test("Time series with negative values")
-	func negativeValues() {
+	func negativeValues() throws {
 		let jan = Period.month(year: 2025, month: 1)
 		let ts = TimeSeries(periods: [jan], values: [-100.0])
 
-		#expect(abs((ts[jan] ?? 0) - (-100.0)) < 1e-6)
+		let measured0 = try #require(ts[jan])
+		#expect(abs(measured0 - (-100.0)) < 1e-6)
 	}
 
 	@Test("Time series with very large values")
-	func largeValues() {
+	func largeValues() throws {
 		let jan = Period.month(year: 2025, month: 1)
 		let ts = TimeSeries(periods: [jan], values: [1_000_000_000.0])
 
-		#expect(abs((ts[jan] ?? 0) - 1_000_000_000.0) < 1e-2)
+		let measured0 = try #require(ts[jan])
+		#expect(abs(measured0 - 1_000_000_000.0) < 1e-2)
 	}
 
 	// MARK: - Real-World Scenarios

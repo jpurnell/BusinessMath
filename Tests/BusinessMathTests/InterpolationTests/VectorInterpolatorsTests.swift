@@ -98,112 +98,162 @@ struct VectorInterpolatorsTests {
 
     @Test("VectorNearestNeighbor matches per-channel scalar")
     func nearestEquivalence() throws {
-        let v = try VectorNearestNeighborInterpolator(xs: Self.xs, ys: Self.ys)
-        let scalars = try Self.channels.map { try NearestNeighborInterpolator(xs: Self.xs, ys: $0) }
-        Self.assertChannelwiseEquivalence(
-            vector: v.callAsFunction(_:),
-            scalarsByChannel: scalars.map { s in { s($0) } }
-        )
-        #expect(true) // TEST-QUALITY: validates no-throw execution
+        // Was `#expect(true) // validates no-throw execution`, which validates no
+        // such thing: it holds whether or not anything threw. The construction is
+        // the claim, so it is the thing to wrap. The channelwise comparison inside
+        // carries the test's real assertions.
+        #expect(throws: Never.self) {
+            let v = try VectorNearestNeighborInterpolator(xs: Self.xs, ys: Self.ys)
+            let scalars = try Self.channels.map { try NearestNeighborInterpolator(xs: Self.xs, ys: $0) }
+            Self.assertChannelwiseEquivalence(
+                vector: v.callAsFunction(_:),
+                scalarsByChannel: scalars.map { s in { s($0) } }
+            )
+        }
     }
 
     @Test("VectorPreviousValue matches per-channel scalar")
     func previousEquivalence() throws {
-        let v = try VectorPreviousValueInterpolator(xs: Self.xs, ys: Self.ys)
-        let scalars = try Self.channels.map { try PreviousValueInterpolator(xs: Self.xs, ys: $0) }
-        Self.assertChannelwiseEquivalence(
-            vector: v.callAsFunction(_:),
-            scalarsByChannel: scalars.map { s in { s($0) } }
-        )
-        #expect(true) // TEST-QUALITY: validates no-throw execution
+        // Was `#expect(true) // validates no-throw execution`, which validates no
+        // such thing: it holds whether or not anything threw. The construction is
+        // the claim, so it is the thing to wrap. The channelwise comparison inside
+        // carries the test's real assertions.
+        #expect(throws: Never.self) {
+            let v = try VectorPreviousValueInterpolator(xs: Self.xs, ys: Self.ys)
+            let scalars = try Self.channels.map { try PreviousValueInterpolator(xs: Self.xs, ys: $0) }
+            Self.assertChannelwiseEquivalence(
+                vector: v.callAsFunction(_:),
+                scalarsByChannel: scalars.map { s in { s($0) } }
+            )
+        }
     }
 
     @Test("VectorNextValue matches per-channel scalar")
     func nextEquivalence() throws {
-        let v = try VectorNextValueInterpolator(xs: Self.xs, ys: Self.ys)
-        let scalars = try Self.channels.map { try NextValueInterpolator(xs: Self.xs, ys: $0) }
-        Self.assertChannelwiseEquivalence(
-            vector: v.callAsFunction(_:),
-            scalarsByChannel: scalars.map { s in { s($0) } }
-        )
-        #expect(true) // TEST-QUALITY: validates no-throw execution
+        // Was `#expect(true) // validates no-throw execution`, which validates no
+        // such thing: it holds whether or not anything threw. The construction is
+        // the claim, so it is the thing to wrap. The channelwise comparison inside
+        // carries the test's real assertions.
+        #expect(throws: Never.self) {
+            let v = try VectorNextValueInterpolator(xs: Self.xs, ys: Self.ys)
+            let scalars = try Self.channels.map { try NextValueInterpolator(xs: Self.xs, ys: $0) }
+            Self.assertChannelwiseEquivalence(
+                vector: v.callAsFunction(_:),
+                scalarsByChannel: scalars.map { s in { s($0) } }
+            )
+        }
     }
 
     @Test("VectorLinear matches per-channel scalar")
     func linearEquivalence() throws {
-        let v = try VectorLinearInterpolator(xs: Self.xs, ys: Self.ys)
-        let scalars = try Self.channels.map { try LinearInterpolator(xs: Self.xs, ys: $0) }
-        Self.assertChannelwiseEquivalence(
-            vector: v.callAsFunction(_:),
-            scalarsByChannel: scalars.map { s in { s($0) } }
-        )
-        #expect(true) // TEST-QUALITY: validates no-throw execution
+        // Was `#expect(true) // validates no-throw execution`, which validates no
+        // such thing: it holds whether or not anything threw. The construction is
+        // the claim, so it is the thing to wrap. The channelwise comparison inside
+        // carries the test's real assertions.
+        #expect(throws: Never.self) {
+            let v = try VectorLinearInterpolator(xs: Self.xs, ys: Self.ys)
+            let scalars = try Self.channels.map { try LinearInterpolator(xs: Self.xs, ys: $0) }
+            Self.assertChannelwiseEquivalence(
+                vector: v.callAsFunction(_:),
+                scalarsByChannel: scalars.map { s in { s($0) } }
+            )
+        }
     }
 
     @Test("VectorCubicSpline matches per-channel scalar")
     func cubicSplineEquivalence() throws {
-        let v = try VectorCubicSplineInterpolator(xs: Self.xs, ys: Self.ys)
-        let scalars = try Self.channels.map { try CubicSplineInterpolator(xs: Self.xs, ys: $0) }
-        Self.assertChannelwiseEquivalence(
-            vector: v.callAsFunction(_:),
-            scalarsByChannel: scalars.map { s in { s($0) } }
-        )
-        #expect(true) // TEST-QUALITY: validates no-throw execution
+        // Was `#expect(true) // validates no-throw execution`, which validates no
+        // such thing: it holds whether or not anything threw. The construction is
+        // the claim, so it is the thing to wrap. The channelwise comparison inside
+        // carries the test's real assertions.
+        #expect(throws: Never.self) {
+            let v = try VectorCubicSplineInterpolator(xs: Self.xs, ys: Self.ys)
+            let scalars = try Self.channels.map { try CubicSplineInterpolator(xs: Self.xs, ys: $0) }
+            Self.assertChannelwiseEquivalence(
+                vector: v.callAsFunction(_:),
+                scalarsByChannel: scalars.map { s in { s($0) } }
+            )
+        }
     }
 
     @Test("VectorPCHIP matches per-channel scalar")
     func pchipEquivalence() throws {
-        let v = try VectorPCHIPInterpolator(xs: Self.xs, ys: Self.ys)
-        let scalars = try Self.channels.map { try PCHIPInterpolator(xs: Self.xs, ys: $0) }
-        Self.assertChannelwiseEquivalence(
-            vector: v.callAsFunction(_:),
-            scalarsByChannel: scalars.map { s in { s($0) } }
-        )
-        #expect(true) // TEST-QUALITY: validates no-throw execution
+        // Was `#expect(true) // validates no-throw execution`, which validates no
+        // such thing: it holds whether or not anything threw. The construction is
+        // the claim, so it is the thing to wrap. The channelwise comparison inside
+        // carries the test's real assertions.
+        #expect(throws: Never.self) {
+            let v = try VectorPCHIPInterpolator(xs: Self.xs, ys: Self.ys)
+            let scalars = try Self.channels.map { try PCHIPInterpolator(xs: Self.xs, ys: $0) }
+            Self.assertChannelwiseEquivalence(
+                vector: v.callAsFunction(_:),
+                scalarsByChannel: scalars.map { s in { s($0) } }
+            )
+        }
     }
 
     @Test("VectorAkima matches per-channel scalar")
     func akimaEquivalence() throws {
-        let v = try VectorAkimaInterpolator(xs: Self.xs, ys: Self.ys)
-        let scalars = try Self.channels.map { try AkimaInterpolator(xs: Self.xs, ys: $0) }
-        Self.assertChannelwiseEquivalence(
-            vector: v.callAsFunction(_:),
-            scalarsByChannel: scalars.map { s in { s($0) } }
-        )
-        #expect(true) // TEST-QUALITY: validates no-throw execution
+        // Was `#expect(true) // validates no-throw execution`, which validates no
+        // such thing: it holds whether or not anything threw. The construction is
+        // the claim, so it is the thing to wrap. The channelwise comparison inside
+        // carries the test's real assertions.
+        #expect(throws: Never.self) {
+            let v = try VectorAkimaInterpolator(xs: Self.xs, ys: Self.ys)
+            let scalars = try Self.channels.map { try AkimaInterpolator(xs: Self.xs, ys: $0) }
+            Self.assertChannelwiseEquivalence(
+                vector: v.callAsFunction(_:),
+                scalarsByChannel: scalars.map { s in { s($0) } }
+            )
+        }
     }
 
     @Test("VectorCatmullRom matches per-channel scalar")
     func catmullRomEquivalence() throws {
-        let v = try VectorCatmullRomInterpolator(xs: Self.xs, ys: Self.ys)
-        let scalars = try Self.channels.map { try CatmullRomInterpolator(xs: Self.xs, ys: $0) }
-        Self.assertChannelwiseEquivalence(
-            vector: v.callAsFunction(_:),
-            scalarsByChannel: scalars.map { s in { s($0) } }
-        )
-        #expect(true) // TEST-QUALITY: validates no-throw execution
+        // Was `#expect(true) // validates no-throw execution`, which validates no
+        // such thing: it holds whether or not anything threw. The construction is
+        // the claim, so it is the thing to wrap. The channelwise comparison inside
+        // carries the test's real assertions.
+        #expect(throws: Never.self) {
+            let v = try VectorCatmullRomInterpolator(xs: Self.xs, ys: Self.ys)
+            let scalars = try Self.channels.map { try CatmullRomInterpolator(xs: Self.xs, ys: $0) }
+            Self.assertChannelwiseEquivalence(
+                vector: v.callAsFunction(_:),
+                scalarsByChannel: scalars.map { s in { s($0) } }
+            )
+        }
     }
 
     @Test("VectorBSpline matches per-channel scalar")
     func bsplineEquivalence() throws {
-        let v = try VectorBSplineInterpolator(xs: Self.xs, ys: Self.ys)
-        let scalars = try Self.channels.map { try BSplineInterpolator(xs: Self.xs, ys: $0) }
-        Self.assertChannelwiseEquivalence(
-            vector: v.callAsFunction(_:),
-            scalarsByChannel: scalars.map { s in { s($0) } }
-        )
-        #expect(true) // TEST-QUALITY: validates no-throw execution
+        // Was `#expect(true) // validates no-throw execution`, which validates no
+        // such thing: it holds whether or not anything threw. The construction is
+        // the claim, so it is the thing to wrap. The channelwise comparison inside
+        // carries the test's real assertions.
+        #expect(throws: Never.self) {
+            let v = try VectorBSplineInterpolator(xs: Self.xs, ys: Self.ys)
+            let scalars = try Self.channels.map { try BSplineInterpolator(xs: Self.xs, ys: $0) }
+            Self.assertChannelwiseEquivalence(
+                vector: v.callAsFunction(_:),
+                scalarsByChannel: scalars.map { s in { s($0) } }
+            )
+        }
     }
 
     @Test("VectorBarycentricLagrange matches per-channel scalar")
     func barycentricEquivalence() throws {
-        let v = try VectorBarycentricLagrangeInterpolator(xs: Self.xs, ys: Self.ys)
-        let scalars = try Self.channels.map { try BarycentricLagrangeInterpolator(xs: Self.xs, ys: $0) }
-        Self.assertChannelwiseEquivalence(
-            vector: v.callAsFunction(_:),
-            scalarsByChannel: scalars.map { s in { s($0) } }
-        )
-        #expect(true) // TEST-QUALITY: validates no-throw execution
+        // Was `#expect(true) // validates no-throw execution`, which validates no
+        // such thing: it holds whether or not anything threw. The construction is
+        // the claim, so it is the thing to wrap. The channelwise comparison inside
+        // carries the test's real assertions.
+        #expect(throws: Never.self) {
+            let v = try VectorBarycentricLagrangeInterpolator(xs: Self.xs, ys: Self.ys)
+            let scalars = try Self.channels.map { try BarycentricLagrangeInterpolator(xs: Self.xs, ys: $0) }
+            Self.assertChannelwiseEquivalence(
+                vector: v.callAsFunction(_:),
+                scalarsByChannel: scalars.map { s in { s($0) } }
+            )
+        }
     }
 
     // MARK: - Pass-through invariant for vector flavors

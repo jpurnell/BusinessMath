@@ -28,8 +28,10 @@ struct EMSTableGeneratorTests {
         let pSelfCoeff = emsP.first { $0.component == Set(["p"]) }?.coefficient
         let pPRCoeff = emsP.first { $0.component == Set(["p", "r"]) }?.coefficient
 
-        #expect(abs((pSelfCoeff ?? 0) - 3.0) < 1e-6) // n_r = 3
-        #expect(abs((pPRCoeff ?? 0) - 1.0) < 1e-6)   // empty product = 1
+        let measured0 = try #require(pSelfCoeff)
+        #expect(abs(measured0 - 3.0) < 1e-6) // n_r = 3
+        let measured1 = try #require(pPRCoeff)
+        #expect(abs(measured1 - 1.0) < 1e-6)   // empty product = 1
 
         // Check EMS({r})
         let emsR = try #require(table[Set(["r"])])
@@ -38,13 +40,16 @@ struct EMSTableGeneratorTests {
         let rSelfCoeff = emsR.first { $0.component == Set(["r"]) }?.coefficient
         let rPRCoeff = emsR.first { $0.component == Set(["p", "r"]) }?.coefficient
 
-        #expect(abs((rSelfCoeff ?? 0) - 4.0) < 1e-6) // n_p = 4
-        #expect(abs((rPRCoeff ?? 0) - 1.0) < 1e-6)
+        let measured2 = try #require(rSelfCoeff)
+        #expect(abs(measured2 - 4.0) < 1e-6) // n_p = 4
+        let measured3 = try #require(rPRCoeff)
+        #expect(abs(measured3 - 1.0) < 1e-6)
 
         // Check EMS({p,r})
         let emsPR = try #require(table[Set(["p", "r"])])
         #expect(emsPR.count == 1)
-        #expect(abs((emsPR.first?.coefficient ?? 0) - 1.0) < 1e-6)
+        let measured4 = try #require(emsPR.first?.coefficient)
+        #expect(abs(measured4 - 1.0) < 1e-6)
     }
 
     // MARK: - Three-Facet EMS Table
@@ -74,17 +79,22 @@ struct EMSTableGeneratorTests {
         let pPI = emsP.first { $0.component == Set(["p", "i"]) }?.coefficient
         let pPRI = emsP.first { $0.component == Set(["p", "r", "i"]) }?.coefficient
 
-        #expect(abs((pSelf ?? 0) - 6.0) < 1e-6)
-        #expect(abs((pPR ?? 0) - 2.0) < 1e-6)
-        #expect(abs((pPI ?? 0) - 3.0) < 1e-6)
-        #expect(abs((pPRI ?? 0) - 1.0) < 1e-6)
+        let measured0 = try #require(pSelf)
+        #expect(abs(measured0 - 6.0) < 1e-6)
+        let measured1 = try #require(pPR)
+        #expect(abs(measured1 - 2.0) < 1e-6)
+        let measured2 = try #require(pPI)
+        #expect(abs(measured2 - 3.0) < 1e-6)
+        let measured3 = try #require(pPRI)
+        #expect(abs(measured3 - 1.0) < 1e-6)
 
         // Verify EMS({r}):
         // Supersets of {r}: {r}, {r,p}, {r,i}, {r,p,i}
         // c({r}, {r}) = n_p * n_i = 4 * 2 = 8
         let emsR = table[Set(["r"])]
         let rSelf = emsR?.first { $0.component == Set(["r"]) }?.coefficient
-        #expect(abs((rSelf ?? 0) - 8.0) < 1e-6)
+        let measured4 = try #require(rSelf)
+        #expect(abs(measured4 - 8.0) < 1e-6)
 
         // Verify EMS({r,i}):
         // Supersets: {r,i}, {p,r,i}
@@ -94,13 +104,16 @@ struct EMSTableGeneratorTests {
         #expect(emsRI?.count == 2)
         let riSelf = emsRI?.first { $0.component == Set(["r", "i"]) }?.coefficient
         let riPRI = emsRI?.first { $0.component == Set(["p", "r", "i"]) }?.coefficient
-        #expect(abs((riSelf ?? 0) - 4.0) < 1e-6)
-        #expect(abs((riPRI ?? 0) - 1.0) < 1e-6)
+        let measured5 = try #require(riSelf)
+        #expect(abs(measured5 - 4.0) < 1e-6)
+        let measured6 = try #require(riPRI)
+        #expect(abs(measured6 - 1.0) < 1e-6)
 
         // Verify EMS({p,r,i}) — the residual always has coefficient 1
         let emsPRI = table[Set(["p", "r", "i"])]
         #expect(emsPRI?.count == 1)
-        #expect(abs((emsPRI?.first?.coefficient ?? 0) - 1.0) < 1e-6)
+        let measured7 = try #require(emsPRI?.first?.coefficient)
+        #expect(abs(measured7 - 1.0) < 1e-6)
     }
 
     // MARK: - Four-Facet EMS Table
@@ -132,7 +145,8 @@ struct EMSTableGeneratorTests {
         let fullSet = Set(["p", "r", "i"])
         let emsResidual = table3[fullSet]
         #expect(emsResidual?.count == 1)
-        #expect(abs((emsResidual?.first?.coefficient ?? 0) - 1.0) < 1e-6)
+        let measured0 = try #require(emsResidual?.first?.coefficient)
+        #expect(abs(measured0 - 1.0) < 1e-6)
         #expect(emsResidual?.first?.component == fullSet)
 
         // Also for 2-facet
@@ -144,7 +158,8 @@ struct EMSTableGeneratorTests {
         let fullSet2 = Set(["x", "y"])
         let emsResidual2 = table2[fullSet2]
         #expect(emsResidual2?.count == 1)
-        #expect(abs((emsResidual2?.first?.coefficient ?? 0) - 1.0) < 1e-6)
+        let measured1 = try #require(emsResidual2?.first?.coefficient)
+        #expect(abs(measured1 - 1.0) < 1e-6)
     }
 
     @Test("Number of entries = 2^f - 1")
@@ -198,6 +213,7 @@ struct EMSTableGeneratorTests {
         #expect(table.count == 1)
         let emsP = table[Set(["p"])]
         #expect(emsP?.count == 1)
-        #expect(abs((emsP?.first?.coefficient ?? 0) - 1.0) < 1e-6)
+        let measured0 = try #require(emsP?.first?.coefficient)
+        #expect(abs(measured0 - 1.0) < 1e-6)
     }
 }
