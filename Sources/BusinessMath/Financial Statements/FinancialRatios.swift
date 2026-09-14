@@ -1468,10 +1468,19 @@ public func liquidityRatios<T: Real & Sendable>(
 /// }
 /// ```
 public struct SolvencyRatios<T: Real & Sendable>: Sendable where T: Codable {
-	/// Total Liabilities / Total Equity (always available)
+	/// Interest-Bearing Debt / Total Equity (always available).
+	///
+	/// **Not** total liabilities, which this said for as long as it has existed. It is
+	/// fed from ``BalanceSheet/debtToEquity``, whose numerator is every account with
+	/// `balanceSheetRole.isDebt` — operating liabilities such as accounts payable are
+	/// excluded. See ``debtToAssets``, which uses the other definition on purpose.
 	public let debtToEquity: TimeSeries<T>
 
-	/// Total Liabilities / Total Assets (always available)
+	/// Total Liabilities / Total Assets (always available).
+	///
+	/// Fed from ``BalanceSheet/debtRatio``. The numerator here *is* total liabilities,
+	/// so it does not match ``debtToEquity``'s — that asymmetry is deliberate, and the
+	/// two ratios can move in opposite directions on the same balance sheet.
 	public let debtToAssets: TimeSeries<T>
 
 	/// Total Equity / Total Assets (always available)

@@ -846,6 +846,12 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// A period with no equity has no value in the result. Leverage against nothing is
 	/// unbounded, not zero, and a company financed entirely by debt is the last one
 	/// that should read as unlevered.
+	///
+	/// The numerator is **all** interest-bearing debt — every account whose
+	/// `balanceSheetRole.isDebt` is true, so short-term debt, lines of credit, revolving
+	/// facilities, mezzanine and convertible debt all count, not only long-term debt.
+	/// ``debtRatio`` uses total liabilities instead; see its note for why the two differ
+	/// and why neither is a rescaling of the other.
 	public var debtToEquity: TimeSeries<T> {
 		return ratio(interestBearingDebt, over: totalEquity)
 	}
@@ -985,10 +991,24 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// - **Technology/Services**: 0.2-0.4 is typical
 	/// - **Real estate**: 0.6-0.8 is common (asset-backed lending)
 	///
+	/// ## Which debt this counts, and why it is not the same as ``debtToEquity``
+	///
+	/// The numerator is **total liabilities** — every claim on the business, accounts
+	/// payable and accrued expenses included. ``debtToEquity`` on this same type uses
+	/// **interest-bearing debt** only, which excludes those operating liabilities.
+	///
+	/// The asymmetry is deliberate, and both conventions are standard. They answer
+	/// different questions: the debt ratio asks what share of the asset base is owed to
+	/// *anyone*, while leverage asks what is owed to *lenders*. Do not read one as a
+	/// rescaling of the other — on the documentation fixture the two even cross, with the
+	/// debt ratio below leverage in Q1 and above it in Q4.
+	///
 	/// ## Related Metrics
 	///
-	/// - Debt-to-Equity Ratio = Total Liabilities / Total Equity
-	/// - Equity Ratio = Total Equity / Total Assets = 1 - Debt Ratio
+	/// - ``debtToEquity`` = Interest-Bearing Debt / Total Equity — a *different* numerator
+	/// - ``equityRatio`` = Total Equity / Total Assets = 1 - Debt Ratio
+	/// - The free function `debtToEquity(totalLiabilities:shareholderEquity:)` uses total
+	///   liabilities, so it does **not** agree with the property of the same name here
 	///
 	/// ## Example
 	///
@@ -996,8 +1016,9 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// let balanceSheet = try BalanceSheet<Double>.documentationFixture
 	/// let debtRatio = balanceSheet.debtRatio
 	///
-	/// let q1 = Period.quarter(year: 2025, quarter: 1)
-	/// print("Debt Ratio: \(debtRatio[q1] ?? 0 * 100)%")  // e.g., "Debt Ratio: 45.0%"
+	/// let q1 = Period.quarter(year: 2024, quarter: 1)
+	/// // Liabilities of 400 against assets of 1,000.
+	/// print("Debt Ratio: \(debtRatio[q1] ?? 0)")  // "Debt Ratio: 0.4"
 	/// ```
 	public var debtRatio: TimeSeries<T> {
 		return ratio(totalLiabilities, over: totalAssets)
