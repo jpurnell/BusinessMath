@@ -39,7 +39,8 @@ struct BayesTests {
 		let result = bayes(probabilityD, probabilityTrueGivenD, probabilityTrueGivenNotD)
 
 		// With high prior and good test, posterior should be very high
-		#expect(result > 0.95)
+		// 36/37 exactly. `> 0.95` passes for 0.951 and for 0.999 alike.
+		#expect(abs(result - 36.0 / 37.0) < 1e-15, "posterior was \(result)")
 	}
 
 	@Test("Perfect test accuracy")
@@ -65,8 +66,8 @@ struct BayesTests {
 		let result = bayes(probabilityD, probabilityTrueGivenD, probabilityTrueGivenNotD)
 
 		// Even with positive test, posterior should be low due to low prior
-		#expect(result < 0.02)
-		#expect(result > 0.01)
+		// The band 0.01–0.02 spans a factor of two on a posterior that has one value.
+		#expect(abs(result - 0.018664047151277015) < 1e-15, "posterior was \(result)")
 	}
 
 	@Test("Symmetric case")

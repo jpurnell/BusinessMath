@@ -24,7 +24,7 @@ struct NPVTests {
 		let npv = npv(discountRate: rate, cashFlows: cashFlows)
 
 		// NPV = -1000 + 600/1.1 + 600/1.1^2 = -1000 + 545.45 + 495.87 = 41.32
-		#expect(abs(npv - 41.32) < tolerance)
+		#expect(abs(npv - 41.32231404958662) < 1e-12, "npv was \(npv)")
 	}
 
 	@Test("NPV for 3-year investment: -10000, +3000, +4200, +6800")
@@ -36,7 +36,7 @@ struct NPVTests {
 
 		// NPV = -10000 + 3000/1.1 + 4200/1.1^2 + 6800/1.1^3
 		// = -10000 + 2727.27 + 3471.07 + 5108.94 = 1307.287754
-		#expect(abs(npv - (1307.287754)) < tolerance)
+		#expect(abs(npv - 1307.287753568743) < 1e-9, "npv was \(npv)")
 	}
 
 	@Test("NPV with zero discount rate")
@@ -128,7 +128,8 @@ struct NPVTests {
 		// PI = (PV of future flows) / Initial Investment
 		// PV = 600/1.1 + 600/1.1^2 = 545.45 + 495.87 = 1041.32
 		// PI = 1041.32 / 1000 = 1.041
-		#expect(abs(pi - 1.041) < 0.01)
+		// The profitability index is NPV/outlay, so it is exact wherever NPV is.
+		#expect(abs(pi - 1.0413223140495866) < 1e-12, "PI was \(pi)")
 		#expect(pi > 1.0)  // Positive NPV means PI > 1
 	}
 
@@ -141,7 +142,7 @@ struct NPVTests {
 
 		// PV = 400/1.1 + 400/1.1^2 = 363.64 + 330.58 = 694.22
 		// PI = 694.22 / 1000 = 0.694
-		#expect(abs(pi - 0.694) < 0.01)
+		#expect(abs(pi - 0.6942148760330579) < 1e-12, "PI was \(pi)")
 		#expect(pi < 1.0)  // Negative NPV means PI < 1
 	}
 
@@ -338,7 +339,7 @@ struct NPVTests {
 
 		// Calculated NPV: -10000 + 3000/1.1 + 4200/1.1^2 + 6800/1.1^3
 		// = -10000 + 2727.27 + 3471.07 + 5107.66 ≈ 1306.00
-		#expect(abs(npv - 1306.0) < 2.0)
+		#expect(abs(npv - 1307.287753568743) < 1e-9, "npv was \(npv)")
 	}
 
 	@Test("NPV with monthly compounding matches Excel")
@@ -368,7 +369,7 @@ struct NPVTests {
 
 		// Excel NPV: 400/1.1 + 400/1.1^2 + 400/1.1^3
 		// = 363.64 + 330.58 + 300.53 = 994.75
-		#expect(abs(npv - 994.75) < tolerance)
+		#expect(abs(npv - 994.7407963936888) < 1e-12, "npv was \(npv)")
 	}
 
 	@Test("npvExcel with initial investment added separately")
@@ -381,7 +382,7 @@ struct NPVTests {
 		let totalNPV = npvExcel(rate: rate, cashFlows: futureCashFlows) + initialInvestment
 
 		// 994.75 + (-1000) = -5.25
-		#expect(abs(totalNPV - (-5.25)) < tolerance)
+		#expect(abs(totalNPV - (-5.259203606311189)) < 1e-12, "npv was \(totalNPV)")
 	}
 
 	@Test("npvExcel vs standard npv comparison")

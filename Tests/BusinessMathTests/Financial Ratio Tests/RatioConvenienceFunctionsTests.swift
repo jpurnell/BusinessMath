@@ -160,14 +160,15 @@ struct RatioConvenienceFunctionsTests {
 				let roe = try #require(profitability.roe[q1], "ROE should be present for Q1")
 				let roic = try #require(profitability.roic[q1], "ROIC should be present for Q1")
 
-				#expect(grossMargin > 0.5) // 60% gross margin
-				#expect(grossMargin < 0.7)
+				// Exact values from the financial-ratio review's table, each one a single
+				// division away from the fixture. A band of 0.5–0.7 on a margin of exactly
+				// 0.6 cannot distinguish the right answer from a 16% error either way.
+				#expect(grossMargin.isEqual(to: 0.6), "gross margin was \(grossMargin)")
 
-				#expect(netMargin > 0.15) // ~17.75% net margin
-				#expect(netMargin < 0.20)
+				#expect(abs(netMargin - 0.17775) < 1e-15, "net margin was \(netMargin)")
 
-				#expect(roa > 0.05) // Positive ROA
-				#expect(roe > 0.08) // Positive ROE
+				#expect(abs(roa - 0.05925) < 1e-15, "ROA was \(roa)")
+				#expect(abs(roe - 0.09608108108108109) < 1e-15, "ROE was \(roe)")
 				#expect(roic > 0.05) // Positive ROIC
 
 				// ROE should be higher than ROA due to leverage
@@ -186,7 +187,10 @@ struct RatioConvenienceFunctionsTests {
 				let q1 = periods[0]
 
 				// Asset turnover is always available
-				#expect(try #require(efficiency.assetTurnover[q1]) > 0.0)
+				// 1/3 exactly — revenue 1,000,000 over total assets 3,000,000 — as a
+				// rational the Double cannot hold.
+				let assetTurnover = try #require(efficiency.assetTurnover[q1])
+				#expect(abs(assetTurnover - 1.0 / 3.0) < 1e-15, "asset turnover was \(assetTurnover)")
 
 				// With our test data, all optional metrics should be present
 				#expect(efficiency.inventoryTurnover?[q1]?.isFinite == true)
@@ -204,8 +208,11 @@ struct RatioConvenienceFunctionsTests {
 				let dpo = try #require(efficiency.daysPayableOutstanding?[q1], "Days payable outstanding should be present for Q1")
 				let ccc = try #require(efficiency.cashConversionCycle?[q1], "Cash conversion cycle should be present for Q1")
 
-				#expect(inventoryTurnover > 0.0)
-				#expect(receivablesTurnover > 0.0)
+				// Inventory turnover is exactly 2.0 — COGS 400,000 over inventory 200,000 —
+				// and receivables turnover is 10/3.
+				#expect(inventoryTurnover.isEqual(to: 2.0), "inventory turnover was \(inventoryTurnover)")
+				#expect(abs(receivablesTurnover - 10.0 / 3.0) < 1e-15,
+						"receivables turnover was \(receivablesTurnover)")
 				#expect(dso > 0.0)
 				#expect(dio > 0.0)
 				#expect(dpo > 0.0)
@@ -229,10 +236,13 @@ struct RatioConvenienceFunctionsTests {
 				let cashRatio = try #require(liquidity.cashRatio[q1], "Cash ratio should be present for Q1")
 				let workingCapital = try #require(liquidity.workingCapital[q1], "Working capital should be present for Q1")
 
-				#expect(currentRatio > 1.0) // Should be > 1 for healthy company
-				#expect(quickRatio > 0.0)
-				#expect(cashRatio > 0.0)
-				#expect(workingCapital > 0.0) // Positive working capital
+				// 20/3, 16/3 and 10/3 — exact rationals the Double cannot hold exactly, so
+				// the bound is representation error rather than a tolerance on the
+				// arithmetic. Working capital is 850,000, which *is* exactly representable.
+				#expect(abs(currentRatio - 20.0 / 3.0) < 1e-15, "current ratio was \(currentRatio)")
+				#expect(abs(quickRatio - 16.0 / 3.0) < 1e-15, "quick ratio was \(quickRatio)")
+				#expect(abs(cashRatio - 10.0 / 3.0) < 1e-15, "cash ratio was \(cashRatio)")
+				#expect(workingCapital.isEqual(to: 850_000.0), "working capital was \(workingCapital)")
 
 				// Quick ratio should be less than current ratio (excludes inventory)
 				#expect(quickRatio < currentRatio)
@@ -257,16 +267,23 @@ struct RatioConvenienceFunctionsTests {
 				let debtToAssets = try #require(solvency.debtToAssets[q1], "Debt-to-assets should be present for Q1")
 				let equityRatio = try #require(solvency.equityRatio[q1], "Equity ratio should be present for Q1")
 
-				#expect(debtToEquity > 0.0)
-				#expect(debtToAssets > 0.0)
-				#expect(debtToAssets < 1.0) // Should be less than 100%
-				#expect(equityRatio > 0.0)
-				#expect(equityRatio < 1.0)
+				// The two debt ratios use different numerators on purpose — interest-bearing
+				// debt for leverage, total liabilities for the asset share — which is the
+				// asymmetry `DebtDefinitionAsymmetryTests` documents and pins. The exact
+				// values differ accordingly, and `> 0.0` could never have shown that.
+				#expect(abs(debtToEquity - 0.5405405405405406) < 1e-15, "D/E was \(debtToEquity)")
+				#expect(abs(debtToAssets - 0.3833333333333334) < 1e-15, "D/A was \(debtToAssets)")
+				#expect(abs(equityRatio - 0.6166666666666667) < 1e-15, "equity ratio was \(equityRatio)")
+
+				// Equity ratio and debt ratio partition the asset base, so they sum to one.
+				let partition: Double = debtToAssets + equityRatio
+				#expect(abs(partition - 1.0) < 1e-15, "shares of assets summed to \(partition)")
 
 				// With our test data, interest coverage should be present
 				#expect(solvency.interestCoverage?[q1]?.isFinite == true)
 				let interestCoverage = try #require(solvency.interestCoverage?[q1], "Interest coverage should be present for Q1")
-				#expect(interestCoverage > 1.0) // Should cover interest
+				// EBIT 250,000 over interest 25,000 — exactly ten times covered.
+				#expect(interestCoverage.isEqual(to: 10.0), "interest coverage was \(interestCoverage)")
 
 				// Debt-to-assets + equity ratio should equal 1.0
 				let sum = debtToAssets + equityRatio
@@ -314,17 +331,29 @@ struct RatioConvenienceFunctionsTests {
 				// Market cap should be shares × price
 				#expect(try #require(valuation.marketCap[q1]) == 50_000_000)
 
-				// Verify all ratios are present
-				#expect(try #require(valuation.priceToEarnings[q1]) > 0.0)
-				#expect(try #require(valuation.priceToBook[q1]) > 0.0)
-				#expect(try #require(valuation.priceToSales[q1]) > 0.0)
-				#expect(try #require(valuation.enterpriseValue[q1]) > 0.0)
-				#expect(try #require(valuation.evToEbitda[q1]) > 0.0)
-				#expect(try #require(valuation.evToSales[q1]) > 0.0)
+				// Exact values, not presence checks. `> 0.0` passes for a price/earnings of
+				// 0.001 as readily as for the true 281.29.
+				//
+				// Three of these are exactly representable and are asserted as such:
+				// price/sales is 50.0, EV/sales is 50.5, and enterprise value is
+				// 50,500,000. The others are exact rationals the Double cannot hold, so
+				// the bound is representation error.
+				let priceToEarnings = try #require(valuation.priceToEarnings[q1])
+				let priceToBook = try #require(valuation.priceToBook[q1])
+				let priceToSales = try #require(valuation.priceToSales[q1])
+				let enterpriseValue = try #require(valuation.enterpriseValue[q1])
+				let evToEbitda = try #require(valuation.evToEbitda[q1])
+				let evToSales = try #require(valuation.evToSales[q1])
 
-				// EV should be Market Cap + interest-bearing debt - Cash
-				let expectedEV: Double = 50_000_000 + 1_000_000 - 500_000
-				#expect(abs(try #require(valuation.enterpriseValue[q1]) - expectedEV) < 1.0)
+				#expect(abs(priceToEarnings - 281.29395218002816) < 1e-12, "P/E was \(priceToEarnings)")
+				#expect(abs(priceToBook - 27.027027027027028) < 1e-13, "P/B was \(priceToBook)")
+				#expect(priceToSales.isEqual(to: 50.0), "P/S was \(priceToSales)")
+				#expect(abs(evToEbitda - 168.33333333333334) < 1e-12, "EV/EBITDA was \(evToEbitda)")
+				#expect(evToSales.isEqual(to: 50.5), "EV/sales was \(evToSales)")
+
+				// EV = market cap + interest-bearing debt - cash, exactly.
+				#expect(enterpriseValue.isEqual(to: 50_500_000.0),
+						"enterprise value was \(enterpriseValue)")
 		}
 
 		@Test("piotroskiFScore() alias works correctly")

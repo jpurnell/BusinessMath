@@ -21,7 +21,7 @@ struct PaymentTests {
 		let pmt = payment(presentValue: 10000.0, rate: 0.05 / 12.0, periods: 60)
 
 		// Monthly payment should be $188.71
-		#expect(abs(pmt - 188.71) < tolerance)
+		#expect(abs(pmt - 188.7123364401099) < 1e-12, "payment was \(pmt)")
 	}
 
 	@Test("Payment for $250,000 mortgage at 4% for 30 years")
@@ -31,7 +31,7 @@ struct PaymentTests {
 		let pmt = payment(presentValue: 250000.0, rate: monthlyRate, periods: periods)
 
 		// Monthly payment should be $1,193.54
-		#expect(abs(pmt - 1193.54) < tolerance)
+		#expect(abs(pmt - 1193.5382386636345) < 1e-11, "payment was \(pmt)")
 	}
 
 	@Test("Payment with zero rate")

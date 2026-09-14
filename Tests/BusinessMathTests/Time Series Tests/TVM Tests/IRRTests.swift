@@ -32,7 +32,9 @@ struct IRRTests {
 		let irr = try irr(cashFlows: cashFlows)
 
 		// IRR ≈ 9.7% (known value)
-		#expect(abs(irr - 0.0970) < tolerance)
+		// The review's verified value, not the four-digit rounding of it. IRR is the root
+		// of a polynomial: there is exactly one answer here and it is worth stating.
+		#expect(abs(irr - 0.097010257403) < 1e-9, "IRR was \(irr)")
 	}
 
 	@Test("IRR for project with uneven cash flows")
@@ -41,7 +43,7 @@ struct IRRTests {
 		let irr = try irr(cashFlows: cashFlows)
 
 		// IRR ≈ 14.3% (adjusted tolerance for iterative method)
-		#expect(abs(irr - 0.143) < 0.01)
+		#expect(abs(irr - 0.143061180358) < 1e-9, "IRR was \(irr)")
 	}
 
 	@Test("IRR with negative ending cash flow")
@@ -85,7 +87,9 @@ struct IRRTests {
 		let irr = try irr(cashFlows: cashFlows, tolerance: 0.00001)
 
 		// Should still converge
-		#expect(abs(irr - 0.0970) < tolerance)
+		// The review's verified value, not the four-digit rounding of it. IRR is the root
+		// of a polynomial: there is exactly one answer here and it is worth stating.
+		#expect(abs(irr - 0.097010257403) < 1e-9, "IRR was \(irr)")
 	}
 
 	@Test("IRR with custom max iterations")
@@ -94,7 +98,9 @@ struct IRRTests {
 		let irr = try irr(cashFlows: cashFlows, maxIterations: 50)
 
 		// Should converge within 50 iterations
-		#expect(abs(irr - 0.0970) < tolerance)
+		// The review's verified value, not the four-digit rounding of it. IRR is the root
+		// of a polynomial: there is exactly one answer here and it is worth stating.
+		#expect(abs(irr - 0.097010257403) < 1e-9, "IRR was \(irr)")
 	}
 
 	// MARK: - MIRR Tests
@@ -234,7 +240,7 @@ struct IRRTests {
 		let irr = try irr(cashFlows: cashFlows)
 
 		// IRR ≈ 21.7% (adjusted for iterative method)
-		#expect(abs(irr - 0.217) < 0.01)
+		#expect(abs(irr - 0.216477854184) < 1e-9, "IRR was \(irr)")
 	}
 
 	@Test("Manufacturing equipment IRR")
@@ -245,7 +251,7 @@ struct IRRTests {
 		let irr = try irr(cashFlows: cashFlows)
 
 		// IRR ≈ 8.1%
-		#expect(abs(irr - 0.081) < 0.01)
+		#expect(abs(irr - 0.081441656464) < 1e-9, "IRR was \(irr)")
 	}
 
 	@Test("Venture capital investment IRR")
@@ -306,7 +312,9 @@ struct IRRTests {
 		let irr = try irr(cashFlows: cashFlows)
 
 		// Should scale properly
-		#expect(abs(irr - 0.0970) < tolerance)
+		// The review's verified value, not the four-digit rounding of it. IRR is the root
+		// of a polynomial: there is exactly one answer here and it is worth stating.
+		#expect(abs(irr - 0.097010257403) < 1e-9, "IRR was \(irr)")
 	}
 
 	@Test("IRR with very small cash flows")
