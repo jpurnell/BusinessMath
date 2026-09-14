@@ -72,6 +72,10 @@ public struct EOQModel<T: Real & Sendable & Codable>: Sendable {
 
 		// Derived fields
 		let ordersPerYear = annualDemand / q
+		// Convention: 365 calendar days. This is an operating cadence — how long a
+		// replenishment cycle lasts — not an accrual, so no day-count standard applies and
+		// the extra quarter-day of a mean year would be false precision against a demand
+		// figure that is itself an estimate.
 		let daysBetweenOrders = T(365) / ordersPerYear
 
 		return Result(

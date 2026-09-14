@@ -268,6 +268,14 @@ public struct Lease {
     /// Calculate present value of lease payments (lease liability)
     public func presentValue() -> Double {
         // Determine periodic discount rate based on payment frequency
+        // Convention: 365.25, and a *simple* division rather than a day count.
+        //
+        // This periodizes an annual discount rate to the lease's payment frequency. It is
+        // not an accrual against a counterparty, so no ISDA convention governs it; what it
+        // has to be is consistent with the sibling cases below, which divide by 12, 4 and 2.
+        // Those are exact periods-per-year, so the sub-daily cases use the mean Gregorian
+        // year for the same reason — a fixed divisor that does not move with the calendar.
+        // Lease standards (IFRS 16, ASC 842) specify the *rate*, not how it is periodized.
         let periodicRate: Double
         if let periods = periods, let firstPeriod = periods.first {
             switch firstPeriod.type {
@@ -332,6 +340,14 @@ public struct Lease {
     /// Returns balance field as beginning balance (before payment)
     public func detailedSchedule() -> [(period: Period?, payment: Double, interest: Double, principal: Double, balance: Double)] {
         // Determine periodic discount rate
+        // Convention: 365.25, and a *simple* division rather than a day count.
+        //
+        // This periodizes an annual discount rate to the lease's payment frequency. It is
+        // not an accrual against a counterparty, so no ISDA convention governs it; what it
+        // has to be is consistent with the sibling cases below, which divide by 12, 4 and 2.
+        // Those are exact periods-per-year, so the sub-daily cases use the mean Gregorian
+        // year for the same reason — a fixed divisor that does not move with the calendar.
+        // Lease standards (IFRS 16, ASC 842) specify the *rate*, not how it is periodized.
         let periodicRate: Double
         if let periods = periods, let firstPeriod = periods.first {
             switch firstPeriod.type {

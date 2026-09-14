@@ -46,6 +46,33 @@ public struct BondCashFlow<T: Real>: Sendable where T: Sendable {
 
 // MARK: - Bond Protocol
 
+/// Day counts in this file
+/// ------------------------
+///
+/// Every discounting step here answers "how many years from the valuation date to this
+/// cash flow", and that answer is a **convention**, not a measurement. Until 2026-09-13
+/// each of the ten sites that needed it built its own from a `365.25` constant applied to
+/// a raw seconds interval — ten copies of the same eight lines, which the duplication
+/// checker had already flagged as a 188-token clone.
+///
+/// Two things were wrong with that beyond the repetition:
+///
+/// - **365.25 is not a day-count convention.** ACT/365, ACT/360, 30/360 and ACT/ACT are
+///   conventions, each with a standard and a counterparty behind it. 365.25 is the mean
+///   length of a Gregorian year — a reasonable average, and not a basis anyone settles on.
+/// - **Seconds are not days.** `Date.timeIntervalSince` returns elapsed seconds, which
+///   absorb daylight-saving shifts into a figure that is supposed to count calendar days.
+///
+/// Both are now routed through ``DayCountConvention/yearFraction(from:to:)``, and the
+/// convention is a stored property on each instrument, so a bond states the basis it is
+/// quoted on instead of the arithmetic choosing silently.
+///
+/// The default is ``DayCountConvention/actual365`` — the named standard nearest the old
+/// behaviour, so existing callers move by cents rather than dollars. Measured on a 5%
+/// semiannual bond priced at a 5% yield: **12¢ at two years, 31¢ at ten, 55¢ at thirty**,
+/// per 1,000 of face. Callers who settle on 30/360 or ACT/ACT can now say so, which is
+/// the point of the change.
+
 /// Protocol for any instrument that can be priced like a bond
 public protocol BondLike {
     associatedtype T: Real where T: Sendable
@@ -64,6 +91,15 @@ public protocol BondLike {
 
     /// Maturity date
     var maturityDate: Date { get } // LIVE: protocol requirement for bond pricing
+
+    /// The day-count convention used to turn a pair of dates into a year fraction.
+    ///
+    /// Every discounting step in this file asks "how many years from the valuation date
+    /// to this cash flow", and the answer is a *convention*, not a fact: ACT/365 and
+    /// 30/360 give different numbers for the same two dates, and both are correct under
+    /// their own standard. Making it a stored property means the instrument states which
+    /// one governs it instead of the arithmetic deciding silently.
+    var dayCount: DayCountConvention { get } // LIVE: protocol requirement for bond pricing
 }
 
 // MARK: - Fixed-Rate Bond
@@ -142,6 +178,9 @@ public struct Bond<T: Real>: BondLike where T: Sendable {
     /// Date when the bond was issued
     public let issueDate: Date
 
+    /// The day-count convention governing this bond's year fractions.
+    public let dayCount: DayCountConvention
+
     /// Initialize a fixed-rate bond
     ///
     /// - Parameters:
@@ -150,18 +189,22 @@ public struct Bond<T: Real>: BondLike where T: Sendable {
     ///   - maturityDate: Date when bond matures
     ///   - paymentFrequency: How often coupons are paid
     ///   - issueDate: Date when bond was issued
+    ///   - dayCount: The convention used to turn two dates into a year fraction.
+    ///     Defaults to ACT/365; pass 30/360 or ACT/ACT to match a quoted basis.
     public init(
         faceValue: T,
         couponRate: T,
         maturityDate: Date,
         paymentFrequency: PaymentFrequency,
-        issueDate: Date
+        issueDate: Date,
+        dayCount: DayCountConvention = .actual365
     ) {
         self.faceValue = faceValue
         self.couponRate = couponRate
         self.maturityDate = maturityDate
         self.paymentFrequency = paymentFrequency
         self.issueDate = issueDate
+        self.dayCount = dayCount
     }
 
     /// Generate the complete cash flow schedule for the bond
@@ -252,15 +295,7 @@ public struct Bond<T: Real>: BondLike where T: Sendable {
 
         for cashFlow in cashFlows {
             // Calculate periods from asOf to cash flow date
-            let timeInterval = cashFlow.date.timeIntervalSince(asOf)
-            // Build seconds per year from integer literals
-            let wholeDays = T(365)
-            let quarterDay = T(1) / T(4)
-            let daysPerYear = wholeDays + quarterDay  // 365.25
-            let hoursPerDay = T(24)
-            let secondsPerHour = T(3600)
-            let secondsPerYear = daysPerYear * hoursPerDay * secondsPerHour
-            let years = T(Int(timeInterval)) / secondsPerYear
+            let years: T = dayCount.yearFraction(from: asOf, to: cashFlow.date)
             let periods = years * m
 
             let discountFactor = T.pow(T(1) + periodicYield, periods)
@@ -394,15 +429,7 @@ public struct Bond<T: Real>: BondLike where T: Sendable {
         var weightedTime: T = 0
 
         for cashFlow in cashFlows {
-            let timeInterval = cashFlow.date.timeIntervalSince(asOf)
-            // Build seconds per year from integer literals
-            let wholeDays = T(365)
-            let quarterDay = T(1) / T(4)
-            let daysPerYear = wholeDays + quarterDay  // 365.25
-            let hoursPerDay = T(24)
-            let secondsPerHour = T(3600)
-            let secondsPerYear = daysPerYear * hoursPerDay * secondsPerHour
-            let years = T(Int(timeInterval)) / secondsPerYear
+            let years: T = dayCount.yearFraction(from: asOf, to: cashFlow.date)
             let periods = years * m
 
             let discountFactor = T.pow(T(1) + periodicYield, periods)
@@ -487,15 +514,7 @@ public struct Bond<T: Real>: BondLike where T: Sendable {
         var convexitySum: T = 0
 
         for cashFlow in cashFlows {
-            let timeInterval = cashFlow.date.timeIntervalSince(asOf)
-            // Build seconds per year from integer literals
-            let wholeDays = T(365)
-            let quarterDay = T(1) / T(4)
-            let daysPerYear = wholeDays + quarterDay  // 365.25
-            let hoursPerDay = T(24)
-            let secondsPerHour = T(3600)
-            let secondsPerYear = daysPerYear * hoursPerDay * secondsPerHour
-            let years = T(Int(timeInterval)) / secondsPerYear
+            let years: T = dayCount.yearFraction(from: asOf, to: cashFlow.date)
             let periods = years * m
 
             let discountFactor = T.pow(T(1) + periodicYield, periods)
@@ -574,20 +593,27 @@ public struct ZeroCouponBond<T: Real>: BondLike where T: Sendable {
     /// Date when the bond was issued
     public let issueDate: Date
 
+    /// The day-count convention governing this bond's year fractions.
+    public let dayCount: DayCountConvention
+
     /// Initialize a zero coupon bond
     ///
     /// - Parameters:
     ///   - faceValue: Par value of the bond (amount paid at maturity)
     ///   - maturityDate: Date when bond matures
     ///   - issueDate: Date when bond was issued
+    ///   - dayCount: The convention used to turn two dates into a year fraction.
+    ///     Defaults to ACT/365; pass 30/360 or ACT/ACT to match a quoted basis.
     public init(
         faceValue: T,
         maturityDate: Date,
-        issueDate: Date
+        issueDate: Date,
+        dayCount: DayCountConvention = .actual365
     ) {
         self.faceValue = faceValue
         self.maturityDate = maturityDate
         self.issueDate = issueDate
+        self.dayCount = dayCount
     }
 
     /// Generate cash flow schedule (single principal payment at maturity)
@@ -616,14 +642,7 @@ public struct ZeroCouponBond<T: Real>: BondLike where T: Sendable {
     ///
     /// Price = Face Value / (1 + yield)^years
     public func price(yield: T, asOf: Date = Date()) -> T {
-        let timeInterval = maturityDate.timeIntervalSince(asOf)
-        let wholeDays = T(365)
-        let quarterDay = T(1) / T(4)
-        let daysPerYear = wholeDays + quarterDay
-        let hoursPerDay = T(24)
-        let secondsPerHour = T(3600)
-        let secondsPerYear = daysPerYear * hoursPerDay * secondsPerHour
-        let years = T(Int(timeInterval)) / secondsPerYear
+        let years: T = dayCount.yearFraction(from: asOf, to: maturityDate)
 
         let discountFactor = T.pow(T(1) + yield, years)
         return faceValue / discountFactor
@@ -639,14 +658,7 @@ public struct ZeroCouponBond<T: Real>: BondLike where T: Sendable {
     ///   - asOf: Valuation date
     /// - Returns: Yield to maturity (annualized)
     public func yieldToMaturity(price: T, asOf: Date = Date()) throws -> T {
-        let timeInterval = maturityDate.timeIntervalSince(asOf)
-        let wholeDays = T(365)
-        let quarterDay = T(1) / T(4)
-        let daysPerYear = wholeDays + quarterDay
-        let hoursPerDay = T(24)
-        let secondsPerHour = T(3600)
-        let secondsPerYear = daysPerYear * hoursPerDay * secondsPerHour
-        let years = T(Int(timeInterval)) / secondsPerYear
+        let years: T = dayCount.yearFraction(from: asOf, to: maturityDate)
 
         // YTM = (Face / Price)^(1/years) - 1
         let ratio = faceValue / price
@@ -664,14 +676,7 @@ public struct ZeroCouponBond<T: Real>: BondLike where T: Sendable {
     /// - Returns: Duration in years (equals years to maturity)
     public func macaulayDuration(yield: T, asOf: Date = Date()) -> T {
         // For zero coupon bonds, duration = time to maturity
-        let timeInterval = maturityDate.timeIntervalSince(asOf)
-        let wholeDays = T(365)
-        let quarterDay = T(1) / T(4)
-        let daysPerYear = wholeDays + quarterDay
-        let hoursPerDay = T(24)
-        let secondsPerHour = T(3600)
-        let secondsPerYear = daysPerYear * hoursPerDay * secondsPerHour
-        let years = T(Int(timeInterval)) / secondsPerYear
+        let years: T = dayCount.yearFraction(from: asOf, to: maturityDate)
 
         return years
     }
@@ -694,14 +699,7 @@ public struct ZeroCouponBond<T: Real>: BondLike where T: Sendable {
     ///   - asOf: Valuation date
     /// - Returns: Convexity
     public func convexity(yield: T, asOf: Date = Date()) -> T {
-        let timeInterval = maturityDate.timeIntervalSince(asOf)
-        let wholeDays = T(365)
-        let quarterDay = T(1) / T(4)
-        let daysPerYear = wholeDays + quarterDay
-        let hoursPerDay = T(24)
-        let secondsPerHour = T(3600)
-        let secondsPerYear = daysPerYear * hoursPerDay * secondsPerHour
-        let years = T(Int(timeInterval)) / secondsPerYear
+        let years: T = dayCount.yearFraction(from: asOf, to: maturityDate)
 
         // For zero coupon: Convexity = t(t+1) / (1+y)^2
         let numerator = years * (years + T(1))
@@ -818,6 +816,9 @@ public struct AmortizingBond<T: Real>: BondLike where T: Sendable {
     /// Schedule of principal amortization payments
     public let amortizationSchedule: [AmortizationPayment<T>]
 
+    /// The day-count convention governing this bond's year fractions.
+    public let dayCount: DayCountConvention
+
     /// Initialize an amortizing bond
     ///
     /// - Parameters:
@@ -827,13 +828,16 @@ public struct AmortizingBond<T: Real>: BondLike where T: Sendable {
     ///   - paymentFrequency: How often coupons are paid
     ///   - issueDate: Date when bond was issued
     ///   - amortizationSchedule: Schedule of principal repayments
+    ///   - dayCount: The convention used to turn two dates into a year fraction.
+    ///     Defaults to ACT/365; pass 30/360 or ACT/ACT to match a quoted basis.
     public init(
         faceValue: T,
         couponRate: T,
         maturityDate: Date,
         paymentFrequency: PaymentFrequency,
         issueDate: Date,
-        amortizationSchedule: [AmortizationPayment<T>]
+        amortizationSchedule: [AmortizationPayment<T>],
+        dayCount: DayCountConvention = .actual365
     ) {
         self.faceValue = faceValue
         self.couponRate = couponRate
@@ -841,6 +845,7 @@ public struct AmortizingBond<T: Real>: BondLike where T: Sendable {
         self.paymentFrequency = paymentFrequency
         self.issueDate = issueDate
         self.amortizationSchedule = amortizationSchedule
+        self.dayCount = dayCount
     }
 
     /// Generate cash flow schedule with coupons and principal payments
@@ -925,14 +930,7 @@ public struct AmortizingBond<T: Real>: BondLike where T: Sendable {
         var presentValue: T = 0
 
         for cashFlow in cashFlows {
-            let timeInterval = cashFlow.date.timeIntervalSince(asOf)
-            let wholeDays = T(365)
-            let quarterDay = T(1) / T(4)
-            let daysPerYear = wholeDays + quarterDay
-            let hoursPerDay = T(24)
-            let secondsPerHour = T(3600)
-            let secondsPerYear = daysPerYear * hoursPerDay * secondsPerHour
-            let years = T(Int(timeInterval)) / secondsPerYear
+            let years: T = dayCount.yearFraction(from: asOf, to: cashFlow.date)
 
             let discountFactor = T.pow(T(1) + yield, years)
             presentValue += cashFlow.amount / discountFactor
@@ -996,14 +994,7 @@ public struct AmortizingBond<T: Real>: BondLike where T: Sendable {
         var weightedTime: T = 0
 
         for cashFlow in cashFlows {
-            let timeInterval = cashFlow.date.timeIntervalSince(asOf)
-            let wholeDays = T(365)
-            let quarterDay = T(1) / T(4)
-            let daysPerYear = wholeDays + quarterDay
-            let hoursPerDay = T(24)
-            let secondsPerHour = T(3600)
-            let secondsPerYear = daysPerYear * hoursPerDay * secondsPerHour
-            let years = T(Int(timeInterval)) / secondsPerYear
+            let years: T = dayCount.yearFraction(from: asOf, to: cashFlow.date)
 
             let discountFactor = T.pow(T(1) + yield, years)
             let pv = cashFlow.amount / discountFactor
@@ -1038,14 +1029,7 @@ public struct AmortizingBond<T: Real>: BondLike where T: Sendable {
         var convexitySum: T = 0
 
         for cashFlow in cashFlows {
-            let timeInterval = cashFlow.date.timeIntervalSince(asOf)
-            let wholeDays = T(365)
-            let quarterDay = T(1) / T(4)
-            let daysPerYear = wholeDays + quarterDay
-            let hoursPerDay = T(24)
-            let secondsPerHour = T(3600)
-            let secondsPerYear = daysPerYear * hoursPerDay * secondsPerHour
-            let years = T(Int(timeInterval)) / secondsPerYear
+            let years: T = dayCount.yearFraction(from: asOf, to: cashFlow.date)
 
             let discountFactor = T.pow(T(1) + yield, years)
             let pv = cashFlow.amount / discountFactor

@@ -220,6 +220,11 @@ public struct DebtInstrument {
         // Calculate expected number of periods based on date range
         let timeInterval = maturityDate.timeIntervalSince(startDate)
         let periodsPerYear = Double(paymentFrequency.periodsPerYear)
+        // Convention: 365.25, sizing a loop rather than pricing anything. The result is
+        // rounded to a whole number of payment periods, so the choice between 365 and
+        // 365.25 can only matter within half a period of the boundary — and the `while`
+        // condition below tests `currentDate < maturityDate` independently, so a schedule
+        // is never extended past maturity by this estimate being generous.
         let expectedPeriods = Int(round((timeInterval / (365.25 * 24 * 3600)) * periodsPerYear))
 
         while currentDate < maturityDate && periods.count < expectedPeriods {

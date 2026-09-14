@@ -37,6 +37,9 @@ public enum CompoundingFrequency: Sendable {
 		case .semiannual: return 2
 		case .quarterly: return 4
 		case .monthly: return 12
+		// Convention: 365. A compounding *frequency* is a count of periods in a year, not
+		// a day count — 365.25 would mean a quarter of a compounding period, which is not
+		// a thing. Market conventions that compound on 360 express that through the rate.
 		case .daily: return 365
 		case .continuous: return Int.max  // Marker for continuous
 		}

@@ -177,7 +177,12 @@ extension TimeSeries {
 												 from: start.startDate,
 												 to: end.startDate)
 		let days = T(components.day ?? 0)
-		// Use 365.25 to account for leap years over long periods
+		// Convention: 365.25, the mean Gregorian year, and deliberately **not** a
+		// `DayCountConvention`. A growth rate is not an accrual — no counterparty settles
+		// on it, so no standard governs it. What it must do is be stable across the leap
+		// years a multi-year span contains, and the mean year is what makes "2020 to 2025"
+		// read as 5.0 rather than 5.003. ACT/365 would drift upward with every leap day in
+		// the window; ACT/ACT would make the answer depend on *which* years they were.
 		let daysPerYear = T(365) + T(1) / T(4)
 		let years = days / daysPerYear
 

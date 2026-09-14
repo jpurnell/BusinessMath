@@ -555,6 +555,14 @@ public struct OptionGrant {
     public func vestedShares(at date: Date) -> Double {
         let timeElapsed = date.timeIntervalSince(grantDate)
 
+        // Convention: 365 calendar days per year, throughout the vesting arithmetic below.
+        //
+        // A vesting cliff is a date in an employment agreement, not an accrual, so no
+        // day-count standard governs it — and a grant that vests on its anniversary should
+        // not drift a quarter-day per year against that date, which is exactly what 365.25
+        // would do. Note this measures *elapsed seconds*, so a grant spanning a leap day
+        // reaches its cliff one day after the calendar anniversary; that is a known
+        // simplification, not a convention choice.
         // If there's a vesting schedule, use it
         if let schedule = vestingSchedule {
             switch schedule {
