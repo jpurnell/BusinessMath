@@ -115,9 +115,23 @@ Box-Muller" and **there isn't one**; the library's is the right target because i
 
 ## 2. Next: C1, C2, C3 — three rules in another repository
 
-The proposal is written to Phase 0's full template:
-**`project/plans/proposals/PHASE_C_GATE_RULES.md`**. Nothing in `quality-gate-swift` has been
-changed, and it needs approval before anything is.
+**Approved and handed off.** The proposal now lives in the tool's own planning repository, at
+`quality-gate-swift-project/plans/upcoming/TestQualityAuditor_CoalescingAndAmbientCalendar.md`.
+Justin implements it in a separate session; nothing in `quality-gate-swift` has been changed.
+
+**Reconciling it against that repo's existing `TestQualityAuditor_SemanticRules.md` deleted C3
+outright.** `assertion-on-constant` already generalises `missing-assertion` from "has no
+assertions" to "has assertions, none of which touch your code" — the correct framing, strictly
+wider than the rule proposed here — and had already settled the suppression-scoping problem. What
+this project contributes instead is a fresh measurement: that rule was 73 on BusinessMath on
+2026-09-10 and is now **53** (40 with `// TEST-QUALITY:` markers, 13 bare in `LoggerTests`). Those
+53 are BusinessMath's work, not the tool's, and they gate `assertion-on-constant` leaving opt-in.
+
+**It also surfaced a collision that was avoided by luck.** `hardcoded-date` already exists and its
+suggested fix is literally *"Use `Date()`"* — which the first draft of C2 would have flagged. The
+adversarial review dropped `Date()` for an unrelated reason and happened to resolve it. The
+boundary now stated in the proposal: **a timestamp wants `Date()`; a calendar date wants a fixed
+calendar.**
 
 **The adversarial review changed two of the three designs and withdrew one**, which is the whole
 reason §12 is mandatory:
