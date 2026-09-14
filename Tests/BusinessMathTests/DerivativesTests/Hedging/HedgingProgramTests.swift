@@ -145,7 +145,7 @@ struct HedgingProgramTests {
 	// MARK: - Effective Realized Price
 
 	@Test("Effective realized price — spot $60 + hedge $12/bbl = $72/bbl")
-	func effectiveRealizedPrice() {
+	func effectiveRealizedPrice() throws {
 		// Swap at $72 fixed, 10K volume. Spot = $60.
 		// Settlement per period = (72-60) * 10000 = 120000
 		// Production = 10000
@@ -176,14 +176,15 @@ struct HedgingProgramTests {
 		)
 
 		for period in periods {
-			#expect(abs((effectivePrice[period] ?? 0) - 72.0) < 1e-6)
+			let measured0 = try #require(effectivePrice[period])
+			#expect(abs(measured0 - 72.0) < 1e-6)
 		}
 	}
 
 	// MARK: - Empty Program
 
 	@Test("Empty program — zero settlements, zero coverage")
-	func emptyProgram() {
+	func emptyProgram() throws {
 		let program = HedgingProgram<Double>()
 
 		let spotPrices = TimeSeries<Double>(
@@ -200,8 +201,10 @@ struct HedgingProgramTests {
 		let ratio = program.coverageRatio(totalProduction: production)
 
 		for period in periods {
-			#expect(abs((settlements[period] ?? 0) - 0.0) < 1e-6)
-			#expect(abs((ratio[period] ?? 0) - 0.0) < 1e-6)
+			let measured0 = try #require(settlements[period])
+			#expect(abs(measured0 - 0.0) < 1e-6)
+			let measured1 = try #require(ratio[period])
+			#expect(abs(measured1 - 0.0) < 1e-6)
 		}
 	}
 }

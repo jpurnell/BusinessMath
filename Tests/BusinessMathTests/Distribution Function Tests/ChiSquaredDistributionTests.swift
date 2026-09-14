@@ -199,7 +199,6 @@ struct ChiSquaredDistributionTests {
 	
 	@Test("Chi-squared distribution approaches normal as df increases")
 	func chiSquaredApproachesNormal() {
-	    #expect(true) // TEST-QUALITY: checker workaround for nested struct scope
 			// Test that skewness decreases as df increases
 			// For chi-squared, skewness = sqrt(8/df)
 		let sampleCount = 5000

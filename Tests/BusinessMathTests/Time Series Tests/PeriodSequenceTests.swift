@@ -78,7 +78,7 @@ struct PeriodSequenceTests {
     // MARK: - Aggregation
 
     @Test("Sum aggregation: 12 monthly values sum to correct quarterly totals")
-    func sumAggregation() {
+    func sumAggregation() throws {
         // Create a monthly time series: revenue = month * 1000
         let months = Array(PeriodSequence.monthly(
             from: Period.month(year: 2026, month: 1),
@@ -98,9 +98,11 @@ struct PeriodSequenceTests {
         )
 
         // Q1: 1000+2000+3000 = 6000
-        #expect(abs((quarterly[Period.quarter(year: 2026, quarter: 1)] ?? 0) - 6000.0) < 1e-10)
+        let measured0 = try #require(quarterly[Period.quarter(year: 2026, quarter: 1)])
+        #expect(abs(measured0 - 6000.0) < 1e-10)
         // Q2: 4000+5000+6000 = 15000
-        #expect(abs((quarterly[Period.quarter(year: 2026, quarter: 2)] ?? 0) - 15000.0) < 1e-10)
+        let measured1 = try #require(quarterly[Period.quarter(year: 2026, quarter: 2)])
+        #expect(abs(measured1 - 15000.0) < 1e-10)
     }
 
     @Test("Average aggregation: monthly rates average to quarterly")
@@ -128,7 +130,7 @@ struct PeriodSequenceTests {
     }
 
     @Test("Last-value aggregation: picks last month of quarter")
-    func lastValueAggregation() {
+    func lastValueAggregation() throws {
         let months = Array(PeriodSequence.monthly(
             from: Period.month(year: 2026, month: 1),
             through: Period.month(year: 2026, month: 6)
@@ -147,8 +149,10 @@ struct PeriodSequenceTests {
         )
 
         // Q1 end: March = 300
-        #expect(abs((quarterly[Period.quarter(year: 2026, quarter: 1)] ?? 0) - 300.0) < 1e-10)
+        let measured0 = try #require(quarterly[Period.quarter(year: 2026, quarter: 1)])
+        #expect(abs(measured0 - 300.0) < 1e-10)
         // Q2 end: June = 600
-        #expect(abs((quarterly[Period.quarter(year: 2026, quarter: 2)] ?? 0) - 600.0) < 1e-10)
+        let measured1 = try #require(quarterly[Period.quarter(year: 2026, quarter: 2)])
+        #expect(abs(measured1 - 600.0) < 1e-10)
     }
 }

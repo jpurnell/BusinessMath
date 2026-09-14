@@ -18,12 +18,12 @@ struct CallableBondTests {
         components.year = 2025
         components.month = 1
         components.day = 1
-        return try #require(Calendar.current.date(from: components))
+        return try #require(gregorianUTC.date(from: components))
     }
 
     @Test("Callable bond prices less than non-callable")
     func callablePriceLessThanNonCallable() throws {
-        let calendar = Calendar.current
+        let calendar = gregorianUTC
         let today = try Self.referenceDate()
         let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
@@ -61,7 +61,7 @@ struct CallableBondTests {
 
     @Test("Call option value is positive")
     func callOptionValuePositive() throws {
-        let calendar = Calendar.current
+        let calendar = gregorianUTC
         let today = try Self.referenceDate()
         let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
@@ -94,7 +94,7 @@ struct CallableBondTests {
 
     @Test("Higher volatility increases call option value")
     func volatilityImpactOnCallValue() throws {
-        let calendar = Calendar.current
+        let calendar = gregorianUTC
         let today = try Self.referenceDate()
         let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
@@ -134,7 +134,7 @@ struct CallableBondTests {
 
     @Test("Call option value with zero volatility is lower")
     func zeroVolatilityCallValue() throws {
-        let calendar = Calendar.current
+        let calendar = gregorianUTC
         let today = try Self.referenceDate()
         let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
@@ -174,7 +174,7 @@ struct CallableBondTests {
 
     @Test("Multiple call dates in schedule")
     func multipleCallDates() throws {
-        let calendar = Calendar.current
+        let calendar = gregorianUTC
         let today = try Self.referenceDate()
         let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
@@ -216,7 +216,7 @@ struct CallableBondTests {
 
     @Test("OAS calculation")
     func oasCalculation() throws {
-        let calendar = Calendar.current
+        let calendar = gregorianUTC
         let today = try Self.referenceDate()
         let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
@@ -258,7 +258,7 @@ struct CallableBondTests {
 
     @Test("OAS is positive for credit risk")
     func oasPositiveForCredit() throws {
-        let calendar = Calendar.current
+        let calendar = gregorianUTC
         let today = try Self.referenceDate()
         let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
@@ -299,7 +299,7 @@ struct CallableBondTests {
 
     @Test("Callable bond with Float type")
     func callableBondFloat() throws {
-        let calendar = Calendar.current
+        let calendar = gregorianUTC
         let today = try Self.referenceDate()
         let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
@@ -331,7 +331,7 @@ struct CallableBondTests {
 
     @Test("Callable bond effective duration")
     func effectiveDuration() throws {
-        let calendar = Calendar.current
+        let calendar = gregorianUTC
         let today = try Self.referenceDate()
         let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 

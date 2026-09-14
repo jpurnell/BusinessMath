@@ -15,7 +15,7 @@ struct DriverProjectionTests {
 	// MARK: - Deterministic Projection Tests
 
 	@Test("Deterministic projection creates correct time series")
-	func deterministicProjection() {
+	func deterministicProjection() throws {
 		let driver = DeterministicDriver(name: "Rent", value: 10_000.0)
 		let periods = Period.year(2025).quarters()
 		let projection = DriverProjection(driver: driver, periods: periods)
@@ -23,10 +23,14 @@ struct DriverProjectionTests {
 		let timeSeries = projection.project()
 
 		#expect(timeSeries.periods.count == 4)
-		#expect(abs((timeSeries[periods[0]] ?? 0) - 10_000.0) < 1e-6)
-		#expect(abs((timeSeries[periods[1]] ?? 0) - 10_000.0) < 1e-6)
-		#expect(abs((timeSeries[periods[2]] ?? 0) - 10_000.0) < 1e-6)
-		#expect(abs((timeSeries[periods[3]] ?? 0) - 10_000.0) < 1e-6)
+		let measured0 = try #require(timeSeries[periods[0]])
+		#expect(abs(measured0 - 10_000.0) < 1e-6)
+		let measured1 = try #require(timeSeries[periods[1]])
+		#expect(abs(measured1 - 10_000.0) < 1e-6)
+		let measured2 = try #require(timeSeries[periods[2]])
+		#expect(abs(measured2 - 10_000.0) < 1e-6)
+		let measured3 = try #require(timeSeries[periods[3]])
+		#expect(abs(measured3 - 10_000.0) < 1e-6)
 	}
 
 	@Test("Probabilistic projection creates valid time series")

@@ -23,7 +23,7 @@ struct SMBIntegrationTests {
 			DateComponents(year: 2024, month: 6, day: 30),
 			DateComponents(year: 2024, month: 9, day: 30),
 			DateComponents(year: 2024, month: 12, day: 31)
-		].compactMap { Calendar.current.date(from: $0) }
+		].compactMap { gregorianUTC.date(from: $0) }
 			.map { Period.day($0) }
 
 		return TimeSeries(periods: periods, values: values)

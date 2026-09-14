@@ -28,7 +28,7 @@ struct DayCountConventionAdditionsTests {
 		components.year = year
 		components.month = month
 		components.day = day
-		guard let date = Calendar.current.date(from: components) else {
+		guard let date = gregorianUTC.date(from: components) else {
 			preconditionFailure("\(year)-\(month)-\(day) is not a date")
 		}
 		return date
@@ -311,8 +311,8 @@ struct DayCountConventionAdditionsTests {
 		components.year = 1899
 		components.month = 12
 		components.day = 30
-		guard let epoch = Calendar.current.date(from: components),
-			  let date = Calendar.current.date(byAdding: .day, value: Int(serial), to: epoch) else {
+		guard let epoch = gregorianUTC.date(from: components),
+			  let date = gregorianUTC.date(byAdding: .day, value: Int(serial), to: epoch) else {
 			preconditionFailure("serial \(serial) is not a date")
 		}
 		return date

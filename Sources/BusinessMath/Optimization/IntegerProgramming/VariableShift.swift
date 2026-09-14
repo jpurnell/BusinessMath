@@ -69,6 +69,14 @@ public struct VariableShift: Sendable {
         return VectorN(shifted)
     }
 
+    /// `y + offsets`, the same mapping ``unshiftPoint(_:)`` performs, as a static so a
+    /// `@Sendable` closure can capture the offsets by value rather than capturing `self`.
+    static func translate(_ point: VectorN<Double>, by offsets: [Double]) -> VectorN<Double> {
+        let components = point.toArray()
+        let moved = zip(components, offsets).map { $0 + $1 }
+        return VectorN(moved)
+    }
+
     /// Transform point from shifted back to original space
     ///
     /// Computes: x_i = y_i + shifts[i] for each variable
@@ -133,12 +141,37 @@ public struct VariableShift: Sendable {
                 rhs: newRHS
             )
 
-        case .equality, .inequality:
-            // Non-linear constraints: would need to wrap the function
-            // For now, throw an error
-            throw OptimizationError.invalidInput(
-                message: "Variable shifting only supports linear constraints. Convert closure-based constraints to linear form first."
-            )
+        case .inequality(let g, let gradient):
+            // A closure needs no inspection to shift — only composition. The substitution
+            // is `x = y + shift`, so the constraint in shifted coordinates is
+            // `g(y + shift) <= 0`, which is `g` applied to the unshifted point.
+            //
+            // This used to throw, which made `enableVariableShifting` refuse any model
+            // carrying a closure constraint — including the one whose bound the extractor
+            // had just recovered. `unshiftPoint` already performs exactly this mapping for
+            // the solution vector; the constraint needs the same treatment.
+            let offsets = shifts
+            let shiftedFunction: @Sendable (VectorN<Double>) -> Double = { y in
+                g(VariableShift.translate(y, by: offsets))
+            }
+            // The gradient keeps its direction — a translation has the identity as its
+            // Jacobian — but must be evaluated at the unshifted point.
+            var shiftedGradient: (@Sendable (VectorN<Double>) -> VectorN<Double>)? = nil
+            if let grad = gradient {
+                shiftedGradient = { y in grad(VariableShift.translate(y, by: offsets)) }
+            }
+            return .inequality(function: shiftedFunction, gradient: shiftedGradient)
+
+        case .equality(let h, let gradient):
+            let offsets = shifts
+            let shiftedFunction: @Sendable (VectorN<Double>) -> Double = { y in
+                h(VariableShift.translate(y, by: offsets))
+            }
+            var shiftedGradient: (@Sendable (VectorN<Double>) -> VectorN<Double>)? = nil
+            if let grad = gradient {
+                shiftedGradient = { y in grad(VariableShift.translate(y, by: offsets)) }
+            }
+            return .equality(function: shiftedFunction, gradient: shiftedGradient)
         }
     }
 }
@@ -252,8 +285,29 @@ public func extractVariableShift(
             // Equality constraints don't provide bounds
             continue
 
-        case .equality, .inequality:
-            // Non-linear constraints: can't extract bounds
+        case .inequality(let g, _):
+            // A bound written as a closure is still a bound.
+            //
+            // This used to `continue`, on the reasoning that a closure is opaque and so
+            // cannot yield a bound. The consequence was a wrong answer rather than a
+            // missed optimisation: with no shift applied, the simplex's implicit `x >= 0`
+            // truncates, so `minimize x` subject to `x >= -3` returned **0** — silently,
+            // with no error, which is the shape this package's fail-silent principle
+            // exists to forbid. The identical bound written as `.linearInequality`
+            // returned -3 correctly, so the answer depended on how the caller spelled it.
+            //
+            // A closure is opaque to *inspection*, not to *evaluation*. The same probe
+            // `validateLinearModel` already uses recovers an affine function's
+            // coefficients exactly: the constant from the origin, each coefficient from a
+            // unit step, and affinity confirmed at points away from both.
+            if let bound = singleVariableLowerBound(of: g, dimension: dimension),
+               bound.value < 0 {
+                shifts[bound.index] = Swift.min(shifts[bound.index], bound.value)
+            }
+
+        case .equality:
+            // An equality pins a variable rather than bounding it from below, and the
+            // `.linearEquality` case above declines it for the same reason.
             continue
         }
     }
@@ -262,4 +316,76 @@ public func extractVariableShift(
     let needsShift = shifts.contains { abs($0) > 1e-10 }
 
     return VariableShift(shifts: shifts, needsShift: needsShift)
+}
+
+
+// MARK: - Recovering a bound from a closure
+
+/// Recovers `x_i >= b` from an inequality closure, when that is what it says.
+///
+/// `MultivariateConstraint.inequality` carries `g(x) <= 0`. When `g` is affine and depends
+/// on exactly one variable, that is a bound on that variable, and which end it bounds is
+/// decided by the sign of the coefficient:
+///
+/// ```
+/// c·x_i + d <= 0     with c < 0   =>   x_i >= -d/c      (a lower bound)
+///                    with c > 0   =>   x_i <= -d/c      (an upper bound, not ours)
+/// ```
+///
+/// The coefficients come from evaluation rather than inspection: `d = g(0)`, and
+/// `c_i = g(e_i) - d`. That is exact for an affine function and meaningless for anything
+/// else, so affinity is **confirmed before the result is trusted** — at points away from
+/// both the origin and the unit vectors, where a quadratic or a product term disagrees.
+///
+/// - Returns: The variable index and its lower bound, or `nil` when `g` is not affine,
+///   depends on more than one variable, bounds from above, or evaluates to a non-finite
+///   value anywhere it is probed.
+private func singleVariableLowerBound(
+    of g: @Sendable (VectorN<Double>) -> Double,
+    dimension: Int
+) -> (index: Int, value: Double)? {
+    guard dimension > 0 else { return nil }
+
+    let origin = VectorN<Double>(Array(repeating: 0.0, count: dimension))
+    let constant = g(origin)
+    guard constant.isFinite else { return nil }
+
+    var coefficients = Array(repeating: 0.0, count: dimension)
+    for index in 0..<dimension {
+        var components = Array(repeating: 0.0, count: dimension)
+        components[index] = 1.0
+        let stepped = g(VectorN<Double>(components))
+        guard stepped.isFinite else { return nil }
+        coefficients[index] = stepped - constant
+    }
+
+    // Confirm affinity away from the probes. A quadratic agrees at 0 and at every unit
+    // vector and disagrees here, which is exactly the case that must not be trusted.
+    let witnesses: [[Double]] = [
+        (0..<dimension).map { Double($0 % 5) * 0.5 + 0.25 },
+        (0..<dimension).map { -(Double($0 % 3) + 1.5) },
+        Array(repeating: 2.75, count: dimension),
+    ]
+    for components in witnesses {
+        let actual = g(VectorN<Double>(components))
+        guard actual.isFinite else { return nil }
+        var predicted = constant
+        for (index, component) in components.enumerated() {
+            predicted += coefficients[index] * component
+        }
+        let scale = Swift.max(1.0, Swift.abs(actual), Swift.abs(predicted))
+        guard Swift.abs(actual - predicted) <= 1e-9 * scale else { return nil }
+    }
+
+    // Exactly one variable, or this is not a bound on a variable.
+    var candidate: Int? = nil
+    for (index, coefficient) in coefficients.enumerated() where Swift.abs(coefficient) > 1e-10 {
+        if candidate != nil { return nil }
+        candidate = index
+    }
+    guard let index = candidate else { return nil }
+
+    let coefficient = coefficients[index]
+    guard coefficient < 0 else { return nil }   // positive coefficient bounds from above
+    return (index, -constant / coefficient)
 }

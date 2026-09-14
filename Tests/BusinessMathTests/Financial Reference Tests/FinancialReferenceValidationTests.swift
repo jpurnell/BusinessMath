@@ -83,7 +83,7 @@ struct FinancialReferenceValidationTests {
 
 	@Test("Bond duration: higher coupon rate yields lower duration")
 	func bondDurationCouponRelationship() throws {
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let issueDate = calendar.date(from: DateComponents(year: 2020, month: 1, day: 1)) ?? Date()
 		let maturityDate = calendar.date(from: DateComponents(year: 2030, month: 1, day: 1)) ?? Date()
 

@@ -15,7 +15,7 @@ struct ZeroCouponBondTests {
 
     @Test("Zero coupon bond price calculation")
     func zeroCouponBondPrice() throws {
-        let calendar = Calendar.current
+        let calendar = gregorianUTC
         let today = Date()
         let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
@@ -36,7 +36,7 @@ struct ZeroCouponBondTests {
 
     @Test("Zero coupon bond at different yields")
     func zeroCouponBondYields() throws {
-        let calendar = Calendar.current
+        let calendar = gregorianUTC
         let today = Date()
         let maturity = try #require(calendar.date(byAdding: .year, value: 5, to: today))
 
@@ -56,7 +56,7 @@ struct ZeroCouponBondTests {
 
     @Test("Zero coupon bond YTM calculation")
     func zeroCouponBondYTM() throws {
-        let calendar = Calendar.current
+        let calendar = gregorianUTC
         let today = Date()
         let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
@@ -79,7 +79,7 @@ struct ZeroCouponBondTests {
 
     @Test("Zero coupon bond duration equals maturity")
     func zeroCouponBondDuration() throws {
-        let calendar = Calendar.current
+        let calendar = gregorianUTC
         let today = Date()
         let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
@@ -98,7 +98,7 @@ struct ZeroCouponBondTests {
 
     @Test("Zero coupon bond cash flow schedule")
     func zeroCouponBondCashFlows() throws {
-        let calendar = Calendar.current
+        let calendar = gregorianUTC
         let today = Date()
         let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
@@ -122,7 +122,7 @@ struct AmortizingBondTests {
 
     @Test("Amortizing bond cash flow schedule")
     func amortizingBondCashFlows() throws {
-        let calendar = Calendar.current
+        let calendar = gregorianUTC
         let today = Date()
         let maturity = try #require(calendar.date(byAdding: .year, value: 3, to: today))
 
@@ -158,7 +158,7 @@ struct AmortizingBondTests {
 
     @Test("Amortizing bond price calculation")
     func amortizingBondPrice() throws {
-        let calendar = Calendar.current
+        let calendar = gregorianUTC
         let today = Date()
         let maturity = try #require(calendar.date(byAdding: .year, value: 3, to: today))
 
@@ -182,7 +182,7 @@ struct AmortizingBondTests {
 
     @Test("Amortizing bond YTM calculation")
     func amortizingBondYTM() throws {
-        let calendar = Calendar.current
+        let calendar = gregorianUTC
         let today = Date()
         let maturity = try #require(calendar.date(byAdding: .year, value: 3, to: today))
 
@@ -211,7 +211,7 @@ struct AmortizingBondTests {
 
     @Test("Amortizing bond duration less than maturity")
     func amortizingBondDuration() throws {
-        let calendar = Calendar.current
+        let calendar = gregorianUTC
         let today = Date()
         let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
@@ -240,7 +240,7 @@ struct AmortizingBondTests {
 
     @Test("Amortizing bond with semiannual coupons")
     func amortizingBondSemiannual() throws {
-        let calendar = Calendar.current
+        let calendar = gregorianUTC
         let today = Date()
         let maturity = try #require(calendar.date(byAdding: .year, value: 2, to: today))
 

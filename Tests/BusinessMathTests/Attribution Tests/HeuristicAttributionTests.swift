@@ -191,7 +191,8 @@ struct HeuristicAttributionTests {
 
 		// First touch inverts the error rather than fixing it.
 		let opening = try HeuristicAttribution.firstTouch.attribute(journeys: funnel)
-		#expect(Swift.abs((opening["Awareness"] ?? 0) - 5) < 1e-9, "\(opening)")
+		let openingAwareness = try #require(opening["Awareness"], "Awareness has no opening credit")
+		#expect(Swift.abs(openingAwareness - 5) < 1e-9, "\(opening)")
 		let closer = try #require(opening["Close"])
 		#expect(Swift.abs(closer) < 1e-12, "and now the closer is worth \(closer)")
 	}

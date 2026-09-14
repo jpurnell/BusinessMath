@@ -95,7 +95,10 @@ struct BranchAndCutRobustnessTests {
             integerSpec: .allInteger(dimension: 2)
         )
 
-        #expect(result.cuttingPlaneStats?.mirCuts ?? 0 >= 0)
+        // `?? 0 >= 0` on an unsigned count is true for every input, present or absent.
+        // The claim worth making is that the statistics exist at all.
+        let stats = try #require(result.cuttingPlaneStats, "cutting planes were enabled but reported nothing")
+        #expect(stats.mirCuts >= 0)
     }
 
     @Test("Duplicate cuts are not added repeatedly")

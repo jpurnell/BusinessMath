@@ -121,7 +121,7 @@ struct PeriodSemiannualAndCustomTests {
 	@Test("Semiannual end date is the last instant of the sixth month")
 	func semiannualEndDate() {
 		let h1 = Period.semiannual(year: 2025, half: 1)
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let components = calendar.dateComponents([.year, .month, .day], from: h1.endDate)
 		#expect(components.year == 2025)
 		#expect(components.month == 6)
@@ -217,7 +217,7 @@ struct PeriodSemiannualAndCustomTests {
 	}
 
 	@Test("Aggregating quarterly data to semiannual sums the halves")
-	func aggregateToSemiannual() {
+	func aggregateToSemiannual() throws {
 		let series = TimeSeries<Double>(
 			periods: [
 				Period.quarter(year: 2025, quarter: 1),
@@ -230,8 +230,10 @@ struct PeriodSemiannualAndCustomTests {
 
 		let halves = series.aggregate(to: .semiannual, method: .sum)
 		#expect(halves.count == 2)
-		#expect(abs((halves[Period.semiannual(year: 2025, half: 1)] ?? 0) - 30.0) < tolerance)
-		#expect(abs((halves[Period.semiannual(year: 2025, half: 2)] ?? 0) - 70.0) < tolerance)
+		let measured0 = try #require(halves[Period.semiannual(year: 2025, half: 1)])
+		#expect(abs(measured0 - 30.0) < tolerance)
+		let measured1 = try #require(halves[Period.semiannual(year: 2025, half: 2)])
+		#expect(abs(measured1 - 70.0) < tolerance)
 	}
 
 	// MARK: - Decision 3: Arbitrary ranges
@@ -241,7 +243,7 @@ struct PeriodSemiannualAndCustomTests {
 		components.year = year
 		components.month = month
 		components.day = day
-		guard let d = Calendar.current.date(from: components) else {
+		guard let d = gregorianUTC.date(from: components) else {
 			preconditionFailure("bad test date")
 		}
 		return d

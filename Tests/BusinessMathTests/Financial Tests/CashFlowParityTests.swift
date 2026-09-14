@@ -35,7 +35,7 @@ struct CashFlowParityTests {
 			components.year = $0.year
 			components.month = $0.month
 			components.day = $0.day
-			guard let date = Calendar.current.date(from: components) else {
+			guard let date = gregorianUTC.date(from: components) else {
 				preconditionFailure("bad date")
 			}
 			return date

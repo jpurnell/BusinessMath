@@ -434,7 +434,7 @@ struct PeriodTests {
 	}
 
 	@Test("Periods can be used as dictionary keys")
-	func periodsAsDictionaryKeys() {
+	func periodsAsDictionaryKeys() throws {
 		var dict: [Period: Double] = [:]
 
 		let jan = Period.month(year: 2025, month: 1)
@@ -443,19 +443,22 @@ struct PeriodTests {
 		dict[jan] = 100.0
 		dict[feb] = 200.0
 
-		#expect(abs((dict[jan] ?? 0) - 100.0) < 1e-6)
-		#expect(abs((dict[feb] ?? 0) - 200.0) < 1e-6)
+		let measured0 = try #require(dict[jan])
+		#expect(abs(measured0 - 100.0) < 1e-6)
+		let measured1 = try #require(dict[feb])
+		#expect(abs(measured1 - 200.0) < 1e-6)
 	}
 
 	@Test("Same period retrieves same value from dictionary")
-	func dictionaryRetrievalConsistency() {
+	func dictionaryRetrievalConsistency() throws {
 		var dict: [Period: Double] = [:]
 
 		let period1 = Period.month(year: 2025, month: 1)
 		dict[period1] = 100.0
 
 		let period2 = Period.month(year: 2025, month: 1)
-		#expect(abs((dict[period2] ?? 0) - 100.0) < 1e-6)
+		let measured0 = try #require(dict[period2])
+		#expect(abs(measured0 - 100.0) < 1e-6)
 	}
 
 	// MARK: - Comparable

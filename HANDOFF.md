@@ -4,8 +4,8 @@
 CI-green.** The work queue is **`project/plans/TEST_REVIEW_ROADMAP.md`** — read that before
 anything else; this file is the state and the traps, that file is the plan.
 
-**Phases A, B and E are complete.** D is partly done. The next piece of work is **C**, and it
-needs a decision from Justin — see §2.
+**Phases A, B, D and E are complete, and C4 with them. L19 is fixed.** What remains of C is three
+gate rules in a different repository, specified but not written — see §2.
 
 ## State
 
@@ -113,31 +113,35 @@ Box-Muller" and **there isn't one**; the library's is the right target because i
 
 ---
 
-## 2. Next: Phase C — and it needs your call first
+## 2. Next: C1, C2, C3 — three rules in another repository
 
-`TEST_REVIEW_ROADMAP.md` §5.2 is the order.
+The specification is written: **`project/plans/proposals/PHASE_C_GATE_RULES.md`**. It names the
+files, the existing rule ids to match, the carve-outs, and the order to land them. Nothing in
+`quality-gate-swift` has been changed.
 
-**Phase C is the one thing I stopped short of, on purpose.** Its four items are *gate rules*, and
-landing a rule means editing **`/Users/jpurnell/Dropbox/Computer/Development/Swift/Tools/quality-gate-swift`**
-— a different repository, shared with other projects, whose output is **blocking**. Adding a
-blocking rule unattended could break your gate and stop your next commit in a repo I was not asked
-to touch. The source is there and the work is tractable; it wants you awake.
+**Why it is a specification and not a branch.** These rules live in
+`/Users/jpurnell/Dropbox/Computer/Development/Swift/Tools/quality-gate-swift`, they are **blocking**,
+and that repository is shared with other projects. A rule that misfires stops the next commit
+everywhere, not just here.
 
-The four: **C1** `?? <literal>` in `#expect` (211 sites measured, not 225) · **C2** ambient
-calendar/clock in tests, **with the bracketing carve-out** or it flags nine correct tests in
-`WallClockAdoptionTests` · **C3** `#expect(true)` as a test's only assertion · **C4** fix the
-checker's nested-scope bug, which is why 18 `#expect(true) // checker workaround` markers exist and
-cannot be removed until it is fixed.
+**C4 turned out to need no change at all.** It was filed as "fix the checker's nested-scope bug",
+and the bug does not reproduce against the shipping binary: a test with two local `func`
+declarations followed by four real `#expect`s draws no `missing-assertion` diagnostic. The auditor
+already handles it and says so in its own source. All 18 `// checker workaround for nested struct
+scope` markers have been removed and the checker is clean without them. **The workarounds outlived
+their cause**, which is worth remembering the next time one is written without an expiry.
 
-**D is partly swept, and the remainder is recorded per item in the roadmap** rather than left as a
-number. D2 is 158 of 211; D1 is 27 of 52; D4's `guard let` half is done and its fixture
-deduplication is not; **D3 is not started**.
+**The three that remain, in the order the proposal argues for:**
 
-**Why D was not finished by regex.** The shapes vary more than the roadmap's counts suggest, and a
-sweeping substitution across 24 files unattended risks silent damage. Each file was transformed and
-run before the next. One concrete trap worth keeping: **`try #require` cannot be inlined into
-`#expect`** — `#expect(abs(try #require(x) - v) < t)` fails to compile with "errors thrown from here
-are not handled", so every site needs a real binding and its enclosing function needs `throws`.
+1. **C2 — ambient calendar or clock.** First, because its carve-out is the one that makes the rule
+   *wrong* if omitted. Two `Date()` readings compared to each other assert ordering and are
+   correct; `WallClockAdoptionTests` has nine. And `Calendar(identifier: .gregorian)` must be
+   flagged too — it *looks* fixed and carries `TimeZone.current`, which is the form that put
+   January's value in the previous year's Q4.
+2. **C1 — `??` with a literal inside an assertion.** Lands clean: **all 211 sites are swept**, so
+   the rule starts at zero rather than as a burn-down.
+3. **C3 — `#expect(true)` as a test's only assertion.** Last, because **53 sites remain** and a
+   blocking rule with 53 known violations is one nobody can turn on. They are enumerated in D1.
 
 ---
 
@@ -271,6 +275,15 @@ where the comparison is deliberate; `== 0.0` is permitted. Auditor justification
 immediately after a full suite plus a full gate had just run, and the identical command passed a
 minute later with nothing changed. Load-sensitive checkers time out. **Re-run quiet before
 believing a gate failure**, and check `git log` — the commit had not landed.
+
+**`0 error(s)` is not a passing gate.** `doc-coverage` exits non-zero when coverage falls below its
+threshold even though its finding is a *warning*, so the summary can read `0 error(s), 12 warning(s)`
+under a red banner. Read `GATE_EXIT` and the per-checker `✗ [name] FAILED` line, not the error count.
+
+**And the property-above-init trap bites more than once.** It was recorded here on 2026-09-13 after
+`dayCount` displaced three `public init` doc comments, and it happened again the next day when a
+`translate` helper displaced `unshiftPoint`'s. Writing a trap down does not stop anyone walking into
+it — the gate does. What the record buys is an instant diagnosis instead of a puzzling one.
 
 **Inserting a stored property above a `public init` steals the init's documentation.** `doc-coverage`
 dropped to 99% with "Public initializer 'init' is missing documentation" ×3 after `dayCount` was

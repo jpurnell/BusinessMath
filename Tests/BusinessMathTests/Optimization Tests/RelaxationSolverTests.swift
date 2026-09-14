@@ -139,7 +139,6 @@ struct RelaxationSolverTests {
 
     @Test("RelaxationSolver protocol can be used as existential type")
     func testRelaxationSolverProtocolExistential() throws {
-        #expect(true) // TEST-QUALITY: checker workaround for nested struct scope
         // Test that the protocol can be used as an existential (any RelaxationSolver)
         // and that conforming types can be called through the protocol interface
 
@@ -181,7 +180,6 @@ struct RelaxationSolverTests {
 
     @Test("RelaxationSolver is Sendable")
     func testRelaxationSolverSendable() {
-        #expect(true) // TEST-QUALITY: checker workaround for nested struct scope
         // The protocol should require Sendable conformance
         struct MockSendableSolver: RelaxationSolver {
             func solveRelaxation<V: VectorSpace>(

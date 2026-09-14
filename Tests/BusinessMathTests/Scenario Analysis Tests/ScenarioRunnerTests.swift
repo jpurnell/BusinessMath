@@ -139,7 +139,8 @@ struct ScenarioRunnerTests {
 		// Verify revenue was set correctly
 		let totalRevenue = projection.incomeStatement.totalRevenue
 		let q1 = Period.quarter(year: 2025, quarter: 1)
-		#expect(abs((totalRevenue[q1] ?? 0) - 1000.0) < 1e-2)
+		let measured0 = try #require(totalRevenue[q1])
+		#expect(abs(measured0 - 1000.0) < 1e-2)
 	}
 
 	@Test("ScenarioRunner applies driver overrides")

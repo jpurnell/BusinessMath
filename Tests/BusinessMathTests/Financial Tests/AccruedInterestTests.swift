@@ -24,7 +24,7 @@ struct AccruedInterestTests {
 		components.year = year
 		components.month = month
 		components.day = day
-		guard let date = Calendar.current.date(from: components) else {
+		guard let date = gregorianUTC.date(from: components) else {
 			preconditionFailure("\(year)-\(month)-\(day) is not a date")
 		}
 		return date

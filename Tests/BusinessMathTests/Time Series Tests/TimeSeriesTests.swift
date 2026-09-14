@@ -583,7 +583,7 @@ struct TimeSeriesTests {
 	@Test("Daily production time series")
 	func dailyProductionScenario() throws {
 		// 7 days of production
-		let calendar = Calendar.current
+		let calendar = gregorianUTC
 		let today = calendar.startOfDay(for: Date())
 		let periods = try (0..<7).map { offset in
 			let date = try #require(calendar.date(byAdding: .day, value: offset, to: today))

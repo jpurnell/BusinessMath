@@ -14,7 +14,7 @@ import Numerics
 struct ScenarioAnalysisTests {
 
 	@Test("Scenario initialization with name and inputs")
-	func scenarioInitialization() {
+	func scenarioInitialization() throws {
 		let scenario = Scenario(name: "Base Case") { config in
 			config.setValue(1_000_000.0, forInput: "Revenue")
 			config.setValue(700_000.0, forInput: "Costs")
@@ -22,8 +22,10 @@ struct ScenarioAnalysisTests {
 
 		#expect(scenario.name == "Base Case")
 		#expect(scenario.inputValues.count == 2)
-		#expect(abs((scenario.inputValues["Revenue"] ?? 0) - 1_000_000.0) < 1e-2)
-		#expect(abs((scenario.inputValues["Costs"] ?? 0) - 700_000.0) < 1e-2)
+		let measured0 = try #require(scenario.inputValues["Revenue"])
+		#expect(abs(measured0 - 1_000_000.0) < 1e-2)
+		let measured1 = try #require(scenario.inputValues["Costs"])
+		#expect(abs(measured1 - 700_000.0) < 1e-2)
 	}
 
 	@Test("ScenarioAnalysis basic setup")
@@ -511,8 +513,10 @@ struct ScenarioAnalysisTests {
 		// Total inputs = values + distributions
 		let totalInputs = scenario.inputValues.count + scenario.inputDistributions.count
 		#expect(totalInputs == 4)
-		#expect(abs((scenario.inputValues["Revenue"] ?? 0) - 1_000_000.0) < 1e-2)
-		#expect(abs((scenario.inputValues["TaxRate"] ?? 0) - 0.3) < 1e-6)
+		let measured0 = try #require(scenario.inputValues["Revenue"])
+		#expect(abs(measured0 - 1_000_000.0) < 1e-2)
+		let measured1 = try #require(scenario.inputValues["TaxRate"])
+		#expect(abs(measured1 - 0.3) < 1e-6)
 		let _ = try #require(scenario.inputDistributions["Costs"])
 		let _ = try #require(scenario.inputDistributions["GrowthRate"])
 	}

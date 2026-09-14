@@ -450,7 +450,8 @@ struct ResourceAllocationTests {
 
 		#expect(result.converged, "Should converge")
 		#expect(result.selectedOptions.count == 1, "Should select the only option")
-		#expect(result.allocations["proj1"] ?? 0.0 > 0.5, "Should allocate to single option")
+		let proj1 = try #require(result.allocations["proj1"], "proj1 received no allocation at all")
+		#expect(proj1 > 0.5, "Should allocate to single option, got \(proj1)")
 	}
 
 	// MARK: - Real-World Scenario

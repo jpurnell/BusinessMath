@@ -78,7 +78,8 @@ struct SchemaMigrationTests {
 		// After all migrations:
 		#expect(migrated["category"] as? String == "Uncategorized")  // v1->v2
 		#expect(migrated["revenue"] == nil)  // Removed in v2->v3
-		#expect(abs((migrated["totalRevenue"] as? Double ?? 0) - 100.0) < 1e-6)  // Renamed and converted
+		let measured0 = try #require(migrated["totalRevenue"] as? Double)
+		#expect(abs(measured0 - 100.0) < 1e-6)  // Renamed and converted
 	}
 
 	@Test("Migration from v1 to v3")
@@ -94,7 +95,8 @@ struct SchemaMigrationTests {
 		let migrated = try manager.migrate(data: data, from: 1, to: 3)
 
 		let _ = try #require(migrated["category"])
-		#expect(abs((migrated["totalRevenue"] as? Double ?? 0) - 100_000.0) < 1e-6)
+		let measured0 = try #require(migrated["totalRevenue"] as? Double)
+		#expect(abs(measured0 - 100_000.0) < 1e-6)
 		#expect(migrated["revenue"] == nil)
 	}
 
@@ -147,7 +149,8 @@ struct SchemaMigrationTests {
 
 		// All original data preserved
 		#expect(migrated["name"] as? String == "Acme Corp")
-		#expect(abs((migrated["revenue"] as? Double ?? 0) - 100_000.0) < 1e-6)
+		let measured0 = try #require(migrated["revenue"] as? Double)
+		#expect(abs(measured0 - 100_000.0) < 1e-6)
 		#expect(migrated["employees"] as? Int == 50)
 		// Plus new field
 		#expect(migrated["category"] as? String == "Uncategorized")
@@ -155,7 +158,6 @@ struct SchemaMigrationTests {
 
 	@Test("Migration chain with data transformation")
 	func migrationChainWithTransformation() throws {
-	    #expect(true) // TEST-QUALITY: checker workaround for nested struct scope
 		struct ComplexMigration: SchemaMigration {
 			let fromVersion = 1
 			let toVersion = 2
@@ -191,7 +193,6 @@ struct SchemaMigrationTests {
 
 	@Test("Migration throws error on invalid data")
 	func migrationWithError() throws {
-	    #expect(true) // TEST-QUALITY: checker workaround for nested struct scope
 		struct FailingMigration: SchemaMigration {
 			let fromVersion = 1
 			let toVersion = 2
@@ -287,7 +288,6 @@ struct MigrationManagerAdditionalTests {
 	
 	@Test("Failing migration in the middle of a chain reports failing version")
 		func midChainFailureReportsVersion() throws {
-	    #expect(true) // TEST-QUALITY: checker workaround for nested struct scope
 			struct Failing2to3: SchemaMigration {
 				let fromVersion = 2
 				let toVersion = 3

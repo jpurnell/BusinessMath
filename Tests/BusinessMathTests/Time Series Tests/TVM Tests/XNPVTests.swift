@@ -20,7 +20,7 @@ struct XNPVTests {
 		components.year = year
 		components.month = month
 		components.day = day
-		return try #require(Calendar.current.date(from: components))
+		return try #require(gregorianUTC.date(from: components))
 	}
 
 	// MARK: - XNPV Tests
@@ -132,7 +132,7 @@ struct XNPVTests {
 	func xirrMonthlyCashFlows() throws {
 		// Monthly investment returns
 		let dates = try (0...12).map { months in
-			(try #require(Calendar.current.date(byAdding: .month, value: months, to: date(2025, 1, 1))))
+			(try #require(gregorianUTC.date(byAdding: .month, value: months, to: date(2025, 1, 1))))
 		}
 		var cashFlows = Array(repeating: 100.0, count: 13)
 		cashFlows[0] = -1000.0  // Initial investment
@@ -352,7 +352,6 @@ struct XNPVTests {
 	
 	@Test("XNPV with duplicate dates aggregates correctly")
 		func xnpvDuplicateDates() throws {
-	    #expect(true) // TEST-QUALITY: checker workaround for nested struct scope
 			func d(_ y:Int,_ m:Int,_ day:Int) throws -> Date {
 				var c = DateComponents()
 				c.year = y; c.month = m; c.day = day; c.timeZone = TimeZone(secondsFromGMT: 0)

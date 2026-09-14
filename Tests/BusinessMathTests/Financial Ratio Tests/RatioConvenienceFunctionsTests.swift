@@ -778,7 +778,6 @@ struct RatioConvenienceFunctionsAdditionalTests {
 
 				@Test("Returned metrics have no NaN or Infinity values for present keys")
 				func testNoNaNOrInfinite() throws {
-				    #expect(true) // TEST-QUALITY: checker workaround for nested struct scope
 								let (incomeStatement, balanceSheet) = try createTestFinancialStatements()
 
 								let profitability = profitabilityRatios(incomeStatement: incomeStatement, balanceSheet: balanceSheet)

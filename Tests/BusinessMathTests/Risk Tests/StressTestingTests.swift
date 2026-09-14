@@ -13,9 +13,12 @@ struct StressTestingTests {
 		let scenario = StressScenario<Double>.recession
 
 		#expect(scenario.name == "Recession")
-		#expect(abs((scenario.shocks["Revenue"] ?? 0) - (-0.15)) < 1e-6)
-		#expect(abs((scenario.shocks["COGS"] ?? 0) - 0.05) < 1e-6)
-		#expect(abs((scenario.shocks["InterestRate"] ?? 0) - 0.02) < 1e-6)
+		let measured0 = try #require(scenario.shocks["Revenue"])
+		#expect(abs(measured0 - (-0.15)) < 1e-6)
+		let measured1 = try #require(scenario.shocks["COGS"])
+		#expect(abs(measured1 - 0.05) < 1e-6)
+		let measured2 = try #require(scenario.shocks["InterestRate"])
+		#expect(abs(measured2 - 0.02) < 1e-6)
 	}
 
 	@Test("Financial crisis scenario more severe than recession")
@@ -52,7 +55,8 @@ struct StressTestingTests {
 
 		#expect(scenario.name == "Pandemic")
 		#expect(scenario.shocks.count == 2)
-		#expect(abs((scenario.shocks["Revenue"] ?? 0) - (-0.40)) < 1e-6)
+		let measured0 = try #require(scenario.shocks["Revenue"])
+		#expect(abs(measured0 - (-0.40)) < 1e-6)
 	}
 
 	// MARK: - Simple Financial Projection for Testing

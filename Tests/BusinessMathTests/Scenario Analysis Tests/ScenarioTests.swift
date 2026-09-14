@@ -128,7 +128,7 @@ struct FinancialScenarioTests {
 	// MARK: - Driver Override Tests
 
 	@Test("Override driver returns correct value")
-	func overrideDriverValue() {
+	func overrideDriverValue() throws {
 		let periods = createTestPeriods()
 		let driver = DeterministicDriver(name: "Revenue Growth", value: 0.15)
 
@@ -144,7 +144,8 @@ struct FinancialScenarioTests {
 		// Test that override returns same value for all periods
 		for period in periods {
 			let value = scenario.driverOverrides["Revenue Growth"]?.sample(for: period)
-			#expect(abs((value ?? 0) - 0.15) < 1e-6)
+			let measured0 = try #require(value)
+			#expect(abs(measured0 - 0.15) < 1e-6)
 		}
 	}
 
@@ -229,9 +230,12 @@ struct FinancialScenarioTests {
 		let optimisticPrice = optimisticScenario.driverOverrides["Price"]?.sample(for: period)
 		let pessimisticPrice = pessimisticScenario.driverOverrides["Price"]?.sample(for: period)
 
-		#expect(abs((basePrice ?? 0) - 100.0) < 1e-6)
-		#expect(abs((optimisticPrice ?? 0) - 120.0) < 1e-6)
-		#expect(abs((pessimisticPrice ?? 0) - 90.0) < 1e-6)
+		let measured0 = try #require(basePrice)
+		#expect(abs(measured0 - 100.0) < 1e-6)
+		let measured1 = try #require(optimisticPrice)
+		#expect(abs(measured1 - 120.0) < 1e-6)
+		let measured2 = try #require(pessimisticPrice)
+		#expect(abs(measured2 - 90.0) < 1e-6)
 
 		// Verify ordering
 		#expect(try #require(pessimisticPrice) < (try #require(basePrice)))

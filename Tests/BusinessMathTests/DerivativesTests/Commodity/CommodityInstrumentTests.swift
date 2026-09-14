@@ -57,7 +57,7 @@ struct CommoditySwapTests {
 	}
 
 	@Test("Multiple period settlements from realized prices")
-	func multiPeriodSettlements() {
+	func multiPeriodSettlements() throws {
 		let swap = CommoditySwap<Double>(
 			underlier: "WTI",
 			fixedPrice: 72.0,
@@ -70,9 +70,12 @@ struct CommoditySwapTests {
 		)
 		let settlements = swap.settlements(realizedPrices: realizedPrices)
 
-		#expect(abs((settlements[periods[0]] ?? 0) - 2.0) < 1e-6)
-		#expect(abs((settlements[periods[1]] ?? 0) - (-2.0)) < 1e-6)
-		#expect(abs((settlements[periods[2]] ?? 0) - 4.0) < 1e-6)
+		let measured0 = try #require(settlements[periods[0]])
+		#expect(abs(measured0 - 2.0) < 1e-6)
+		let measured1 = try #require(settlements[periods[1]])
+		#expect(abs(measured1 - (-2.0)) < 1e-6)
+		let measured2 = try #require(settlements[periods[2]])
+		#expect(abs(measured2 - 4.0) < 1e-6)
 	}
 
 	@Test("Zero volume produces zero settlement")

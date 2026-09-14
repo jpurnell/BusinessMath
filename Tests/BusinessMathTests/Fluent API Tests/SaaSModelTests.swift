@@ -54,7 +54,7 @@ import RealModule
         #expect(abs(mrr - 19_500) < 1.0)
     }
 
-    @Test("SaaSModel_MRRCalculation_MultipleMonths") func LSaaSModel_MRRCalculation_MultipleMonths() {
+    @Test("SaaSModel_MRRCalculation_MultipleMonths") func LSaaSModel_MRRCalculation_MultipleMonths() throws {
         // Given: A SaaS model
         let model = SaaSModel(
             initialMRR: 10_000,
@@ -68,7 +68,9 @@ import RealModule
 
         // Then: MRR should grow each month (assuming net positive growth)
         #expect(mrrSeries.count == 12)
-        #expect(mrrSeries.valuesArray.last ?? 0 > mrrSeries.valuesArray.first ?? 0)
+        let lastMRR = try #require(mrrSeries.valuesArray.last, "the MRR series is empty")
+        let firstMRR = try #require(mrrSeries.valuesArray.first, "the MRR series is empty")
+        #expect(lastMRR > firstMRR, "MRR should grow: \(firstMRR) -> \(lastMRR)")
     }
 
     // MARK: - ARR Calculation Tests

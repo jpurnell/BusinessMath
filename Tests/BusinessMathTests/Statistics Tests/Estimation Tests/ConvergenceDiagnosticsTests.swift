@@ -28,7 +28,8 @@ struct ConvergenceDiagnosticsTests {
 
         let rHat = rHatStatistic([chain1, chain2])
         #expect(rHat?.isFinite == true)
-        #expect((rHat ?? 0.0) > 1.1, "Non-convergent chains should have R-hat > 1.1, got \(String(describing: rHat))")
+        let value = try #require(rHat, "R-hat was not computed at all")
+        #expect(value > 1.1, "Non-convergent chains should have R-hat > 1.1, got \(value)")
     }
 
     // MARK: - R-hat: Single chain returns nil

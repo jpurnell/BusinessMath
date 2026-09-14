@@ -22,7 +22,7 @@ struct BondValuationIntegrationTests {
         components.year = 2025
         components.month = 1
         components.day = 1
-        return try #require(Calendar.current.date(from: components))
+        return try #require(gregorianUTC.date(from: components))
     }
 
     // MARK: - Workflow 1: Credit Metrics → Bond Pricing
@@ -32,7 +32,7 @@ struct BondValuationIntegrationTests {
         // Scenario: Price a 5-year corporate bond for a company
         // with moderate credit quality (grey zone Z-Score)
 
-        let calendar = Calendar.current
+        let calendar = gregorianUTC
         let today = try Self.referenceDate()
         let maturity = try #require(calendar.date(byAdding: .year, value: 5, to: today))
 
@@ -95,7 +95,7 @@ struct BondValuationIntegrationTests {
 
     @Test("Workflow: Credit deterioration impact on bond value")
     func creditDeteriorationImpact() throws {
-        let calendar = Calendar.current
+        let calendar = gregorianUTC
         let today = try Self.referenceDate()
         let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
@@ -157,7 +157,7 @@ struct BondValuationIntegrationTests {
 
     @Test("Workflow: Callable bond analysis with OAS decomposition")
     func callableBondOASAnalysis() throws {
-        let calendar = Calendar.current
+        let calendar = gregorianUTC
         let today = try Self.referenceDate()
         let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
@@ -236,7 +236,7 @@ struct BondValuationIntegrationTests {
 
     @Test("Workflow: Volatility impact on callable bond pricing")
     func volatilityImpactAnalysis() throws {
-        let calendar = Calendar.current
+        let calendar = gregorianUTC
         let today = try Self.referenceDate()
         let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
@@ -374,7 +374,7 @@ struct BondValuationIntegrationTests {
 
     @Test("Workflow: Spread decomposition into credit and option components")
     func spreadDecomposition() throws {
-        let calendar = Calendar.current
+        let calendar = gregorianUTC
         let today = try Self.referenceDate()
         let maturity = try #require(calendar.date(byAdding: .year, value: 10, to: today))
 
@@ -492,7 +492,7 @@ struct BondValuationIntegrationTests {
 
     @Test("Workflow: Cross-validate models with round-trip calculations")
     func crossModelValidation() throws {
-        let calendar = Calendar.current
+        let calendar = gregorianUTC
         let today = try Self.referenceDate()
         let maturity = try #require(calendar.date(byAdding: .year, value: 5, to: today))
 

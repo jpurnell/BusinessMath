@@ -65,7 +65,7 @@ struct DebtInstrumentTests {
             principal: principal,
             interestRate: annualRate,
             startDate: Date(timeIntervalSince1970: 0),
-            maturityDate: try #require(Calendar.current.date(byAdding: .year, value: years, to: Date(timeIntervalSince1970: 0))),
+            maturityDate: try #require(gregorianUTC.date(byAdding: .year, value: years, to: Date(timeIntervalSince1970: 0))),
             paymentFrequency: .monthly,
             amortizationType: .levelPayment
         )

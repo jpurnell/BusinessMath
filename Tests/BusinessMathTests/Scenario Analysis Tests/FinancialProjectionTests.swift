@@ -235,7 +235,8 @@ struct FinancialProjectionTests {
 		// Net income should be revenue - expenses
 		// Q1: 1000 - 600 = 400
 		let q1 = Period.quarter(year: 2025, quarter: 1)
-		#expect(abs((netIncome[q1] ?? 0) - 400.0) < 1e-2)
+		let measured0 = try #require(netIncome[q1])
+		#expect(abs(measured0 - 400.0) < 1e-2)
 	}
 
 	@Test("Access balance sheet metrics")
@@ -291,10 +292,12 @@ struct FinancialProjectionTests {
 		#expect(!freeCashFlow.periods.isEmpty)
 
 		let q1 = Period.quarter(year: 2025, quarter: 1)
-		#expect(abs((operatingCashFlow[q1] ?? 0) - 400.0) < 1e-2)
+		let measured0 = try #require(operatingCashFlow[q1])
+		#expect(abs(measured0 - 400.0) < 1e-2)
 
 		// FCF = Operating CF + Investing CF = 400 + (-100) = 300
-		#expect(abs((freeCashFlow[q1] ?? 0) - 300.0) < 1e-2)
+		let measured1 = try #require(freeCashFlow[q1])
+		#expect(abs(measured1 - 300.0) < 1e-2)
 	}
 
 	// MARK: - Multiple Projection Comparison Tests

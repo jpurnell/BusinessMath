@@ -268,9 +268,12 @@ struct BranchAndBoundCorrectnessTests {
 
             let shifting = BranchAndBoundSolver<VectorN<Double>>(enableVariableShifting: true)
 
-            // 2. Shifting on, bound hidden in a closure. This is L19, recorded as an
-            //    executable expectation so that fixing shift detection breaks the build
-            //    rather than passing unnoticed.
+            // 2. Shifting on, bound hidden in a closure. **This was L19, and it is fixed.**
+            //    `extractVariableShift` now recovers the bound by *evaluating* the closure
+            //    rather than inspecting it — constant from the origin, coefficients from
+            //    unit steps, affinity confirmed away from both — and `transformConstraint`
+            //    shifts a closure by composition instead of refusing it. The answer no
+            //    longer depends on how the caller spelled the bound.
             let shifted = try shifting.solve(
                 objective: { v in v.toArray()[0] },
                 from: VectorN([0.0]),
@@ -281,9 +284,8 @@ struct BranchAndBoundCorrectnessTests {
                 integerSpec: spec,
                 minimize: true
             )
-            withKnownIssue("L19: an opaque inequality closure hides the bound from extractVariableShift") {
-                #expect(shifted.integerSolution[0] == -3)
-            }
+            #expect(shifted.integerSolution[0] == -3,
+                    "a closure-stated bound should shift too, got \(shifted.integerSolution[0])")
 
             // 3. Shifting on, the same bound stated structurally. The capability works.
             let structural = try shifting.solve(

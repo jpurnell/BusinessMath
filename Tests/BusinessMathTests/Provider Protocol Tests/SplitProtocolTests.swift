@@ -282,23 +282,41 @@ struct SplitProtocolTests {
 
 		#expect(decoded.symbol == original.symbol)
 		let measured0 = try #require(decoded.priceToEarnings)
-		#expect(abs(measured0 - (original.priceToEarnings ?? 0)) < 1e-10)
+		let expected0 = try #require(original.priceToEarnings)
+
+		#expect(abs(measured0 - expected0) < 1e-10)
 		let measured1 = try #require(decoded.priceToBook)
-		#expect(abs(measured1 - (original.priceToBook ?? 0)) < 1e-10)
+		let expected1 = try #require(original.priceToBook)
+
+		#expect(abs(measured1 - expected1) < 1e-10)
 		let measured2 = try #require(decoded.priceToSales)
-		#expect(abs(measured2 - (original.priceToSales ?? 0)) < 1e-10)
+		let expected2 = try #require(original.priceToSales)
+
+		#expect(abs(measured2 - expected2) < 1e-10)
 		let measured3 = try #require(decoded.marketCapitalization)
-		#expect(abs(measured3 - (original.marketCapitalization ?? 0)) < 1e-10)
+		let expected3 = try #require(original.marketCapitalization)
+
+		#expect(abs(measured3 - expected3) < 1e-10)
 		let measured4 = try #require(decoded.earningsPerShare)
-		#expect(abs(measured4 - (original.earningsPerShare ?? 0)) < 1e-10)
+		let expected4 = try #require(original.earningsPerShare)
+
+		#expect(abs(measured4 - expected4) < 1e-10)
 		let measured5 = try #require(decoded.dividendYield)
-		#expect(abs(measured5 - (original.dividendYield ?? 0)) < 1e-10)
+		let expected5 = try #require(original.dividendYield)
+
+		#expect(abs(measured5 - expected5) < 1e-10)
 		let measured6 = try #require(decoded.beta)
-		#expect(abs(measured6 - (original.beta ?? 0)) < 1e-10)
+		let expected6 = try #require(original.beta)
+
+		#expect(abs(measured6 - expected6) < 1e-10)
 		let measured7 = try #require(decoded.fiftyTwoWeekHigh)
-		#expect(abs(measured7 - (original.fiftyTwoWeekHigh ?? 0)) < 1e-10)
+		let expected7 = try #require(original.fiftyTwoWeekHigh)
+
+		#expect(abs(measured7 - expected7) < 1e-10)
 		let measured8 = try #require(decoded.fiftyTwoWeekLow)
-		#expect(abs(measured8 - (original.fiftyTwoWeekLow ?? 0)) < 1e-10)
+		let expected8 = try #require(original.fiftyTwoWeekLow)
+
+		#expect(abs(measured8 - expected8) < 1e-10)
 		#expect(decoded.additionalMetrics.count == 2)
 		let measured9 = try #require(decoded.additionalMetrics["debtToEquity"])
 		#expect(abs(measured9 - 1.87) < 1e-10)

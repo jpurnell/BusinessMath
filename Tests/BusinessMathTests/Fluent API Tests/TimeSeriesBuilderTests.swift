@@ -421,16 +421,19 @@ struct TimeSeriesBuilderTests {
     }
 
     @Test("Accessing values by period subscript")
-    func subscriptAccess() {
+    func subscriptAccess() throws {
         let series = TimeSeries {
             Period.year(2023) => 100_000.0
             Period.year(2024) => 110_000.0
             Period.year(2025) => 121_000.0
         }
 
-        #expect(abs((series[Period.year(2023)] ?? 0) - 100_000.0) < 1e-6)
-        #expect(abs((series[Period.year(2024)] ?? 0) - 110_000.0) < 1e-6)
-        #expect(abs((series[Period.year(2025)] ?? 0) - 121_000.0) < 1e-6)
+        let measured0 = try #require(series[Period.year(2023)])
+        #expect(abs(measured0 - 100_000.0) < 1e-6)
+        let measured1 = try #require(series[Period.year(2024)])
+        #expect(abs(measured1 - 110_000.0) < 1e-6)
+        let measured2 = try #require(series[Period.year(2025)])
+        #expect(abs(measured2 - 121_000.0) < 1e-6)
         #expect(series[Period.year(2026)] == nil) // Not in series
     }
 
@@ -445,15 +448,17 @@ struct TimeSeriesBuilderTests {
     }
 
     @Test("First and last values")
-    func firstAndLastValues() {
+    func firstAndLastValues() throws {
         let series = TimeSeries {
             Period.year(2023) => 100_000.0
             Period.year(2024) => 110_000.0
             Period.year(2025) => 121_000.0
         }
 
-        #expect(abs((series.first ?? 0) - 100_000.0) < 1e-6)
-        #expect(abs((series.last ?? 0) - 121_000.0) < 1e-6)
+        let measured0 = try #require(series.first)
+        #expect(abs(measured0 - 100_000.0) < 1e-6)
+        let measured1 = try #require(series.last)
+        #expect(abs(measured1 - 121_000.0) < 1e-6)
     }
 
     @Test("Empty series first and last")

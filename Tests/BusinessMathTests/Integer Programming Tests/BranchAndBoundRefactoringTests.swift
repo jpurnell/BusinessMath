@@ -203,7 +203,6 @@ struct BranchAndBoundRefactoringTests {
 
     @Test("BranchAndBound can use mock relaxation solver for testing")
     func testMockRelaxationSolver() throws {
-        #expect(true) // TEST-QUALITY: checker workaround for nested struct scope
         // Create a mock solver that always returns a fixed solution
         struct MockRelaxationSolver: RelaxationSolver {
             func solveRelaxation<V: VectorSpace>(

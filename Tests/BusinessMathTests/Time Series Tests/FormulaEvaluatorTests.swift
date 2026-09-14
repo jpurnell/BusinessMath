@@ -243,6 +243,7 @@ struct FormulaEvaluatorTests {
 		])
 
 		let result = try evaluator.evaluate(formula)
-		#expect(abs((result[periods[0]] ?? 0) - 40.0) < 1e-12)
+		let measured0 = try #require(result[periods[0]])
+		#expect(abs(measured0 - 40.0) < 1e-12)
 	}
 }

@@ -141,7 +141,7 @@ struct ReorderPointModelTests {
 	@Test("Accepts TimeSeries input")
 	func timeSeriesInput() throws {
 		let periods = try (0..<30).map { i in
-			Period.day(try #require(Calendar.current.date(byAdding: .day, value: i, to: Date())))
+			Period.day(try #require(gregorianUTC.date(byAdding: .day, value: i, to: Date())))
 		}
 		let values: [Double] = (0..<30).map { _ in 10.0 }
 		let ts = TimeSeries(periods: periods, values: values)

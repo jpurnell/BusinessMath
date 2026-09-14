@@ -24,7 +24,7 @@ struct ExcelBondFunctionTests {
 	static func date(_ y: Int, _ m: Int, _ d: Int) -> Date {
 		var components = DateComponents()
 		components.year = y; components.month = m; components.day = d
-		guard let date = Calendar.current.date(from: components) else {
+		guard let date = gregorianUTC.date(from: components) else {
 			preconditionFailure("\(y)-\(m)-\(d) is not a date")
 		}
 		return date
