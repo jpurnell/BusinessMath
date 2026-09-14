@@ -115,9 +115,26 @@ Box-Muller" and **there isn't one**; the library's is the right target because i
 
 ## 2. Next: C1, C2, C3 — three rules in another repository
 
-The specification is written: **`project/plans/proposals/PHASE_C_GATE_RULES.md`**. It names the
-files, the existing rule ids to match, the carve-outs, and the order to land them. Nothing in
-`quality-gate-swift` has been changed.
+The proposal is written to Phase 0's full template:
+**`project/plans/proposals/PHASE_C_GATE_RULES.md`**. Nothing in `quality-gate-swift` has been
+changed, and it needs approval before anything is.
+
+**The adversarial review changed two of the three designs and withdrew one**, which is the whole
+reason §12 is mandatory:
+
+- **C2 dropped `Date()` entirely.** The first draft flagged it with a "bracketing carve-out" for two
+  readings compared to each other. That carve-out is a **dataflow** question and the implementation
+  is a **syntax visitor** — it cannot follow a value through bindings and helpers, so it would flag
+  the nine correct tests in `WallClockAdoptionTests` and miss readings laundered through a helper.
+  The rule now covers `Calendar.current` and `Calendar(identifier:)` only, where the match is purely
+  syntactic and there is no legitimate use.
+- **C3 is withdrawn as a rule.** The auditor already has `assertion-on-constant` and
+  `missing-assertion`, and `#expect(true)` is a *deliberate evasion* of the latter, which counts any
+  `#expect` regardless of what it asserts. The fix is a one-line amendment — a literal condition
+  does not count as an assertion — not a third rule. Blocked on the 53 remaining sites either way.
+- **C1 ships at `.warning`.** Its population in BusinessMath is already zero, and the other four
+  consuming repositories have never been measured, so on day one it can only produce false
+  positives.
 
 **Why it is a specification and not a branch.** These rules live in
 `/Users/jpurnell/Dropbox/Computer/Development/Swift/Tools/quality-gate-swift`, they are **blocking**,
