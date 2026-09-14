@@ -89,6 +89,21 @@ public struct SimplexTableau: Sendable {
     /// Number of original decision variables
     private let numOriginalVars: Int
 
+    /// The constraint rows as first built — equilibrated, negated where the caller gave a
+    /// negative right-hand side, and before any pivot. Each row is the full standard-form
+    /// width with the right-hand side in the last column.
+    private let initialRows: [[Double]]
+
+    /// Column indices of the artificial variables.
+    private let artificialColumns: Set<Int>
+
+    /// The number of structural (caller-supplied) variables.
+    ///
+    /// Tableau columns beyond this are slacks, surpluses and artificials, which exist only
+    /// inside the solver. A cut written over those columns means nothing to a caller
+    /// working in structural space — see ``projectToStructuralSpace(coefficients:rhs:)``.
+    public var structuralVariableCount: Int { numOriginalVars }
+
     /// Number of rows (constraints)
     public var rowCount: Int {
         // Exclude objective row
@@ -101,9 +116,119 @@ public struct SimplexTableau: Sendable {
     }
 
     /// Internal initializer
-    internal init(table: [[Double]], numOriginalVars: Int) {
+    internal init(
+        table: [[Double]],
+        numOriginalVars: Int,
+        initialRows: [[Double]] = [],
+        artificialColumns: Set<Int> = []
+    ) {
         self.table = table
         self.numOriginalVars = numOriginalVars
+        self.initialRows = initialRows
+        self.artificialColumns = artificialColumns
+    }
+
+    // MARK: - Projecting a cut into structural space
+
+    /// Rewrites a cut expressed over tableau columns as one over the structural variables.
+    ///
+    /// A Gomory cut is derived from a tableau row, so its support is whatever was non-basic
+    /// there — structural variables, slacks and surpluses alike. Such a cut is valid in the
+    /// solver's extended space and **meaningless outside it**: imposed over the structural
+    /// variables alone, its slack terms simply vanish, and what is left is an inequality
+    /// between the surviving structural terms and a right-hand side that was never theirs.
+    ///
+    /// Before 2026-09-13 that is exactly what happened. On `max x + y` subject to
+    /// `x + 2y ≤ 7` and `2x + y ≤ 7`, the generated cut was
+    /// `[0, 0, -0.7071, -0.7071] · x ≤ -0.7071` — both non-zeros on slack columns, so over
+    /// `(x, y)` the left side is identically zero and the constraint reads `0 ≤ -0.7071`.
+    /// False at every point, including every integer-feasible one, so the LP went
+    /// infeasible on the first cut and the whole cutting effort was discarded.
+    ///
+    /// ## The substitution
+    ///
+    /// Every added column appears in exactly one constraint row, where its coefficient is
+    /// `+1` for a slack and `-1` for a surplus. Writing `σ` for that coefficient and `r`
+    /// for the row, and noting that artificial variables are identically zero at any
+    /// feasible point and so drop out:
+    ///
+    /// ```
+    /// σ·x_j + Σ_i A_ri x_i = b_r    ⟹    x_j = (b_r - Σ_i A_ri x_i) / σ
+    /// ```
+    ///
+    /// Substituting each added column into `Σ_j c_j x_j ≤ d` leaves a cut over structural
+    /// variables alone:
+    ///
+    /// ```
+    /// Σ_i [ c_i - Σ_j (c_j/σ_j)·A_{r(j)i} ] x_i  ≤  d - Σ_j (c_j/σ_j)·b_{r(j)}
+    /// ```
+    ///
+    /// The row is found by **searching** `initialRows` for the one where the column is
+    /// non-zero, never by assuming it sits at `structuralVariableCount + k`. Standard form
+    /// groups added columns by kind — `[variables | slacks | surpluses | artificials]` —
+    /// so that offset is wrong the moment constraint relations are mixed. The same
+    /// assumption once produced wrong shadow prices here, and the reasoning is recorded
+    /// beside `shadowPrices(from:)`.
+    ///
+    /// `initialRows` is the *equilibrated* standard form, so the substitution is performed
+    /// in the same scaling the slack was defined in. Using the caller's unscaled
+    /// coefficients would silently misstate every cut on a row that was equilibrated.
+    ///
+    /// - Parameters:
+    ///   - coefficients: The cut's coefficients over tableau columns.
+    ///   - rhs: The cut's right-hand side, in `≤` orientation.
+    /// - Returns: The cut over the structural variables, or `nil` when it cannot be
+    ///   projected — no standard-form rows were retained, a column belongs to no row, or
+    ///   the projected cut has no non-zero structural coefficient and so constrains
+    ///   nothing.
+    public func projectToStructuralSpace(
+        coefficients: [Double],
+        rhs: Double
+    ) -> (coefficients: [Double], rhs: Double)? {
+        guard !initialRows.isEmpty else { return nil }
+        let structuralCount = numOriginalVars
+        guard structuralCount > 0 else { return nil }
+
+        var projected = Array(repeating: 0.0, count: structuralCount)
+        var projectedRHS = rhs
+
+        for (column, coefficient) in coefficients.enumerated() {
+            if coefficient == 0 { continue }
+
+            // Structural columns carry straight across.
+            if column < structuralCount {
+                projected[column] += coefficient
+                continue
+            }
+
+            // Artificial variables are zero at every feasible point, so they contribute
+            // nothing and need no row.
+            if artificialColumns.contains(column) { continue }
+
+            // Find the one constraint row this added column belongs to.
+            guard let row = initialRows.firstIndex(where: { candidate in
+                column < candidate.count && candidate[column] != 0
+            }) else {
+                return nil  // an added column belonging to no row: cannot project
+            }
+
+            let sigma = initialRows[row][column]
+            guard sigma != 0 else { return nil }
+
+            let ratio = coefficient / sigma
+            let rowValues = initialRows[row]
+            let rowRHS = rowValues.last ?? 0
+
+            for index in 0..<structuralCount where index < rowValues.count {
+                projected[index] -= ratio * rowValues[index]
+            }
+            projectedRHS -= ratio * rowRHS
+        }
+
+        let isVacuous = projected.allSatisfy { abs($0) < 1e-12 }
+        guard !isVacuous else { return nil }
+
+        return (projected, projectedRHS)
     }
 
     /// Get a tableau row (coefficients of non-basic variables)
@@ -636,7 +761,9 @@ public struct SimplexSolver: Sendable {
         // Create public tableau for cutting plane generation
         let publicTableau = SimplexTableau(
             table: phaseIIResult.tableau.table,
-            numOriginalVars: numOriginalVars
+            numOriginalVars: numOriginalVars,
+            initialRows: phaseIIResult.tableau.initialRows,
+            artificialColumns: Set(phaseIIResult.tableau.artificialVars)
         )
 
         // Extract basis information

@@ -421,25 +421,34 @@ struct NodeCutLoopTests {
 
         // If cuts were generated, rounds should be positive.
         //
-        // This assertion never executed until 2026-09-13: `totalCutsGenerated` was always
-        // zero, because four of the five return paths in `solve` built the result with a
+        // The history of these four lines is worth keeping, because each stage was only
+        // visible once the previous one was fixed.
+        //
+        // The assertion never executed until 2026-09-13: `totalCutsGenerated` was always
+        // zero, because four of the five return paths in `solve` built the result from a
         // freshly-constructed `CuttingPlaneStats()` instead of the tracker that had been
-        // accumulating. Fixing that woke this guard up, and it failed immediately.
+        // accumulating. Fixing that woke the guard, and it failed immediately.
         //
-        // The cause is an asymmetry in what the two counters count. A cut is counted when
-        // it is *generated* (`stats.totalCutsGenerated += 1`); a round is counted only
-        // after the LP *re-solve succeeds* (`roundsPerformed += 1`). A round that adds a
-        // cut and then fails to re-solve therefore reports cuts without rounds, and the
-        // invariant this asserts does not hold of the implementation.
+        // The proximate cause looked like an asymmetry in what the counters count, and it
+        // is real: a cut is counted when it is *generated*, a round only after the LP
+        // *re-solve succeeds*. But the reason every re-solve was failing turned out to be
+        // a defect rather than a naming question. Gomory cuts were emitted over tableau
+        // columns — structural variables *and slacks* — and imposed over the structural
+        // variables alone, so the slack terms vanished and what remained was `0 ≤ -0.7071`:
+        // false at every point, including every integer-feasible one. The LP went
+        // infeasible on the first cut, every time.
         //
-        // Which counter should move is a real question — "rounds attempted" and "rounds
-        // completed" are both defensible and are not the same number — so it is recorded
-        // rather than patched. Fixing the asymmetry makes this marker fail, which is the
-        // point of recording it this way.
+        // `SimplexTableau.projectToStructuralSpace` now substitutes the slacks out before
+        // a cut becomes a constraint. On this problem the cut closes the root without
+        // branching: 3 nodes before, 1 after.
+        //
+        // So this is asserted directly. The counter asymmetry is documented on
+        // `CuttingPlaneStats` and remains reachable in principle — a genuinely infeasible
+        // subproblem can still end a round early — but it is no longer reachable *here*,
+        // where the LP is feasible and the cuts are valid.
         if stats.totalCutsGenerated > 0 {
-            withKnownIssue("cuts are counted at generation, rounds only after a successful re-solve") {
-                #expect(stats.cuttingRounds > 0, "Should have at least one cutting round")
-            }
+            #expect(stats.cuttingRounds > 0,
+                   "cuts were generated but no round completed: every re-solve after a cut failed")
         }
 
         // Track cuts by type

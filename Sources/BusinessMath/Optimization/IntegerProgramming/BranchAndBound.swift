@@ -1196,11 +1196,25 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
 
                     // Add cuts as new constraints
                     for cut in cutsToAdd {
-                        // Convert CuttingPlane to MultivariateConstraint
-                        // Cut is: sum(cut.coefficients[i] * x[i]) <= cut.rhs
-                        let cutConstraint = MultivariateConstraint<V>.linearInequality(
+                        // A cut comes off a tableau row, so its support is whatever was
+                        // non-basic there — structural variables *and* slacks. Imposing it
+                        // over the structural variables alone drops the slack terms and
+                        // keeps a right-hand side that was never theirs, which is how this
+                        // used to emit `0 ≤ -0.7071`: false at every point, so the LP went
+                        // infeasible on the first cut and the round was discarded. Project
+                        // it first, and skip any cut that will not project.
+                        guard let projected = tableau.projectToStructuralSpace(
                             coefficients: cut.coefficients,
-                            rhs: cut.rhs,
+                            rhs: cut.rhs
+                        ) else { continue }
+
+                        let structuralCoefficients = Array(projected.coefficients.prefix(dimension))
+
+                        // Convert CuttingPlane to MultivariateConstraint
+                        // Cut is: sum(coefficients[i] * x[i]) <= rhs
+                        let cutConstraint = MultivariateConstraint<V>.linearInequality(
+                            coefficients: structuralCoefficients,
+                            rhs: projected.rhs,
                             sense: .lessOrEqual
                         )
                         currentConstraints.append(cutConstraint)
@@ -1946,17 +1960,48 @@ public enum BranchingRule: Sendable {
 }
 
 /// Statistics from cutting plane generation during branch-and-cut
+///
+/// ## Two counters, measured at different moments
+///
+/// ``totalCutsGenerated`` counts **work attempted** and ``cuttingRounds`` counts **work
+/// completed**, and they are deliberately not the same number. A cut is counted the moment
+/// it joins the constraint set; a round is counted only once the LP has been re-solved and
+/// come back optimal. Three exits sit between those points — the re-solve reports
+/// infeasible, it reports a non-optimal status, or it throws — and each leaves cuts counted
+/// with no round to show for them.
+///
+/// So `totalCutsGenerated > 0 && cuttingRounds == 0` is a *reachable* state and not a
+/// contradiction: it says cuts were built and none of them survived a re-solve. Read it as
+/// a diagnostic. On a feasible subproblem it should not happen, because a valid cut cannot
+/// make a feasible LP infeasible while integer-feasible points remain — so seeing it there
+/// means the cuts are wrong, which is exactly how the tableau-space defect fixed on
+/// 2026-09-13 was found.
+///
+/// ``lpResolves`` and ``maxRoundsAtNode`` are derived from the same count as
+/// ``cuttingRounds`` and share its meaning; a round *is* a successful re-solve.
 public struct CuttingPlaneStats: Sendable {
-    /// Total number of cuts generated across all nodes
+    /// Total number of cuts generated across all nodes — **work attempted**.
+    ///
+    /// Incremented when a cut is added to the constraint set, before the LP is re-solved,
+    /// so this counts cuts that were subsequently discarded. Compare ``cuttingRounds``.
     public let totalCutsGenerated: Int
 
-    /// Total number of cutting plane rounds performed
+    /// Total number of cutting plane rounds completed — **work that survived**.
+    ///
+    /// Incremented only after the LP re-solve returns an optimal solution, so a round that
+    /// adds cuts and then fails to re-solve is not counted here. This is why it can be
+    /// zero while ``totalCutsGenerated`` is positive; see the note on the type.
     public let cuttingRounds: Int
 
-    /// Number of LP re-solves after adding cuts
+    /// Number of LP re-solves after adding cuts.
+    ///
+    /// Equal to ``cuttingRounds`` by construction — a completed round is a successful
+    /// re-solve — and kept separate because they answer different questions of the reader.
     public let lpResolves: Int
 
-    /// Maximum cutting rounds at any single node
+    /// Maximum completed cutting rounds at any single node.
+    ///
+    /// Completed, on the same definition as ``cuttingRounds``.
     public let maxRoundsAtNode: Int
 
     /// Number of Gomory cuts generated
