@@ -68,9 +68,12 @@ import Testing
 		let weights = result.solution.toArray()
 		#expect(abs(weights.reduce(0, +) - 1.0) < 1e-3)
 
-		// Check non-negativity
+		// Check non-negativity.
+		//
+		// Was `weight.rounded() >= 0.0`, which passes any violation below 0.5. Measured
+		// worst violation here: −1.87e-5, hence 1e-4.
 		for weight in weights {
-			#expect(weight.rounded() >= 0.0)
+			#expect(weight >= -1e-4, "weight \(weight) is negative beyond the optimizer's tolerance")
 		}
 
 		// Expected return should be positive

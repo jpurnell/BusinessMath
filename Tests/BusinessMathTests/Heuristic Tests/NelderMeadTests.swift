@@ -165,7 +165,9 @@ struct NelderMeadTests {
 
         let result = try optimizer.minimize(objective, from: VectorN([2.0, 2.0]))
 
-        #expect(result.converged || result.iterations == 500)
+        // Was `converged || iterations == 500`, which passes exactly when the simplex ran
+        // out of budget. Measured: it converges.
+        #expect(result.converged, "did not converge in \(result.iterations) iterations")
         // Should make significant improvement
         #expect(result.value < 50.0)
     }
@@ -252,7 +254,8 @@ struct NelderMeadTests {
 
         let result = try optimizer.minimize(objective, from: VectorN([1.0, 1.0]))
 
-        #expect(result.converged || result.iterations == 300)
+        // Was `converged || iterations == 300`. Measured: it converges.
+        #expect(result.converged, "did not converge in \(result.iterations) iterations")
         #expect(result.value < 1.5) // Should find something near minimum
     }
 
@@ -361,7 +364,8 @@ struct NelderMeadTests {
         let initialGuess = VectorN(Array(repeating: 2.0, count: 5))
         let result = try optimizer.minimize(objective, from: initialGuess)
 
-        #expect(result.converged || result.iterations == 1000)
+        // Was `converged || iterations == 1000`. Measured: it converges.
+        #expect(result.converged, "did not converge in \(result.iterations) iterations")
         #expect(result.value < 1.0) // Should significantly improve
     }
 
@@ -449,7 +453,8 @@ struct NelderMeadTests {
 
         let result = try optimizer.minimize(objective, from: VectorN([2.0]))
 
-        #expect(result.converged || result.iterations == 200)
+        // Was `converged || iterations == 200`. Measured: it converges.
+        #expect(result.converged, "did not converge in \(result.iterations) iterations")
         #expect(abs(result.solution[0]) < 1.0)
     }
 }

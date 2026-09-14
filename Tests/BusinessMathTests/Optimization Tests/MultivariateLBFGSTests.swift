@@ -226,7 +226,9 @@ struct MultivariateLBFGSTests {
 			initialGuess: initialWeights
 		)
 
-		#expect(result.converged || result.iterations > 50, "Should converge or make good progress")
+		// Was `converged || iterations > 50`, satisfied by 51 iterations of divergence.
+		// Measured: it converges.
+		#expect(result.converged, "L-BFGS did not converge (\(result.iterations) iterations)")
 		#expect(result.solution.sum > 0.5, "Weights should sum to positive value")
 		print("50-asset portfolio: iterations=\(result.iterations), final objective=\(result.value)")
 	}
@@ -283,7 +285,8 @@ struct MultivariateLBFGSTests {
 		)
 
 		// Should converge with small memory
-		#expect(result.converged || result.iterations >= 10, "Should make progress")
+		// Was `converged || iterations >= 10`. Measured: it converges.
+		#expect(result.converged, "L-BFGS did not converge (\(result.iterations) iterations)")
 		let history = try #require(result.history, "Should record history")
 		#expect(history.count <= 20, "History count should match iterations")
 	}

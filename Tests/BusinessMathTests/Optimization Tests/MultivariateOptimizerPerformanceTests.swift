@@ -170,7 +170,10 @@ struct MultivariateOptimizerPerformanceTests {
         let initialGuess = VectorN(Array(repeating: 1.0 / Double(dimension), count: dimension))
         let result = try optimizer.minimize(objective, from: initialGuess, constraints: constraints)
 
-        #expect(result.converged || result.iterations == 200)  // Should make progress
+        // Was `converged || iterations == 200`, which passes precisely when the optimizer
+        // exhausted its budget *without* converging — the worst outcome satisfying it.
+        // Measured: it converges.
+        #expect(result.converged, "did not converge in \(result.iterations) iterations")
     }
 
     // MARK: - Algorithm Efficiency Comparison
@@ -321,7 +324,8 @@ struct MultivariateOptimizerPerformanceTests {
         let initialGuess = VectorN(Array(repeating: 1.0 / Double(numAssets), count: numAssets))
         let result = try optimizer.minimize(variance, from: initialGuess, constraints: constraints)
 
-        #expect(result.converged || result.iterations == 200)
+        // Was `converged || iterations == 200` — see the note above. Measured: it converges.
+        #expect(result.converged, "did not converge in \(result.iterations) iterations")
         // Portfolio should be feasible
         let sum = result.solution.toArray().reduce(0.0, +)
         #expect(abs(sum - 1.0) < 0.1)

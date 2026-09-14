@@ -127,9 +127,12 @@ import Testing
 		let weights = result.solution.toArray()
 		#expect(abs(weights.reduce(0.0, +) - 1.0) < 1e-3)
 
-		// Verify non-negativity
+		// Verify non-negativity.
+		//
+		// Was `weight.rounded() >= 0.0` — not a tolerance, since it passes any violation
+		// below 0.5. Measured worst violation here: −1.32e-10.
 		for weight in weights {
-			#expect(weight.rounded() >= 0.0)
+			#expect(weight >= -1e-6, "weight \(weight) is negative beyond the optimizer's tolerance")
 		}
 
 		// Since we minimize negative return, worst-case objective is the most negative
@@ -320,9 +323,9 @@ import Testing
 		// Budget constraint
 		#expect(abs(weights.reduce(0.0, +) - 1.0) < 1e-3)
 
-		// Non-negativity
+		// Non-negativity. Measured worst violation: −1.32e-10.
 		for weight in weights {
-			#expect(weight.rounded() >= 0.0)
+			#expect(weight >= -1e-6, "weight \(weight) is negative beyond the optimizer's tolerance")
 		}
 
 		// Test constraints hold for sampled uncertainty points
@@ -331,8 +334,12 @@ import Testing
 			// At minimum, budget and non-negativity must hold
 			// (These are scenario-independent)
 			#expect(abs(weights.reduce(0.0, +) - 1.0) < 1e-3)
+			// This one read `weight.rounded() >= -1e-6`: a tolerance *and* a rounding, where
+			// the rounding made the tolerance meaningless. Someone reached for precision and
+			// `.rounded()` ate it. Dropping the rounding restores the bound they wrote, and
+			// it holds — the measured violation is −1.32e-10, four orders inside it.
 			for weight in weights {
-				#expect(weight.rounded() >= -1e-6)
+				#expect(weight >= -1e-6, "sampled weight \(weight) is negative beyond tolerance")
 			}
 		}
 	}

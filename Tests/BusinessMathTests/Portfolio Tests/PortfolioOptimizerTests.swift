@@ -351,8 +351,9 @@ struct PortfolioOptimizerTests {
 		// Newton-Raphson should converge very quickly on quadratic objective
 		#expect(portfolio.iterations < 50,
 			   "Should converge in few iterations")
-		#expect(portfolio.converged || portfolio.iterations < 20,
-			   "Should converge or make rapid progress")
+		// Was `converged || iterations < 20`, which passes for an optimizer that stopped
+		// early without converging. Measured: it converges.
+		#expect(portfolio.converged, "portfolio optimisation did not converge (\(portfolio.iterations) iterations)")
 	}
 
 	// MARK: - Constraint Set Tests

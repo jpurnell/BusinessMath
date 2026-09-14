@@ -231,10 +231,15 @@ private final class SeededScenarioStream {
 
 		#expect(result.converged)
 
-		// Check all weights are non-negative
+		// Check all weights are non-negative.
+		//
+		// This asserted `weight.rounded() >= 0.0`, which is not a tolerance — it accepts
+		// any violation below 0.5, so a weight of −0.4 passed. Measured, the largest
+		// violation this test actually produces is −5.07e-5, so the bound is 1e-4: above
+		// what the optimizer does, and 5,000× tighter than what `.rounded()` allowed.
 		let weights = result.solution.toArray()
 		for weight in weights {
-			#expect(weight.rounded() >= 0.0, "All weights should be non-negative")
+			#expect(weight >= -1e-4, "weight \(weight) is negative beyond the optimizer's tolerance")
 		}
 
 		// Check budget
@@ -383,8 +388,11 @@ private final class SeededScenarioStream {
 		// The key test is that variance is small, not the exact allocation
 		let weights = result.solution.toArray()
 		#expect(abs(weights.reduce(0.0, +) - 1.0) < 1e-3, "Weights should sum to 1")
+		// Measured worst violation here is −1.75e-10, so this holds a far tighter bound
+		// than its sibling above; they are not given a shared constant because the two
+		// optimizers do not have the same feasibility behaviour.
 		for weight in weights {
-			#expect(weight.rounded() >= 0.0, "All weights should be non-negative")
+			#expect(weight >= -1e-6, "weight \(weight) is negative beyond the optimizer's tolerance")
 		}
 	}
 
@@ -452,7 +460,9 @@ private final class SeededScenarioStream {
 		let optimalProduction = result.solution.toArray()[0]
 		// Allow small tolerance for floating-point rounding errors (optimizer may produce -1e-5 instead of 0)
 		#expect(optimalProduction >= -1e-4, "Production should be non-negative (within tolerance)")
-		#expect(optimalProduction.rounded() <= 200.0, "Production should be within bounds")
+		// Was `optimalProduction.rounded() <= 200.0`, which admits 200.49. The sibling
+		// assertion directly above already used the right shape.
+		#expect(optimalProduction <= 200.0 + 1e-6, "production \(optimalProduction) exceeds the 200 bound")
 
 		// With reasonable production, expected profit should be reasonable
 		// Note: With reduced samples/iterations, optimizer may find suboptimal solutions

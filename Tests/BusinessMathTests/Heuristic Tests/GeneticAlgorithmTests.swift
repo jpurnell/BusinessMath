@@ -463,7 +463,21 @@ struct GeneticAlgorithmTests {
 
         // Verify GPU produced valid result
         #expect(result.value < 10.0)
-        #expect(result.converged || result.iterations > 0)
+        // This one is different, and it is the only site of the eleven where the vacuous
+        // disjunction was hiding a real answer rather than nothing.
+        //
+        // It was `converged || iterations > 0`, satisfied by any run at all. Replacing it
+        // with `converged` fails — and **correctly so**: the config sets `generations: 10`
+        // with the comment "Keep short for testing", so this run exhausts its budget in ten
+        // generations. A genetic algorithm that finishes its budget has not converged; it
+        // has finished. Asserting convergence here would assert something false.
+        //
+        // What the test actually claims is that the GPU path ran and produced a usable
+        // answer. The budget assertion is the falsifiable half of that — it fails if the
+        // GA bails out early *or* overruns — and the value assertions around it carry the
+        // rest.
+        #expect(result.iterations == 10,
+                "the GPU run should consume its configured 10-generation budget, took \(result.iterations)")
         #expect(result.solution.dimension == 2)
 
         // Result should be close to origin

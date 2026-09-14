@@ -318,8 +318,10 @@ struct MultivariateNewtonRaphsonTests {
 		)
 
 		// Should find minimum variance quickly
-		#expect(result.converged || result.iterations < 20,
-			   "Should converge or make rapid progress")
+		// Was `converged || iterations < 20`, which passes for an optimizer that gave up
+		// early. Measured: this converges, so the disjunction was hiding nothing — but it
+		// could not have told us that.
+		#expect(result.converged, "Newton-Raphson did not converge (\(result.iterations) iterations)")
 		#expect(result.value < portfolioVariance(initialGuess),
 			   "Should find lower variance")
 	}

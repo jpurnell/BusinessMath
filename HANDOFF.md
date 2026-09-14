@@ -4,7 +4,8 @@
 CI-green.** The work queue is **`project/plans/TEST_REVIEW_ROADMAP.md`** — read that before
 anything else; this file is the state and the traps, that file is the plan.
 
-**Phase A is complete.** The next piece of work is **B1**, and it needs no decisions.
+**Phase A is complete, and B1 with it.** The next piece of work is **B2**, and it needs no
+decisions.
 
 ## State
 
@@ -89,32 +90,47 @@ Box-Muller" and **there isn't one**; the library's is the right target because i
 
 ---
 
-## 2. Next: B1, then the rest of Phase B
+## 2. Next: B2, then the rest of Phase B
 
 `TEST_REVIEW_ROADMAP.md` §5.2 is the order. Every item carries a **done when**, so no further
 decisions are needed to proceed.
 
-**B1 — the 18 vacuous optimizer assertions.** Seven `.rounded()` comparisons and eleven
-always-true convergence disjunctions. Each must assert the real bound.
+**B1 is done.** Its answer was the first branch: 18 unknowns became evidence and **no solver defect
+was found**. Worst real constraint violation across the seven `.rounded()` sites is −5.07e-5 against
+a form that admitted 0.5; ten of the eleven optimizers genuinely converge. The one that does not —
+`GeneticAlgorithmTests.testGPUAcceleration` — is *right* not to: its config sets `generations: 10`,
+so the run finishes its budget, and finishing a budget is not converging.
 
-**Done when:** each asserts the bound it claims to. Either the suite stays green — ~18 unknowns
-become evidence — or it turns red on a solver defect. **Do not sweep past a red here.**
+**Two things B1 taught that apply to the rest of Phase D's sweeps.** *Measure per site before
+choosing a bound* — bisecting showed only two of seven needed the loose tolerance, and one blanket
+value would have left five assertions 100,000× weaker than the code warrants. And *a vacuous
+assertion sometimes hides a correct answer the test is asking for wrongly*, not a defect: the honest
+fix at the GA site was a different assertion, not a stricter one.
+
+**B2 — the 3 stale integer-programming assertions**, each of which names its own expectation in a
+comment and tests nothing.
+
+**Done when:** the assertions are written. All three capabilities have shipped, so they should
+pass; if one does not, that is the finding.
 
 **The 10 standing gate warnings are the same material**, and they name their own tests: a test
 *claims* an improvement but asserts `<=` or `>=`, which an unchanged implementation also satisfies.
 `noCombinationBeatsTheReportedScore`, `seasonalBeatsGrid`, `nonSeasonalBeatsGrid`,
 `testDuPontImprovementStrategies`, `testMultiStartImprovement`, `optimalBetterThanEqual`,
 `optimizerBeatsEqualWeights`, `cvarIsNeverBetterThanVaR`, `testCutsImproveDualBound`,
-`tighterConstraintsDontImprove`. Closing B1 should take that count down.
+`tighterConstraintsDontImprove`.
 
-**Take the warning about a red seriously.** A6 was filed as a naming decision and the subsystem
-next door turned out to contain a feature that had never worked. Two of B1's eleven are in
-optimization and one — `testCutsImproveDualBound` — is in the cutting-plane code that L18 just
-changed, so it is now asserting against a solver that behaves differently.
+**They are a different population from B1's 18, and closing B1 did not move them** — verified, the
+gate still reports 10. Same species of defect, different tests. Whoever takes them should treat
+them as their own sweep.
 
-Then B2 (3 stale integer-programming assertions), B3 (`Phase1_CutValidityTests` — **note L18
-changed the cut path underneath it**), B4 (wall-clock assertions behind `.benchmarkOnly`).
-Then Phase C.
+**`testCutsImproveDualBound` is still open and now matters more.** It is one of the ten standing
+gate warnings, it lives in the cutting-plane code that L18 changed, and it is therefore asserting
+against a solver that behaves differently than when it was written. B1 did not touch it.
+
+Then B3 (`Phase1_CutValidityTests` — **note L18 changed the cut path underneath it**, and its
+`totalCutsGenerated > 0` assertions can now mean something), B4 (wall-clock assertions behind
+`.benchmarkOnly`). Then Phase C.
 
 ---
 
