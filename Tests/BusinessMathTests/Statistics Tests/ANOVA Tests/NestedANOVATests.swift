@@ -228,7 +228,9 @@ struct NestedANOVATests {
 
 	@Test("Fewer than 2 groups throws insufficientData")
 	func testFewerThan2Groups() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "Nested ANOVA requires at least 2 groups")
+		) {
 			let _: NestedANOVAResult<Double> = try nestedANOVA([
 				[[1, 2, 3], [4, 5, 6]]
 			])
@@ -239,7 +241,9 @@ struct NestedANOVATests {
 
 	@Test("Group with fewer than 2 subgroups throws insufficientData")
 	func testFewerThan2Subgroups() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "Group 1 requires at least 2 subgroups for nested ANOVA")
+		) {
 			let _ = try nestedANOVA([
 				[[1, 2, 3], [4, 5, 6]],
 				[[7, 8, 9]]             // only 1 subgroup
@@ -251,7 +255,9 @@ struct NestedANOVATests {
 
 	@Test("Empty subgroup throws insufficientData")
 	func testEmptySubgroup() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 1, actual: 0, context: "Subgroup 1 in group 0 is empty")
+		) {
 			let _ = try nestedANOVA([
 				[[1, 2, 3], []],
 				[[4, 5, 6], [7, 8, 9]]

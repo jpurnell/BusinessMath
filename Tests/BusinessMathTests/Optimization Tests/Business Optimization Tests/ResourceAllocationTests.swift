@@ -419,12 +419,15 @@ struct ResourceAllocationTests {
 	func emptyOptionsError() throws {
 		let optimizer = ResourceAllocationOptimizer()
 
-		#expect(throws: OptimizationError.self) {
+		#expect {
 			_ = try optimizer.optimize(
 				options: [],
 				objective: .maximizeValue,
 				constraints: []
 			)
+		} throws: { error in
+			guard case let OptimizationError.invalidInput(message) = error else { return false }
+			return message == "No options provided"
 		}
 	}
 

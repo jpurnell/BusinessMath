@@ -247,7 +247,9 @@ struct ICCMissingDataTests {
 			[nil, nil, nil]
 		]
 
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "ICC requires at least 2 subjects with observed data")
+		) {
 			let _ = try icc(
 				ratings,
 				model: .twoWayRandom,
@@ -266,7 +268,9 @@ struct ICCMissingDataTests {
 			[3.0, nil, nil]
 		]
 
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "ICC requires at least 2 raters with observed data")
+		) {
 			let _ = try icc(
 				ratings,
 				model: .twoWayRandom,
@@ -284,7 +288,9 @@ struct ICCMissingDataTests {
 			[3.0, 4.0, 5.0]
 		]
 
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.mismatchedDimensions(message: "All rows must have the same number of columns", expected: "2", actual: "3")
+		) {
 			let _ = try icc(
 				ratings,
 				model: .twoWayRandom,
@@ -303,7 +309,9 @@ struct ICCMissingDataTests {
 			[nil, nil, nil]
 		]
 
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 1, actual: 0, context: "ICC requires at least some observed data")
+		) {
 			let _ = try icc(
 				ratings,
 				model: .twoWayRandom,

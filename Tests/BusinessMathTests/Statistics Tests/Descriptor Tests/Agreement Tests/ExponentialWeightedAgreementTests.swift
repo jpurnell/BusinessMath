@@ -39,13 +39,19 @@ struct ExponentialWeightedAgreementTests {
 
 	@Test("lambda <= 0 or lambda > 1: throws invalidInput")
 	func testInvalidLambdaThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Lambda must be in (0, 1]", value: "0.0", expectedRange: "(0, 1]")
+		) {
 			_ = try exponentialDecayWeights(count: 5, lambda: 0.0)
 		}
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Lambda must be in (0, 1]", value: "-0.5", expectedRange: "(0, 1]")
+		) {
 			_ = try exponentialDecayWeights(count: 5, lambda: -0.5)
 		}
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Lambda must be in (0, 1]", value: "1.1", expectedRange: "(0, 1]")
+		) {
 			_ = try exponentialDecayWeights(count: 5, lambda: 1.1)
 		}
 	}

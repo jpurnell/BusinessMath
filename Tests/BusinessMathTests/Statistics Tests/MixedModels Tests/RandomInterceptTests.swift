@@ -146,7 +146,9 @@ struct RandomInterceptTests {
 		let grouping = try GroupingFactor([0, 0, 0])
 		let X = DenseMatrix<Double>(rows: 3, columns: 1, repeating: 1.0)
 		let model = RandomInterceptModel(fixedEffects: X, response: [1.0, 2.0, 3.0], grouping: grouping)
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "Random intercept model requires at least 2 groups")
+		) {
 			try fitRandomIntercept(model)
 		}
 	}
@@ -156,7 +158,9 @@ struct RandomInterceptTests {
 		let grouping = try GroupingFactor([0, 0, 1, 1])
 		let X = DenseMatrix<Double>(rows: 3, columns: 1, repeating: 1.0) // Wrong: 3 rows vs 4 obs
 		let model = RandomInterceptModel(fixedEffects: X, response: [1.0, 2.0, 3.0, 4.0], grouping: grouping)
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.mismatchedDimensions(message: "X.rows must equal y.length", expected: "4", actual: "3")
+		) {
 			try fitRandomIntercept(model)
 		}
 	}

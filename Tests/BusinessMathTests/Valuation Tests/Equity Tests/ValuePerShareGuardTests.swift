@@ -67,10 +67,14 @@ struct ValuePerShareGuardTests {
 
 	@Test("Zero shares throws rather than returning infinity")
 	func zeroSharesThrows() throws {
-		#expect(throws: ValuationError.self) {
+		#expect(
+			throws: ValuationError.invalidModelAssumptions("Shares outstanding (0.0) must be greater than zero. A per-share value divided by zero shares is infinite, and by a negative count is a negative price; neither is a valuation.")
+		) {
 			_ = try Self.residualIncome.valuePerShare(sharesOutstanding: 0.0)
 		}
-		#expect(throws: ValuationError.self) {
+		#expect(
+			throws: ValuationError.invalidModelAssumptions("Shares outstanding (0.0) must be greater than zero. A per-share value divided by zero shares is infinite, and by a negative count is a negative price; neither is a valuation.")
+		) {
 			_ = try Self.fcfe.valuePerShare(sharesOutstanding: 0.0)
 		}
 	}
@@ -81,10 +85,14 @@ struct ValuePerShareGuardTests {
 	/// caller gets a plausible-looking negative price rather than an obvious infinity.
 	@Test("A negative share count throws rather than returning a negative price")
 	func negativeSharesThrow() throws {
-		#expect(throws: ValuationError.self) {
+		#expect(
+			throws: ValuationError.invalidModelAssumptions("Shares outstanding (-100.0) must be greater than zero. A per-share value divided by zero shares is infinite, and by a negative count is a negative price; neither is a valuation.")
+		) {
 			_ = try Self.residualIncome.valuePerShare(sharesOutstanding: -100.0)
 		}
-		#expect(throws: ValuationError.self) {
+		#expect(
+			throws: ValuationError.invalidModelAssumptions("Shares outstanding (-100.0) must be greater than zero. A per-share value divided by zero shares is infinite, and by a negative count is a negative price; neither is a valuation.")
+		) {
 			_ = try Self.fcfe.valuePerShare(sharesOutstanding: -100.0)
 		}
 	}

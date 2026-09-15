@@ -112,13 +112,23 @@ struct BayesContractTests {
 
 	@Test("The checked form throws where the free form returns NaN")
 	func checkedFormThrows() throws {
-		#expect(throws: BusinessMathError.self) { _ = try bayesChecked(0.0, 0.99, 0.0) }
-		#expect(throws: BusinessMathError.self) { _ = try bayesChecked(1.0, 0.0, 0.5) }
+		#expect(
+			throws: BusinessMathError.divisionByZero(context: "P(T) is zero: no evidence pathway exists, so the posterior is undefined")
+		) { _ = try bayesChecked(0.0, 0.99, 0.0) }
+		#expect(
+			throws: BusinessMathError.divisionByZero(context: "P(T) is zero: no evidence pathway exists, so the posterior is undefined")
+		) { _ = try bayesChecked(1.0, 0.0, 0.5) }
 
 		// And it rejects arguments that are not probabilities at all.
-		#expect(throws: BusinessMathError.self) { _ = try bayesChecked(1.5, 0.99, 0.02) }
-		#expect(throws: BusinessMathError.self) { _ = try bayesChecked(0.01, -0.1, 0.02) }
-		#expect(throws: BusinessMathError.self) { _ = try bayesChecked(Double.nan, 0.99, 0.02) }
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "probabilityD must be a probability", value: "1.5", expectedRange: "0 ... 1")
+		) { _ = try bayesChecked(1.5, 0.99, 0.02) }
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "probabilityTrueGivenD must be a probability", value: "-0.1", expectedRange: "0 ... 1")
+		) { _ = try bayesChecked(0.01, -0.1, 0.02) }
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "probabilityD must be a probability", value: "nan", expectedRange: "0 ... 1")
+		) { _ = try bayesChecked(Double.nan, 0.99, 0.02) }
 
 		// Where both agree, they agree exactly.
 		let checked = try bayesChecked(0.01, 0.99, 0.02)

@@ -71,11 +71,15 @@ struct KernelWeightedAgreementTests {
 
 	@Test("Bandwidth <= 0: throws invalidInput")
 	func testZeroBandwidthThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Bandwidth must be positive", value: "0.0", expectedRange: "(0, +inf)")
+		) {
 			_ = try kernelWeights([1.0, 2.0], [1.0, 2.0],
 								  target: 0.0, bandwidth: 0.0, kernel: .gaussian)
 		}
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Bandwidth must be positive", value: "-1.0", expectedRange: "(0, +inf)")
+		) {
 			_ = try kernelWeights([1.0, 2.0], [1.0, 2.0],
 								  target: 0.0, bandwidth: -1.0, kernel: .gaussian)
 		}
@@ -124,7 +128,9 @@ struct KernelWeightedAgreementTests {
 		let x: [Double] = [1.0, 2.0]
 		let y: [Double] = [1.0, 2.0]
 		// With target=100 and bandwidth=0.1, weights will be essentially zero
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 0, context: "Kernel weights sum to zero at target 100.0 — no observations are effectively weighted")
+		) {
 			_ = try kernelWeightedCCC(x, y, target: 100.0, bandwidth: 0.1, kernel: .gaussian)
 		}
 	}
@@ -203,10 +209,14 @@ struct KernelWeightedAgreementTests {
 
 	@Test("Empty or single-element: throws insufficientData")
 	func testBandwidthInsufficientData() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 0, context: "Bandwidth selection requires at least 2 values")
+		) {
 			_ = try selectBandwidth([Double](), method: .silverman)
 		}
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "Bandwidth selection requires at least 2 values")
+		) {
 			_ = try selectBandwidth([1.0], method: .silverman)
 		}
 	}

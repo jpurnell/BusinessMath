@@ -51,8 +51,11 @@ struct SimulationSeedTests {
 			inputs[0]
 		}
 		simulation.addInput(SimulationInput(name: "Custom") { 1.0 })
-		#expect(throws: SimulationError.self) {
+		#expect {
 			try simulation.run()
+		} throws: { error in
+			guard case let SimulationError.seedingUnsupported(inputName, details) = error else { return false }
+			return inputName == "Custom" && details == "Input uses a custom sampler or a distribution that does not conform to SeedableDistribution"
 		}
 	}
 
@@ -120,8 +123,11 @@ struct SimulationSeedTests {
 		simulation.addInput(SimulationInput(name: "A", distribution: DistributionNormal(100, 15)))
 		simulation.addInput(SimulationInput(name: "Custom") { 1.0 })
 		try simulation.setCorrelationMatrix([[1.0, 0.5], [0.5, 1.0]])
-		#expect(throws: SimulationError.self) {
+		#expect {
 			try simulation.run()
+		} throws: { error in
+			guard case let SimulationError.seedingUnsupported(inputName, details) = error else { return false }
+			return inputName == "Custom" && details == "Input uses a custom sampler or a distribution that does not conform to SeedableDistribution"
 		}
 	}
 

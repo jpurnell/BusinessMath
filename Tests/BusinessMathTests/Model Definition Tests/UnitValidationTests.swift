@@ -72,7 +72,7 @@ struct UnitValidationTests {
             .defining(LineItem<Money>("Funded"), as: debtAmount.expr + price.expr)
             .defining(LineItem<Money>("Implied"), as: price.expr * debtShare.expr)
 
-        #expect(throws: TypedModelError.self) { try model.validateUnits() }
+        #expect(throws: TypedModelError.conflictingUnits(name: "Debt", "money", "ratio")) { try model.validateUnits() }
 
         do {
             try model.validateUnits()

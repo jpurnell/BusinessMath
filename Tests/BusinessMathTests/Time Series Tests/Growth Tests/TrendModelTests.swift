@@ -258,8 +258,11 @@ struct TrendModelTests {
 		var model = LinearTrend<Double>()
 
 		// Linear trend requires at least 2 points to calculate slope
-		#expect(throws: TrendModelError.self) {
+		#expect {
 			try model.fit(to: data)
+		} throws: { error in
+			guard case let TrendModelError.insufficientData(required, provided) = error else { return false }
+			return required == 2 && provided == 1
 		}
 	}
 

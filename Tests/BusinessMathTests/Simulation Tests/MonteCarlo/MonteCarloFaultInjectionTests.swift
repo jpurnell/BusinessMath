@@ -23,8 +23,11 @@ struct MonteCarloFaultInjectionTests {
 			distribution: DistributionNormal(0.0, 1.0)
 		))
 
-		#expect(throws: SimulationError.self) {
+		#expect {
 			_ = try simulation.run()
+		} throws: { error in
+			guard case let SimulationError.invalidModel(iteration, details) = error else { return false }
+			return iteration == 0 && details == "NaN result"
 		}
 	}
 
@@ -38,8 +41,11 @@ struct MonteCarloFaultInjectionTests {
 			distribution: DistributionNormal(0.0, 1.0)
 		))
 
-		#expect(throws: SimulationError.self) {
+		#expect {
 			_ = try simulation.run()
+		} throws: { error in
+			guard case let SimulationError.invalidModel(iteration, details) = error else { return false }
+			return iteration == 0 && details == "Infinite result"
 		}
 	}
 
@@ -53,8 +59,11 @@ struct MonteCarloFaultInjectionTests {
 			distribution: DistributionNormal(0.0, 1.0)
 		))
 
-		#expect(throws: SimulationError.self) {
+		#expect {
 			_ = try simulation.run()
+		} throws: { error in
+			guard case SimulationError.insufficientIterations = error else { return false }
+			return true
 		}
 	}
 
@@ -64,8 +73,11 @@ struct MonteCarloFaultInjectionTests {
 			inputs[0]
 		}
 
-		#expect(throws: SimulationError.self) {
+		#expect {
 			_ = try simulation.run()
+		} throws: { error in
+			guard case SimulationError.noInputs = error else { return false }
+			return true
 		}
 	}
 
@@ -98,8 +110,11 @@ struct MonteCarloFaultInjectionTests {
 			distribution: DistributionUniform(0.0, 1.0)
 		))
 
-		#expect(throws: SimulationError.self) {
+		#expect {
 			_ = try simulation.run()
+		} throws: { error in
+			guard case let SimulationError.invalidModel(iteration, details) = error else { return false }
+			return iteration == 0 && details == "NaN result"
 		}
 	}
 }

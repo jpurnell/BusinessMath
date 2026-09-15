@@ -796,12 +796,21 @@ struct FinancialRatiosTests {
 			accounts: balanceAccounts
 		)
 
-		// Our test company has no inventory account
-		#expect(throws: FinancialRatioError.self) {
+		// The test is named for a missing inventory *account*, but the refusal names a
+		// missing *expense* — Cost of Goods Sold, which `inventoryTurnover` needs for its
+		// numerator and checks first. The type-only assertion passed either way, so the
+		// mismatch between the name and the behaviour went unrecorded.
+		//
+		// `FinancialRatioError` is not `Equatable`; the name it carries is the whole
+		// content of the refusal — which line item the caller has to add.
+		#expect {
 			try inventoryTurnover(
 				incomeStatement: incomeStatement,
 				balanceSheet: balanceSheet
 			)
+		} throws: { error in
+			guard case let FinancialRatioError.missingExpense(name) = error else { return false }
+			return name == "Cost of Goods Sold (COGS)"
 		}
 	}
 
@@ -823,11 +832,14 @@ struct FinancialRatiosTests {
 		)
 
 		// Our test company has no receivables account
-		#expect(throws: FinancialRatioError.self) {
+		#expect {
 			try receivablesTurnover(
 				incomeStatement: incomeStatement,
 				balanceSheet: balanceSheet
 			)
+		} throws: { error in
+			guard case let FinancialRatioError.missingAccount(name) = error else { return false }
+			return name == "Accounts Receivable"
 		}
 	}
 
@@ -942,8 +954,13 @@ struct FinancialRatiosTests {
 		)
 
 		// Should throw error when no interest expense found
-		#expect(throws: FinancialRatioError.self) {
+		// A missing *expense*, not a missing account — two cases the type-only assertion
+		// could not tell apart.
+		#expect {
 			try interestCoverage(incomeStatement: incomeStatement)
+		} throws: { error in
+			guard case let FinancialRatioError.missingExpense(name) = error else { return false }
+			return name == "Interest Expense"
 		}
 	}
 

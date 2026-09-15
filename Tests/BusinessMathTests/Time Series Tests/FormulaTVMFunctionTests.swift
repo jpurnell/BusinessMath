@@ -142,10 +142,14 @@ struct FormulaTVMFunctionTests {
 
     @Test("The TVM names state their argument counts")
     func tvmArity() {
-        #expect(throws: FormulaError.self) {
+        #expect(
+        	throws: FormulaError.wrongArgumentCount(function: "NPV", expected: "exactly 2", got: 1)
+        ) {
             _ = try evaluator(["a": [1]]).evaluate("NPV(0.1)")
         }
-        #expect(throws: FormulaError.self) {
+        #expect(
+        	throws: FormulaError.wrongArgumentCount(function: "PMT", expected: "exactly 3", got: 2)
+        ) {
             _ = try evaluator(["a": [1]]).evaluate("PMT(0.1, 10)")
         }
     }

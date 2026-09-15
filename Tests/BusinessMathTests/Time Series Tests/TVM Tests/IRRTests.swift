@@ -144,7 +144,16 @@ struct IRRTests {
 	func irrAllPositive() throws {
 		let cashFlows = [100.0, 200.0, 300.0]
 
-		#expect(throws: BusinessMathError.self) {
+		// No sign change, so there is no root to find and the guard fires before the
+		// Newton loop ever runs.
+		#expect(throws: BusinessMathError.calculationFailed(
+			operation: "IRR",
+			reason: "Cash flows must contain both positive and negative values (all cash flows have the same sign)",
+			suggestions: [
+				"Ensure you have at least one negative cash flow (typically the initial investment)",
+				"Verify that you have at least one positive cash flow (returns or receipts)",
+				"Check that cash flows are correctly signed (negative for outflows, positive for inflows)"
+			])) {
 			_ = try irr(cashFlows: cashFlows)
 		}
 	}
@@ -153,7 +162,14 @@ struct IRRTests {
 	func irrAllNegative() throws {
 		let cashFlows = [-100.0, -200.0, -300.0]
 
-		#expect(throws: BusinessMathError.self) {
+		#expect(throws: BusinessMathError.calculationFailed(
+			operation: "IRR",
+			reason: "Cash flows must contain both positive and negative values (all cash flows have the same sign)",
+			suggestions: [
+				"Ensure you have at least one negative cash flow (typically the initial investment)",
+				"Verify that you have at least one positive cash flow (returns or receipts)",
+				"Check that cash flows are correctly signed (negative for outflows, positive for inflows)"
+			])) {
 			_ = try irr(cashFlows: cashFlows)
 		}
 	}
@@ -162,7 +178,10 @@ struct IRRTests {
 	func irrEmpty() throws {
 		let cashFlows: [Double] = []
 
-		#expect(throws: BusinessMathError.self) {
+		// Too few flows is a different guard, and it reports both counts.
+		#expect(throws: BusinessMathError.insufficientData(
+			required: 2, actual: 0,
+			context: "IRR calculation requires at least 2 cash flows")) {
 			_ = try irr(cashFlows: cashFlows)
 		}
 	}
@@ -171,7 +190,9 @@ struct IRRTests {
 	func irrSingle() throws {
 		let cashFlows = [-1000.0]
 
-		#expect(throws: BusinessMathError.self) {
+		#expect(throws: BusinessMathError.insufficientData(
+			required: 2, actual: 1,
+			context: "IRR calculation requires at least 2 cash flows")) {
 			_ = try irr(cashFlows: cashFlows)
 		}
 	}
@@ -180,7 +201,17 @@ struct IRRTests {
 	func irrConvergenceFailure() throws {
 		let cashFlows = [-1000.0, 400.0, 400.0, 400.0]
 
-		#expect(throws: BusinessMathError.self) {
+		// The convergence failure names the budget it exhausted and the guess it started
+		// from — the default 0.1, since none was supplied.
+		#expect(throws: BusinessMathError.calculationFailed(
+			operation: "IRR",
+			reason: "Failed to converge within 1 iterations",
+			suggestions: [
+				"Increase maxIterations (current: 1)",
+				"Try a different initial guess (current: 0.1)",
+				"Verify that cash flows represent a realistic investment pattern",
+				"Check for multiple sign changes, which can give more than one IRR"
+			])) {
 			_ = try irr(cashFlows: cashFlows, maxIterations: 1)
 		}
 	}

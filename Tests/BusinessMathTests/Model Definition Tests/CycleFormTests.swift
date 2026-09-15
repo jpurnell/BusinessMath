@@ -168,7 +168,7 @@ struct CycleFormTests {
 			.defining("a", as: "b +")
 			.defining("b", as: "a")
 
-		#expect(throws: FormulaError.self) { try model.dependencyReport() }
+		#expect(throws: FormulaError.unexpectedEnd) { try model.dependencyReport() }
 	}
 
 	// MARK: - Through the report

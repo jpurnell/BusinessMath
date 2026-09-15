@@ -86,7 +86,9 @@ struct FormulaConditionalTests {
 
     @Test("IF takes exactly three arguments")
     func ifArity() {
-        #expect(throws: FormulaError.self) {
+        #expect(
+        	throws: FormulaError.wrongArgumentCount(function: "IF", expected: "exactly 3", got: 2)
+        ) {
             _ = try evaluator().evaluate("IF(revenue > target, revenue)")
         }
     }

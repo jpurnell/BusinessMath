@@ -57,12 +57,15 @@ struct CorrelationExpressionTests {
         simulation.addInput(SimulationInput(name: "B", distribution: DistributionNormal(50, 5)))
 
         // Try to set 3x3 matrix for 2 inputs
-        #expect(throws: SimulationError.self) {
+        #expect {
             try simulation.setCorrelationMatrix([
                 [1.0, 0.5, 0.3],
                 [0.5, 1.0, 0.2],
                 [0.3, 0.2, 1.0]
             ])
+        } throws: { error in
+        	guard case SimulationError.correlationDimensionMismatch = error else { return false }
+        	return true
         }
     }
 
@@ -83,11 +86,14 @@ struct CorrelationExpressionTests {
         simulation.addInput(SimulationInput(name: "B", distribution: DistributionNormal(50, 5)))
 
         // Diagonal must be 1.0
-        #expect(throws: SimulationError.self) {
+        #expect {
             try simulation.setCorrelationMatrix([
                 [0.9, 0.5],  // Invalid diagonal
                 [0.5, 1.0]
             ])
+        } throws: { error in
+        	guard case SimulationError.invalidCorrelationMatrix = error else { return false }
+        	return true
         }
     }
 

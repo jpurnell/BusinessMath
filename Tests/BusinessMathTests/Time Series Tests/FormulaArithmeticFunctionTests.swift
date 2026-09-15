@@ -80,7 +80,9 @@ struct FormulaArithmeticFunctionTests {
 
     @Test("ABS takes exactly one argument")
     func absArity() {
-        #expect(throws: FormulaError.self) {
+        #expect(
+        	throws: FormulaError.wrongArgumentCount(function: "ABS", expected: "exactly 1", got: 2)
+        ) {
             _ = try evaluator().evaluate("ABS(revenue, cogs)")
         }
     }

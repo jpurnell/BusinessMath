@@ -202,7 +202,7 @@ struct MultiVariableMonteCarloTests {
 
 		let simulation = MonteCarloSimulation()
 
-		#expect(throws: SimulationError.self) {
+		#expect {
 			_ = try simulation.runCorrelated(
 				inputs: [input1, input2, input3],
 				correlationMatrix: correlationMatrix,
@@ -211,6 +211,9 @@ struct MultiVariableMonteCarloTests {
 			) { samples in
 				return samples.reduce(0, +)
 			}
+		} throws: { error in
+			guard case SimulationError.correlationDimensionMismatch = error else { return false }
+			return true
 		}
 	}
 
@@ -234,7 +237,7 @@ struct MultiVariableMonteCarloTests {
 
 		let simulation = MonteCarloSimulation()
 
-		#expect(throws: SimulationError.self) {
+		#expect {
 			_ = try simulation.runCorrelated(
 				inputs: [input1, input2],
 				correlationMatrix: invalidMatrix,
@@ -243,6 +246,9 @@ struct MultiVariableMonteCarloTests {
 			) { samples in
 				return samples[0] + samples[1]
 			}
+		} throws: { error in
+			guard case SimulationError.invalidCorrelationMatrix = error else { return false }
+			return true
 		}
 	}
 

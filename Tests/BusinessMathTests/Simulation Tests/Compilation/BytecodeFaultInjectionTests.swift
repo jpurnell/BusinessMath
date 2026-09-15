@@ -20,8 +20,12 @@ struct BytecodeFaultInjectionTests {
 			builder[0] / builder[1]
 		}
 
-		#expect(throws: EvaluationError.self) {
+		// `EvaluationError` is not `Equatable`, so the case is matched by hand.
+		#expect {
 			_ = try model.evaluate(inputs: [1.0, 0.0])
+		} throws: { error in
+			guard case EvaluationError.divisionByZero = error else { return false }
+			return true
 		}
 	}
 
@@ -29,8 +33,11 @@ struct BytecodeFaultInjectionTests {
 	func sqrtOfNegative() throws {
 		let bytecode: [Bytecode] = [.input(0), .sqrt]
 
-		#expect(throws: EvaluationError.self) {
+		#expect {
 			_ = try BytecodeInterpreter.evaluate(bytecode: bytecode, inputs: [-4.0])
+		} throws: { error in
+			guard case let EvaluationError.invalidOperation(what) = error else { return false }
+			return what == "sqrt of negative"
 		}
 	}
 
@@ -38,8 +45,11 @@ struct BytecodeFaultInjectionTests {
 	func logOfZero() throws {
 		let bytecode: [Bytecode] = [.input(0), .log]
 
-		#expect(throws: EvaluationError.self) {
+		#expect {
 			_ = try BytecodeInterpreter.evaluate(bytecode: bytecode, inputs: [0.0])
+		} throws: { error in
+			guard case let EvaluationError.invalidOperation(what) = error else { return false }
+			return what == "log of non-positive"
 		}
 	}
 
@@ -47,8 +57,12 @@ struct BytecodeFaultInjectionTests {
 	func logOfNegative() throws {
 		let bytecode: [Bytecode] = [.input(0), .log]
 
-		#expect(throws: EvaluationError.self) {
+		// Zero and a negative argument meet the same guard, and report the same way.
+		#expect {
 			_ = try BytecodeInterpreter.evaluate(bytecode: bytecode, inputs: [-1.0])
+		} throws: { error in
+			guard case let EvaluationError.invalidOperation(what) = error else { return false }
+			return what == "log of non-positive"
 		}
 	}
 
@@ -58,22 +72,33 @@ struct BytecodeFaultInjectionTests {
 			builder[2]
 		}
 
-		#expect(throws: EvaluationError.self) {
+		// The index asked for and the number available, which is what makes it actionable.
+		#expect {
 			_ = try model.evaluate(inputs: [1.0, 2.0])
+		} throws: { error in
+			guard case let EvaluationError.invalidInputIndex(index, available) = error else { return false }
+			return index == 2 && available == 2
 		}
 	}
 
 	@Test("Empty bytecode throws invalidStack")
 	func emptyBytecode() throws {
-		#expect(throws: EvaluationError.self) {
+		// Empty bytecode leaves nothing on the stack, and the count says so.
+		#expect {
 			_ = try BytecodeInterpreter.evaluate(bytecode: [], inputs: [])
+		} throws: { error in
+			guard case let EvaluationError.invalidStack(count) = error else { return false }
+			return count == 0
 		}
 	}
 
 	@Test("Binary operation with empty stack throws stackUnderflow")
 	func stackUnderflowOnAdd() throws {
-		#expect(throws: EvaluationError.self) {
+		#expect {
 			_ = try BytecodeInterpreter.evaluate(bytecode: [.add], inputs: [])
+		} throws: { error in
+			guard case EvaluationError.stackUnderflow = error else { return false }
+			return true
 		}
 	}
 
@@ -81,8 +106,12 @@ struct BytecodeFaultInjectionTests {
 	func stackUnderflowOnDivide() throws {
 		let bytecode: [Bytecode] = [.input(0), .divide]
 
-		#expect(throws: EvaluationError.self) {
+		// One operand where two are needed is the same underflow as none at all.
+		#expect {
 			_ = try BytecodeInterpreter.evaluate(bytecode: bytecode, inputs: [5.0])
+		} throws: { error in
+			guard case EvaluationError.stackUnderflow = error else { return false }
+			return true
 		}
 	}
 

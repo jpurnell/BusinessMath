@@ -72,7 +72,9 @@ struct DividendDiscountModelTests {
         )
 
         // When/Then: Should throw ValuationError for invalid model assumptions
-        #expect(throws: ValuationError.self) {
+        #expect(
+        	throws: ValuationError.invalidModelAssumptions("Growth rate (0.1) must be less than required return (0.1). A perpetual growth rate equal to or greater than the discount rate is mathematically undefined and economically nonsensical.")
+        ) {
             try model.valuePerShare()
         }
     }
@@ -87,7 +89,9 @@ struct DividendDiscountModelTests {
         )
 
         // When/Then: Should throw ValuationError for invalid model assumptions
-        #expect(throws: ValuationError.self) {
+        #expect(
+        	throws: ValuationError.invalidModelAssumptions("Growth rate (0.12) must be less than required return (0.1). A perpetual growth rate equal to or greater than the discount rate is mathematically undefined and economically nonsensical.")
+        ) {
             try model.valuePerShare()
         }
     }
@@ -235,7 +239,9 @@ struct DividendDiscountModelTests {
         )
 
         // When/Then: Should throw ValuationError for invalid stable growth rate
-        #expect(throws: ValuationError.self) {
+        #expect(
+        	throws: ValuationError.invalidModelAssumptions("Stable growth rate (0.1) must be less than required return (0.1). Terminal value calculation requires g < r for mathematical validity.")
+        ) {
             try model.valuePerShare()
         }
     }

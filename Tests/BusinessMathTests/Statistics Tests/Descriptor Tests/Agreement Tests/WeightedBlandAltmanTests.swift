@@ -89,28 +89,34 @@ struct WeightedBlandAltmanTests {
 
 	@Test("Negative weight → throws invalidInput")
 	func testNegativeWeightThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Weights must be non-negative", value: nil, expectedRange: nil)
+		) {
 			let _ = try blandAltman([1.0, 2.0, 3.0], [1.0, 2.0, 3.0], weights: [1.0, -1.0, 1.0])
 		}
 	}
 
 	@Test("Mismatched lengths → throws mismatchedDimensions")
 	func testMismatchedLengthsThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.mismatchedDimensions(message: "Arrays must have equal length", expected: "2", actual: "3")
+		) {
 			let _ = try blandAltman([1.0, 2.0], [1.0, 2.0, 3.0], weights: [1.0, 1.0])
 		}
 	}
 
 	@Test("Fewer than 2 → throws insufficientData")
 	func testInsufficientDataThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "Weighted Bland-Altman analysis requires at least 2 paired observations")
+		) {
 			let _ = try blandAltman([1.0], [1.0], weights: [1.0])
 		}
 	}
 
 	@Test("All-zero weights → throws divisionByZero")
 	func testAllZeroWeightsThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(throws: BusinessMathError.divisionByZero(context: "Total weight is zero")) {
 			let _ = try blandAltman([1.0, 2.0, 3.0], [1.0, 2.0, 3.0], weights: [0.0, 0.0, 0.0])
 		}
 	}

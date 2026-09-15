@@ -86,21 +86,27 @@ struct FCDFTests {
 
 	@Test("Negative f throws invalidInput")
 	func testNegativeFThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "F-statistic must be non-negative", value: "-1.0", expectedRange: "[0, ∞)")
+		) {
 			let _: Double = try fCDF(f: -1.0, df1: 5, df2: 10)
 		}
 	}
 
 	@Test("df1 = 0 throws invalidInput")
 	func testZeroDf1Throws() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Numerator degrees of freedom must be positive", value: "0", expectedRange: "(0, ∞)")
+		) {
 			let _: Double = try fCDF(f: 1.0, df1: 0, df2: 10)
 		}
 	}
 
 	@Test("df2 = 0 throws invalidInput")
 	func testZeroDf2Throws() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Denominator degrees of freedom must be positive", value: "0", expectedRange: "(0, ∞)")
+		) {
 			let _: Double = try fCDF(f: 1.0, df1: 5, df2: 0)
 		}
 	}
@@ -133,14 +139,18 @@ struct FQuantileTests {
 
 	@Test("p = 0 throws invalidInput")
 	func testZeroPThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Probability must be in (0, 1) exclusive", value: "0.0", expectedRange: "(0, 1)")
+		) {
 			let _: Double = try fQuantile(p: 0.0, df1: 5, df2: 10)
 		}
 	}
 
 	@Test("p = 1 throws invalidInput")
 	func testOnePThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Probability must be in (0, 1) exclusive", value: "1.0", expectedRange: "(0, 1)")
+		) {
 			let _: Double = try fQuantile(p: 1.0, df1: 5, df2: 10)
 		}
 	}

@@ -130,7 +130,9 @@ struct DStudyTests {
 	func testMismatchedDesignFacetsThrows() throws {
 		let g = try oneFacetGResult()
 
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Design facets must match G-study facets", value: "[\"items\"]", expectedRange: "[\"raters\"]")
+		) {
 			let _ = try dStudy(g, design: ["items": 5])
 		}
 	}
@@ -139,7 +141,9 @@ struct DStudyTests {
 	func testDesignFacetSizeLessThan1Throws() throws {
 		let g = try oneFacetGResult()
 
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Facet size must be at least 1", value: "raters: 0", expectedRange: ">= 1")
+		) {
 			let _ = try dStudy(g, design: ["raters": 0])
 		}
 	}

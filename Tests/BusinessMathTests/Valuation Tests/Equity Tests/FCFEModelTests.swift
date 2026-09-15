@@ -331,7 +331,9 @@ struct FCFEModelTests {
         )
 
         // When/Then: Should throw ValuationError for invalid model assumptions
-        #expect(throws: ValuationError.self) {
+        #expect(
+        	throws: ValuationError.invalidModelAssumptions("Terminal growth rate (0.1) must be less than cost of equity (0.1). FCFE model requires g < r for terminal value calculation.")
+        ) {
             try model.equityValue()
         }
     }

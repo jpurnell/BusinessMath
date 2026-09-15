@@ -186,23 +186,29 @@ struct ReorderPointModelTests {
 
 	@Test("Rejects empty demand history")
 	func rejectsEmptyHistory() throws {
-		#expect(throws: OperationsError.self) {
+		#expect {
 			_ = try ReorderPointModel<Double>.calculate(
 				demandHistory: [],
 				leadTime: 7.0,
 				serviceLevel: 0.95
 			)
+		} throws: { error in
+			guard case let OperationsError.insufficientData(required, got) = error else { return false }
+			return required == 1 && got == 0
 		}
 	}
 
 	@Test("Rejects invalid service level")
 	func rejectsInvalidServiceLevel() throws {
-		#expect(throws: OperationsError.self) {
+		#expect {
 			_ = try ReorderPointModel<Double>.calculate(
 				demandHistory: Array(repeating: 10.0, count: 30),
 				leadTime: 7.0,
 				serviceLevel: 1.5
 			)
+		} throws: { error in
+			guard case OperationsError.invalidServiceLevel = error else { return false }
+			return true
 		}
 	}
 }

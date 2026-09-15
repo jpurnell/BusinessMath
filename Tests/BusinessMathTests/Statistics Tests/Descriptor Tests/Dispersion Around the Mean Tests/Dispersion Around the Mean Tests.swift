@@ -192,7 +192,7 @@ struct DispersionProperties {
 		#expect(cv >= 0.0)
 
 		// Throws when mean is zero
-		#expect(throws: BusinessMathError.self) {
+		#expect(throws: BusinessMathError.divisionByZero(context: "Coefficient of Variation")) {
 			_ = try coefficientOfVariation(stdDev([ -1.0, 0.0, 1.0 ]), mean: 0.0)
 		}
 	}
@@ -257,7 +257,9 @@ struct DispersionNaNInfinityTests {
 		#expect(try result1 == nil || (try #require(result1)).isNaN)
 
 		// NaN mean should throw
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Coefficient of Variation requires finite mean", value: "NaN", expectedRange: nil)
+		) {
 			_ = try coefficientOfVariation(2.0, mean: Double.nan)
 		}
 	}

@@ -250,7 +250,7 @@ struct MultivariateAndFitTests {
 
 	@Test("Fitting refuses a sample too small to carry four moments")
 	func sampleFitRefusesSmallSamples() {
-		#expect(throws: MomentFitError.self) {
+		#expect(throws: MomentFitError.nonFiniteMoment) {
 			_ = try DistributionMomentFit(sample: [1.0, 2.0, 3.0])
 		}
 		#expect(throws: MomentFitError.nonPositiveStandardDeviation) {

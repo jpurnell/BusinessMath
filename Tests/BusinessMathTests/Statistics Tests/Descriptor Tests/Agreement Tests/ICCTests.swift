@@ -181,21 +181,27 @@ struct ICCTests {
 
 	@Test("Single rater throws")
 	func testSingleRaterThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "ICC requires at least 2 raters (columns)")
+		) {
 			let _ = try icc([[1.0], [2.0], [3.0]], model: .oneWayRandom, agreement: .absolute)
 		}
 	}
 
 	@Test("Single subject throws")
 	func testSingleSubjectThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "ICC requires at least 2 subjects (rows)")
+		) {
 			let _ = try icc([[1.0, 2.0, 3.0]], model: .oneWayRandom, agreement: .absolute)
 		}
 	}
 
 	@Test("Ragged matrix throws")
 	func testRaggedMatrixThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.mismatchedDimensions(message: "All rows must have the same number of columns", expected: "2", actual: "3")
+		) {
 			let _ = try icc([[1.0, 2.0], [3.0, 4.0, 5.0]], model: .twoWayRandom, agreement: .absolute)
 		}
 	}

@@ -120,7 +120,9 @@ struct LMEApplicationsTests {
     @Test("clusterICC with single group throws")
     func clusterICCSingleGroupThrows() throws {
         let singleGroup: [[Double]] = [[1.0, 2.0, 3.0]]
-        #expect(throws: BusinessMathError.self) {
+        #expect(
+        	throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "clusterICC requires at least 2 groups")
+        ) {
             let _: Double = try clusterICC(singleGroup)
         }
     }
@@ -130,7 +132,9 @@ struct LMEApplicationsTests {
     @Test("clusterICC with empty input throws")
     func clusterICCEmptyInputThrows() throws {
         let empty: [[Double]] = []
-        #expect(throws: BusinessMathError.self) {
+        #expect(
+        	throws: BusinessMathError.insufficientData(required: 2, actual: 0, context: "clusterICC requires at least 2 groups")
+        ) {
             let _: Double = try clusterICC(empty)
         }
     }
@@ -223,7 +227,9 @@ struct LMEApplicationsTests {
 
     @Test("clusterICC from flat arrays with mismatched lengths throws")
     func clusterICCFlatMismatchedLengthsThrows() throws {
-        #expect(throws: BusinessMathError.self) {
+        #expect(
+        	throws: BusinessMathError.mismatchedDimensions(message: "values and groups must have the same length", expected: "3", actual: "2")
+        ) {
             let _: Double = try clusterICC(values: [1.0, 2.0, 3.0], groups: [0, 1])
         }
     }

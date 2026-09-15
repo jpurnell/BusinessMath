@@ -55,10 +55,14 @@ struct BSplineTests {
 
     @Test("Throws on degree out of range")
     func throwsOnInvalidDegree() throws {
-        #expect(throws: InterpolationError.self) {
+        #expect(
+        	throws: InterpolationError.invalidParameter(message: "BSpline degree must be in 1...5 (got 0)")
+        ) {
             _ = try BSplineInterpolator(xs: [0.0, 1.0, 2.0], ys: [0.0, 1.0, 4.0], degree: 0)
         }
-        #expect(throws: InterpolationError.self) {
+        #expect(
+        	throws: InterpolationError.invalidParameter(message: "BSpline degree must be in 1...5 (got 6)")
+        ) {
             _ = try BSplineInterpolator(xs: [0.0, 1.0, 2.0], ys: [0.0, 1.0, 4.0], degree: 6)
         }
     }
@@ -116,7 +120,7 @@ struct BarycentricLagrangeTests {
 
     @Test("Throws on empty input")
     func throwsOnEmpty() throws {
-        #expect(throws: InterpolationError.self) {
+        #expect(throws: InterpolationError.insufficientPoints(required: 1, got: 0)) {
             _ = try BarycentricLagrangeInterpolator(xs: [Double](), ys: [Double]())
         }
     }
@@ -129,7 +133,7 @@ struct BarycentricLagrangeTests {
 
     @Test("Throws on duplicate xs")
     func throwsOnDuplicate() throws {
-        #expect(throws: InterpolationError.self) {
+        #expect(throws: InterpolationError.duplicateXValues(at: 2)) {
             _ = try BarycentricLagrangeInterpolator(
                 xs: [0.0, 1.0, 1.0, 2.0],
                 ys: [0.0, 1.0, 1.5, 4.0]

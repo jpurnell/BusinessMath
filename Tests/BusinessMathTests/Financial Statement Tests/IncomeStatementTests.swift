@@ -138,7 +138,9 @@ struct IncomeStatementTests {
 		let revenue = try makeRevenueAccount(entity: entity1, periods: periods)
 		let cogs = try makeCogsAccount(entity: entity2, periods: periods)
 
-		#expect(throws: FinancialModelError.self) {
+		#expect(
+			throws: FinancialModelError.entityMismatch(expected: "TEST", found: "OTHER", accountName: "Cost of Goods Sold")
+		) {
 			_ = try IncomeStatement(
 				entity: entity1,
 				periods: periods,
@@ -164,7 +166,9 @@ struct IncomeStatementTests {
 			timeSeries: timeSeries
 		)
 
-		#expect(throws: FinancialModelError.self) {
+		#expect(
+			throws: FinancialModelError.accountMissingRole(statement: BusinessMath.StatementType.incomeStatement, accountName: "Cash")
+		) {
 			_ = try IncomeStatement(
 				entity: entity,
 				periods: periods,

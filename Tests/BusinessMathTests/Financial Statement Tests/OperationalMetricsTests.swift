@@ -328,8 +328,13 @@ struct OperationalMetricsTests {
 			)
 		]
 
-		#expect(throws: OperationalMetricsError.self) {
+		// Not `metricNotFound`, the type's other case — which is what this assertion
+		// could not distinguish before.
+		#expect {
 			_ = try OperationalMetricsTimeSeries(metrics: metricsList)
+		} throws: { error in
+			guard case OperationalMetricsError.entityMismatch = error else { return false }
+			return true
 		}
 	}
 

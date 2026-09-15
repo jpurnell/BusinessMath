@@ -197,7 +197,9 @@ struct GeneralizedGStudyTests {
             dimensions: [4, 3]
         )
 
-        #expect(throws: BusinessMathError.self) {
+        #expect(
+        	throws: BusinessMathError.invalidInput(message: "Object of measurement 'unknown' not found in facet names", value: "unknown", expectedRange: "one of [\"p\", \"r\"]")
+        ) {
             let _ = try generalizedGStudy(data, objectOfMeasurement: "unknown")
         }
     }

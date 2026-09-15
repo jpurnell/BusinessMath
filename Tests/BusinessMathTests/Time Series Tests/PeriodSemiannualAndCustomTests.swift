@@ -467,16 +467,31 @@ struct PeriodSemiannualAndCustomTests {
 	@Test("A custom period with no end in the JSON is rejected, not guessed")
 	func decodeCustomWithoutEndThrows() throws {
 		let json = #"{"type":9,"date":757382400}"#
-		#expect(throws: DecodingError.self) {
+		// `DecodingError` is not `Equatable`, and its four cases are the difference
+		// between "the JSON was malformed" and "the JSON was well-formed and wrong".
+		// The coding path and the debug description say which field and why.
+		#expect {
 			_ = try JSONDecoder().decode(Period.self, from: Data(json.utf8))
+		} throws: { error in
+			guard case let DecodingError.dataCorrupted(context) = error else { return false }
+			return context.codingPath.map(\.stringValue) == ["end"]
+				&& context.debugDescription
+					== "A custom period requires an explicit end date; none was present."
 		}
 	}
 
 	@Test("A custom period whose end precedes its start is rejected")
 	func decodeCustomWithInvertedIntervalThrows() throws {
 		let json = #"{"type":9,"date":776908800,"end":757382400}"#
-		#expect(throws: DecodingError.self) {
+		// Same case and same field as the missing-end refusal above; only the reason
+		// differs, which is exactly what `DecodingError.self` could not distinguish.
+		#expect {
 			_ = try JSONDecoder().decode(Period.self, from: Data(json.utf8))
+		} throws: { error in
+			guard case let DecodingError.dataCorrupted(context) = error else { return false }
+			return context.codingPath.map(\.stringValue) == ["end"]
+				&& context.debugDescription.hasPrefix("A custom period's end (")
+				&& context.debugDescription.hasSuffix("must not precede its start (2025-08-15 00:00:00 +0000).")
 		}
 	}
 

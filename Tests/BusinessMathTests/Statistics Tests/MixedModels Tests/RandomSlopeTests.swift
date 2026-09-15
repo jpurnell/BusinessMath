@@ -202,7 +202,9 @@ struct RandomSlopeTests {
 		let model = RandomSlopeModel(
 			fixedEffects: X, response: [1.0, 2.0, 3.0, 4.0],
 			grouping: grouping, slopeColumn: 1)
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.mismatchedDimensions(message: "X.rows must equal y.length", expected: "4", actual: "3")
+		) {
 			try fitRandomSlope(model)
 		}
 	}
@@ -216,7 +218,9 @@ struct RandomSlopeTests {
 		let model = RandomSlopeModel(
 			fixedEffects: testData.X, response: testData.y,
 			grouping: grouping, slopeColumn: 5)
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "slopeColumn must be in [0, 1]", value: "5", expectedRange: "0 ..< 2")
+		) {
 			try fitRandomSlope(model)
 		}
 	}
@@ -229,7 +233,9 @@ struct RandomSlopeTests {
 		let model = RandomSlopeModel(
 			fixedEffects: testData.X, response: testData.y,
 			grouping: grouping, slopeColumn: -1)
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "slopeColumn must be in [0, 1]", value: "-1", expectedRange: "0 ..< 2")
+		) {
 			try fitRandomSlope(model)
 		}
 	}
@@ -243,7 +249,9 @@ struct RandomSlopeTests {
 		let model = RandomSlopeModel(
 			fixedEffects: X, response: [1.0, 2.0, 3.0, 4.0, 5.0],
 			grouping: grouping, slopeColumn: 1)
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "Random slope model requires at least 2 groups")
+		) {
 			try fitRandomSlope(model)
 		}
 	}
@@ -344,7 +352,9 @@ struct RandomSlopeTests {
 		let model = RandomSlopeModel(
 			fixedEffects: X, response: [1.0, 2.0, 3.0, 4.0],
 			grouping: grouping, slopeColumn: 1)
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.mismatchedDimensions(message: "GroupingFactor length must equal y.length", expected: "4", actual: "6")
+		) {
 			try fitRandomSlope(model)
 		}
 	}

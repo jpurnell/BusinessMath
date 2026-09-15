@@ -171,7 +171,7 @@ struct ParametricCLVTests {
 	@Test("A perpetuity that does not converge is refused under both conventions")
 	func divergenceIsRefused() {
 		for definition in [CLVDefinition.perpetuity, .perpetuityDue] {
-			#expect(throws: CLVError.self) {
+			#expect(throws: CLVError.divergentPerpetuity(retention: 1.0, discountRate: 0.0)) {
 				_ = try customerLifetimeValue(marginPerPeriod: 10, retention: 1,
 											  definition: definition, discountRate: 0)
 			}

@@ -86,7 +86,7 @@ struct AccountTests {
 		let entity = makeEntity()
 		let timeSeries = makeTimeSeries()
 
-		#expect(throws: AccountError.self) {
+		#expect(throws: AccountError.invalidName) {
 			_ = try Account(
 				entity: entity,
 				name: "",
@@ -101,7 +101,7 @@ struct AccountTests {
 		let entity = makeEntity()
 		let timeSeries = makeTimeSeries()
 
-		#expect(throws: AccountError.self) {
+		#expect(throws: AccountError.invalidName) {
 			_ = try Account(
 				entity: entity,
 				name: "   ",
@@ -116,7 +116,7 @@ struct AccountTests {
 		let entity = makeEntity()
 		let emptyTimeSeries = TimeSeries<Double>(periods: [], values: [])
 
-		#expect(throws: AccountError.self) {
+		#expect(throws: AccountError.emptyTimeSeries) {
 			_ = try Account(
 				entity: entity,
 				name: "Revenue",

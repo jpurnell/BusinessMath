@@ -89,7 +89,9 @@ struct VectorInterpolatorsTests {
             VectorN([1.0, 11.0, 100.0]),  // wrong dimension
             VectorN([4.0, 14.0]),
         ]
-        #expect(throws: InterpolationError.self) {
+        #expect(
+        	throws: InterpolationError.invalidParameter(message: "All vector ys must have the same dimension; ys[1] has 3 but ys[0] has 2")
+        ) {
             _ = try VectorLinearInterpolator(xs: xs, ys: ys)
         }
     }

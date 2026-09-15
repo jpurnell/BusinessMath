@@ -194,7 +194,9 @@ struct ModelDefinitionTests {
 		model.define("Revenue", as: "GrossProfit + Units")
 		model.define("GrossProfit", as: "Revenue - Units")
 
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.circularDependency(path: ["GrossProfit", "Revenue", "GrossProfit"])
+		) {
 			try model.evaluate()
 		}
 	}
@@ -271,7 +273,9 @@ struct ModelDefinitionTests {
 		var model = ModelDefinition<Double>(inputs: ["revenue": series([100, 200, 300])])
 		model.define("revenue", as: "units * unitPrice")
 
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.inconsistentData(description: "'revenue' is supplied as an input and also defined by a formula. Remove one: a derived account would shadow the supplied series, and nothing downstream could tell which had been used.")
+		) {
 			try model.evaluate()
 		}
 	}

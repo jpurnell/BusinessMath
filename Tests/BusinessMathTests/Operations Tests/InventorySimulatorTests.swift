@@ -197,7 +197,7 @@ struct InventorySimulatorTests {
 
 	@Test("Rejects empty demand history")
 	func rejectsEmptyHistory() throws {
-		#expect(throws: OperationsError.self) {
+		#expect {
 			// Seeded for reproducibility only: the empty history is rejected before any
 			// path is drawn, so the assertion cannot vary.
 			_ = try InventorySimulator.simulate(
@@ -206,12 +206,15 @@ struct InventorySimulatorTests {
 				serviceLevel: 0.95,
 				seed: 0x1_11_5E_02
 			)
+		} throws: { error in
+			guard case let OperationsError.insufficientData(required, got) = error else { return false }
+			return required == 1 && got == 0
 		}
 	}
 
 	@Test("Rejects invalid service level")
 	func rejectsInvalidServiceLevel() throws {
-		#expect(throws: OperationsError.self) {
+		#expect {
 			// Seeded for reproducibility only: the invalid service level is rejected
 			// before any path is drawn, so the assertion cannot vary.
 			_ = try InventorySimulator.simulate(
@@ -220,6 +223,9 @@ struct InventorySimulatorTests {
 				serviceLevel: 1.5,
 				seed: 0x1_11_5E_03
 			)
+		} throws: { error in
+			guard case OperationsError.invalidServiceLevel = error else { return false }
+			return true
 		}
 	}
 }

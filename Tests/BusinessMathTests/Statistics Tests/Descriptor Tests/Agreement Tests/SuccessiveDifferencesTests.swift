@@ -38,14 +38,18 @@ struct SuccessiveDifferencesTests {
 
 	@Test("Single element → throws insufficientData")
 	func testSingleElementThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "Successive differences requires at least 2 values")
+		) {
 			let _: [Double] = try successiveDifferences([42.0])
 		}
 	}
 
 	@Test("Empty array → throws insufficientData")
 	func testEmptyArrayThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 0, context: "Successive differences requires at least 2 values")
+		) {
 			let _: [Double] = try successiveDifferences([])
 		}
 	}

@@ -33,21 +33,27 @@ struct ProfitabilityRatiosTests {
 
     @Test("ROE throws on zero equity")
     func testROEThrows() throws {
-        #expect(throws: BusinessMathError.self) {
+        #expect(
+        	throws: BusinessMathError.divisionByZero(context: "Return on equity: shareholder equity must be positive")
+        ) {
             _ = try roe(netIncome: 1000.0, shareholderEquity: 0.0)
         }
     }
 
     @Test("ROI throws on zero cost")
     func testROIThrows() throws {
-        #expect(throws: BusinessMathError.self) {
+        #expect(
+        	throws: BusinessMathError.divisionByZero(context: "Return on investment: cost of investment must be positive")
+        ) {
             _ = try roi(gainFromInvestment: 500.0, costOfInvestment: 0.0)
         }
     }
 
     @Test("Profit margin throws on zero revenue")
     func testProfitMarginThrows() throws {
-        #expect(throws: BusinessMathError.self) {
+        #expect(
+        	throws: BusinessMathError.divisionByZero(context: "Profit margin: revenue must be positive")
+        ) {
             _ = try profitMargin(netIncome: 300.0, revenue: 0.0)
         }
     }

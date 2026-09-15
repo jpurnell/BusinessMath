@@ -61,28 +61,34 @@ struct WeightedCovarianceTests {
 
 	@Test("Mismatched x and y lengths throws")
 	func testMismatchedXYThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.mismatchedDimensions(message: "Weighted covariance requires x and y of equal length", expected: "2", actual: "3")
+		) {
 			let _ = try weightedCovariance([1.0, 2.0], [1.0, 2.0, 3.0], weights: [1.0, 1.0])
 		}
 	}
 
 	@Test("Mismatched weights length throws")
 	func testMismatchedWeightsThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.mismatchedDimensions(message: "Weighted covariance requires weights of same length as data", expected: "3", actual: "2")
+		) {
 			let _ = try weightedCovariance([1.0, 2.0, 3.0], [1.0, 2.0, 3.0], weights: [1.0, 1.0])
 		}
 	}
 
 	@Test("Negative weight throws invalidInput")
 	func testNegativeWeightThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Weights must be non-negative", value: nil, expectedRange: nil)
+		) {
 			let _ = try weightedCovariance([1.0, 2.0, 3.0], [1.0, 2.0, 3.0], weights: [1.0, -1.0, 1.0])
 		}
 	}
 
 	@Test("All-zero weights throws divisionByZero")
 	func testAllZeroWeightsThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(throws: BusinessMathError.divisionByZero(context: "Total weight is zero")) {
 			let _ = try weightedCovariance([1.0, 2.0, 3.0], [1.0, 2.0, 3.0], weights: [0.0, 0.0, 0.0])
 		}
 	}

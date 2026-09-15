@@ -158,8 +158,11 @@ struct ReciprocalRegressionScaleTests {
 	@Test("Fitting no data is an error, not a fit")
 	func emptyDataThrows() throws {
 		let fitter = ReciprocalRegressionFitter<Double>()
-		#expect(throws: OptimizationError.self) {
+		#expect {
 			_ = try fitter.fit(data: [])
+		} throws: { error in
+			guard case let OptimizationError.invalidInput(message) = error else { return false }
+			return message == "Cannot fit a reciprocal regression to no data"
 		}
 	}
 

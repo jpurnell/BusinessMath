@@ -123,8 +123,8 @@ struct TemplateDelegationTests {
 
 	@Test("Zero churn is a divergent perpetuity, not a lifetime value of zero")
 	func zeroChurnDiverges() {
-		#expect(throws: CLVError.self) { _ = try Self.saas(churn: 0).lifetimeValue() }
-		#expect(throws: CLVError.self) { _ = try Self.box(churn: 0).lifetimeValue() }
+		#expect(throws: CLVError.divergentPerpetuity(retention: 1.0, discountRate: 0.0)) { _ = try Self.saas(churn: 0).lifetimeValue() }
+		#expect(throws: CLVError.divergentPerpetuity(retention: 1.0, discountRate: 0.0)) { _ = try Self.box(churn: 0).lifetimeValue() }
 		// A discount rate rescues it: money later is worth less even if nobody leaves.
 		#expect(throws: Never.self) {
 			_ = try Self.saas(churn: 0).lifetimeValue(discountRate: 0.01)

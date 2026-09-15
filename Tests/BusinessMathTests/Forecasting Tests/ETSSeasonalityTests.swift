@@ -123,8 +123,13 @@ struct ETSSeasonalityTests {
 	@Test("A non-positive explicit cycle length throws", arguments: [0, -1, -12])
 	func nonPositivePeriodsThrow(length: Int) {
 		let series = seasonalSeries(cycle: 12, cycles: 6)
-		#expect(throws: ForecastError.self) {
+		// The message quotes the rejected length, so each of the three arguments asserts
+		// something different rather than all three asserting "it threw".
+		#expect {
 			_ = try series.resolvedSeasonality(.periods(length))
+		} throws: { error in
+			guard case let ForecastError.invalidParameter(reason) = error else { return false }
+			return reason == "seasonality: cycle length must be at least 1, got \(length)"
 		}
 	}
 

@@ -68,11 +68,15 @@ struct InverseGammaSamplerTests {
 
     @Test("Shape <= 0 throws invalidInput")
     func testNegativeShapeThrows() throws {
-        #expect(throws: BusinessMathError.self) {
+        #expect(
+        	throws: BusinessMathError.invalidInput(message: "Inverse-Gamma shape must be positive", value: "0.0", expectedRange: "(0, +inf)")
+        ) {
             let _: Double = try sampleInverseGamma(shape: 0.0, scale: 2.0, seed: 7)
         }
 
-        #expect(throws: BusinessMathError.self) {
+        #expect(
+        	throws: BusinessMathError.invalidInput(message: "Inverse-Gamma shape must be positive", value: "-1.0", expectedRange: "(0, +inf)")
+        ) {
             let _: Double = try sampleInverseGamma(shape: -1.0, scale: 2.0, seed: 7)
         }
     }
@@ -81,11 +85,15 @@ struct InverseGammaSamplerTests {
 
     @Test("Scale <= 0 throws invalidInput")
     func testNegativeScaleThrows() throws {
-        #expect(throws: BusinessMathError.self) {
+        #expect(
+        	throws: BusinessMathError.invalidInput(message: "Inverse-Gamma scale must be positive", value: "0.0", expectedRange: "(0, +inf)")
+        ) {
             let _: Double = try sampleInverseGamma(shape: 3.0, scale: 0.0, seed: 7)
         }
 
-        #expect(throws: BusinessMathError.self) {
+        #expect(
+        	throws: BusinessMathError.invalidInput(message: "Inverse-Gamma scale must be positive", value: "-1.0", expectedRange: "(0, +inf)")
+        ) {
             let _: Double = try sampleInverseGamma(shape: 3.0, scale: -1.0, seed: 7)
         }
     }

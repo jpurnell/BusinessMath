@@ -128,7 +128,9 @@ struct CashFlowStatementTests {
 		let investing = try makeInvestingCFAccount(entity: entity2, periods: periods)
 		let financing = try makeFinancingCFAccount(entity: entity1, periods: periods)
 
-		#expect(throws: FinancialModelError.self) {
+		#expect(
+			throws: FinancialModelError.entityMismatch(expected: "TEST", found: "OTHER", accountName: "Capital Expenditures")
+		) {
 			_ = try CashFlowStatement(
 				entity: entity1,
 				periods: periods,

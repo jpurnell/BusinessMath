@@ -143,7 +143,7 @@ struct CustomerValueTests {
 		// plausible-looking CLV for an infinitely valuable customer.
 		let cohort = [CustomerHistory<Double>(margins: [100], isActive: true,
 											  acquisitionCost: nil)]
-		#expect(throws: CLVError.self) {
+		#expect(throws: CLVError.divergentPerpetuity(retention: 1.0, discountRate: 0.0)) {
 			_ = try customerLifetimeValue(cohort: cohort, definition: .perpetuity,
 										  discountRate: 0, horizon: 5,
 										  retention: 1.0, marginPerPeriod: 100)
@@ -154,21 +154,21 @@ struct CustomerValueTests {
 	func refusals() {
 		let cohort = [CustomerHistory<Double>(margins: [100], isActive: false,
 											  acquisitionCost: nil)]
-		#expect(throws: CLVError.self) {
+		#expect(throws: CLVError.emptyCohort) {
 			_ = try customerLifetimeValue(cohort: [], definition: .historic,
 										  discountRate: 0.1, horizon: 5)
 		}
-		#expect(throws: CLVError.self) {
+		#expect(throws: CLVError.invalidDiscountRate) {
 			_ = try customerLifetimeValue(cohort: cohort, definition: .finiteHorizon,
 										  discountRate: -0.5, horizon: 5,
 										  retention: 0.8, marginPerPeriod: 100)
 		}
-		#expect(throws: CLVError.self) {
+		#expect(throws: CLVError.invalidHorizon) {
 			_ = try customerLifetimeValue(cohort: cohort, definition: .finiteHorizon,
 										  discountRate: 0.1, horizon: 0,
 										  retention: 0.8, marginPerPeriod: 100)
 		}
-		#expect(throws: CLVError.self) {
+		#expect(throws: CLVError.invalidRetention) {
 			_ = try customerLifetimeValue(cohort: cohort, definition: .perpetuity,
 										  discountRate: 0.1, horizon: 5,
 										  retention: 1.5, marginPerPeriod: 100)

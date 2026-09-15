@@ -101,28 +101,32 @@ struct ConcordanceCorrelationCoefficientTests {
 
 	@Test("Mismatched lengths → throws")
 	func testMismatchedLengthsThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.mismatchedDimensions(message: "Arrays must have equal length", expected: "2", actual: "1")
+		) {
 			let _ = try concordanceCorrelationCoefficient([1.0, 2.0], [1.0])
 		}
 	}
 
 	@Test("Fewer than 2 → throws insufficientData")
 	func testInsufficientDataThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "Concordance correlation requires at least 2 paired observations")
+		) {
 			let _ = try concordanceCorrelationCoefficient([1.0], [1.0])
 		}
 	}
 
 	@Test("Constant x → throws divisionByZero")
 	func testConstantXThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(throws: BusinessMathError.divisionByZero(context: "x series has zero variance")) {
 			let _ = try concordanceCorrelationCoefficient([5.0, 5.0, 5.0], [1.0, 2.0, 3.0])
 		}
 	}
 
 	@Test("Constant y → throws divisionByZero")
 	func testConstantYThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(throws: BusinessMathError.divisionByZero(context: "y series has zero variance")) {
 			let _ = try concordanceCorrelationCoefficient([1.0, 2.0, 3.0], [5.0, 5.0, 5.0])
 		}
 	}

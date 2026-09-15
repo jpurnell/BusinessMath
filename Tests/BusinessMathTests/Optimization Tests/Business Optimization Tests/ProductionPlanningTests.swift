@@ -402,12 +402,15 @@ struct ProductionPlanningTests {
 	func emptyProductsError() throws {
 		let optimizer = ProductionPlanningOptimizer()
 
-		#expect(throws: OptimizationError.self) {
+		#expect {
 			_ = try optimizer.optimize(
 				products: [],
 				resources: ["machine_hours": 1000],
 				objective: .maximizeProfit
 			)
+		} throws: { error in
+			guard case let OptimizationError.invalidInput(message) = error else { return false }
+			return message == "No products provided"
 		}
 	}
 

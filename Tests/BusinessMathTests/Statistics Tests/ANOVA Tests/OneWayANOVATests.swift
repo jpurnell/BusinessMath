@@ -133,21 +133,27 @@ struct OneWayANOVATests {
 
 	@Test("Single group throws insufficientData")
 	func testSingleGroupThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "One-way ANOVA requires at least 2 groups")
+		) {
 			let _ = try oneWayANOVA([[1.0, 2.0, 3.0]])
 		}
 	}
 
 	@Test("Empty groups array throws insufficientData")
 	func testEmptyGroupsThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 0, context: "One-way ANOVA requires at least 2 groups")
+		) {
 			let _: OneWayANOVAResult<Double> = try oneWayANOVA([])
 		}
 	}
 
 	@Test("Group with no observations throws insufficientData")
 	func testEmptyGroupThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 1, actual: 0, context: "Group 1 is empty")
+		) {
 			let _ = try oneWayANOVA([[1.0, 2.0], []])
 		}
 	}

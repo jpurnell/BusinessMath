@@ -89,9 +89,15 @@ struct CombinatoricsContractTests {
 	func checkedVariantsThrow() {
 		// The pair is the point: zero is only a safe answer because a caller who needs the
 		// distinction has `…Checked` to reach for.
-		#expect(throws: BusinessMathError.self) { _ = try combinationChecked(-1, c: 0) }
-		#expect(throws: BusinessMathError.self) { _ = try permutationChecked(-1, p: 0) }
-		#expect(throws: BusinessMathError.self) { _ = try factorialChecked(-1) }
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Combination undefined for negative n", value: "n = -1", expectedRange: "n ≥ 0")
+		) { _ = try combinationChecked(-1, c: 0) }
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Permutation undefined for negative n", value: "n = -1", expectedRange: "n ≥ 0")
+		) { _ = try permutationChecked(-1, p: 0) }
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Factorial undefined for negative numbers", value: "-1", expectedRange: "n ≥ 0")
+		) { _ = try factorialChecked(-1) }
 	}
 
 	@Test("The identities at the boundary")
@@ -111,7 +117,9 @@ struct CombinatoricsContractTests {
 		// 20! = 2,432,902,008,176,640,000 fits in Int64; 21! does not.
 		#expect(maxFactorialInt == 20)
 		#expect(factorial(20) == 2_432_902_008_176_640_000)
-		#expect(throws: BusinessMathError.self) { _ = try factorialChecked(21) }
+		#expect(
+			throws: BusinessMathError.overflow(operation: "factorial", value: "21!", limit: "20! is max for Int64")
+		) { _ = try factorialChecked(21) }
 	}
 
 	// An exit test spawns a child process, which iOS, tvOS and watchOS do not permit.

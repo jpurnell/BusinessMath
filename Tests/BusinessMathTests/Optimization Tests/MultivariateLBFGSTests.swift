@@ -366,12 +366,15 @@ struct MultivariateLBFGSTests {
 			gradient: nil
 		)
 
-		#expect(throws: OptimizationError.self) {
+		#expect {
 			_ = try optimizer.minimize(
 				objective,
 				from: VectorN([5.0, 5.0]),
 				constraints: [constraint]
 			)
+		} throws: { error in
+			guard case let OptimizationError.unsupportedConstraints(v0) = error else { return false }
+			return v0 == "MultivariateLBFGS only supports unconstrained optimization. For constrained optimization, use ConstrainedOptimizer or InequalityOptimizer."
 		}
 	}
 

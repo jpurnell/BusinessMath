@@ -45,33 +45,45 @@ struct NewsvendorModelTests {
 
 	@Test("Critical fractile rejects negative costs")
 	func criticalFractileRejectsNegative() throws {
-		#expect(throws: OperationsError.self) {
+		#expect {
 			_ = try NewsvendorModel<Double>.criticalFractile(
 				underageCost: -1.0,
 				overageCost: 2.0
 			)
+		} throws: { error in
+			guard case OperationsError.negativeCost = error else { return false }
+			return true
 		}
-		#expect(throws: OperationsError.self) {
+		#expect {
 			_ = try NewsvendorModel<Double>.criticalFractile(
 				underageCost: 5.0,
 				overageCost: -1.0
 			)
+		} throws: { error in
+			guard case OperationsError.negativeCost = error else { return false }
+			return true
 		}
 	}
 
 	@Test("Critical fractile rejects zero costs")
 	func criticalFractileRejectsZero() throws {
-		#expect(throws: OperationsError.self) {
+		#expect {
 			_ = try NewsvendorModel<Double>.criticalFractile(
 				underageCost: 0.0,
 				overageCost: 2.0
 			)
+		} throws: { error in
+			guard case OperationsError.negativeCost = error else { return false }
+			return true
 		}
-		#expect(throws: OperationsError.self) {
+		#expect {
 			_ = try NewsvendorModel<Double>.criticalFractile(
 				underageCost: 5.0,
 				overageCost: 0.0
 			)
+		} throws: { error in
+			guard case OperationsError.negativeCost = error else { return false }
+			return true
 		}
 	}
 
@@ -178,13 +190,16 @@ struct NewsvendorModelTests {
 
 	@Test("Rejects negative underage cost")
 	func rejectsNegativeUnderageCost() throws {
-		#expect(throws: OperationsError.self) {
+		#expect {
 			_ = try NewsvendorModel<Double>.optimalQuantity(
 				meanDemand: 100.0,
 				demandStdDev: 25.0,
 				underageCost: -5.0,
 				overageCost: 2.0
 			)
+		} throws: { error in
+			guard case OperationsError.negativeCost = error else { return false }
+			return true
 		}
 	}
 }

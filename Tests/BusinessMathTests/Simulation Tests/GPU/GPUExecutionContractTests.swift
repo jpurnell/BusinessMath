@@ -545,12 +545,20 @@ struct MetalKernelCompilationTests {
         #expect(usable.allSatisfy { abs($0 - 0.5) < 1e-6 }, "surviving values were \(usable.prefix(4))")
 
         // And the same model under the default refuses the whole batch.
-        #expect(throws: GPUError.self) {
+        #expect {
             _ = try gpu.runSimulation(
                 distributions: [(type: 1, params: (0.0, 1.0, 0.0))],
                 modelBytecode: BytecodeCompiler.toGPUFormat(bytecode),
                 iterations: 512, seed: 99
             )
+        } throws: { error in
+            guard case let GPUError.iterationsFailed(count, firstIteration, reason) = error
+            else { return false }
+            // `reason` and `firstIteration` are properties of the bytecode and the seed, so
+            // they are pinned. `count` is how many of the 512 threads hit the pole, which is
+            // a property of the sampled draws — bounded rather than pinned to a figure.
+            return reason == .divisionByZero && firstIteration == 1
+                && count > 0 && count <= 512
         }
     }
 

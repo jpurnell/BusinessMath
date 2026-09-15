@@ -142,7 +142,7 @@ struct DenseMatrixTests {
     func emptyMatrix() throws {
         let data: [[Double]] = []
 
-        #expect(throws: MatrixError.self) {
+        #expect(throws: MatrixError.invalidDimensions(expected: "Non-empty array", actual: "Empty array")) {
             _ = try DenseMatrix(data)
         }
     }
@@ -208,7 +208,9 @@ struct DenseMatrixTests {
         let data = [[1.0, 2.0],
                     [3.0, 4.0, 5.0]]  // Different row lengths
 
-        #expect(throws: MatrixError.self) {
+        #expect(throws: MatrixError.invalidDimensions(
+            expected: "Rectangular array with 2 columns",
+            actual: "Jagged array with varying column counts")) {
             _ = try DenseMatrix(data)
         }
     }
@@ -219,7 +221,9 @@ struct DenseMatrixTests {
         let B = try DenseMatrix([[1.0], [2.0], [3.0]])  // 3×1
 
         // Cannot multiply 1×2 by 3×1 (inner dimensions don't match)
-        #expect(throws: MatrixError.self) {
+        #expect(throws: MatrixError.dimensionMismatch(
+            expected: "Inner dimensions must match: (1×2) × (3×1)",
+            actual: "Cannot multiply: column count 2 ≠ row count 3")) {
             _ = try A.multiplied(by: B)
         }
     }
@@ -230,7 +234,9 @@ struct DenseMatrixTests {
                                   [3.0, 4.0]])  // 2×2
         let x = [1.0, 2.0, 3.0]  // Length 3
 
-        #expect(throws: MatrixError.self) {
+        #expect(throws: MatrixError.dimensionMismatch(
+            expected: "Vector length must equal column count: 2",
+            actual: "Vector has length 3")) {
             _ = try A.multiplied(by: x)
         }
     }
@@ -241,7 +247,7 @@ struct DenseMatrixTests {
                                   [4.0, 5.0, 6.0]])  // 2×3 (not square)
         let b = [1.0, 2.0]
 
-        #expect(throws: MatrixError.notSquare.self) {
+        #expect(throws: MatrixError.notSquare) {
             _ = try A.solve(b)
         }
     }
@@ -253,7 +259,7 @@ struct DenseMatrixTests {
                                   [2.0, 4.0]])  // Row 2 = 2 × Row 1
         let b = [3.0, 6.0]
 
-        #expect(throws: MatrixError.singularMatrix.self) {
+        #expect(throws: MatrixError.singularMatrix) {
             _ = try A.solve(b)
         }
     }

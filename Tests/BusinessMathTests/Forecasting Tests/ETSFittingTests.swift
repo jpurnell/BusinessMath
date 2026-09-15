@@ -265,16 +265,24 @@ struct ETSFittingTests {
 	@Test("A series shorter than two seasonal cycles throws insufficientData")
 	func tooShortForTheCycleThrows() {
 		let series = monthly([1.0, 2.0, 3.0, 4.0, 5.0])
-		#expect(throws: ForecastError.self) {
+		#expect {
 			_ = try series.fitETS(seasonality: .periods(4), config: .default)
+		} throws: { error in
+			guard case let ForecastError.insufficientData(required, got) = error else { return false }
+			return required == 8 && got == 5
 		}
 	}
 
 	@Test("A non-positive explicit cycle length throws", arguments: [0, -1])
 	func nonPositiveCycleThrows(length: Int) {
 		let series = monthly(seasonalValues(cycle: 4, cycles: 6))
-		#expect(throws: ForecastError.self) {
+		// `ForecastError` is not `Equatable`. The message quotes the length that was
+		// rejected, which is what makes one parameterised case distinguishable from another.
+		#expect {
 			_ = try series.fitETS(seasonality: .periods(length), config: .default)
+		} throws: { error in
+			guard case let ForecastError.invalidParameter(reason) = error else { return false }
+			return reason == "seasonality: cycle length must be at least 1, got \(length)"
 		}
 	}
 

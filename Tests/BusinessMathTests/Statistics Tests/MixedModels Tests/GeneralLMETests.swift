@@ -359,7 +359,9 @@ struct GeneralLMETests {
 			fixedEffects: X, randomEffectsDesign: Z,
 			response: [1.0, 2.0, 3.0, 4.0],
 			grouping: grouping, randomEffectsPerGroup: 1)
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.mismatchedDimensions(message: "X.rows must equal y.length", expected: "4", actual: "3")
+		) {
 			try fitGeneralLME(model)
 		}
 	}
@@ -375,7 +377,9 @@ struct GeneralLMETests {
 			fixedEffects: X, randomEffectsDesign: Z,
 			response: [1.0, 2.0, 3.0, 4.0],
 			grouping: grouping, randomEffectsPerGroup: 1)
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.mismatchedDimensions(message: "Z.rows must equal y.length", expected: "4", actual: "3")
+		) {
 			try fitGeneralLME(model)
 		}
 	}
@@ -391,7 +395,9 @@ struct GeneralLMETests {
 			fixedEffects: X, randomEffectsDesign: Z,
 			response: [1.0, 2.0, 3.0],
 			grouping: grouping, randomEffectsPerGroup: 1)
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "General LME model requires at least 2 groups")
+		) {
 			try fitGeneralLME(model)
 		}
 	}
@@ -623,7 +629,9 @@ struct GeneralLMETests {
 			fixedEffects: X, randomEffectsDesign: Z,
 			response: [1.0, 2.0, 3.0, 4.0],
 			grouping: grouping, randomEffectsPerGroup: 3) // 3 != Z.columns (2)
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.mismatchedDimensions(message: "Z.columns must equal randomEffectsPerGroup", expected: "3", actual: "2")
+		) {
 			try fitGeneralLME(model)
 		}
 	}

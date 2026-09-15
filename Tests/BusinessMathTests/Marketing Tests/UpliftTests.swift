@@ -170,13 +170,13 @@ struct UpliftTests {
 
 	@Test("Mismatched inputs are refused before anything is fitted")
 	func mismatchedInputIsRefused() {
-		#expect(throws: UpliftError.self) {
+		#expect(throws: UpliftError.malformedInput(reason: "3 rows, 2 arms, 3 outcomes")) {
 			_ = try UpliftModel<Double>(predictors: [[1], [2], [3]],
 										treated: [true, false],
 										responded: [true, false, true],
 										method: .twoModel)
 		}
-		#expect(throws: UpliftError.self) {
+		#expect(throws: UpliftError.malformedInput(reason: "no observations")) {
 			_ = try UpliftModel<Double>(predictors: [],
 										treated: [],
 										responded: [],

@@ -75,7 +75,9 @@ struct FormulaLogicalFunctionTests {
 
     @Test("ROUND takes exactly two arguments")
     func roundArity() {
-        #expect(throws: FormulaError.self) {
+        #expect(
+        	throws: FormulaError.wrongArgumentCount(function: "ROUND", expected: "exactly 2", got: 1)
+        ) {
             _ = try evaluator().evaluate("ROUND(a)")
         }
     }
@@ -110,7 +112,9 @@ struct FormulaLogicalFunctionTests {
 
     @Test("NOT takes exactly one argument")
     func notArity() {
-        #expect(throws: FormulaError.self) {
+        #expect(
+        	throws: FormulaError.wrongArgumentCount(function: "NOT", expected: "exactly 1", got: 2)
+        ) {
             _ = try evaluator().evaluate("NOT(flag, other)")
         }
     }

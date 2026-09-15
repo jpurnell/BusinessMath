@@ -69,28 +69,36 @@ struct WeightedTrimmedMeanTests {
 
 	@Test("Alpha <= 0 throws invalidInput")
 	func testAlphaZeroThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Trimming alpha must be in (0, 0.5)", value: "0.0", expectedRange: "(0, 0.5)")
+		) {
 			let _ = try weightedTrimmedMean([1.0, 2.0, 3.0], weights: [1.0, 1.0, 1.0], alpha: 0.0)
 		}
 	}
 
 	@Test("Alpha >= 0.5 throws invalidInput")
 	func testAlphaHalfThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Trimming alpha must be in (0, 0.5)", value: "0.5", expectedRange: "(0, 0.5)")
+		) {
 			let _ = try weightedTrimmedMean([1.0, 2.0, 3.0], weights: [1.0, 1.0, 1.0], alpha: 0.5)
 		}
 	}
 
 	@Test("Fewer than 3 values throws insufficientData")
 	func testFewerThanThreeThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 3, actual: 2, context: "Weighted trimmed mean requires at least 3 values")
+		) {
 			let _ = try weightedTrimmedMean([1.0, 2.0], weights: [1.0, 1.0], alpha: 0.1)
 		}
 	}
 
 	@Test("Mismatched dimensions throws mismatchedDimensions")
 	func testMismatchedDimensionsThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.mismatchedDimensions(message: "Weighted trimmed mean requires equal-length arrays", expected: "3", actual: "2")
+		) {
 			let _ = try weightedTrimmedMean([1.0, 2.0, 3.0], weights: [1.0, 1.0], alpha: 0.1)
 		}
 	}

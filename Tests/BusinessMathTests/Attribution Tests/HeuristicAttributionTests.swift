@@ -213,11 +213,11 @@ struct HeuristicAttributionTests {
 
 	@Test("Position weights that leave no room for the middle are refused")
 	func positionWeightsMustLeaveAMiddle() {
-		#expect(throws: AttributionError.self) {
+		#expect(throws: AttributionError.invalidWeights(first: 0.6, last: 0.6)) {
 			_ = try HeuristicAttribution.positionBased(first: 0.6, last: 0.6)
 				.attribute(journeys: Self.journeys)
 		}
-		#expect(throws: AttributionError.self) {
+		#expect(throws: AttributionError.invalidWeights(first: -0.1, last: 0.5)) {
 			_ = try HeuristicAttribution.positionBased(first: -0.1, last: 0.5)
 				.attribute(journeys: Self.journeys)
 		}

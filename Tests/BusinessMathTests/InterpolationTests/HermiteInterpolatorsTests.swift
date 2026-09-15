@@ -70,7 +70,7 @@ struct PCHIPTests {
 
     @Test("Throws on insufficient points")
     func throwsOnInsufficient() throws {
-        #expect(throws: InterpolationError.self) {
+        #expect(throws: InterpolationError.insufficientPoints(required: 2, got: 1)) {
             _ = try PCHIPInterpolator(xs: [0.0], ys: [0.0])
         }
     }
@@ -204,10 +204,14 @@ struct CatmullRomTests {
 
     @Test("Throws when tension is out of [0, 1]")
     func throwsOnInvalidTension() throws {
-        #expect(throws: InterpolationError.self) {
+        #expect(
+        	throws: InterpolationError.invalidParameter(message: "CatmullRom tension must be in [0, 1]")
+        ) {
             _ = try CatmullRomInterpolator(xs: [0.0, 1.0, 2.0], ys: [0.0, 1.0, 2.0], tension: -0.1)
         }
-        #expect(throws: InterpolationError.self) {
+        #expect(
+        	throws: InterpolationError.invalidParameter(message: "CatmullRom tension must be in [0, 1]")
+        ) {
             _ = try CatmullRomInterpolator(xs: [0.0, 1.0, 2.0], ys: [0.0, 1.0, 2.0], tension: 1.1)
         }
     }

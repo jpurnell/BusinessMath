@@ -283,13 +283,19 @@ struct TVMReferenceTests {
 	func irrRejectsSingleSignFlows() throws {
 		// All-positive and all-negative flows have no root; the function must say
 		// so rather than return whatever Newton-Raphson wandered to.
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.calculationFailed(operation: "IRR", reason: "Cash flows must contain both positive and negative values (all cash flows have the same sign)", suggestions: ["Ensure you have at least one negative cash flow (typically the initial investment)", "Verify that you have at least one positive cash flow (returns or receipts)", "Check that cash flows are correctly signed (negative for outflows, positive for inflows)"])
+		) {
 			_ = try irr(cashFlows: [100.0, 200.0, 300.0])
 		}
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.calculationFailed(operation: "IRR", reason: "Cash flows must contain both positive and negative values (all cash flows have the same sign)", suggestions: ["Ensure you have at least one negative cash flow (typically the initial investment)", "Verify that you have at least one positive cash flow (returns or receipts)", "Check that cash flows are correctly signed (negative for outflows, positive for inflows)"])
+		) {
 			_ = try irr(cashFlows: [-100.0, -200.0, -300.0])
 		}
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "IRR calculation requires at least 2 cash flows")
+		) {
 			_ = try irr(cashFlows: [-100.0])
 		}
 	}

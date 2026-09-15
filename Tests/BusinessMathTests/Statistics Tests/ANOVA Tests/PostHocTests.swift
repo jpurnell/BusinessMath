@@ -413,7 +413,9 @@ struct PostHocTests {
 
 		@Test("Single group throws for Bonferroni")
 		func testSingleGroupBonferroni() throws {
-			#expect(throws: BusinessMathError.self) {
+			#expect(
+				throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "One-way ANOVA requires at least 2 groups")
+			) {
 				let groups: [[Double]] = [[1.0, 2.0, 3.0]]
 				let anova = try oneWayANOVA(groups)
 				let _ = try bonferroniPostHoc(groups, anova: anova)
@@ -422,7 +424,9 @@ struct PostHocTests {
 
 		@Test("Single group throws for Scheffé")
 		func testSingleGroupScheffe() throws {
-			#expect(throws: BusinessMathError.self) {
+			#expect(
+				throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "One-way ANOVA requires at least 2 groups")
+			) {
 				let groups: [[Double]] = [[1.0, 2.0, 3.0]]
 				let anova = try oneWayANOVA(groups)
 				let _ = try scheffePostHoc(groups, anova: anova)
@@ -431,7 +435,9 @@ struct PostHocTests {
 
 		@Test("Single group throws for Tukey HSD")
 		func testSingleGroupTukey() throws {
-			#expect(throws: BusinessMathError.self) {
+			#expect(
+				throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "One-way ANOVA requires at least 2 groups")
+			) {
 				let groups: [[Double]] = [[1.0, 2.0, 3.0]]
 				let anova = try oneWayANOVA(groups)
 				let _ = try tukeyHSD(groups, anova: anova)
@@ -440,7 +446,9 @@ struct PostHocTests {
 
 		@Test("Empty group throws (propagated from ANOVA)")
 		func testEmptyGroup() throws {
-			#expect(throws: BusinessMathError.self) {
+			#expect(
+				throws: BusinessMathError.insufficientData(required: 1, actual: 0, context: "Group 1 is empty")
+			) {
 				let groups: [[Double]] = [[1.0, 2.0], []]
 				let anova = try oneWayANOVA(groups)
 				let _ = try bonferroniPostHoc(groups, anova: anova)

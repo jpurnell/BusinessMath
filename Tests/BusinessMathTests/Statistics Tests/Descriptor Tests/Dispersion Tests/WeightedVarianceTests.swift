@@ -76,35 +76,43 @@ struct WeightedVarianceTests {
 
 	@Test("Negative weight throws invalidInput")
 	func testNegativeWeightThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Weights must be non-negative", value: nil, expectedRange: nil)
+		) {
 			let _ = try weightedVariance([1.0, 2.0, 3.0], weights: [1.0, -1.0, 1.0])
 		}
 	}
 
 	@Test("Mismatched lengths throws mismatchedDimensions")
 	func testMismatchedLengthsThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.mismatchedDimensions(message: "Weighted variance requires equal-length arrays", expected: "3", actual: "2")
+		) {
 			let _ = try weightedVariance([1.0, 2.0, 3.0], weights: [1.0, 1.0])
 		}
 	}
 
 	@Test("All-zero weights throws divisionByZero")
 	func testAllZeroWeightsThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(throws: BusinessMathError.divisionByZero(context: "Total weight is zero")) {
 			let _ = try weightedVariance([1.0, 2.0, 3.0], weights: [0.0, 0.0, 0.0])
 		}
 	}
 
 	@Test("Single value throws insufficientData")
 	func testSingleValueThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "Weighted variance requires at least 2 values")
+		) {
 			let _ = try weightedVariance([1.0], weights: [1.0])
 		}
 	}
 
 	@Test("Sample variance with total weight <= 1 throws insufficientData")
 	func testTotalWeightTooSmallForSample() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 3, context: "Weighted sample variance requires sum of weights > 1")
+		) {
 			let _ = try weightedVariance([1.0, 2.0, 3.0], weights: [0.3, 0.3, 0.3], .sample)
 		}
 	}

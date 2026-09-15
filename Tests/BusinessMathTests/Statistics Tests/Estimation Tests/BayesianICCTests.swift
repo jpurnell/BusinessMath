@@ -129,7 +129,9 @@ struct BayesianICCTests {
     func testTooFewSubjects() throws {
         let data: [[Double]] = [[1.0, 2.0, 3.0]]
 
-        #expect(throws: BusinessMathError.self) {
+        #expect(
+        	throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "Bayesian ICC requires at least 2 subjects (rows)")
+        ) {
             let _ = try bayesianICC(data, model: .twoWayRandom)
         }
     }
@@ -140,7 +142,9 @@ struct BayesianICCTests {
     func testTooFewRaters() throws {
         let data: [[Double]] = [[1.0], [2.0], [3.0]]
 
-        #expect(throws: BusinessMathError.self) {
+        #expect(
+        	throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "Bayesian ICC requires at least 2 raters (columns)")
+        ) {
             let _ = try bayesianICC(data, model: .twoWayRandom)
         }
     }
@@ -155,7 +159,9 @@ struct BayesianICCTests {
             [6.0, 7.0, 8.0]
         ]
 
-        #expect(throws: BusinessMathError.self) {
+        #expect(
+        	throws: BusinessMathError.mismatchedDimensions(message: "All rows must have the same number of columns (balanced design required)", expected: "3", actual: "2")
+        ) {
             let _ = try bayesianICC(data, model: .twoWayRandom)
         }
     }
@@ -332,7 +338,9 @@ struct BayesianICCTests {
             [nil, nil, nil]
         ]
 
-        #expect(throws: BusinessMathError.self) {
+        #expect(
+        	throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "Bayesian ICC requires at least 2 subjects with observed data")
+        ) {
             let _ = try bayesianICC(missingRatings, model: .twoWayRandom)
         }
     }

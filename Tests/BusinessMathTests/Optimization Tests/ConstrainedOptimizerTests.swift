@@ -273,8 +273,11 @@ struct ConstrainedOptimizerTests {
 
 		let optimizer = ConstrainedOptimizer<VectorN<Double>>()
 
-		#expect(throws: OptimizationError.self) {
+		#expect {
 			_ = try optimizer.minimize(objective, from: VectorN([0.5]), subjectTo: [constraint])
+		} throws: { error in
+			guard case let OptimizationError.invalidInput(message) = error else { return false }
+			return message == "ConstrainedOptimizer only handles equality constraints. Use InequalityOptimizer for inequality constraints."
 		}
 	}
 
@@ -283,8 +286,11 @@ struct ConstrainedOptimizerTests {
 		let objective: @Sendable (VectorN<Double>) -> Double = { v in v[0] * v[0] }
 		let optimizer = ConstrainedOptimizer<VectorN<Double>>()
 
-		#expect(throws: OptimizationError.self) {
+		#expect {
 			_ = try optimizer.minimize(objective, from: VectorN([0.5]), subjectTo: [])
+		} throws: { error in
+			guard case let OptimizationError.invalidInput(message) = error else { return false }
+			return message == "No equality constraints provided. Use unconstrained optimizer instead."
 		}
 	}
 

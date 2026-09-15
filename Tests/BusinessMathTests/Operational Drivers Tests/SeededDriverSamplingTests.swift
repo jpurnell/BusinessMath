@@ -134,8 +134,11 @@ struct SeededDriverSamplingTests {
 		#expect(!driver.supportsSeeding)
 
 		var generator = Xoshiro256StarStar(seed: 1)
-		#expect(throws: SimulationError.self) {
+		#expect {
 			_ = try driver.sample(for: q1, using: &generator)
+		} throws: { error in
+			guard case let SimulationError.seedingUnsupported(inputName, details) = error else { return false }
+			return inputName == "Opaque" && details == "Driver uses a distribution that does not conform to SeedableDistribution"
 		}
 
 		// The unseeded path still works.
@@ -175,8 +178,11 @@ struct SeededDriverSamplingTests {
 		let opaque = AnyDriver(ProbabilisticDriver<Double>(name: "Opaque", distribution: UnseedableDistribution()))
 		#expect(!opaque.supportsSeeding)
 		var generator = Xoshiro256StarStar(seed: 1)
-		#expect(throws: SimulationError.self) {
+		#expect {
 			_ = try opaque.sample(for: q1, using: &generator)
+		} throws: { error in
+			guard case let SimulationError.seedingUnsupported(inputName, details) = error else { return false }
+			return inputName == "Opaque" && details == "Driver does not support seeded sampling"
 		}
 	}
 
@@ -356,8 +362,11 @@ struct SeededDriverSamplingTests {
 		#expect(!product.supportsSeeding)
 
 		var generator = Xoshiro256StarStar(seed: 1)
-		#expect(throws: SimulationError.self) {
+		#expect {
 			_ = try product.sample(for: q1, using: &generator)
+		} throws: { error in
+			guard case let SimulationError.seedingUnsupported(inputName, details) = error else { return false }
+			return inputName == "Opaque" && details == "Driver does not support seeded sampling"
 		}
 	}
 
@@ -385,8 +394,11 @@ struct SeededDriverSamplingTests {
 		let driver = ProbabilisticDriver<Double>(name: "Opaque", distribution: UnseedableDistribution())
 		let projection = DriverProjection(driver: driver, periods: [q1])
 
-		#expect(throws: SimulationError.self) {
+		#expect {
 			_ = try projection.projectMonteCarlo(iterations: 10, seed: 1)
+		} throws: { error in
+			guard case let SimulationError.seedingUnsupported(inputName, details) = error else { return false }
+			return inputName == "Opaque" && details == "Driver does not support seeded sampling"
 		}
 	}
 }

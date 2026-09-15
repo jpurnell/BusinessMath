@@ -191,8 +191,13 @@ struct MultiPeriodReportTests {
 	func testRejectsEmptyPeriods() throws {
 		let entity = Entity(id: "TEST", primaryType: .ticker, name: "TestCo")
 
-		#expect(throws: MultiPeriodReportError.self) {
+		// `MultiPeriodReportError` is not `Equatable` and has two cases; only the case
+		// says which refusal this is.
+		#expect {
 			_ = try MultiPeriodReport<Double>(entity: entity, periodSummaries: [])
+		} throws: { error in
+			guard case MultiPeriodReportError.emptyPeriods = error else { return false }
+			return true
 		}
 	}
 
@@ -218,8 +223,13 @@ struct MultiPeriodReportTests {
 			balanceSheet: balanceSheets[1]
 		)
 
-		#expect(throws: MultiPeriodReportError.self) {
+		// The other case — and the one `MultiPeriodReportError.self` could not tell from
+		// the empty-periods refusal above.
+		#expect {
 			_ = try MultiPeriodReport(entity: entity1, periodSummaries: [summary1, summary2])
+		} throws: { error in
+			guard case MultiPeriodReportError.entityMismatch = error else { return false }
+			return true
 		}
 	}
 

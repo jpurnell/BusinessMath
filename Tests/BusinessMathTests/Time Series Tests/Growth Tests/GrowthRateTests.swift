@@ -346,7 +346,7 @@ struct GrowthRateTests {
 		let to = 100.0
 
 		// Growth from zero is undefined (division by zero)
-		#expect(throws: BusinessMathError.self) {
+		#expect(throws: BusinessMathError.divisionByZero(context: "Growth Rate Calculation")) {
 			_ = try growthRate(from: from, to: to)
 		}
 	}

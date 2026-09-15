@@ -168,8 +168,11 @@ struct XNPVTests {
 		let dates = [try date(2025, 1, 1), try date(2026, 1, 1)]
 		let cashFlows = [-1000.0, 500.0, 600.0]  // One extra
 
-		#expect(throws: XNPVError.self) {
+		#expect {
 			_ = try xnpv(rate: 0.10, dates: dates, cashFlows: cashFlows)
+		} throws: { error in
+			guard case XNPVError.mismatchedArrays = error else { return false }
+			return true
 		}
 	}
 
@@ -178,8 +181,11 @@ struct XNPVTests {
 		let dates: [Date] = []
 		let cashFlows: [Double] = []
 
-		#expect(throws: XNPVError.self) {
+		#expect {
 			_ = try xnpv(rate: 0.10, dates: dates, cashFlows: cashFlows)
+		} throws: { error in
+			guard case XNPVError.insufficientData = error else { return false }
+			return true
 		}
 	}
 
@@ -188,8 +194,11 @@ struct XNPVTests {
 		let dates = [try date(2025, 1, 1), try date(2026, 1, 1)]
 		let cashFlows = [100.0, 200.0]
 
-		#expect(throws: XNPVError.self) {
+		#expect {
 			_ = try xirr(dates: dates, cashFlows: cashFlows)
+		} throws: { error in
+			guard case XNPVError.invalidCashFlows = error else { return false }
+			return true
 		}
 	}
 
@@ -198,8 +207,11 @@ struct XNPVTests {
 		let dates = [try date(2025, 1, 1), try date(2026, 1, 1)]
 		let cashFlows = [-100.0, -200.0]
 
-		#expect(throws: XNPVError.self) {
+		#expect {
 			_ = try xirr(dates: dates, cashFlows: cashFlows)
+		} throws: { error in
+			guard case XNPVError.invalidCashFlows = error else { return false }
+			return true
 		}
 	}
 

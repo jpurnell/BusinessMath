@@ -90,14 +90,18 @@ struct ChiSquaredCDFTests {
 
 	@Test("Negative x throws invalidInput")
 	func testNegativeXThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Chi-squared statistic must be non-negative", value: "-1.0", expectedRange: "[0, ∞)")
+		) {
 			let _: Double = try chiSquaredCDF(x: -1.0, df: 5)
 		}
 	}
 
 	@Test("df = 0 throws invalidInput")
 	func testZeroDfThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Degrees of freedom must be positive", value: "0", expectedRange: "(0, ∞)")
+		) {
 			let _: Double = try chiSquaredCDF(x: 5.0, df: 0)
 		}
 	}

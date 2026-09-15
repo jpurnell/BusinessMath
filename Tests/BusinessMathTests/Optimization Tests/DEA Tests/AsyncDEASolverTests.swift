@@ -178,8 +178,11 @@ struct AsyncDEAInputValidationTests {
         let solver = AsyncDEASolver()
         let singleDMU = [DMU(name: "Only", inputs: [1], outputs: [1])]
 
-        await #expect(throws: DEAError.self) {
+        await #expect {
             _ = try await solver.solve(dmus: singleDMU)
+        } throws: { error in
+        	guard case let DEAError.insufficientDMUs(count) = error else { return false }
+        	return count == 1
         }
     }
 
@@ -192,8 +195,11 @@ struct AsyncDEAInputValidationTests {
             DMU(name: "B", inputs: [0, 2], outputs: [3])
         ]
 
-        await #expect(throws: DEAError.self) {
+        await #expect {
             _ = try await solver.solve(dmus: dmus)
+        } throws: { error in
+        	guard case let DEAError.nonPositiveValues(dmu, dimension) = error else { return false }
+        	return dmu == "B" && dimension == "input[0]"
         }
     }
 
@@ -206,8 +212,11 @@ struct AsyncDEAInputValidationTests {
             DMU(name: "B", inputs: [1, 2], outputs: [-1])
         ]
 
-        await #expect(throws: DEAError.self) {
+        await #expect {
             _ = try await solver.solve(dmus: dmus)
+        } throws: { error in
+        	guard case let DEAError.nonPositiveValues(dmu, dimension) = error else { return false }
+        	return dmu == "B" && dimension == "output[0]"
         }
     }
 
@@ -216,8 +225,11 @@ struct AsyncDEAInputValidationTests {
     func emptyDMUArray() async throws {
         let solver = AsyncDEASolver()
 
-        await #expect(throws: DEAError.self) {
+        await #expect {
             _ = try await solver.solve(dmus: [])
+        } throws: { error in
+        	guard case let DEAError.insufficientDMUs(count) = error else { return false }
+        	return count == 0
         }
     }
 }

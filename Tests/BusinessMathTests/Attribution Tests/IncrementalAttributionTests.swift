@@ -108,11 +108,15 @@ struct IncrementalAttributionTests {
 	@Test("A channel named after a synthetic state is refused, not merged")
 	func reservedNamesAreRefused() {
 		let collision = [Journey(channels: ["(conversion)"], converted: true, value: 1)]
-		#expect(throws: AttributionError.self) {
+		#expect(
+			throws: AttributionError.degenerateChain(reason: "channel '(conversion)' collides with a reserved state")
+		) {
 			_ = try MarkovAttribution().attribute(journeys: collision)
 		}
 		let removed = [Journey(channels: ["(removed)", "A"], converted: true, value: 1)]
-		#expect(throws: AttributionError.self) {
+		#expect(
+			throws: AttributionError.degenerateChain(reason: "channel '(removed)' collides with a reserved state")
+		) {
 			_ = try MarkovAttribution().attribute(journeys: removed)
 		}
 	}

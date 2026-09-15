@@ -75,28 +75,30 @@ struct NearestNeighborTests {
 
     @Test("Throws on empty input")
     func throwsOnEmpty() throws {
-        #expect(throws: InterpolationError.self) {
+        // Nearest-neighbour needs one point; an empty input has none.
+        #expect(throws: InterpolationError.insufficientPoints(required: 1, got: 0)) {
             _ = try NearestNeighborInterpolator(xs: [Double](), ys: [Double]())
         }
     }
 
     @Test("Throws on mismatched sizes")
     func throwsOnMismatched() throws {
-        #expect(throws: InterpolationError.self) {
+        #expect(throws: InterpolationError.mismatchedSizes(xsCount: 2, ysCount: 1)) {
             _ = try NearestNeighborInterpolator(xs: [0.0, 1.0], ys: [0.0])
         }
     }
 
     @Test("Throws on unsorted xs")
     func throwsOnUnsorted() throws {
-        #expect(throws: InterpolationError.self) {
+        #expect(throws: InterpolationError.unsortedInputs) {
             _ = try NearestNeighborInterpolator(xs: [0.0, 2.0, 1.0], ys: [0.0, 4.0, 1.0])
         }
     }
 
     @Test("Throws on duplicate xs")
     func throwsOnDuplicate() throws {
-        #expect(throws: InterpolationError.self) {
+        // The index is the second of the pair, which is what makes it actionable.
+        #expect(throws: InterpolationError.duplicateXValues(at: 2)) {
             _ = try NearestNeighborInterpolator(xs: [0.0, 1.0, 1.0], ys: [0.0, 1.0, 2.0])
         }
     }
@@ -155,7 +157,7 @@ struct PreviousValueTests {
 
     @Test("Throws on empty input")
     func throwsOnEmpty() throws {
-        #expect(throws: InterpolationError.self) {
+        #expect(throws: InterpolationError.insufficientPoints(required: 1, got: 0)) {
             _ = try PreviousValueInterpolator(xs: [Double](), ys: [Double]())
         }
     }
@@ -252,7 +254,8 @@ struct LinearInterpolatorTests {
 
     @Test("Throws on insufficient points")
     func throwsOnInsufficientPoints() throws {
-        #expect(throws: InterpolationError.self) {
+        // Linear interpolation needs two points to have a segment at all.
+        #expect(throws: InterpolationError.insufficientPoints(required: 2, got: 1)) {
             _ = try LinearInterpolator(xs: [0.0], ys: [0.0])
         }
     }

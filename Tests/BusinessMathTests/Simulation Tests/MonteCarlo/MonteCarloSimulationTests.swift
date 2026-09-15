@@ -228,8 +228,11 @@ struct MonteCarloSimulationTests {
 		}
 
 			// Should throw error when run without inputs
-		#expect(throws: SimulationError.self) {
+		#expect {
 			try simulation.run()
+		} throws: { error in
+			guard case SimulationError.noInputs = error else { return false }
+			return true
 		}
 	}
 	
@@ -241,8 +244,11 @@ struct MonteCarloSimulationTests {
 		
 		simulation.addInput(SimulationInput(name: "X", distribution: DistributionNormal(0.0, 1.0)))
 		
-		#expect(throws: SimulationError.self) {
+		#expect {
 			try simulation.run()
+		} throws: { error in
+			guard case SimulationError.insufficientIterations = error else { return false }
+			return true
 		}
 	}
 	
@@ -481,10 +487,13 @@ struct MonteCarloSimulationAdditionalTests {
 			[1.0, 1.0]
 		]
 		let sim = MonteCarloSimulation()
-		#expect(throws: SimulationError.self) {
+		#expect {
 			_ = try sim.runCorrelated(inputs: [x, y], correlationMatrix: corr, iterations: 1000, seed: 0x51_9C_1A_11) { samples in
 				samples[0] + samples[1]
 			}
+		} throws: { error in
+			guard case SimulationError.invalidCorrelationMatrix = error else { return false }
+			return true
 		}
 	}
 }

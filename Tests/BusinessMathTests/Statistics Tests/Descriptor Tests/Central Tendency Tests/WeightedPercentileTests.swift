@@ -100,35 +100,45 @@ struct WeightedPercentileTests {
 
 	@Test("Empty array throws insufficientData")
 	func testEmptyArrayThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 1, actual: 0, context: "Weighted percentile requires at least 1 value")
+		) {
 			let _: Double = try weightedPercentile([], weights: [], p: 0.5)
 		}
 	}
 
 	@Test("Negative weight throws invalidInput")
 	func testNegativeWeightThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Weights must be non-negative", value: nil, expectedRange: nil)
+		) {
 			let _ = try weightedPercentile([1.0, 2.0, 3.0], weights: [1.0, -1.0, 1.0], p: 0.5)
 		}
 	}
 
 	@Test("p < 0 throws invalidInput")
 	func testPBelowZeroThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Percentile p must be in [0, 1]", value: "-0.1", expectedRange: "[0, 1]")
+		) {
 			let _ = try weightedPercentile([1.0, 2.0, 3.0], weights: [1.0, 1.0, 1.0], p: -0.1)
 		}
 	}
 
 	@Test("p > 1 throws invalidInput")
 	func testPAboveOneThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Percentile p must be in [0, 1]", value: "1.1", expectedRange: "[0, 1]")
+		) {
 			let _ = try weightedPercentile([1.0, 2.0, 3.0], weights: [1.0, 1.0, 1.0], p: 1.1)
 		}
 	}
 
 	@Test("Mismatched dimensions throws mismatchedDimensions")
 	func testMismatchedDimensionsThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.mismatchedDimensions(message: "Weighted percentile requires equal-length arrays", expected: "2", actual: "1")
+		) {
 			let _ = try weightedPercentile([1.0, 2.0], weights: [1.0], p: 0.5)
 		}
 	}

@@ -195,7 +195,9 @@ struct PercentilesAdditionalTests {
 
 	@Test("Empty dataset should throw")
 	func emptyDatasetThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 1, actual: 0, context: "Percentiles calculation requires at least one value")
+		) {
 			_ = try Percentiles(values: [])
 		}
 	}
@@ -226,7 +228,9 @@ struct PercentilesAdditionalTests {
 	
 	@Test("Non-finite values should throw")
 	func nonFiniteValuesThrow() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.dataQuality(message: "All values must be finite (not NaN or infinite)", context: ["invalid_count": "1"])
+		) {
 			_ = try Percentiles(values: [1.0, .infinity, 3.0])
 		}
 	}

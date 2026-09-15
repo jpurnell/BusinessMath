@@ -251,7 +251,9 @@ struct LinearCycleSolverTests {
 			.defining("fee", as: "total * 0.10")
 			.defining("total", as: "base + fee")
 
-		#expect(throws: BusinessMathError.self) { try model.solve() }
+		#expect(
+			throws: BusinessMathError.inconsistentData(description: "'fee' is supplied as an input and also defined by a formula. Remove one: a derived account would shadow the supplied series, and nothing downstream could tell which had been used.")
+		) { try model.solve() }
 	}
 
 	@Test("A missing input is refused rather than read as zero")
@@ -260,7 +262,7 @@ struct LinearCycleSolverTests {
 			.defining("fee", as: "total * 0.10")
 			.defining("total", as: "base + fee")
 
-		#expect(throws: FormulaError.self) { try model.solve() }
+		#expect(throws: FormulaError.unknownAccount("base")) { try model.solve() }
 	}
 
 	// MARK: - Determinism

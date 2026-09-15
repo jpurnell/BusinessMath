@@ -177,7 +177,9 @@ struct REMLVarianceComponentsTests {
 			[1.0, 2.0, 3.0]
 		]
 
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "REML variance components requires at least 2 groups")
+		) {
 			let _ = try remlVarianceComponents(groups)
 		}
 	}
@@ -196,7 +198,9 @@ struct REMLVarianceComponentsTests {
 
 		// Should throw because we need within-group df > 0
 		// or handle gracefully by returning a degenerate result
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 4, actual: 3, context: "REML requires total observations > number of groups for within-group df")
+		) {
 			let _ = try remlVarianceComponents(groups)
 		}
 	}

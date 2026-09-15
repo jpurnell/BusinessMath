@@ -79,7 +79,9 @@ struct WeightedCCCTests {
 
 	@Test("Negative weight → throws invalidInput")
 	func testNegativeWeightThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Weights must be non-negative", value: nil, expectedRange: nil)
+		) {
 			let _ = try concordanceCorrelationCoefficient(
 				[1.0, 2.0, 3.0], [1.0, 2.0, 3.0],
 				weights: [1.0, -1.0, 1.0]
@@ -89,7 +91,9 @@ struct WeightedCCCTests {
 
 	@Test("Mismatched lengths → throws")
 	func testMismatchedLengthsThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.mismatchedDimensions(message: "Arrays must have equal length", expected: "2", actual: "3")
+		) {
 			let _ = try concordanceCorrelationCoefficient(
 				[1.0, 2.0], [1.0, 2.0, 3.0],
 				weights: [1.0, 1.0]
@@ -99,7 +103,9 @@ struct WeightedCCCTests {
 
 	@Test("Fewer than 2 → throws insufficientData")
 	func testInsufficientDataThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "Weighted CCC requires at least 2 paired observations")
+		) {
 			let _ = try concordanceCorrelationCoefficient(
 				[1.0], [1.0],
 				weights: [1.0]

@@ -45,7 +45,9 @@ struct RollingAgreementTests {
 	func testSeriesShorterThanWindowThrows() throws {
 		let x: [Double] = [1.0, 2.0]
 		let y: [Double] = [1.0, 2.0]
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 5, actual: 2, context: "Series must have at least windowSize observations for rolling CCC")
+		) {
 			_ = try rollingCCC(x, y, windowSize: 5)
 		}
 	}
@@ -54,7 +56,9 @@ struct RollingAgreementTests {
 	func testWindowTooSmallThrows() throws {
 		let x: [Double] = [1.0, 2.0, 3.0, 4.0, 5.0]
 		let y: [Double] = [1.0, 2.0, 3.0, 4.0, 5.0]
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Window size must be at least 3 for CCC", value: "2", expectedRange: "[3, +inf)")
+		) {
 			_ = try rollingCCC(x, y, windowSize: 2)
 		}
 	}
@@ -93,7 +97,9 @@ struct RollingAgreementTests {
 	func testBAWindowTooSmallThrows() throws {
 		let x: [Double] = [1.0, 2.0, 3.0, 4.0, 5.0]
 		let y: [Double] = [1.0, 2.0, 3.0, 4.0, 5.0]
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Window size must be at least 2 for Bland-Altman", value: "1", expectedRange: "[2, +inf)")
+		) {
 			_ = try rollingBlandAltman(x, y, windowSize: 1)
 		}
 	}

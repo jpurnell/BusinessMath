@@ -57,14 +57,18 @@ struct StudentTPDFTests {
 
 	@Test("df ≤ 0 throws invalidInput")
 	func testZeroDfThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Degrees of freedom must be positive", value: "0", expectedRange: "(0, ∞)")
+		) {
 			let _: Double = try studentTPDF(t: 1.0, df: 0)
 		}
 	}
 
 	@Test("df = -1 throws invalidInput")
 	func testNegativeDfThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Degrees of freedom must be positive", value: "-1", expectedRange: "(0, ∞)")
+		) {
 			let _: Double = try studentTPDF(t: 1.0, df: -1)
 		}
 	}

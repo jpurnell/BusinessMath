@@ -260,10 +260,14 @@ struct UnassortedTests {
 		#expect(abs(r_near_zero - 0.0) < 0.0001)
 
 		// Test boundary behavior - should throw at ±1
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Fisher's Z requires correlation strictly between -1 and 1", value: "1.0", expectedRange: "(-1, 1)")
+		) {
 			_ = try fisher(1.0)
 		}
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Fisher's Z requires correlation strictly between -1 and 1", value: "-1.0", expectedRange: "(-1, 1)")
+		) {
 			_ = try fisher(-1.0)
 		}
     }

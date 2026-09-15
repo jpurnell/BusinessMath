@@ -107,8 +107,11 @@ struct SeasonalityTests {
 		// Only 3 quarters (less than 2 complete cycles)
 		let data = createQuarterlyTimeSeries(values: [100.0, 120.0, 80.0])
 
-		#expect(throws: SeasonalityError.self) {
+		#expect {
 			_ = try seasonalIndices(timeSeries: data, periodsPerYear: 4)
+		} throws: { error in
+			guard case let SeasonalityError.insufficientData(required, provided) = error else { return false }
+			return required == 8 && provided == 3
 		}
 	}
 
@@ -164,8 +167,11 @@ struct SeasonalityTests {
 		let data = createQuarterlyTimeSeries(values: [100.0, 120.0, 80.0])
 		let wrongIndices = [1.0, 1.1, 0.9, 1.0]  // 4 indices but only 3 data points
 
-		#expect(throws: SeasonalityError.self) {
+		#expect {
 			_ = try seasonallyAdjust(timeSeries: data, indices: wrongIndices)
+		} throws: { error in
+			guard case let SeasonalityError.insufficientData(required, provided) = error else { return false }
+			return required == 4 && provided == 3
 		}
 	}
 
@@ -306,8 +312,11 @@ struct SeasonalityTests {
 		// Only 5 quarters (less than 2 complete cycles)
 		let data = createQuarterlyTimeSeries(values: [100.0, 120.0, 80.0, 100.0, 110.0])
 
-		#expect(throws: SeasonalityError.self) {
+		#expect {
 			_ = try decomposeTimeSeries(timeSeries: data, periodsPerYear: 4, method: .additive)
+		} throws: { error in
+			guard case let SeasonalityError.insufficientData(required, provided) = error else { return false }
+			return required == 8 && provided == 5
 		}
 	}
 

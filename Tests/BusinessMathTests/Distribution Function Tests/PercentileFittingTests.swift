@@ -212,22 +212,24 @@ struct PercentileFittingTests {
 	func malformedConstraintsAreRefused() {
 		// Each of these would otherwise surface as `noSolution` after two hundred
 		// iterations, which tells a caller nothing about what they got wrong.
-		#expect(throws: ParameterFitError.self) {
+		#expect(throws: ParameterFitError.invalidConstraint("probability 0.0 is not in (0, 1)")) {
 			_ = try DistributionNormal.fitting([
 				.quantile(p: 0, value: 1), .quantile(p: 0.9, value: 3),
 			])
 		}
-		#expect(throws: ParameterFitError.self) {
+		#expect(throws: ParameterFitError.invalidConstraint("two constraints on the same quantile 0.5")) {
 			_ = try DistributionNormal.fitting([
 				.quantile(p: 0.5, value: 1), .quantile(p: 0.5, value: 3),
 			])
 		}
-		#expect(throws: ParameterFitError.self) {
+		#expect(throws: ParameterFitError.invalidConstraint("stdev -1.0 is not positive")) {
 			_ = try DistributionNormal.fitting([
 				.standardDeviation(-1), .quantile(p: 0.9, value: 3),
 			])
 		}
-		#expect(throws: ParameterFitError.self) {
+		#expect(
+			throws: ParameterFitError.invalidConstraint("no parameter named 'lambda'; has mean, stdDev")
+		) {
 			_ = try DistributionNormal.fitting([
 				.parameter(name: "lambda", value: 1), .quantile(p: 0.9, value: 3),
 			])
@@ -264,7 +266,7 @@ struct PercentileFittingTests {
 		// A quantile function increases in p, so a lower percentile above a higher one
 		// describes nothing. The fit must fail rather than return whichever
 		// distribution the solve wandered into.
-		#expect(throws: ParameterFitError.self) {
+		#expect(throws: ParameterFitError.noSolution) {
 			_ = try DistributionNormal.fitting([
 				.quantile(p: 0.1, value: 100), .quantile(p: 0.9, value: 5),
 			])

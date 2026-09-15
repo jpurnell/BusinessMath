@@ -84,21 +84,27 @@ struct BlandAltmanTests {
 
 	@Test("Mismatched lengths → throws mismatchedDimensions")
 	func testMismatchedLengthsThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.mismatchedDimensions(message: "Arrays must have equal length", expected: "3", actual: "2")
+		) {
 			let _ = try blandAltman([1.0, 2.0, 3.0], [1.0, 2.0])
 		}
 	}
 
 	@Test("Single pair → throws insufficientData")
 	func testSinglePairThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "Bland-Altman analysis requires at least 2 paired observations")
+		) {
 			let _ = try blandAltman([1.0], [1.0])
 		}
 	}
 
 	@Test("Empty arrays → throws insufficientData")
 	func testEmptyThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 0, context: "Bland-Altman analysis requires at least 2 paired observations")
+		) {
 			let _: BlandAltmanResult<Double> = try blandAltman([], [])
 		}
 	}

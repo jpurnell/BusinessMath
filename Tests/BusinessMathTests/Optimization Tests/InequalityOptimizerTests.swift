@@ -354,8 +354,11 @@ struct InequalityOptimizerTests {
 		let objective: @Sendable (VectorN<Double>) -> Double = { v in v[0] * v[0] }
 		let optimizer = InequalityOptimizer<VectorN<Double>>()
 
-		#expect(throws: OptimizationError.self) {
+		#expect {
 			_ = try optimizer.minimize(objective, from: VectorN([0.5]), subjectTo: [])
+		} throws: { error in
+			guard case let OptimizationError.invalidInput(message) = error else { return false }
+			return message == "No constraints provided. Use unconstrained optimizer instead."
 		}
 	}
 }

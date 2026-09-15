@@ -35,14 +35,18 @@ struct GroupingFactorTests {
 
 	@Test("Empty groups throws")
 	func emptyThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "GroupingFactor requires at least one observation", value: "empty", expectedRange: ">= 1 observation")
+		) {
 			try GroupingFactor([])
 		}
 	}
 
 	@Test("Negative group ID throws")
 	func negativeThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Group IDs must be non-negative", value: "contains negative", expectedRange: ">= 0")
+		) {
 			try GroupingFactor([0, -1, 1])
 		}
 	}

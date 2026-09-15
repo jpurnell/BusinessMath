@@ -223,13 +223,19 @@ struct TrendModelConfidenceIntervalTests {
 		try model.fit(to: historical)
 
 		// Test confidence level > 1
-		#expect(throws: ForecastError.self) {
+		#expect {
 			let _ = try model.projectWithConfidence(periods: 3, confidenceLevel: 1.5)
+		} throws: { error in
+			guard case ForecastError.invalidConfidenceLevel = error else { return false }
+			return true
 		}
 
 		// Test confidence level < 0
-		#expect(throws: ForecastError.self) {
+		#expect {
 			let _ = try model.projectWithConfidence(periods: 3, confidenceLevel: -0.1)
+		} throws: { error in
+			guard case ForecastError.invalidConfidenceLevel = error else { return false }
+			return true
 		}
 	}
 
@@ -238,8 +244,11 @@ struct TrendModelConfidenceIntervalTests {
 		let model = LinearTrend<Double>()
 		// Don't fit the model
 
-		#expect(throws: TrendModelError.self) {
+		#expect {
 			let _ = try model.projectWithConfidence(periods: 3, confidenceLevel: 0.95)
+		} throws: { error in
+			guard case TrendModelError.modelNotFitted = error else { return false }
+			return true
 		}
 	}
 

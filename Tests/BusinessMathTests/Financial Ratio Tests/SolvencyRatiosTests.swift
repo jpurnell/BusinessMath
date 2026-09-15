@@ -25,14 +25,18 @@ struct SolvencyRatiosTests {
 
     @Test("Debt to equity throws on zero equity")
     func testDebtToEquityThrows() throws {
-        #expect(throws: BusinessMathError.self) {
+        #expect(
+        	throws: BusinessMathError.divisionByZero(context: "Debt to equity: shareholder equity must be positive")
+        ) {
             _ = try debtToEquity(totalLiabilities: 40000.0, shareholderEquity: 0.0)
         }
     }
 
     @Test("Interest coverage throws on zero interest")
     func testInterestCoverageThrows() throws {
-        #expect(throws: BusinessMathError.self) {
+        #expect(
+        	throws: BusinessMathError.divisionByZero(context: "Interest coverage: interest expense must be positive")
+        ) {
             _ = try interestCoverage(earningsBeforeInterestAndTax: 6000.0, interestExpense: 0.0)
         }
     }

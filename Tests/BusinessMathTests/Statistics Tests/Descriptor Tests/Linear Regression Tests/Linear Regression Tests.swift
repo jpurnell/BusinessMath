@@ -161,13 +161,17 @@ struct LinearRegressionNaNInfinityTests {
 	func rSquared_rejects_nan() throws {
 		let x1 = [1.0, Double.nan, 3.0]
 		let y1 = [2.0, 4.0, 6.0]
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.divisionByZero(context: "Correlation coefficient: one or both variables have zero variance")
+		) {
 			_ = try rSquared(x1, y1)
 		}
 
 		let x2 = [1.0, 2.0, 3.0]
 		let y2 = [2.0, Double.nan, 6.0]
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.divisionByZero(context: "Correlation coefficient: one or both variables have zero variance")
+		) {
 			_ = try rSquared(x2, y2)
 		}
 	}
@@ -206,7 +210,9 @@ struct LinearRegressionNaNInfinityTests {
 	func rSquared_rejects_infinity() throws {
 		let x = [1.0, Double.infinity, 3.0]
 		let y = [2.0, 4.0, 6.0]
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.divisionByZero(context: "Correlation coefficient: one or both variables have zero variance")
+		) {
 			_ = try rSquared(x, y)
 		}
 	}

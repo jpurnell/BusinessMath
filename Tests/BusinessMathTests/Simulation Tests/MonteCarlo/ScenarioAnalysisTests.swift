@@ -541,8 +541,11 @@ struct ScenarioAnalysisTests {
 
 		analysis.addScenario(incomplete)
 
-		#expect(throws: ScenarioError.self) {
+		#expect {
 			let _ = try analysis.run()
+		} throws: { error in
+			guard case let ScenarioError.missingInputConfiguration(scenario, missingInputs) = error else { return false }
+			return scenario == "Incomplete" && missingInputs == ["Costs"]
 		}
 	}
 }

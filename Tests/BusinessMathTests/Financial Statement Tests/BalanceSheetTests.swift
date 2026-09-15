@@ -158,7 +158,9 @@ struct BalanceSheetTests {
 		let ap = try makeAPAccount(entity: entity2, periods: periods)
 		let equity = try makeEquityAccount(entity: entity1, periods: periods)
 
-		#expect(throws: FinancialModelError.self) {
+		#expect(
+			throws: FinancialModelError.entityMismatch(expected: "TEST", found: "OTHER", accountName: "Accounts Payable")
+		) {
 			_ = try BalanceSheet(
 				entity: entity1,
 				periods: periods,

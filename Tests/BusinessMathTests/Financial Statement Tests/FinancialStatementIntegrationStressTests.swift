@@ -333,7 +333,9 @@ struct FinancialStatementIntegrationStressTests {
 
         // Edge case 4: Profit margin function rejects zero revenue
         do {
-            #expect(throws: BusinessMathError.self) {
+            #expect(
+            	throws: BusinessMathError.divisionByZero(context: "Profit margin: revenue must be positive")
+            ) {
                 _ = try profitMargin(netIncome: 100.0, revenue: 0.0)
             }
         }

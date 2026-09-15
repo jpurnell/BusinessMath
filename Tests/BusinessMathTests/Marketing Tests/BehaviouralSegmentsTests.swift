@@ -212,15 +212,15 @@ struct BehaviouralSegmentsTests {
 	@Test("Feature rows that do not line up are refused")
 	func raggedFeaturesAreRefused() {
 		let ragged: [String: [Double]] = ["ada": [1, 2], "brs": [1]]
-		#expect(throws: SegmentationError.self) {
+		#expect(throws: SegmentationError.raggedFeatures(reason: "'brs' has 1 features, not 2")) {
 			_ = try BehaviouralSegmentation.byFeatures(customers: ragged, into: 2, seed: Self.seed)
 		}
 		let infinite: [String: [Double]] = ["ada": [1, 2], "brs": [1, .infinity]]
-		#expect(throws: SegmentationError.self) {
+		#expect(throws: SegmentationError.raggedFeatures(reason: "'brs' has a non-finite feature")) {
 			_ = try BehaviouralSegmentation.byFeatures(customers: infinite, into: 2, seed: Self.seed)
 		}
 		let empty: [String: [Double]] = ["ada": [], "brs": []]
-		#expect(throws: SegmentationError.self) {
+		#expect(throws: SegmentationError.raggedFeatures(reason: "a customer has no features")) {
 			_ = try BehaviouralSegmentation.byFeatures(customers: empty, into: 2, seed: Self.seed)
 		}
 	}
@@ -236,7 +236,7 @@ struct BehaviouralSegmentsTests {
 			_ = try BehaviouralSegmentation.byCoBehaviour(memberships: nothing)
 		}
 		let touchedNothing: [String: Set<String>] = ["ada": []]
-		#expect(throws: SegmentationError.self) {
+		#expect(throws: SegmentationError.raggedFeatures(reason: "a customer touched nothing")) {
 			_ = try BehaviouralSegmentation.byCoBehaviour(memberships: touchedNothing)
 		}
 	}

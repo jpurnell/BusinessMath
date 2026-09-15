@@ -81,12 +81,20 @@ struct LinearityValidationTests {
             v[0] * v[0]
         }
 
-        #expect(throws: OptimizationError.self) {
+        #expect {
             try validateLinearModel(
                 quadratic,
                 dimension: 1,
                 at: VectorN([0.5])
             )
+        } throws: { error in
+        	guard case let OptimizationError.nonlinearModel(message) = error
+        	else { return false }
+        	// The message quotes the probe point, the value there and the residual, all of them
+        	// computed — so the whole-value pin the rest of this sweep uses would be pinning a
+        	// float. What is stable is the verdict and the tolerance it was measured against.
+        	return message.hasPrefix("Function is nonlinear.")
+        		&& message.contains("tolerance = 0.0001")
         }
     }
 
@@ -97,12 +105,20 @@ struct LinearityValidationTests {
             v[0] * v[1]
         }
 
-        #expect(throws: OptimizationError.self) {
+        #expect {
             try validateLinearModel(
                 bilinear,
                 dimension: 2,
                 at: VectorN([0.5, 0.5])
             )
+        } throws: { error in
+        	guard case let OptimizationError.nonlinearModel(message) = error
+        	else { return false }
+        	// The message quotes the probe point, the value there and the residual, all of them
+        	// computed — so the whole-value pin the rest of this sweep uses would be pinning a
+        	// float. What is stable is the verdict and the tolerance it was measured against.
+        	return message.hasPrefix("Function is nonlinear.")
+        		&& message.contains("tolerance = 0.0001")
         }
     }
 
@@ -113,12 +129,20 @@ struct LinearityValidationTests {
             exp(v[0])
         }
 
-        #expect(throws: OptimizationError.self) {
+        #expect {
             try validateLinearModel(
                 exponential,
                 dimension: 1,
                 at: VectorN([0.5])
             )
+        } throws: { error in
+        	guard case let OptimizationError.nonlinearModel(message) = error
+        	else { return false }
+        	// The message quotes the probe point, the value there and the residual, all of them
+        	// computed — so the whole-value pin the rest of this sweep uses would be pinning a
+        	// float. What is stable is the verdict and the tolerance it was measured against.
+        	return message.hasPrefix("Function is nonlinear.")
+        		&& message.contains("tolerance = 0.0001")
         }
     }
 
@@ -129,12 +153,20 @@ struct LinearityValidationTests {
             log(v[0])
         }
 
-        #expect(throws: OptimizationError.self) {
+        #expect {
             try validateLinearModel(
                 logarithmic,
                 dimension: 1,
                 at: VectorN([1.0])  // Must be positive for log
             )
+        } throws: { error in
+        	guard case let OptimizationError.nonlinearModel(message) = error
+        	else { return false }
+        	// The message quotes the probe point, the value there and the residual, all of them
+        	// computed — so the whole-value pin the rest of this sweep uses would be pinning a
+        	// float. What is stable is the verdict and the tolerance it was measured against.
+        	return message.hasPrefix("Function is nonlinear.")
+        		&& message.contains("tolerance = 0.0001")
         }
     }
 
@@ -145,12 +177,20 @@ struct LinearityValidationTests {
             v[0]*v[0] + 2.0*v[0]*v[1] + v[1]*v[1] + 3.0*v[0] + 4.0*v[1] + 5.0
         }
 
-        #expect(throws: OptimizationError.self) {
+        #expect {
             try validateLinearModel(
                 polynomial,
                 dimension: 2,
                 at: VectorN([0.5, 0.5])
             )
+        } throws: { error in
+        	guard case let OptimizationError.nonlinearModel(message) = error
+        	else { return false }
+        	// The message quotes the probe point, the value there and the residual, all of them
+        	// computed — so the whole-value pin the rest of this sweep uses would be pinning a
+        	// float. What is stable is the verdict and the tolerance it was measured against.
+        	return message.hasPrefix("Function is nonlinear.")
+        		&& message.contains("tolerance = 0.0001")
         }
     }
 
@@ -161,12 +201,20 @@ struct LinearityValidationTests {
             abs(v[0])
         }
 
-        #expect(throws: OptimizationError.self) {
+        #expect {
             try validateLinearModel(
                 absValue,
                 dimension: 1,
                 at: VectorN([0.5])  // Test away from non-differentiable point
             )
+        } throws: { error in
+        	guard case let OptimizationError.nonlinearModel(message) = error
+        	else { return false }
+        	// The message quotes the probe point, the value there and the residual, all of them
+        	// computed — so the whole-value pin the rest of this sweep uses would be pinning a
+        	// float. What is stable is the verdict and the tolerance it was measured against.
+        	return message.hasPrefix("Function is nonlinear.")
+        		&& message.contains("tolerance = 0.0001")
         }
     }
 
@@ -179,12 +227,20 @@ struct LinearityValidationTests {
             max(0.0, v[0])
         }
 
-        #expect(throws: OptimizationError.self) {
+        #expect {
             try validateLinearModel(
                 relu,
                 dimension: 1,
                 at: VectorN([0.5])
             )
+        } throws: { error in
+        	guard case let OptimizationError.nonlinearModel(message) = error
+        	else { return false }
+        	// The message quotes the probe point, the value there and the residual, all of them
+        	// computed — so the whole-value pin the rest of this sweep uses would be pinning a
+        	// float. What is stable is the verdict and the tolerance it was measured against.
+        	return message.hasPrefix("Function is nonlinear.")
+        		&& message.contains("tolerance = 0.0001")
         }
     }
 
@@ -282,12 +338,20 @@ struct LinearityValidationTests {
         }
 
         let dimension = 10
-        #expect(throws: OptimizationError.self) {
+        #expect {
             try validateLinearModel(
                 nonlinear,
                 dimension: dimension,
                 at: VectorN(Array(repeating: 0.5, count: dimension))
             )
+        } throws: { error in
+        	guard case let OptimizationError.nonlinearModel(message) = error
+        	else { return false }
+        	// The message quotes the probe point, the value there and the residual, all of them
+        	// computed — so the whole-value pin the rest of this sweep uses would be pinning a
+        	// float. What is stable is the verdict and the tolerance it was measured against.
+        	return message.hasPrefix("Function is nonlinear.")
+        		&& message.contains("tolerance = 0.0001")
         }
     }
 

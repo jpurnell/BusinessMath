@@ -46,21 +46,27 @@ struct WeightedBreakdownPointTests {
 
 	@Test("Zero total weight throws divisionByZero")
 	func testZeroTotalWeightThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.divisionByZero(context: "Total weight is zero in weighted breakdown point")
+		) {
 			let _ = try weightedBreakdownPoint([0.0, 0.0, 0.0] as [Double])
 		}
 	}
 
 	@Test("Empty weights throws insufficientData")
 	func testEmptyWeightsThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 1, actual: 0, context: "Weighted breakdown point requires at least 1 weight")
+		) {
 			let _: Double = try weightedBreakdownPoint([])
 		}
 	}
 
 	@Test("Negative weight throws invalidInput")
 	func testNegativeWeightThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Weights must be non-negative", value: nil, expectedRange: nil)
+		) {
 			let _ = try weightedBreakdownPoint([1.0, -1.0, 1.0])
 		}
 	}

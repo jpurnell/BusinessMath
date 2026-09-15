@@ -232,19 +232,23 @@ struct PercentileFittingCoverageTests {
 		// A mode outside the stated range does not make the solve hard, it makes the
 		// bounds unidentifiable: both percentiles fall on one side of the peak and
 		// every sufficiently wide pair of bounds fits as well as any other.
-		#expect(throws: ParameterFitError.self) {
+		#expect(
+			throws: ParameterFitError.invalidConstraint("the mode must lie between the two stated values")
+		) {
 			_ = try DistributionTriangular.generalised(lowerPercentile: (0.1, 12), mode: 50,
 													   upperPercentile: (0.9, 35))
 		}
-		#expect(throws: ParameterFitError.self) {
+		#expect(throws: ParameterFitError.invalidConstraint("the lower percentile must come first")) {
 			_ = try DistributionTriangular.generalised(lowerPercentile: (0.9, 12), mode: 20,
 													   upperPercentile: (0.1, 35))
 		}
-		#expect(throws: ParameterFitError.self) {
+		#expect(
+			throws: ParameterFitError.invalidConstraint("percentiles must lie strictly inside (0, 1)")
+		) {
 			_ = try DistributionTriangular.generalised(lowerPercentile: (0.0, 12), mode: 20,
 													   upperPercentile: (0.9, 35))
 		}
-		#expect(throws: ParameterFitError.self) {
+		#expect(throws: ParameterFitError.invalidConstraint("the stated values must increase with p")) {
 			_ = try DistributionTriangular.generalised(lowerPercentile: (0.1, 40), mode: 20,
 													   upperPercentile: (0.9, 35))
 		}
@@ -267,7 +271,9 @@ struct PercentileFittingCoverageTests {
 		// Lévy has no mean at any parameter value. The contract says a family that
 		// cannot answer must throw; returning an integrated estimate would make the
 		// refusal invisible and the answer wrong.
-		#expect(throws: ParameterFitError.self) {
+		#expect(
+			throws: ParameterFitError.unsupportedConstraint("DistributionLevy has no closed-form mean")
+		) {
 			_ = try DistributionLevy.fitting([.mean(3), .quantile(p: 0.5, value: 4)])
 		}
 	}

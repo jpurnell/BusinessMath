@@ -30,18 +30,24 @@ struct SafetyStockModelTests {
 
 	@Test("z-score rejects invalid service levels")
 	func zScoreRejectsInvalid() throws {
-		#expect(throws: OperationsError.self) {
-			_ = try SafetyStockModel<Double>.zScore(for: 0.0)
+		// `OperationsError` is not `Equatable`, so the case is matched by hand. All four
+		// inputs meet the same guard, and the case carries no payload to tell them apart —
+		// the call itself is the only distinction there is to make.
+		func expectInvalidServiceLevel(
+			_ level: Double,
+			sourceLocation: SourceLocation = #_sourceLocation
+		) {
+			#expect(sourceLocation: sourceLocation) {
+				_ = try SafetyStockModel<Double>.zScore(for: level)
+			} throws: { error in
+				guard case OperationsError.invalidServiceLevel = error else { return false }
+				return true
+			}
 		}
-		#expect(throws: OperationsError.self) {
-			_ = try SafetyStockModel<Double>.zScore(for: 1.0)
-		}
-		#expect(throws: OperationsError.self) {
-			_ = try SafetyStockModel<Double>.zScore(for: -0.1)
-		}
-		#expect(throws: OperationsError.self) {
-			_ = try SafetyStockModel<Double>.zScore(for: 1.5)
-		}
+		expectInvalidServiceLevel(0.0)
+		expectInvalidServiceLevel(1.0)
+		expectInvalidServiceLevel(-0.1)
+		expectInvalidServiceLevel(1.5)
 	}
 
 	// MARK: - Demand-only method
@@ -166,7 +172,7 @@ struct SafetyStockModelTests {
 
 	@Test("Forecast error method requires forecastRMSE parameter")
 	func forecastErrorRequiresRMSE() throws {
-		#expect(throws: OperationsError.self) {
+		#expect {
 			_ = try SafetyStockModel<Double>.safetyStock(
 				method: .forecastError,
 				serviceLevel: 0.95,
@@ -174,6 +180,9 @@ struct SafetyStockModelTests {
 				demandStdDev: 5.0,
 				leadTime: 7.0
 			)
+		} throws: { error in
+			guard case let OperationsError.invalidParameter(name) = error else { return false }
+			return name == "forecastRMSE is required for the forecastError method"
 		}
 	}
 
@@ -181,7 +190,7 @@ struct SafetyStockModelTests {
 
 	@Test("Rejects zero demand")
 	func rejectsZeroDemand() throws {
-		#expect(throws: OperationsError.self) {
+		#expect {
 			_ = try SafetyStockModel<Double>.safetyStock(
 				method: .demandOnly,
 				serviceLevel: 0.95,
@@ -189,6 +198,9 @@ struct SafetyStockModelTests {
 				demandStdDev: 0.0,
 				leadTime: 7.0
 			)
+		} throws: { error in
+			guard case OperationsError.zeroDemand = error else { return false }
+			return true
 		}
 	}
 

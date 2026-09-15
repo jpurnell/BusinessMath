@@ -487,7 +487,9 @@ struct EquityValuationIntegrationTests {
             requiredReturn: 0.10
         )
 
-        #expect(throws: ValuationError.self) {
+        #expect(
+        	throws: ValuationError.invalidModelAssumptions("Growth rate (0.1) must be less than required return (0.1). A perpetual growth rate equal to or greater than the discount rate is mathematically undefined and economically nonsensical.")
+        ) {
             try invalidGG.valuePerShare()
         }
 
@@ -504,7 +506,9 @@ struct EquityValuationIntegrationTests {
             terminalGrowthRate: 0.12  // > cost of equity
         )
 
-        #expect(throws: ValuationError.self) {
+        #expect(
+        	throws: ValuationError.invalidModelAssumptions("Terminal growth rate (0.12) must be less than cost of equity (0.1). FCFE model requires g < r for terminal value calculation.")
+        ) {
             try invalidFCFE.equityValue()
         }
 
@@ -520,7 +524,9 @@ struct EquityValuationIntegrationTests {
             terminalGrowthRate: 0.10  // = cost of equity
         )
 
-        #expect(throws: ValuationError.self) {
+        #expect(
+        	throws: ValuationError.invalidModelAssumptions("Terminal growth rate (0.1) must be less than cost of equity (0.1). Residual income model requires g < r for terminal value calculation.")
+        ) {
             try invalidRI.equityValue()
         }
     }

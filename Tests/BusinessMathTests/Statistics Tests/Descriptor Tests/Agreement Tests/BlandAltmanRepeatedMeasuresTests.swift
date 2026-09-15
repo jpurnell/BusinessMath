@@ -196,7 +196,9 @@ struct BlandAltmanRepeatedMeasuresTests {
 		let pairs: [[(x: Double, y: Double)]] = [
 			[(x: 11, y: 10), (x: 12, y: 10)]
 		]
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "Repeated-measures Bland-Altman requires at least 2 subjects")
+		) {
 			let _ = try blandAltmanRepeatedMeasures(pairs)
 		}
 	}
@@ -208,7 +210,9 @@ struct BlandAltmanRepeatedMeasuresTests {
 			[],
 			[(x: 13, y: 10)]
 		]
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 1, actual: 0, context: "Subject 1 has no paired observations")
+		) {
 			let _ = try blandAltmanRepeatedMeasures(pairs)
 		}
 	}
@@ -216,7 +220,9 @@ struct BlandAltmanRepeatedMeasuresTests {
 	@Test("Empty pairs array throws insufficientData")
 	func testEmptyPairsArrayThrows() throws {
 		let pairs: [[(x: Double, y: Double)]] = []
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 0, context: "Repeated-measures Bland-Altman requires at least 2 subjects")
+		) {
 			let _ = try blandAltmanRepeatedMeasures(pairs)
 		}
 	}

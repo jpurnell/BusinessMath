@@ -56,28 +56,36 @@ struct BetaCDFTests {
 
 	@Test("x < 0 throws invalidInput")
 	func testNegativeXThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "x must be in [0, 1]", value: "-0.1", expectedRange: "[0, 1]")
+		) {
 			let _: Double = try betaCDF(x: -0.1, alpha: 2.0, beta: 2.0)
 		}
 	}
 
 	@Test("x > 1 throws invalidInput")
 	func testXAboveOneThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "x must be in [0, 1]", value: "1.1", expectedRange: "[0, 1]")
+		) {
 			let _: Double = try betaCDF(x: 1.1, alpha: 2.0, beta: 2.0)
 		}
 	}
 
 	@Test("alpha ≤ 0 throws invalidInput")
 	func testNonPositiveAlphaThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Shape parameter a must be positive", value: "0.0", expectedRange: "(0, ∞)")
+		) {
 			let _: Double = try betaCDF(x: 0.5, alpha: 0.0, beta: 2.0)
 		}
 	}
 
 	@Test("beta ≤ 0 throws invalidInput")
 	func testNonPositiveBetaThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Shape parameter b must be positive", value: "0.0", expectedRange: "(0, ∞)")
+		) {
 			let _: Double = try betaCDF(x: 0.5, alpha: 2.0, beta: 0.0)
 		}
 	}

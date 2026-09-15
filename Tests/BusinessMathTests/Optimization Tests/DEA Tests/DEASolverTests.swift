@@ -590,8 +590,11 @@ struct DEAMatrixFormTests {
         let inputs: [[Double]] = [[2, 5], [3, 3], [6, 2]]
         let outputs: [[Double]] = [[1, 4], [2, 2]]
 
-        #expect(throws: DEAError.self) {
+        #expect {
             _ = try solver.solve(inputs: inputs, outputs: outputs)
+        } throws: { error in
+        	guard case let DEAError.dimensionMismatch(expected, actual, dmu) = error else { return false }
+        	return expected == 3 && actual == 2 && dmu == "matrix rows"
         }
     }
 
@@ -600,8 +603,11 @@ struct DEAMatrixFormTests {
         let inputs: [[Double]] = [[2, 5], [3]]
         let outputs: [[Double]] = [[1, 4], [2, 2]]
 
-        #expect(throws: DEAError.self) {
+        #expect {
             _ = try solver.solve(inputs: inputs, outputs: outputs)
+        } throws: { error in
+        	guard case let DEAError.dimensionMismatch(expected, actual, dmu) = error else { return false }
+        	return expected == 2 && actual == 1 && dmu == "DMU_2"
         }
     }
 
@@ -610,8 +616,11 @@ struct DEAMatrixFormTests {
         let inputs: [[Double]] = [[2, 5], [3, 3]]
         let outputs: [[Double]] = [[1, 4], [2, 2]]
 
-        #expect(throws: DEAError.self) {
+        #expect {
             _ = try solver.solve(inputs: inputs, outputs: outputs, names: ["A"])
+        } throws: { error in
+        	guard case let DEAError.dimensionMismatch(expected, actual, dmu) = error else { return false }
+        	return expected == 2 && actual == 1 && dmu == "names array"
         }
     }
 

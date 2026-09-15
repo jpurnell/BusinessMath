@@ -72,8 +72,15 @@ struct ForecastabilityTests {
 
     @Test("requireForecastable throws unforecastableSeries for noise")
     func requireThrows() throws {
-        #expect(throws: BacktestError.self) {
+        // `BacktestError` is not `Equatable`. The threshold is the argument, so it is
+        // pinned; the entropy is measured from the series, so it is bounded — an impulse
+        // is white, and white is entropy 1.
+        #expect {
             _ = try self.impulse(n: 16).requireForecastable(maxSpectralEntropy: 0.9)
+        } throws: { error in
+            guard case let BacktestError.unforecastableSeries(entropy, threshold) = error
+            else { return false }
+            return threshold.isEqual(to: 0.9) && entropy > 0.9 && entropy <= 1.0
         }
     }
 
@@ -89,10 +96,16 @@ struct ForecastabilityTests {
 
     @Test("Strict backtest refuses a noise-like series")
     func strictBacktestRefuses() throws {
-        #expect(throws: BacktestError.self) {
+        // The refusal has to carry the *config's* threshold out of the backtest, which is
+        // the part worth asserting: 0.5 here, not the 0.9 above.
+        #expect {
             _ = try self.impulse(n: 20).backtest(
                 NaiveForecaster<Double>(),
                 config: BacktestConfig(initialTrainSize: 10, horizon: 2, refusal: .strict(maxSpectralEntropy: 0.5)))
+        } throws: { error in
+            guard case let BacktestError.unforecastableSeries(entropy, threshold) = error
+            else { return false }
+            return threshold.isEqual(to: 0.5) && entropy > 0.5 && entropy <= 1.0
         }
     }
 

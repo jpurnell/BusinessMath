@@ -27,8 +27,11 @@ struct OptimizationErrorPrecisionTests {
 		let matrix: [[Double]] = [[2, 1], [1, 3]]
 		let tooShort: [Double] = [1]
 
-		#expect(throws: OptimizationError.self) {
+		#expect {
 			try solveLinearSystem(matrix: matrix, vector: tooShort)
+		} throws: { error in
+			guard case let OptimizationError.dimensionMismatch(message) = error else { return false }
+			return message == "Matrix is 2×2 but the right-hand side has 1 elements"
 		}
 		#expect(isDimensionMismatch(try solveLinearSystem(matrix: matrix, vector: tooShort)))
 	}

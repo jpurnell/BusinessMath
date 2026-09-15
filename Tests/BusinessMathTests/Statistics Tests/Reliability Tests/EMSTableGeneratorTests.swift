@@ -185,7 +185,9 @@ struct EMSTableGeneratorTests {
 
     @Test("Empty facet list throws insufficientData")
     func testEmptyFacetListThrows() throws {
-        #expect(throws: BusinessMathError.self) {
+        #expect(
+        	throws: BusinessMathError.insufficientData(required: 1, actual: 0, context: "EMS table generation requires at least one facet")
+        ) {
             let _: [Set<String>: [EMSEntry<Double>]] = try generateEMSTable(
                 facetNames: [],
                 sampleSizes: [:]
@@ -195,7 +197,9 @@ struct EMSTableGeneratorTests {
 
     @Test("Missing sample size throws invalidInput")
     func testMissingSampleSizeThrows() throws {
-        #expect(throws: BusinessMathError.self) {
+        #expect(
+        	throws: BusinessMathError.invalidInput(message: "Missing sample size for facet 'r'", value: nil, expectedRange: "a positive integer")
+        ) {
             let _: [Set<String>: [EMSEntry<Double>]] = try generateEMSTable(
                 facetNames: ["p", "r"],
                 sampleSizes: ["p": 4]

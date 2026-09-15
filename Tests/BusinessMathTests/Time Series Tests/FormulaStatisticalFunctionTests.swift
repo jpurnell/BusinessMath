@@ -101,7 +101,9 @@ struct FormulaStatisticalFunctionTests {
 
     @Test("The statistical names take exactly one series")
     func statisticalArity() {
-        #expect(throws: FormulaError.self) {
+        #expect(
+        	throws: FormulaError.wrongArgumentCount(function: "STDEV", expected: "exactly 1", got: 2)
+        ) {
             _ = try evaluator(sample).evaluate("STDEV(x, x)")
         }
     }

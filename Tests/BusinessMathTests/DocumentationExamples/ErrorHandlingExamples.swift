@@ -23,30 +23,39 @@ struct ErrorHandlingExamples {
         // Source: ErrorHandlingGuide.md - Invalid Input section
         let cashFlows = [-1000.0, 300.0, 400.0, 500.0]
 
-        #expect(throws: BusinessMathError.self) {
+        #expect(throws: BusinessMathError.invalidInput(
+            message: "Invalid input parameter - discountRate must be non-negative.",
+            value: "-0.5", expectedRange: "≥ 0.0")) {
 			_ = try calculateNPV(discountRate: -0.5, cashFlows: cashFlows)
         }
 
-        // Verify error details
+        // The guide's claim is about what a caller *sees*, so the code and the two
+        // user-facing strings are checked too. This was an `if case` with no `else`
+        // branch on the failure path below the expectation — which asserts nothing at
+        // all when the case does not match. `guard` says so instead.
         do {
             _ = try calculateNPV(discountRate: -0.5, cashFlows: cashFlows)
             Issue.record("Should have thrown")
         } catch let error as BusinessMathError {
-            if case .invalidInput = error {
-                #expect(error.code == "E001")
-                let desc = try #require(error.errorDescription)
-                #expect(!desc.isEmpty)
-                let recovery = try #require(error.recoverySuggestion)
-                #expect(!recovery.isEmpty)
-            } else {
-                Issue.record("Wrong error type: \(error)")
+            guard case .invalidInput = error else {
+                Issue.record("Wrong error case: \(error)")
+                return
             }
+            #expect(error.code == "E001")
+            let desc = try #require(error.errorDescription)
+            #expect(!desc.isEmpty)
+            let recovery = try #require(error.recoverySuggestion)
+            #expect(!recovery.isEmpty)
         }
     }
 
     @Test("E001: Invalid Input - Empty cash flows")
     func invalidInputEmptyCashFlows() throws {
-        #expect(throws: BusinessMathError.self) {
+        // A different case from the negative rate above — insufficient data, not invalid
+        // input — which `BusinessMathError.self` could not distinguish.
+        #expect(throws: BusinessMathError.insufficientData(
+            required: 1, actual: 0,
+            context: "At least one cash flow value is needed to calculate NPV. 0 cash flow values provided. ,npv(0.1, [])")) {
             _ = try calculateNPV(discountRate: 0.10, cashFlows: [])
         }
     }
@@ -74,16 +83,20 @@ struct ErrorHandlingExamples {
     @Test("E003: Division by Zero")
     func divisionByZero() throws {
         // Source: ErrorHandlingGuide.md - Division by Zero section
-        #expect(throws: BusinessMathError.self) {
+        #expect(throws: BusinessMathError.divisionByZero(context: "Growth Rate Calculation")) {
             _ = try growthRate(from: 0, to: 100)
         }
 
+        // Same `if case`-with-no-`else` problem as E001: a non-matching case asserted
+        // nothing.
         do {
             _ = try growthRate(from: 0, to: 100)
         } catch let error as BusinessMathError {
-            if case .divisionByZero = error {
-                #expect(error.code == "E003")
+            guard case .divisionByZero = error else {
+                Issue.record("Wrong error case: \(error)")
+                return
             }
+            #expect(error.code == "E003")
         }
     }
 
@@ -120,19 +133,20 @@ struct ErrorHandlingExamples {
         ]
         let values = [100.0, 110.0]  // Only 2 values for 3 periods!
 
-        #expect(throws: BusinessMathError.self) {
+        #expect(throws: BusinessMathError.mismatchedDimensions(
+            message: "Periods and values must have same length",
+            expected: "3", actual: "2")) {
             _ = try TimeSeries(validating: periods, values: values)
         }
 
         do {
             _ = try TimeSeries(validating: periods, values: values)
         } catch let error as BusinessMathError {
-            if case .mismatchedDimensions(let message, let expected, let actual) = error {
-				#expect(!message.isEmpty)
-                #expect(expected == "3")
-                #expect(actual == "2")
-                #expect(error.code == "E100")
+            guard case .mismatchedDimensions = error else {
+                Issue.record("Wrong error case: \(error)")
+                return
             }
+            #expect(error.code == "E100")
         }
     }
 
@@ -149,7 +163,11 @@ struct ErrorHandlingExamples {
         let timeSeries = TimeSeries(periods: periods, values: values)
 
         // Validate should catch NaN
-        #expect(throws: BusinessMathError.self) {
+        // The context carries the count and the offending index, which is the part a
+        // caller acts on.
+        #expect(throws: BusinessMathError.dataQuality(
+            message: "Time series contains NaN values at 1 position(s)",
+            context: ["errorCount": "1", "indices": "1"])) {
             try timeSeries.validateAndThrow()
         }
 
@@ -166,7 +184,8 @@ struct ErrorHandlingExamples {
 			RevenueComponent(name: "Product Sales", amount: 100_000)
         }
 
-        #expect(throws: BusinessMathError.self) {
+        #expect(throws: BusinessMathError.missingData(
+            account: "Marketing Expenses", period: "2025-Q1")) {
             let period = Period.quarter(year: 2025, quarter: 1)
             _ = try model.getValue(account: "Marketing Expenses", period: period)
         }
@@ -175,11 +194,11 @@ struct ErrorHandlingExamples {
             let period = Period.quarter(year: 2025, quarter: 1)
             _ = try model.getValue(account: "Marketing Expenses", period: period)
         } catch let error as BusinessMathError {
-            if case .missingData(let account, let period) = error {
-				#expect(period.description == Period.quarter(year: 2025, quarter: 1).description)
-                #expect(account == "Marketing Expenses")
-                #expect(error.code == "E102")
+            guard case .missingData = error else {
+                Issue.record("Wrong error case: \(error)")
+                return
             }
+            #expect(error.code == "E102")
         }
     }
 
@@ -190,7 +209,11 @@ struct ErrorHandlingExamples {
         let xValues = [1.0]
         let yValues = [2.0]
 
-        #expect(throws: Error.self) {
+        // `Error.self` was weaker still than the `BusinessMathError.self` elsewhere in
+        // this file — it did not even pin the domain the failure came from.
+        #expect(throws: BusinessMathError.insufficientData(
+            required: 2, actual: 1,
+            context: "Insufficient data points for calculation")) {
             _ = try linearRegression(xValues, yValues)
         }
     }
@@ -251,7 +274,9 @@ struct ErrorHandlingExamples {
         }
 
         // Should throw with all collected errors
-        #expect(throws: BusinessMathError.self) {
+        #expect(
+        	throws: BusinessMathError.validationFailed(errors: ["Negative value for 'Revenue' (-100.0) in Income Statement", "Value 1.5 out of range [0.0, 1.0] in DCF Valuation", "Invalid input: Cash flows cannot be empty"])
+        ) {
             try aggregator.throwIfNeeded()
         }
 

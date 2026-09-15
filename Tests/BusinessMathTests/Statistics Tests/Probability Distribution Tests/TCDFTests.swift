@@ -70,7 +70,9 @@ struct TCDFTests {
 
 	@Test("df = 0 throws invalidInput")
 	func testZeroDfThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Degrees of freedom must be positive", value: "0", expectedRange: "(0, ∞)")
+		) {
 			let _: Double = try tCDF(t: 1.0, df: 0)
 		}
 	}
@@ -108,14 +110,18 @@ struct TQuantileTests {
 
 	@Test("p = 0 throws invalidInput")
 	func testZeroPThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Probability must be in (0, 1) exclusive", value: "0.0", expectedRange: "(0, 1)")
+		) {
 			let _: Double = try tQuantile(p: 0.0, df: 10)
 		}
 	}
 
 	@Test("p = 1 throws invalidInput")
 	func testOnePThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Probability must be in (0, 1) exclusive", value: "1.0", expectedRange: "(0, 1)")
+		) {
 			let _: Double = try tQuantile(p: 1.0, df: 10)
 		}
 	}

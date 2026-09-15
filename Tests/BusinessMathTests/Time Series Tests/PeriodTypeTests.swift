@@ -341,8 +341,15 @@ struct PeriodTypeTests {
 		let json = try #require("99".data(using: .utf8))  // Invalid raw value
 		let decoder = JSONDecoder()
 
-		#expect(throws: Error.self) {
+		// `Error.self` was the weakest assertion in the corpus: it did not even pin the
+		// domain. The decoder rejects 99 because no `PeriodType` has that raw value, and
+		// the debug description is where it says so.
+		#expect {
 			_ = try decoder.decode(PeriodType.self, from: json)
+		} throws: { error in
+			guard case let DecodingError.dataCorrupted(context) = error else { return false }
+			return context.debugDescription
+				== "Cannot initialize PeriodType from invalid Int value 99"
 		}
 	}
 

@@ -117,21 +117,27 @@ struct TwoWayANOVATests {
 
 	@Test("Single subject throws insufficientData")
 	func testSingleSubjectThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "Two-way ANOVA requires at least 2 subjects (rows)")
+		) {
 			let _ = try twoWayANOVA([[1.0, 2.0, 3.0]])
 		}
 	}
 
 	@Test("Single rater throws insufficientData")
 	func testSingleRaterThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "Two-way ANOVA requires at least 2 raters (columns)")
+		) {
 			let _ = try twoWayANOVA([[1.0], [2.0], [3.0]])
 		}
 	}
 
 	@Test("Ragged matrix throws mismatchedDimensions")
 	func testRaggedMatrixThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.mismatchedDimensions(message: "All rows must have the same number of columns", expected: "3", actual: "2")
+		) {
 			let _ = try twoWayANOVA([[1.0, 2.0, 3.0], [4.0, 5.0]])
 		}
 	}
@@ -139,7 +145,9 @@ struct TwoWayANOVATests {
 	@Test("Empty matrix throws insufficientData")
 	func testEmptyMatrixThrows() throws {
 		let empty: [[Double]] = []
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 0, context: "Two-way ANOVA requires at least 2 subjects (rows)")
+		) {
 			let _ = try twoWayANOVA(empty)
 		}
 	}

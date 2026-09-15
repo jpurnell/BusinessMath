@@ -52,14 +52,18 @@ struct WeightedCorrelationTests {
 
 	@Test("Constant x series → throws divisionByZero")
 	func testConstantXThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.divisionByZero(context: "Weighted correlation: x series has zero weighted variance")
+		) {
 			let _ = try weightedCorrelation([5.0, 5.0, 5.0], [1.0, 2.0, 3.0], weights: [1.0, 1.0, 1.0])
 		}
 	}
 
 	@Test("Constant y series → throws divisionByZero")
 	func testConstantYThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.divisionByZero(context: "Weighted correlation: y series has zero weighted variance")
+		) {
 			let _ = try weightedCorrelation([1.0, 2.0, 3.0], [5.0, 5.0, 5.0], weights: [1.0, 1.0, 1.0])
 		}
 	}
@@ -69,7 +73,9 @@ struct WeightedCorrelationTests {
 	@Test("All weight on single pair → degenerate, throws")
 	func testAllWeightOnSinglePairThrows() throws {
 		// When all weight is on one point, weighted variance of x and y = 0
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.divisionByZero(context: "Weighted correlation: x series has zero weighted variance")
+		) {
 			let _ = try weightedCorrelation(
 				[1.0, 2.0, 3.0], [4.0, 5.0, 6.0],
 				weights: [0.0, 10.0, 0.0]

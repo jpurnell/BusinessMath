@@ -39,7 +39,9 @@ struct FormulaFunctionCallTests {
 
     @Test("A comma outside a call is still a token, and fails in the parser")
     func strayCommaIsASyntaxError() {
-        #expect(throws: FormulaError.self) {
+        #expect(
+        	throws: FormulaError.invalidSyntax("unexpected token after the end of the expression")
+        ) {
             _ = try FormulaEvaluator<Double>(accounts: [:]).evaluate("1, 2")
         }
     }
@@ -169,7 +171,9 @@ struct FormulaFunctionCallTests {
     func trailingCommaThrows() throws {
         let tokens = try FormulaEvaluator<Double>.tokenise("MAX(1,)")
         var parser = FormulaEvaluator<Double>.Parser(tokens: tokens)
-        #expect(throws: FormulaError.self) {
+        #expect(
+        	throws: FormulaError.invalidSyntax("a trailing comma in a function call's arguments")
+        ) {
             _ = try parser.parseExpression()
         }
     }

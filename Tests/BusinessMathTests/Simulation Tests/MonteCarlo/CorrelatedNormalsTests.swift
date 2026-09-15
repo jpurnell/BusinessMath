@@ -40,8 +40,11 @@ struct CorrelatedNormalsTests {
 			[0.5, 1.0]
 		]
 
-		#expect(throws: CorrelatedNormalsError.self) {
+		#expect {
 			_ = try CorrelatedNormals(means: means, correlationMatrix: correlationMatrix)
+		} throws: { error in
+			guard case CorrelatedNormalsError.dimensionMismatch = error else { return false }
+			return true
 		}
 	}
 
@@ -53,8 +56,11 @@ struct CorrelatedNormalsTests {
 			[0.3, 1.0]
 		]
 
-		#expect(throws: CorrelatedNormalsError.self) {
+		#expect {
 			_ = try CorrelatedNormals(means: means, correlationMatrix: invalidMatrix)
+		} throws: { error in
+			guard case CorrelatedNormalsError.invalidCorrelationMatrix = error else { return false }
+			return true
 		}
 	}
 

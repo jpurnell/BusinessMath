@@ -129,14 +129,18 @@ struct GStudyTests {
 
 	@Test("Fewer than 2 persons throws insufficientData")
 	func testFewerThan2PersonsThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "Two-way ANOVA requires at least 2 subjects (rows)")
+		) {
 			let _ = try gStudy([[1.0, 2.0, 3.0]])
 		}
 	}
 
 	@Test("Ragged matrix throws mismatchedDimensions")
 	func testRaggedMatrixThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.mismatchedDimensions(message: "All rows must have the same number of columns", expected: "3", actual: "2")
+		) {
 			let _ = try gStudy([[1.0, 2.0, 3.0], [4.0, 5.0]])
 		}
 	}
@@ -243,7 +247,9 @@ struct GStudyTests {
 			[[4.0, 5.0], [6.0, 7.0]]
 		]
 
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.mismatchedDimensions(message: "All rater-person cells must have the same number of items", expected: "2", actual: "1")
+		) {
 			let _ = try gStudy(data, facetLabels: ("raters", "items"))
 		}
 	}

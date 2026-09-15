@@ -277,8 +277,12 @@ struct MonteCarloExpressionModelTests {
         }
 
         // Provide only 1 input when 2 are needed
-        #expect(throws: EvaluationError.self) {
-            try model.evaluate(inputs: [10.0])
+        // `EvaluationError` is not `Equatable`; the index and the count are matched directly.
+        #expect {
+        	_ = try model.evaluate(inputs: [10.0])
+        } throws: { error in
+        	guard case let EvaluationError.invalidInputIndex(index, available) = error else { return false }
+        	return index == 1 && available == 1
         }
     }
 
@@ -288,8 +292,11 @@ struct MonteCarloExpressionModelTests {
             return builder[0] / builder[1]
         }
 
-        #expect(throws: EvaluationError.self) {
-            try model.evaluate(inputs: [10.0, 0.0])
+        #expect {
+        	_ = try model.evaluate(inputs: [10.0, 0.0])
+        } throws: { error in
+        	guard case EvaluationError.divisionByZero = error else { return false }
+        	return true
         }
     }
 

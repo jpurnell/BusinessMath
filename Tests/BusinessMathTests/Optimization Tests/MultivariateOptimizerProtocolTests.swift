@@ -55,8 +55,11 @@ struct MultivariateOptimizerProtocolTests {
         let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let constraint: MultivariateConstraint<VectorN<Double>> = .equality { v in v[0] - 1.0 }
 
-        #expect(throws: OptimizationError.self) {
+        #expect {
             try optimizer.minimize(objective, from: VectorN([5.0, 5.0]), constraints: [constraint])
+        } throws: { error in
+        	guard case let OptimizationError.unsupportedConstraints(v0) = error else { return false }
+        	return v0 == "MultivariateGradientDescent only supports unconstrained optimization. For constrained optimization, use ConstrainedOptimizer or InequalityOptimizer."
         }
     }
 
@@ -148,8 +151,11 @@ struct MultivariateOptimizerProtocolTests {
         let objective: @Sendable (VectorN<Double>) -> Double = { v in v.dot(v) }
         let inequality: MultivariateConstraint<VectorN<Double>> = .inequality { v in 1.0 - v[0] }
 
-        #expect(throws: OptimizationError.self) {
+        #expect {
             try optimizer.minimize(objective, from: VectorN([5.0, 5.0]), constraints: [inequality])
+        } throws: { error in
+        	guard case let OptimizationError.unsupportedConstraints(v0) = error else { return false }
+        	return v0 == "ConstrainedOptimizer only supports equality constraints. Found 1 inequality constraint(s). Use InequalityOptimizer for mixed equality/inequality constraints."
         }
     }
 

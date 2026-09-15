@@ -93,13 +93,21 @@ struct LinearFunctionIntegrationTests {
             v[0] * v[0]  // Nonlinear!
         }
 
-        #expect(throws: OptimizationError.self) {
+        #expect {
             try solver.solve(
                 objective: quadratic,
                 from: VectorN([0.5]),
                 subjectTo: [],
                 integerSpec: .allInteger(dimension: 1)
             )
+        } throws: { error in
+        	guard case let OptimizationError.nonlinearModel(message) = error
+        	else { return false }
+        	// The message quotes the probe point, the value there and the residual, all of them
+        	// computed — so the whole-value pin the rest of this sweep uses would be pinning a
+        	// float. What is stable is the verdict and the tolerance it was measured against.
+        	return message.hasPrefix("Function is nonlinear.")
+        		&& message.contains("tolerance = 0.0001")
         }
     }
 
@@ -113,13 +121,21 @@ struct LinearFunctionIntegrationTests {
             v[0] * v[1] - 1.0  // Nonlinear!
         }
 
-        #expect(throws: OptimizationError.self) {
+        #expect {
             try solver.solve(
                 objective: { v in v[0] },
                 from: VectorN([0.5, 0.5]),
                 subjectTo: [bilinearConstraint],
                 integerSpec: .allBinary(dimension: 2)
             )
+        } throws: { error in
+        	guard case let OptimizationError.nonlinearModel(message) = error
+        	else { return false }
+        	// The message quotes the probe point, the value there and the residual, all of them
+        	// computed — so the whole-value pin the rest of this sweep uses would be pinning a
+        	// float. What is stable is the verdict and the tolerance it was measured against.
+        	return message.hasPrefix("Function is nonlinear.")
+        		&& message.contains("tolerance = 0.0001")
         }
     }
 

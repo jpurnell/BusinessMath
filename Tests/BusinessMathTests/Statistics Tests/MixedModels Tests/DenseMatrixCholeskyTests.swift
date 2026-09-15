@@ -52,7 +52,7 @@ struct DenseMatrixCholeskyTests {
 	@Test("Cholesky of non-SPD matrix throws")
 	func choleskyNotSPD() throws {
 		let A = try DenseMatrix([[1.0, 2.0], [2.0, 1.0]])
-		#expect(throws: MatrixError.self) {
+		#expect(throws: MatrixError.notPositiveDefinite) {
 			try A.cholesky()
 		}
 	}
@@ -60,7 +60,7 @@ struct DenseMatrixCholeskyTests {
 	@Test("Cholesky of non-square matrix throws")
 	func choleskyNotSquare() throws {
 		let A = try DenseMatrix([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
-		#expect(throws: MatrixError.self) {
+		#expect(throws: MatrixError.notSquare) {
 			try A.cholesky()
 		}
 	}
@@ -97,7 +97,9 @@ struct DenseMatrixCholeskyTests {
 	@Test("Cholesky solve with wrong vector length throws")
 	func choleskySolveDimensionMismatch() throws {
 		let A = try DenseMatrix([[4.0, 2.0], [2.0, 3.0]])
-		#expect(throws: MatrixError.self) {
+		#expect(
+			throws: MatrixError.dimensionMismatch(expected: "Vector length must equal matrix rows: 2", actual: "Vector has length 3")
+		) {
 			try A.choleskySolve([1.0, 2.0, 3.0])
 		}
 	}

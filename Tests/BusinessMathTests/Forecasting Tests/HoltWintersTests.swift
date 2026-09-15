@@ -426,12 +426,18 @@ struct ConvenienceForecastTests {
 		let model = HoltWintersModel<Double>(seasonalPeriods: 12)
 
 		// Should throw insufficientData error
-		#expect(throws: ForecastError.self) {
+		#expect {
 			_ = try model.forecast(timeSeries: timeSeries, periods: 6)
+		} throws: { error in
+			guard case let ForecastError.insufficientData(required, got) = error else { return false }
+			return required == 24 && got == 10
 		}
 
-		#expect(throws: ForecastError.self) {
+		#expect {
 			_ = try model.forecastWithConfidence(timeSeries: timeSeries, periods: 6, confidenceLevel: 0.95)
+		} throws: { error in
+			guard case let ForecastError.insufficientData(required, got) = error else { return false }
+			return required == 24 && got == 10
 		}
 	}
 }

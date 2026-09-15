@@ -299,8 +299,11 @@ struct NumericalDifferentiationTests {
 
 		let point = VectorN([0.0, 1.0])
 
-		#expect(throws: OptimizationError.self) {
+		#expect {
 			_ = try numericalGradient(badFunction, at: point)
+		} throws: { error in
+			guard case let OptimizationError.nonFiniteValue(message) = error else { return false }
+			return message == "Function returned non-finite value at point"
 		}
 	}
 
@@ -311,8 +314,11 @@ struct NumericalDifferentiationTests {
 						[2.0, 4.0]]
 		let vector = [1.0, 2.0]
 
-		#expect(throws: OptimizationError.self) {
+		#expect {
 			_ = try solveLinearSystem(matrix: singular, vector: vector)
+		} throws: { error in
+			guard case let OptimizationError.singularMatrix(message) = error else { return false }
+			return message == "Column 1 is entirely zero; the matrix is singular"
 		}
 	}
 

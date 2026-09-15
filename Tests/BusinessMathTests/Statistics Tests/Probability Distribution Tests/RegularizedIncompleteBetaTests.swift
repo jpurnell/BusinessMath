@@ -126,28 +126,36 @@ struct RegularizedIncompleteBetaTests {
 
 	@Test("x < 0 throws invalidInput")
 	func testNegativeXThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "x must be in [0, 1]", value: "-0.1", expectedRange: "[0, 1]")
+		) {
 			let _: Double = try regularizedIncompleteBeta(x: -0.1, a: 2.0, b: 3.0)
 		}
 	}
 
 	@Test("x > 1 throws invalidInput")
 	func testXGreaterThanOneThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "x must be in [0, 1]", value: "1.1", expectedRange: "[0, 1]")
+		) {
 			let _: Double = try regularizedIncompleteBeta(x: 1.1, a: 2.0, b: 3.0)
 		}
 	}
 
 	@Test("a ≤ 0 throws invalidInput")
 	func testNonPositiveAThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Shape parameter a must be positive", value: "0.0", expectedRange: "(0, ∞)")
+		) {
 			let _: Double = try regularizedIncompleteBeta(x: 0.5, a: 0.0, b: 3.0)
 		}
 	}
 
 	@Test("b ≤ 0 throws invalidInput")
 	func testNonPositiveBThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(
+			throws: BusinessMathError.invalidInput(message: "Shape parameter b must be positive", value: "-1.0", expectedRange: "(0, ∞)")
+		) {
 			let _: Double = try regularizedIncompleteBeta(x: 0.5, a: 2.0, b: -1.0)
 		}
 	}

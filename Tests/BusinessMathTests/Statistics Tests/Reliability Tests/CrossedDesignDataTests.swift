@@ -57,7 +57,9 @@ struct CrossedDesignDataTests {
 
     @Test("Mismatched value count throws mismatchedDimensions")
     func testMismatchedValueCountThrows() throws {
-        #expect(throws: BusinessMathError.self) {
+        #expect(
+        	throws: BusinessMathError.mismatchedDimensions(message: "Value count must equal the product of dimensions", expected: "6", actual: "3")
+        ) {
             let _ = try CrossedDesignData<Double>(
                 values: [1.0, 2.0, 3.0],
                 facetNames: ["p", "raters"],
@@ -68,7 +70,9 @@ struct CrossedDesignDataTests {
 
     @Test("Mismatched facet names count throws mismatchedDimensions")
     func testMismatchedFacetNamesThrows() throws {
-        #expect(throws: BusinessMathError.self) {
+        #expect(
+        	throws: BusinessMathError.mismatchedDimensions(message: "Number of facet names must equal number of dimensions", expected: "2", actual: "3")
+        ) {
             let _ = try CrossedDesignData<Double>(
                 values: [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
                 facetNames: ["p", "raters", "items"],
@@ -79,7 +83,9 @@ struct CrossedDesignDataTests {
 
     @Test("Empty facet names throws insufficientData")
     func testEmptyFacetNamesThrows() throws {
-        #expect(throws: BusinessMathError.self) {
+        #expect(
+        	throws: BusinessMathError.insufficientData(required: 1, actual: 0, context: "CrossedDesignData requires at least one facet")
+        ) {
             let _ = try CrossedDesignData<Double>(
                 values: [],
                 facetNames: [],
@@ -90,7 +96,9 @@ struct CrossedDesignDataTests {
 
     @Test("Dimension of zero throws mismatchedDimensions")
     func testZeroDimensionThrows() throws {
-        #expect(throws: BusinessMathError.self) {
+        #expect(
+        	throws: BusinessMathError.mismatchedDimensions(message: "Dimension for 'p' must be at least 1", expected: ">= 1", actual: "0")
+        ) {
             let _ = try CrossedDesignData<Double>(
                 values: [],
                 facetNames: ["p"],

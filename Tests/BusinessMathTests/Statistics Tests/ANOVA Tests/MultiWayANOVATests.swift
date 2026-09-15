@@ -163,7 +163,9 @@ struct MultiWayANOVATests {
             dimensions: [2, 1]
         )
 
-        #expect(throws: BusinessMathError.self) {
+        #expect(
+        	throws: BusinessMathError.insufficientData(required: 2, actual: 1, context: "Multi-way ANOVA requires at least 2 levels for facet 'b'")
+        ) {
             let _ = try multiWayANOVA(data)
         }
     }

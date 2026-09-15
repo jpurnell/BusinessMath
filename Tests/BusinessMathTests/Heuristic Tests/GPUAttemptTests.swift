@@ -162,8 +162,11 @@ struct GPUAttemptResolutionTests {
 		let abandonment = GPUAttemptAbandonment(seedPromiseBroken: true, underlying: QueueExhausted())
 		let outcome = GPUAttemptOutcome<Int>.abandoned(abandonment)
 
-		#expect(throws: OptimizationError.self) {
+		#expect {
 			try outcome.resultOrCPUFallback(operation: "test dispatch")
+		} throws: { error in
+			guard case let OptimizationError.invalidInput(message) = error else { return false }
+			return message == "test dispatch failed on a seeded run, and falling back to the CPU would return a different answer for the same seed — the kernels compute in Float where the CPU path computes in Double. Underlying failure: command queue exhausted"
 		}
 	}
 
@@ -195,8 +198,11 @@ struct GPUAttemptResolutionTests {
 		let abandonment = GPUAttemptAbandonment(seedPromiseBroken: true, underlying: nil)
 		let outcome = GPUAttemptOutcome<Int>.abandoned(abandonment)
 
-		#expect(throws: OptimizationError.self) {
+		#expect {
 			try outcome.resultOrCPUFallback(operation: "test dispatch")
+		} throws: { error in
+			guard case let OptimizationError.invalidInput(message) = error else { return false }
+			return message == "test dispatch failed on a seeded run, and falling back to the CPU would return a different answer for the same seed — the kernels compute in Float where the CPU path computes in Double. Underlying failure: no result"
 		}
 	}
 }

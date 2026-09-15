@@ -180,7 +180,9 @@ struct GeneralizedDStudyTests {
     func testMismatchedDesignKeysThrows() throws {
         let gResult = try threeFacetGResult()
 
-        #expect(throws: BusinessMathError.self) {
+        #expect(
+        	throws: BusinessMathError.invalidInput(message: "Design sizes must match non-object facets", value: "[\"raters\", \"wrong\"]", expectedRange: "[\"items\", \"raters\"]")
+        ) {
             let _ = try generalizedDStudy(gResult, designSizes: ["raters": 3, "wrong": 2])
         }
     }
@@ -189,7 +191,9 @@ struct GeneralizedDStudyTests {
     func testExtraDesignKeyThrows() throws {
         let gResult = try threeFacetGResult()
 
-        #expect(throws: BusinessMathError.self) {
+        #expect(
+        	throws: BusinessMathError.invalidInput(message: "Design sizes must match non-object facets", value: "[\"extra\", \"items\", \"raters\"]", expectedRange: "[\"items\", \"raters\"]")
+        ) {
             let _ = try generalizedDStudy(
                 gResult,
                 designSizes: ["raters": 3, "items": 2, "extra": 5]
@@ -201,7 +205,9 @@ struct GeneralizedDStudyTests {
     func testDesignSizeLessThanOneThrows() throws {
         let gResult = try threeFacetGResult()
 
-        #expect(throws: BusinessMathError.self) {
+        #expect(
+        	throws: BusinessMathError.invalidInput(message: "Design size must be at least 1", value: "raters: 0", expectedRange: ">= 1")
+        ) {
             let _ = try generalizedDStudy(gResult, designSizes: ["raters": 0, "items": 2])
         }
     }

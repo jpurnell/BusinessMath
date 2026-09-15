@@ -150,19 +150,25 @@ struct RollingOriginBacktestTests {
 
     @Test("Series too short throws")
     func tooShort() throws {
-        #expect(throws: BacktestError.self) {
+        #expect {
             _ = try self.indexSeries(4).backtest(
                 NaiveForecaster<Double>(),
                 config: BacktestConfig(initialTrainSize: 5, horizon: 2, step: 1))
+        } throws: { error in
+        	guard case let BacktestError.seriesTooShort(required, got) = error else { return false }
+        	return required == 7 && got == 4
         }
     }
 
     @Test("Invalid config throws")
     func invalidConfig() throws {
-        #expect(throws: BacktestError.self) {
+        #expect {
             _ = try self.indexSeries(10).backtest(
                 NaiveForecaster<Double>(),
                 config: BacktestConfig(initialTrainSize: 5, horizon: 0, step: 1))
+        } throws: { error in
+        	guard case let BacktestError.invalidConfig(v0) = error else { return false }
+        	return v0 == "initialTrainSize, horizon, and step must be ≥ 1"
         }
     }
 }
