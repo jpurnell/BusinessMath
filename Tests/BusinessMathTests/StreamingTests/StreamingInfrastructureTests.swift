@@ -146,10 +146,9 @@ struct StreamingInfrastructureTests {
         #expect(identical(buffers[2], [7.0, 8.0]))
     }
 
-    // @Test("Buffer elements with time window")
-    // func bufferWithTimeWindow() async throws {
-    //     // Deferred - requires concurrent-safe iterator management
-    // }
+    // There is no `buffer(duration:)` to test. Its declaration is commented out at
+    // `AsyncValueStream.swift:359` along with the `AsyncTimeBufferSequence` it would
+    // return, so the stub that stood here named a capability the library does not ship.
 
     // MARK: - Transformation Tests
 
@@ -264,31 +263,77 @@ struct StreamingInfrastructureTests {
     }
 
     // MARK: - Backpressure Tests
-    // Note: Throttle and Debounce deferred to Phase 2.5 due to timing complexity
 
-    // @Test("Throttle stream to limit rate")
-    // func throttleStream() async throws {
-    //     // Deferred - timing-based operations need more work
-    // }
+    /// `throttle` is a delay, not a filter: every element arrives, and in order.
+    ///
+    /// Worth pinning, because the name usually means the opposite. Combine's `throttle`
+    /// discards all but one element per interval; `AsyncThrottleSequence` sleeps out the
+    /// remainder of the interval and then yields the element it was holding. A test that
+    /// only counted elements would pass against either behaviour.
+    @Test("Throttling delays every element and drops none", .timeLimit(testHangGuard))
+    func throttlePreservesEveryElement() async throws {
+        let values = [1.0, 2.0, 3.0, 4.0, 5.0]
+        let stream = AsyncValueStream(values)
 
-    // @Test("Debounce stream to suppress rapid values")
-    // func debounceStream() async throws {
-    //     // Deferred - requires concurrent-safe iterator management
-    // }
+        let collector = ProgressCollector<Double>()
+        for try await value in stream.throttle(interval: .milliseconds(20)) {
+            collector.append(value)
+        }
+
+        let collected = collector.getItems()
+
+        // Throttling changes when an element is yielded, never which one or what it holds,
+        // so the claim is bit-for-bit.
+        #expect(identical(collected, values))
+    }
+
+    /// The rate limit, asserted as a *lower* bound on elapsed time and gated on
+    /// `RUN_BENCHMARKS` anyway.
+    ///
+    /// An upper bound — "five values finished inside 200ms" — is a statement about the
+    /// machine and fails under load; that flakiness is why this operator was left
+    /// untested for two phases. A lower bound is a statement about the operator:
+    /// `next()` sleeps the remainder of the interval before every element after the
+    /// first, and `Task.sleep(for:)` is documented to sleep *at least* as long as asked,
+    /// so a slow machine can only make this more true.
+    ///
+    /// It still reads the wall clock, and `AsyncThrottleSequence` holds a
+    /// `ContinuousClock` that no caller can substitute — there is no logical clock to
+    /// drive it from. So it takes the house treatment for a wall-clock assertion:
+    /// `// TIMING:` and `.benchmarkOnly`, the same pair `HangGuard` prescribes. The
+    /// content and ordering claims above stay in the live suite, where they belong,
+    /// because they read no clock at all.
+    @Test("Five values throttled to 20ms cannot finish inside four intervals",
+          .timeLimit(testHangGuard), .benchmarkOnly)
+    func throttleEnforcesTheMinimumGap() async throws {
+        let values = [1.0, 2.0, 3.0, 4.0, 5.0]
+        let interval: Duration = .milliseconds(20)
+        let stream = AsyncValueStream(values)
+
+        let clock = ContinuousClock()
+        let start = clock.now
+        let collector = ProgressCollector<Double>()
+        for try await value in stream.throttle(interval: interval) {
+            collector.append(value)
+        }
+        let elapsed: Duration = clock.now - start
+
+        // Four gaps between five elements; the first element is not delayed.
+        let gaps: Int = values.count - 1
+        let minimumElapsed: Duration = interval * gaps
+        let count: Int = collector.getItems().count
+
+        #expect(count == values.count, "\(count) values came through, not \(values.count)")
+        // TIMING: intentional wall-clock assertion — a floor, which load cannot break
+        #expect(elapsed >= minimumElapsed,
+                "five throttled values took \(elapsed), under the \(minimumElapsed) floor")
+    }
 
     // MARK: - Combining Streams Tests
-    // Note: Merge and Zip will be implemented in Phase 2.5 (Stream Composition)
-    // They require more sophisticated concurrent iterator management
-
-    // @Test("Merge two streams")
-    // func mergeStreams() async throws {
-    //     // Deferred to Phase 2.5
-    // }
-
-    // @Test("Zip two streams together")
-    // func zipStreams() async throws {
-    //     // Deferred to Phase 2.5
-    // }
+    //
+    // `merge(with:)`, `zip(with:)` and `debounce(interval:)` shipped in Phase 2.5 and live
+    // in `StreamingComposition.swift`; `StreamingCompositionTests` covers them. The stubs
+    // that stood here described them as deferred, which stopped being true.
 
     // MARK: - Memory Efficiency Tests
 

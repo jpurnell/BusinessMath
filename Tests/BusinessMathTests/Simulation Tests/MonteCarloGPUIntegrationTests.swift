@@ -250,8 +250,16 @@ struct MonteCarloGPUIntegrationTests {
         #endif
     }
 
-	@Test("Edge case: constant distribution", .disabled("Metal initialization quirk in test environment"))
-    func disabledTestConstantDistribution() throws {
+	/// Re-enabled: the "Metal initialization quirk" was a `try?`, and it has been fixed.
+	///
+	/// Both this test and `reproducibilityWithSeed` below were disabled for a quirk that
+	/// made "direct GPU device calls produce incorrect results on initial runs". That was
+	/// commit 4470f7e's defect: a `try?` in the routing path swallowed a GPU failure and
+	/// silently fell through to the CPU mid-run, so the first calls in a process came back
+	/// off a different generator than the later ones. With the `try?` gone there is no
+	/// warm-up to do; both pass on a cold device, three consecutive cold runs measured.
+	@Test("Edge case: constant distribution")
+    func constantDistribution() throws {
         #if canImport(Metal)
         let gpuDevice = try #require(MonteCarloGPUDevice(),
                                      "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
@@ -730,12 +738,13 @@ struct MonteCarloGPUIntegrationTests {
         #expect(Bool(true)) // Always pass
     }
 
-    // DISABLED: This test exhibits a Metal initialization quirk where direct GPU device
-    // calls produce incorrect results on initial runs. However, production code via
-    // MonteCarloSimulation works correctly (see other passing GPU tests). This appears
-    // to be a Metal shader caching/initialization issue specific to test environments.
-    @Test("Reproducibility with seed", .disabled("Metal initialization quirk in test environment - GPU device calls produce incorrect results on initial runs, but production code via MonteCarloSimulation works correctly"))
-    func disabledTestReproducibility() throws {
+    /// Re-enabled with its warm-up removed — see `constantDistribution` above.
+    ///
+    /// Two throwaway simulations used to run first, commented "skip first 2 runs due to
+    /// Metal initialization quirks on fresh device". They are gone: the first call on a
+    /// cold device now reproduces exactly, which is what the test was always meant to say.
+    @Test("Reproducibility with seed")
+    func reproducibilityWithSeed() throws {
         #if canImport(Metal)
         let gpuDevice = try #require(MonteCarloGPUDevice(),
                                      "this suite runs only where Metal works, so the GPU path cannot be unavailable here")
@@ -747,12 +756,6 @@ struct MonteCarloGPUIntegrationTests {
             (4, 0, 0.0)  // Just return input[0]
         ]
         let seed: UInt64 = 42
-
-        // IMPORTANT: Skip first 2 runs due to Metal initialization quirks on fresh device
-        // Production code (via MonteCarloSimulation) works correctly; this only affects
-        // direct GPU device testing. Warm up by running a few simulations first.
-        _ = try gpuDevice.runSimulation(distributions: distributions, modelBytecode: bytecode, iterations: 10, seed: 1)
-        _ = try gpuDevice.runSimulation(distributions: distributions, modelBytecode: bytecode, iterations: 10, seed: 2)
 
         // Now test reproducibility: same seed should produce identical results
         let results1 = try gpuDevice.runSimulation(

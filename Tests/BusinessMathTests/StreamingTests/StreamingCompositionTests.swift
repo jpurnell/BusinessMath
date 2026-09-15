@@ -134,21 +134,59 @@ struct StreamingCompositionTests {
         #expect(abs(debounced[0] - 3.0) < 1e-6)
     }
 
-	@Test("Debounce with separated values", .timeLimit(testHangGuard), .disabled("This should be run manually, as it is inherently flaky in a sequential test environment."))
-    func debounceWithSeparatedValues() async throws {
-        // Use more generous timing to avoid flakiness in parallel test runs
-        // Values are separated by 100ms with 30ms debounce interval
-        let stream = AsyncDelayedStream([1.0, 2.0], delay: .milliseconds(100))
+	/// The part of debouncing that no scheduler can change.
+	///
+	/// The exact-count claim below this one asserts that two values 100ms apart both
+	/// survive a 30ms debounce. That is true of the operator and false of a loaded
+	/// machine: if the consumer is not scheduled inside the gap, the two coalesce and one
+	/// emission is lost. It was `.disabled` for that, with a note to run it by hand.
+	///
+	/// These three properties hold under any scheduling at all. The stream ends, and the
+	/// end is unbounded silence, so the last value always survives; debouncing selects
+	/// from the input rather than computing anything, so the output is a subsequence in
+	/// order; and it can only drop, never duplicate.
+	@Test("Debouncing drops and preserves order, whatever the scheduler does", .timeLimit(testHangGuard))
+	func debouncePreservesTheLastValueAndTheOrder() async throws {
+		let values = [1.0, 2.0]
+		let stream = AsyncDelayedStream(values, delay: .milliseconds(100))
 
-        var debounced: [Double] = []
-        for try await value in stream.debounce(interval: .milliseconds(30)) {
-            debounced.append(value)
-        }
+		var debounced: [Double] = []
+		for try await value in stream.debounce(interval: .milliseconds(30)) {
+			debounced.append(value)
+		}
 
-        // With 100ms between values and 30ms debounce, both should emit
-        // (each value has >30ms of silence after it to trigger debounce emission)
-        #expect(debounced.count == 2)
-    }
+		let count: Int = debounced.count
+		#expect(count >= 1, "debouncing emitted nothing at all")
+		#expect(count <= values.count, "debouncing emitted \(count) values from \(values.count)")
+
+		// Unbounded silence follows the final value, so it cannot be debounced away.
+		let last: Double = try #require(debounced.last)
+		#expect(last.isEqual(to: 2.0), "the last emitted value was \(last)")
+
+		// Whatever survived did so in input order, unaltered.
+		let ordered: Bool = zip(debounced, debounced.dropFirst()).allSatisfy { $0 < $1 }
+		#expect(ordered, "emissions came out in the order \(debounced)")
+		#expect(debounced.allSatisfy { values.contains($0) }, "debouncing invented \(debounced)")
+	}
+
+	/// The exact-count claim, moved from `.disabled` to opt-in.
+	///
+	/// Two values 100ms apart under a 30ms debounce should both emit: each has more than
+	/// 30ms of silence after it. Whether they do is a statement about the scheduler as
+	/// much as about the operator, which is why B4 of the test-review roadmap put every
+	/// assertion of this shape behind `RUN_BENCHMARKS`. `.disabled` said the same thing
+	/// with no way to ever run it.
+	@Test("Two values 100ms apart both survive a 30ms debounce", .timeLimit(testHangGuard), .benchmarkOnly)
+	func debounceWithSeparatedValues() async throws {
+		let stream = AsyncDelayedStream([1.0, 2.0], delay: .milliseconds(100))
+
+		var debounced: [Double] = []
+		for try await value in stream.debounce(interval: .milliseconds(30)) {
+			debounced.append(value)
+		}
+
+		#expect(debounced.count == 2, "debouncing emitted \(debounced)")
+	}
 
     // MARK: - CombineLatest Tests
 

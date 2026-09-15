@@ -499,27 +499,11 @@ struct VectorSpaceTests {
 	
 		// MARK: - Matrix-Vector Operations Tests
 	
-//	@Test("Matrix-vector multiplication")
-//	func matrixVectorMultiplication() {
-//		let v = VectorN<Double>([1.0, 2.0])
-//		let matrix = [
-//			VectorN<Double>([1.0, 0.0]),  // [1 0]
-//			VectorN<Double>([0.0, 1.0]),  // [0 1]
-//			VectorN<Double>([1.0, 1.0])   // [1 1]
-//		]
-//		
-//		let result = v.multiply(by: matrix)
-//		#expect(result != nil)
-//		#expect(result!.count == 3)
-//		#expect(result![0] == 1.0)  // 1*1 + 2*0
-//		#expect(result![1] == 2.0)  // 1*0 + 2*1
-//		#expect(result![2] == 3.0)  // 1*1 + 2*1
-//		
-//			// Invalid dimensions
-//		let badMatrix = [VectorN<Double>([1.0])]
-//		let badResult = v.multiply(by: badMatrix)
-//		#expect(badResult == nil)
-//	}
+	// `VectorN` has no `multiply(by:)` taking an array of row vectors — the method this
+	// stub called has never existed on any vector type in the package (the only
+	// `multiply` is `SparseMatrix.multiply(vector:)`, which takes `[Double]` and is
+	// tested with the rest of that type). Left-multiplying a vector by a matrix of rows
+	// is spelled `outerProduct(with:)` and `dot(_:)` here, both covered below.
 	
 	@Test("Outer product")
 	func outerProduct() {
@@ -540,34 +524,29 @@ struct VectorSpaceTests {
 	
 		// MARK: - Convenience Extensions Tests
 	
-//	@Test("Convenience vector creation")
-//	func convenienceVectorCreation() {
-//			// Variadic arguments
-//		let v1 = VectorN<Double>.vector(1.0, 2.0, 3.0)
-//		#expect(v1 != nil)
-//		#expect(v1!.count == 3)
-//		#expect(v1![0] == 1.0)
-//		
-//			// Filled vector
-//		let v2 = VectorN<Double>.filled(with: 7.0, dimension: 4)
-//		#expect(v2 != nil)
-//		#expect(v2!.count == 4)
-//		#expect(v2![0] == 7.0)
-//		#expect(v2![3] == 7.0)
-//		
-//			// Random vector
-//		let v3 = VectorN<Double>.random(dimension: 5)
-//		#expect(v3 != nil)
-//		#expect(v3!.count == 5)
-//		#expect(v3!.isFinite == true)
-//		
-//			// Random vector in range
-//		let v4 = VectorN<Double>.random(in: -1.0...1.0, dimension: 3)
-//		#expect(v4 != nil)
-//		#expect(v4!.count == 3)
-//		#expect(v4!.min >= -1.0)
-//		#expect(v4!.max <= 1.0)
-//	}
+	/// The two factory methods that return `nil`, and the one nothing else calls.
+	///
+	/// `filled(with:dimension:)` has covered happy paths elsewhere in this suite; its
+	/// refusal on a negative dimension does not. `vector(_:)` had no test at all — the
+	/// variadic factory was reachable only through this commented-out stub.
+	@Test("The variadic and filled factories, including the inputs they refuse")
+	func convenienceVectorCreation() throws {
+		let fromVariadic = try #require(VectorN<Double>.vector(1.0, 2.0, 3.0))
+		#expect(fromVariadic.count == 3, "the variadic factory built \(fromVariadic.count) components")
+		#expect(identical(fromVariadic.toArray(), [1.0, 2.0, 3.0]))
+
+		// No components is not a zero-dimensional vector; it is a caller mistake, and the
+		// factory refuses rather than handing back something indistinguishable from `.zero`.
+		#expect(VectorN<Double>.vector() == nil, "the variadic factory accepted no arguments")
+
+		let sevens = try #require(VectorN<Double>.filled(with: 7.0, dimension: 4))
+		#expect(sevens.count == 4, "filled built \(sevens.count) components")
+		#expect(identical(sevens.toArray(), [7.0, 7.0, 7.0, 7.0]))
+
+		// A negative dimension has no vector to describe.
+		#expect(VectorN<Double>.filled(with: 7.0, dimension: -1) == nil,
+				"filled accepted a negative dimension")
+	}
 	
 		// MARK: - Scalar Type Conformance Tests
 	
@@ -616,75 +595,49 @@ struct VectorSpaceTests {
 	
 		// MARK: - Performance Tests
 	
-//	@Test("VectorN performance", .tags(.performance))
-//	func vectorNPerformance() async throws {
-//		let size = 1000
-//		let v1 = VectorN<Double>(repeating: 1.0, count: size)
-//		let v2 = VectorN<Double>(repeating: 2.0, count: size)
-//		
-//			// Measure addition
-//		try await #measure(iterations: 1000) {
-//			_ = v1 + v2
-//		}
-//		
-//			// Measure dot product
-//		try await #measure(iterations: 1000) {
-//			_ = v1.dot(v2)
-//		}
-//		
-//			// Measure norm
-//		try await #measure(iterations: 1000) {
-//			_ = v1.norm
-//		}
-//	}
-//	
-//	@Test("Vector2D vs VectorN performance", .tags(.performance))
-//	func vector2DvsVectorNPerformance() async throws {
-//		let iterations = 10000
-//		
-//			// Vector2D
-//		let v2d1 = Vector2D<Double>(x: 1.0, y: 2.0)
-//		let v2d2 = Vector2D<Double>(x: 3.0, y: 4.0)
-//		
-//		let v2dTime = try await #measure(iterations: iterations) {
-//			_ = v2d1 + v2d2
-//			_ = v2d1.dot(v2d2)
-//			_ = v2d1.norm
-//		}
-//		
-//			// VectorN with 2 dimensions
-//		let vn1 = VectorN<Double>([1.0, 2.0])
-//		let vn2 = VectorN<Double>([3.0, 4.0])
-//		
-//		let vnTime = try await #measure(iterations: iterations) {
-//			_ = vn1 + vn2
-//			_ = vn1.dot(vn2)
-//			_ = vn1.norm
-//		}
-//		
-//			// Vector2D should be faster due to compile-time optimization
-//		#expect(v2dTime < vnTime * 1.5)  // Allow some overhead
-//	}
+	// Two wall-clock performance stubs stood here: one timing `VectorN` against itself,
+	// one asserting `Vector2D` finishes inside 1.5× the time `VectorN` takes. Neither is a
+	// correctness claim, and B4 of the test-review roadmap moved this whole class of
+	// assertion behind `.benchmarkOnly` precisely because a relative-speed bound measures
+	// the machine rather than the code. Restoring them would reintroduce what that phase
+	// removed, so they are deleted instead.
 	
 		// MARK: - Edge Cases Tests
 	
-//	@Test("Empty vector operations")
-//	func emptyVectorOperations() {
-//		let empty = VectorN<Double>.zero
-//		
-//		#expect(empty.count == 0)
-//		#expect(empty.norm == 0.0)
-//		#expect(empty.sum == 0.0)
-//		#expect(empty.mean == 0.0)
-//		#expect(empty.standardDeviation == 0.0)
-//		
-//			// Operations with empty vectors
-//		let result = empty + empty
-//		#expect(result.count == 0)
-//		
-//		let dot = empty.dot(empty)
-//		#expect(dot == 0.0)
-//	}
+	/// The empty vector, which `VectorN.zero` returns, and what every reducer does with it.
+	///
+	/// The answers are not all of a kind, and that is the point of pinning them. `min` and
+	/// `max` return `nil` on an empty vector — no element, no answer. `mean` and
+	/// `standardDeviation` return `0`, a value the empty vector does not actually have.
+	/// Both choices are documented; the asymmetry between them is not obvious from either
+	/// call site, so it is written down here rather than rediscovered.
+	@Test("Every reducer on the empty vector, including where they disagree about nil")
+	func emptyVectorOperations() {
+		let empty = VectorN<Double>.zero
+
+		#expect(empty.count == 0, "the zero vector had \(empty.count) components")
+		#expect(empty.norm.isEqual(to: 0.0), "its norm was \(empty.norm)")
+		#expect(empty.sum.isEqual(to: 0.0), "its sum was \(empty.sum)")
+
+		// No element to return, so no answer is invented.
+		#expect(empty.min == nil, "min on the empty vector returned a value")
+		#expect(empty.max == nil, "max on the empty vector returned a value")
+
+		// Whereas these two do return a value, by documented choice.
+		let mean: Double = empty.mean
+		let spread: Double = empty.standardDeviation()
+		#expect(mean.isEqual(to: 0.0), "the mean of no components was \(mean)")
+		#expect(spread.isEqual(to: 0.0), "the standard deviation of no components was \(spread)")
+
+		// The empty vector is the additive identity at every dimension, so adding it to
+		// itself stays empty rather than falling into the dimension-mismatch NaN branch.
+		let result = empty + empty
+		#expect(result.count == 0, "empty + empty gave \(result.count) components")
+
+		// An empty sum of products is zero, and the guard says so explicitly.
+		let dot: Double = empty.dot(empty)
+		#expect(dot.isEqual(to: 0.0), "the dot product of two empty vectors was \(dot)")
+	}
 	
 	@Test("Vector with NaN and infinity")
 	func vectorWithNaNandInfinity() {
@@ -702,29 +655,39 @@ struct VectorSpaceTests {
 		#expect(abs(sum[3] - 9.0) < 1e-6)  // 4 + 5
 	}
 	
-//	@Test("Large dimension vectors")
-//	func largeDimensionVectors() {
-//		let dimension = 10000
-//		let v1 = VectorN<Double>(repeating: 1.0, count: dimension)
-//		let v2 = VectorN<Double>(repeating: 2.0, count: dimension)
-//		
-//			// Basic operations should work
-//		let sum = v1 + v2
-//		#expect(sum.count == dimension)
-//		#expect(sum[0] == 3.0)
-//		#expect(sum[dimension - 1] == 3.0)
-//		
-//		let dot = v1.dot(v2)
-//		#expect(dot == Double(dimension) * 2.0)  // 1*2 for each component
-//		
-//		let norm = v1.norm
-//		#expect(abs(norm - sqrt(Double(dimension))) < 1e-10)
-//		
-//			// Statistics
-//		#expect(v1.sum == Double(dimension))
-//		#expect(v1.mean == 1.0)
-//		#expect(v1.standardDeviation == 0.0)
-//	}
+	/// Ten thousand components, and every expectation here is exact.
+	///
+	/// Every intermediate is an integer below 2⁵³, so binary floating point holds each one
+	/// without rounding: the sums, the dot product, and √10000 = 100 alike. A tolerance
+	/// would be looser than the arithmetic, and would pass against an implementation that
+	/// drifted.
+	@Test("Ten thousand components, with every answer exact")
+	func largeDimensionVectors() {
+		let dimension = 10_000
+		let v1 = VectorN<Double>(repeating: 1.0, count: dimension)
+		let v2 = VectorN<Double>(repeating: 2.0, count: dimension)
+
+		let sum = v1 + v2
+		#expect(sum.count == dimension, "the sum had \(sum.count) components")
+		#expect(sum[0].isEqual(to: 3.0), "first component was \(sum[0])")
+		#expect(sum[dimension - 1].isEqual(to: 3.0), "last component was \(sum[dimension - 1])")
+
+		// 1·2 summed ten thousand times.
+		let dot: Double = v1.dot(v2)
+		#expect(dot.isEqual(to: 20_000.0), "the dot product was \(dot)")
+
+		// √(1² × 10000) = 100, and 100 is exactly representable.
+		let norm: Double = v1.norm
+		#expect(norm.isEqual(to: 100.0), "the norm was \(norm)")
+
+		let total: Double = v1.sum
+		let mean: Double = v1.mean
+		let spread: Double = v1.standardDeviation()
+		#expect(total.isEqual(to: 10_000.0), "the sum was \(total)")
+		#expect(mean.isEqual(to: 1.0), "the mean was \(mean)")
+		// A constant vector has no spread at all, not merely a small one.
+		#expect(spread.isEqual(to: 0.0), "the standard deviation was \(spread)")
+	}
 	
 	@Test("Vector equality and hashability")
 	func vectorEqualityAndHashability() {
@@ -793,24 +756,10 @@ struct VectorSpaceTests {
 		#expect(abs(decodedV2D.y - 2.5) < 1e-6)
 	}
 	
-//	@Test("Vector description and debug strings")
-//	func vectorDescription() {
-//		let v = VectorN<Double>([1.0, 2.0, 3.0])
-//		let description = v.description
-//		let debugDescription = v.debugDescription
-//		
-//		#expect(description.contains("VectorN"))
-//		#expect(description.contains("1.0"))
-//		#expect(description.contains("3.0"))
-//		#expect(debugDescription.contains("VectorN"))
-//		
-//			// Vector2D description
-//		let v2d = Vector2D<Double>(x: 1.0, y: 2.0)
-//		let v2dDescription = v2d.description
-//		#expect(v2dDescription.contains("Vector2D"))
-//		#expect(v2dDescription.contains("x: 1.0"))
-//		#expect(v2dDescription.contains("y: 2.0"))
-//	}
+	// `VectorN` and `Vector2D` conform to neither `CustomStringConvertible` nor
+	// `CustomDebugStringConvertible`, so the `description`/`debugDescription` this stub
+	// asserted on do not exist. What the library actually ships is
+	// `formattedDescription()`, which seven tests elsewhere already cover.
 	
 		// MARK: - Cross Product Tests (3D specific)
 	
@@ -1077,7 +1026,13 @@ struct VectorSpaceTests {
 		#expect(abs(v2dNorm - sqrt(5.0)) < 1e-6)
 	}
 	
-	@Test(.disabled("Integration with existing math functions"))
+	/// Re-enabled: the trait carried no reason, only a title.
+	///
+	/// Nothing here is nondeterministic or slow — `hadamard`, scalar multiplication,
+	/// `mean`, `standardDeviation()` and `normalized()` on fixed literals — so there was
+	/// nothing to be disabled *for*. The `.disabled` string was the display name the
+	/// `@Test` never got.
+	@Test("Vectors compose with the elementwise, statistical and normalising members")
 	func integrationWithMathFunctions() {
 			// Test that vectors work with existing BusinessMath functions
 		let v = VectorN<Double>([1.0, 2.0, 3.0])
@@ -1186,7 +1141,14 @@ struct VectorSpaceTests {
 		#expect(abs(outer[2][2] - 18.0) < 1e-6) // 3*6
 	}
 	
-	@Test("Integration with probability distributions", .disabled("Statistical test with random variation - needs larger sample size or deterministic seeding"))
+	/// Re-enabled: the stated reason was not true of this test.
+	///
+	/// The trait blamed "random variation" and asked for deterministic seeding. There is
+	/// no randomness to seed: every sample is the fractional part of `i · φ`, a
+	/// low-discrepancy sequence that produces the identical thousand vectors on every
+	/// run and every platform. The bands below are fixed properties of that sequence,
+	/// not confidence intervals.
+	@Test("A golden-ratio sequence reproduces the uniform mean and variance")
 	func integrationWithProbabilityDistributions() {
 			// Generate deterministic vectors simulating Monte Carlo
 		let dimension = 3

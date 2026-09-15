@@ -354,11 +354,9 @@ extension AsyncSequence {
         AsyncBufferSequence(base: self, size: size)
     }
 
-    // Time-based buffering deferred to Phase 2.5
-    // /// Buffers elements within a time window
-    // public func buffer(duration: Duration) -> AsyncTimeBufferSequence<Self> {
-    //     AsyncTimeBufferSequence(base: self, duration: duration)
-    // }
+    // Time-based buffering is the one Phase 2.5 did not ship: there is no
+    // `buffer(duration:)` and no `AsyncTimeBufferSequence`. Size-based buffering above
+    // is the only form the library offers.
 }
 
 /// AsyncSequence that buffers elements up to a size limit before yielding.
@@ -427,10 +425,7 @@ public struct AsyncBufferSequence<Base: AsyncSequence>: AsyncSequence {
     }
 }
 
-// AsyncTimeBufferSequence deferred to Phase 2.5 - requires concurrent-safe iterator management
-// public struct AsyncTimeBufferSequence<Base: AsyncSequence>: AsyncSequence {
-//     // Implementation deferred
-// }
+// `AsyncTimeBufferSequence` was never written — see the note on `buffer(duration:)` above.
 
 // MARK: - Error Handling
 
@@ -592,11 +587,8 @@ extension AsyncSequence {
         AsyncThrottleSequence(base: self, interval: interval)
     }
 
-    // Debounce deferred to Phase 2.5 - requires concurrent-safe iterator management
-    // /// Debounces the stream, only emitting after the interval of silence
-    // public func debounce(interval: Duration) -> AsyncDebounceSequence<Self> {
-    //     AsyncDebounceSequence(base: self, interval: interval)
-    // }
+    // `debounce(interval:)` shipped in Phase 2.5 and is declared in
+    // `StreamingComposition.swift`, constrained to `Sendable` elements.
 }
 
 /// AsyncSequence that throttles emission rate to a maximum frequency.
@@ -673,33 +665,16 @@ public struct AsyncThrottleSequence<Base: AsyncSequence>: AsyncSequence {
     }
 }
 
-// AsyncDebounceSequence deferred to Phase 2.5 - requires concurrent-safe iterator management
-// public struct AsyncDebounceSequence<Base: AsyncSequence>: AsyncSequence {
-//     // Implementation deferred
-// }
+// `AsyncDebounceSequence` shipped in Phase 2.5; see `StreamingComposition.swift`.
 
 // MARK: - Combining Streams
-// Note: Merge and Zip deferred to Phase 2.5 (Stream Composition)
-// They require more sophisticated concurrent iterator management to avoid
-// capturing mutating self in task groups
-
-// extension AsyncSequence {
-//     /// Merges this stream with another stream
-//     public func merge<Other: AsyncSequence>(with other: Other) -> AsyncMergeSequence<Self, Other> where Other.Element == Element {
-//         AsyncMergeSequence(first: self, second: other)
-//     }
 //
-//     /// Zips this stream with another stream
-//     public func zip<Other: AsyncSequence>(with other: Other) -> AsyncZipSequence<Self, Other> {
-//         AsyncZipSequence(first: self, second: other)
-//     }
-// }
+// `merge(with:)` and `zip(with:)` shipped in Phase 2.5 and live in
+// `StreamingComposition.swift`, where the concurrent iterator management they need is
+// handled by a task group.
 
 // MARK: - Helper Functions
-// withTimeout deferred to Phase 2.5 - requires different approach for concurrent-safe implementation
-
-// private func withTimeout<T>(_ duration: Duration, operation: @escaping () async throws -> T) async throws -> T {
-//     // Implementation deferred
-// }
 //
-// private struct TimeoutError: Error {}
+// The `withTimeout` helper sketched here was never needed: Phase 2.5 shipped the
+// capability as `timeout(duration:)` in `StreamingComposition.swift`, built on a task
+// group rather than on a free function.

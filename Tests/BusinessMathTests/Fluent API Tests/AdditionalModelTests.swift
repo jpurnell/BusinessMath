@@ -250,34 +250,68 @@ struct SubscriptionBoxModelAdditionalTests {
 	}
 }
 
-@Suite("Validation (Optional) - Disabled until implemented")
-struct ValidationTests {
+@Suite("Out-of-range model inputs")
+struct OutOfRangeInputTests {
 
-	enum ValidationError: Error { case invalidRate, invalidCapacity, divisionByZero }
+	/// A churn rate above 1 drives the customer count negative, and nothing stops it.
+	///
+	/// Two disabled stubs stood here, both asserting that the initializers throw a
+	/// test-local `ValidationError` on nonsense input. They could never have passed:
+	/// `SaaSModel.init` and `ManufacturingModel.init` are not `throws`, and the library
+	/// has no error to throw — so the closures were non-throwing and the expectation was
+	/// unsatisfiable by construction. Adding validation is a source-breaking change to two
+	/// public initializers, and `churnRate` is a `var` besides, so a throwing `init` alone
+	/// would not close the hole. That decision belongs to 3.0.0.
+	///
+	/// What can be done now is state the requirement as an executable one. Churn above
+	/// 100% means the model loses more customers than it has: month 1 of a 100-customer
+	/// base at 1.2 churn with no acquisition is −20 customers. A negative headcount is the
+	/// plausible-but-wrong result this package's rules name directly, so the assertion is
+	/// written the way it should read, and marked as the known failure it currently is.
+	/// When validation lands, this stops being a known issue and starts being a test.
+	@Test("A churn rate above 100% produces a negative customer count")
+	func churnAboveOneGoesNegative() {
+		let model = SaaSModel(
+			initialMRR: 10_000,
+			churnRate: 1.2,
+			newCustomersPerMonth: 0,
+			averageRevenuePerUser: 100
+		)
 
-	@Test(.disabled("Enable after adding validation"))
-	func ratesAreWithinZeroToOne() throws {
-		// Assume initializers or setters throw on invalid rates
-		#expect(throws: ValidationError.self) {
-			_ = SaaSModel(
-				initialMRR: 10_000,
-				churnRate: 1.2, // invalid
-				newCustomersPerMonth: 100,
-				averageRevenuePerUser: 100
-			)
+		// 10,000 / 100 = 100 customers to start.
+		let monthOne: Double = model.calculateCustomerCount(forMonth: 1)
+
+		withKnownIssue("churnRate is unvalidated; rejecting it is a 3.0.0 API change") {
+			#expect(monthOne >= 0, "month 1 ended with \(monthOne) customers")
 		}
+
+		// And the value it does return, pinned, so the arithmetic above is not a guess:
+		// 100 − (100 × 1.2) + 0 = −20, exactly representable.
+		#expect(monthOne.isEqual(to: -20.0), "month 1 gave \(monthOne), not -20")
 	}
 
-	@Test(.disabled("Enable after adding validation"))
-	func zeroCapacityIsRejected() throws {
-		#expect(throws: ValidationError.self) {
-			_ = ManufacturingModel(
-				productionCapacity: 0, // invalid
-				sellingPricePerUnit: 50,
-				directMaterialCostPerUnit: 15,
-				directLaborCostPerUnit: 10,
-				monthlyOverhead: 150_000
-			)
-		}
+	/// Zero production capacity, which the division guards do handle.
+	///
+	/// The second stub assumed this case was unguarded. It is not: every quotient with
+	/// capacity or production underneath it returns 0 rather than dividing, so no
+	/// infinity escapes. Worth an assertion because the guards are the only thing
+	/// standing between this input and a non-finite unit cost.
+	@Test("Zero capacity returns zero from every quotient rather than an infinity")
+	func zeroCapacityDoesNotDivide() {
+		let model = ManufacturingModel(
+			productionCapacity: 0,
+			sellingPricePerUnit: 50,
+			directMaterialCostPerUnit: 15,
+			directLaborCostPerUnit: 10,
+			monthlyOverhead: 150_000
+		)
+
+		let unitCost: Double = model.calculateUnitCost(atCapacityUtilization: 1.0)
+		let overheadPerUnit: Double = model.calculateOverheadPerUnit(atProduction: 0)
+
+		#expect(unitCost.isFinite, "unit cost at zero capacity was \(unitCost)")
+		#expect(overheadPerUnit.isFinite, "overhead per unit at zero production was \(overheadPerUnit)")
+		#expect(unitCost.isEqual(to: 0.0), "unit cost at zero capacity was \(unitCost)")
+		#expect(overheadPerUnit.isEqual(to: 0.0), "overhead per unit was \(overheadPerUnit)")
 	}
 }

@@ -141,44 +141,59 @@ struct BranchAndBoundTests {
         #expect(result.status == IntegerSolutionStatus.infeasible || result.objectiveValue == Double.infinity)
     }
 
-    @Test("Node limit termination", .disabled("Test problem too easy - LP relaxation finds integer solution at root"))
+    /// Re-enabled, on a fixture whose constraint points the right way.
+    ///
+    /// The trait said "test problem too easy — LP relaxation finds integer solution at
+    /// root", which was the symptom. The cause was in the fixture: its knapsack was
+    /// written `.inequality { 5 - (2x₀ + 3x₁ + 4x₂ + 5x₃) }`, and
+    /// ``MultivariateConstraint/inequality(_:)`` is documented as feasible where
+    /// **g(x) ≤ 0**. So that closure did not say "weight at most 5"; it said weight *at
+    /// least* 5 — a constraint all-ones satisfies. The relaxation maximised straight to
+    /// the all-ones vertex, integral, at the root, in one node.
+    ///
+    /// The closure spelling itself is sound: `SimplexRelaxationSolver` recovers
+    /// coefficients from any constraint function by finite differences, and the same
+    /// knapsack written `{ w·x - capacity }` was measured returning exactly what
+    /// `.linearInequality(coefficients:rhs:sense:)` returns, node for node. Widening the
+    /// old fixture would not have helped, and neither would a convex objective — both
+    /// were measured at one node.
+    ///
+    /// This uses `Phase1_CutValidityTests`'s `cutRich` polytope instead, measured there
+    /// at **17 nodes with cutting planes disabled** — comfortably past a budget of five.
+    @Test("A polytope needing seventeen nodes stops at a budget of five")
     func testNodeLimitTermination() throws {
-        // Create a problem that requires branching
-        // Classic knapsack: weights = [2,3,4,5], values = [3,4,5,6], capacity = 5
-        // LP relaxation will have x[3] fractional
-        let spec = IntegerProgramSpecification.allBinary(dimension: 4)
-
-        // Maximize profit (minimize negative profit)
-        let objective: @Sendable (VectorN<Double>) -> Double = { x in
-            let arr = x.toArray()
-            return -(3.0*arr[0] + 4.0*arr[1] + 5.0*arr[2] + 6.0*arr[3])
-        }
-
-        // Weight constraint: 2*x[0] + 3*x[1] + 4*x[2] + 5*x[3] ≤ 5
+        // 5x + 4y ≤ 22, 3x + 7y ≤ 25, maximising x + y over the integers.
         let constraints: [MultivariateConstraint<VectorN<Double>>] = [
-            .inequality { x in
-                let arr = x.toArray()
-                return 5.0 - (2.0*arr[0] + 3.0*arr[1] + 4.0*arr[2] + 5.0*arr[3])
-            }
+            .linearInequality(coefficients: [5.0, 4.0], rhs: 22.0, sense: .lessOrEqual),
+            .linearInequality(coefficients: [3.0, 7.0], rhs: 25.0, sense: .lessOrEqual)
         ]
 
-        // Set very low node limit
+        let objective: @Sendable (VectorN<Double>) -> Double = { v in
+            let arr = v.toArray()
+            return arr[0] + arr[1]
+        }
+
+        let maxNodes = 5
+        // Cuts stay off: they take this same tree down to 5 nodes, which is the budget.
         let solver = BranchAndBoundSolver<VectorN<Double>>(
-            maxNodes: 5,
-            timeLimit: unboundedSolverTimeLimit
+            maxNodes: maxNodes,
+            timeLimit: unboundedSolverTimeLimit,
+            enableCuttingPlanes: false
         )
 
         let result = try solver.solve(
             objective: objective,
-            from: VectorN(Array(repeating: 0.5, count: 4)),
+            from: VectorN([2.5, 2.5]),
             subjectTo: constraints,
-            integerSpec: spec,
-            minimize: true
+            integerSpec: IntegerProgramSpecification.allInteger(dimension: 2),
+            minimize: false
         )
 
-        // Should hit node limit
-        #expect(result.status == IntegerSolutionStatus.nodeLimit)
-        #expect(result.nodesExplored <= 6)  // Should explore approximately maxNodes
+        #expect(result.status == IntegerSolutionStatus.nodeLimit,
+                "the solver finished with status \(result.status) after \(result.nodesExplored) nodes")
+        // The budget is tested on entry to each node, so the count stops at the limit.
+        #expect(result.nodesExplored <= maxNodes + 1,
+                "\(result.nodesExplored) nodes explored against a budget of \(maxNodes)")
     }
 
     @Test("Mixed integer problem (not all binary)")
