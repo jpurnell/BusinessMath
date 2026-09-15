@@ -96,6 +96,33 @@ the test, not by reading the code.
   no standard governs the choice — a growth rate is not an accrual, a compounding frequency is a
   period count rather than a day count, and a vesting cliff is a date in a contract.
 
+#### Tests
+
+Phase G of `project/plans/TEST_REVIEW_ROADMAP.md`. No library behaviour changes here, but two
+things a consumer may want to know came out of it.
+
+- **`SaaSModel` does not validate `churnRate`, and a rate above 1 yields a negative customer
+  count.** A 100-customer base at 1.2 churn with no acquisition ends month one at **−20
+  customers**, reported as a number rather than an error. Rejecting it means a throwing
+  initialiser on `SaaSModel` and `ManufacturingModel` — source-breaking, and defeated by the
+  `var` on `churnRate` besides — so the requirement is recorded as a `withKnownIssue` that
+  starts failing the day validation lands. Until then, check `churnRate` at your own call site.
+
+- **`throttle(interval:)` shipped untested and is now covered.** It is a *delay*, not a filter:
+  every element arrives, in order, unlike Combine's operator of the same name, which drops. If
+  you reached for it expecting Combine's semantics, it does not have them.
+
+Two `.disabled` GPU tests were re-enabled — the "Metal initialization quirk" they cited was the
+`try?` fixed in `4470f7e`, and both pass on a cold device with their warm-up runs removed.
+
+Every `.disabled` trait and commented-out `@Test` in the corpus is now gone. Of the **524**
+assertions that pinned only an error's *type*, 510 now name the error — 381 comparing the whole
+value, 126 matching the case and its payload where the type is not `Equatable`. The remaining 14
+keep the type-only form on purpose: `CancellationError` and a test-local fault type carry no
+payload, so the type is the whole claim, and ten sites already capture the error and match its
+case immediately below. The 24 `throws: Never.self` assertions are untouched — they assert that a
+call does *not* throw. 7,757 tests to 7,815.
+
 #### Not recorded here, deliberately
 
 Cutting-plane generation had a defect for the life of the feature — cuts were emitted over

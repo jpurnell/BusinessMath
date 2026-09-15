@@ -1,33 +1,43 @@
-# Handoff — 2026-09-13 (Phase A complete)
+# Handoff — 2026-09-15 (Phases A–G complete)
 
-**`main` is `06d997ad`, pushed and verified by `ls-remote`. `v3.0.0-alpha.5` is tagged and
-CI-green.** The work queue is **`project/plans/TEST_REVIEW_ROADMAP.md`** — read that before
-anything else; this file is the state and the traps, that file is the plan.
+**`main` is `077562dd`, pushed and verified by `ls-remote`.** The work queue is
+**`project/plans/TEST_REVIEW_ROADMAP.md`** — read that before anything else; this file is the
+state and the traps, that file is the plan.
 
-**Phases A, B, D and E are complete, and C4 with them. L19 is fixed.** What remains of C is three
-gate rules in a different repository, specified but not written — see §2.
+**Every phase of the test-review roadmap is done: A, B, D, E, F and G, with C4.** L19 is fixed.
+What remains of C is three gate rules in a different repository, specified but not written —
+see §2. **The roadmap has nothing open.** The next decision is whether to tag `v3.0.0-alpha.6`,
+whose CHANGELOG section is written but whose tag does not exist. An untagged CHANGELOG version
+puts the gate into its release profile — `--check all` currently reports **45 of 45 checkers**,
+including `build` and `test`, which is why a full gate run takes four minutes.
 
 ## State
 
 | | |
 |---|---|
-| branch | `main` at `06d997ad`, local == remote by `ls-remote` |
-| tags | latest `v3.0.0-alpha.5` = `82bff1ee`, verified on remote by `ls-remote` |
-| tests | **7,781 in 700 suites**, exit 0, **0 known issues** |
-| gate | `quality-gate --no-cache --check all --continue-on-failure` → 0 errors, 10 warnings |
-| working tree | clean |
+| branch | `main` at `077562dd`, local == remote by `ls-remote` |
+| tags | latest `v3.0.0-alpha.5` = `82bff1ee`, verified on remote by `ls-remote`. **alpha.6 is not tagged.** |
+| tests | **7,815 in 703 suites**, exit 0, **1 known issue** |
+| gate | `quality-gate --no-cache --check all --continue-on-failure` → 0 errors, 10–11 warnings |
+| working tree | the CHANGELOG/roadmap reconciliation for Phase G |
 | CI | green on `82bff1ee`; nothing since has been CI-verified |
 
-Nothing is unpushed. Everything above `82bff1ee` goes into alpha.6.
+Everything above `82bff1ee` goes into alpha.6.
 
-**The known-issue count is 0 for the first time in this programme** — L17's marker came out when
-L18 was fixed. If a run reports a known issue, something regressed; it is no longer the
-steady state.
+**The one known issue is deliberate and new in Phase G.** `SaaSModel` does not validate
+`churnRate`, and a rate above 1 drives the customer count negative — 100 customers at 1.2 churn
+with no acquisition ends month one at −20. Rejecting it is a source-breaking change to two public
+initialisers, so the requirement is recorded as a `withKnownIssue` that starts failing the day
+validation lands. **A run reporting exactly one known issue is the steady state; two is a
+regression.**
 
-**The 10 gate warnings are the standing set** — all `[test-quality]`, all one class ("claims an
-improvement but asserts `<=`/`>=`, which an unchanged implementation also satisfies"), in ten
-directories. They are **B1's material**. They have not moved all session; treat any change in that
-count as yours.
+**The gate warning count moves between 10 and 11, and neither is a regression.** The ten are the
+standing set — all `[test-quality]`, all one class ("claims an improvement but asserts `<=`/`>=`,
+which an unchanged implementation also satisfies"), in ten directories. They are **B1's material**
+and have not moved in two sessions; treat any change in *that* count as yours. The eleventh is a
+deprecation warning from `TemplateDelegationTests`' deliberate use of `LegacyTemplateEconomics`,
+which appears only when the test target rebuilds rather than hits the cache. Count the
+`[test-quality]` ones, not the total.
 
 Always `--check all`. Plain `--no-cache` runs a subset and prints an identical PASSED line.
 `--check` takes **one** checker per flag; `--check a,b,c` prints *"No checkers enabled"* and exits 0.
@@ -54,25 +64,33 @@ fixed along the way.
 Earlier in the session, Phase 1 of `REVIEW_simulation_tests.md` and the GPU error-parity work also
 shipped into the same tag.
 
-### Phases A, B and E — complete; D partial
+### Every phase — complete
 
 | Phase | Commit(s) | Outcome |
 |---|---|---|
 | **A** | `43aaba32` `f49472c8` `03220a61` `e3f69aa2` `06d997ad` | Six items; **two library defects** (L18, the day-count non-convention), two false doc formulas, one review claim refuted |
 | **B** | `aa61d6e4` `b4bd8761` | Four items; **L19 found**; a cut-validity suite where 14 of 16 tests never cut |
 | **E** | `e89457ea` | Six structural oracles, each holding where a band assertion cannot |
-| **D** | (with E and after) | Partial: D2 158/211, D1 27/52, D4 half, **D3 not started** |
+| **D** | `2251c71a` `1063934b` | L19 fixed by probing the closure numerically |
+| **F** | `77c37352` `2344d33e` | **EOQ overflowed to a non-finite order quantity with no error**; 35 supplied reference values, all 35 confirmed |
+| **G** | `9d2ca2fa` `12997d28` `741f786b` `077562dd` | Hygiene; **the negative customer count found**; 524 type-only error assertions → 14 |
 
-**Three new defects were filed across the night**, all recorded in the roadmap with measurements:
+**Four new defects were filed across the programme**, all recorded in the roadmap with measurements:
 
 - **L18 — every Gomory cut was infeasible by construction** (fixed). Emitted over tableau columns,
   imposed over structural ones, so the cut read `0 ≤ -0.7071`: false at every point. It failed
   *safe* — the infeasible re-solve discarded the round — so answers were always right and
   `enableCuttingPlanes: true` simply bought nothing. Node count on the test problem: 3 → 1.
-- **L19 — a negative lower bound in an opaque closure is silently truncated to zero** (open,
-  recorded as `withKnownIssue`). `minimize x` s.t. `x ≥ -3` returns **0**, not -3, when the bound is
-  an `.inequality` closure; **-3** when it is a `.linearInequality`. `extractVariableShift` reads
-  the constraint list for bounds it can *recognise*, and a closure states nothing.
+- **L19 — a negative lower bound in an opaque closure was silently truncated to zero**
+  (**fixed** in D, `2251c71a` and `1063934b`). `minimize x` s.t. `x ≥ -3` returned **0**, not -3,
+  when the bound was an `.inequality` closure; **-3** when it was a `.linearInequality`.
+  `extractVariableShift` read the constraint list for bounds it could *recognise*, and a closure
+  states nothing — so it now probes the closure numerically instead of reading it.
+- **A churn rate above 1 drives `SaaSModel`'s customer count negative** (open, recorded as
+  `withKnownIssue`, found in G1). 100 customers at 1.2 churn with no acquisition ends month one at
+  **−20 customers**, returned as a number. Neither `SaaSModel.init` nor `ManufacturingModel.init`
+  is `throws`, and `churnRate` is a `var` besides, so validating it is a 3.0.0 decision rather
+  than a fix.
 - **The Sharpe inversion** (documented, not a defect). `Portfolio`'s default 3% *annual* risk-free
   rate against *monthly* returns makes every excess return negative — and maximising a negative
   Sharpe ratio prefers **more** risk, so the "optimum" is 100% of the single riskiest asset.
@@ -176,15 +194,24 @@ their cause**, which is worth remembering the next time one is written without a
 
 ---
 
-## 2a. Doc debt, deliberately deferred
+## 2a. Doc debt — **cleared**
 
-**No CHANGELOG entry exists for any of Phase A.** The convention here is roadmap-at-the-time,
-CHANGELOG-at-release, which is how A1 was handled. At release, alpha.6 needs:
+This section used to say no CHANGELOG entry existed for any of Phase A. The `3.0.0-alpha.6`
+section now carries all of it, and each item landed where it was owed:
 
-- **A4 is breaking.** Bond prices move — measured 12¢ / 31¢ / 55¢ at 2 / 10 / 30 years per 1,000 of
-  face. Source compatibility is unchanged (`dayCount:` is defaulted everywhere).
-- **A5 adds public API** — `ModifiedZScoreAnomalyDetector`, `IQRAnomalyDetector`.
-- **A3 and A6 are documentation and tests**; L18 is deliberately omitted, per above.
+- **A4, breaking** — the day-count convention, under `#### Breaking`. Bond prices move: measured
+  12¢ / 31¢ / 55¢ at 2 / 10 / 30 years per 1,000 of face. Source compatibility is unchanged
+  (`dayCount:` is defaulted everywhere).
+- **A5, public API** — `ModifiedZScoreAnomalyDetector` and `IQRAnomalyDetector`, under `#### Added`.
+- **A3 and A6** — under `#### Documentation`, and L18 under `#### Not recorded here, deliberately`,
+  per the decision in §3.
+- **G** — under `#### Tests`, carrying the two things a consumer can act on: the unvalidated
+  `churnRate`, and `throttle(interval:)` being a delay rather than a filter.
+
+The roadmap (`project/plans/TEST_REVIEW_ROADMAP.md`) is reconciled through G. What is *not* done
+is the tag: alpha.6 has a CHANGELOG section and no `v3.0.0-alpha.6`, which is what keeps the gate
+in its release profile. Tagging should drop the checker count; that has not been measured here,
+so verify it rather than assuming.
 
 ---
 
