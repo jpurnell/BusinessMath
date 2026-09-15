@@ -7,10 +7,7 @@ state and the traps, that file is the plan.
 **Every phase of the test-review roadmap is done: A, B, D, E, F and G, with C4.** L19 is fixed.
 What remains of C is three gate rules in a different repository, specified but not written —
 see §2. **The roadmap has nothing open.** `v3.0.0-alpha.6` is tagged and pushed; the
-roadmap has nothing open and there is no queued work. An untagged CHANGELOG version puts the gate
-into its release profile — `--check all` reported **45 of 45 checkers** while alpha.6 was
-untagged, including `build` and `test`, which is why a full gate run takes four minutes. Re-run
-the gate now that the tag exists and see whether that count drops; it was never measured.
+roadmap has nothing open and there is no queued work.
 
 ## State
 
@@ -39,6 +36,15 @@ and have not moved in two sessions; treat any change in *that* count as yours. T
 deprecation warning from `TemplateDelegationTests`' deliberate use of `LegacyTemplateEconomics`,
 which appears only when the test target rebuilds rather than hits the cache. Count the
 `[test-quality]` ones, not the total.
+
+**Tagging does not change what the gate runs — measured, both ways, on `346a50ad`.** The standing
+belief was that an untagged CHANGELOG version forces a release profile that a tag then clears.
+It does not: `--check all` reported **45 of 45** before and after the tag, and the default
+profile reported **40 of 45** before and after. The five the default profile omits are
+`doc-claims`, `doc-comment-code`, `doc-generated`, `doc-run` and `xcode-build` — the four slowest
+documentation checkers and the Xcode build — and they are omitted for cost, not for release
+state. So a full run takes four minutes because `build` and `test` are in the 40, not because of
+anything to do with tagging.
 
 Always `--check all`. Plain `--no-cache` runs a subset and prints an identical PASSED line.
 `--check` takes **one** checker per flag; `--check a,b,c` prints *"No checkers enabled"* and exits 0.
@@ -209,9 +215,9 @@ section now carries all of it, and each item landed where it was owed:
 - **G** — under `#### Tests`, carrying the two things a consumer can act on: the unvalidated
   `churnRate`, and `throttle(interval:)` being a delay rather than a filter.
 
-The roadmap (`project/plans/TEST_REVIEW_ROADMAP.md`) is reconciled through G. alpha.6 is tagged, so the release-profile
-question is now answerable: re-run the gate and compare the checker count against the 45 of 45 it
-reported while untagged.
+The roadmap (`project/plans/TEST_REVIEW_ROADMAP.md`) is reconciled through G. alpha.6 is tagged, and the release-profile
+question is now **answered by measurement, and the answer is "no change"** — see the note under
+State.
 
 ---
 
