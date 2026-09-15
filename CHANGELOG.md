@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
-### [3.0.0-alpha.6] - 2026-09-14
+### [3.0.0-alpha.6] - 2026-09-15
 
 **Three wrong answers, one breaking convention, and two new detectors.** Everything here came
 out of working `project/plans/TEST_REVIEW_ROADMAP.md`; the three defects were found by writing

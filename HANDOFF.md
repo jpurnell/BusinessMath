@@ -1,4 +1,4 @@
-# Handoff — 2026-09-15 (Phases A–G complete)
+# Handoff — 2026-09-15 (Phases A–G complete, alpha.6 tagged)
 
 **`main` is `077562dd`, pushed and verified by `ls-remote`.** The work queue is
 **`project/plans/TEST_REVIEW_ROADMAP.md`** — read that before anything else; this file is the
@@ -6,17 +6,18 @@ state and the traps, that file is the plan.
 
 **Every phase of the test-review roadmap is done: A, B, D, E, F and G, with C4.** L19 is fixed.
 What remains of C is three gate rules in a different repository, specified but not written —
-see §2. **The roadmap has nothing open.** The next decision is whether to tag `v3.0.0-alpha.6`,
-whose CHANGELOG section is written but whose tag does not exist. An untagged CHANGELOG version
-puts the gate into its release profile — `--check all` currently reports **45 of 45 checkers**,
-including `build` and `test`, which is why a full gate run takes four minutes.
+see §2. **The roadmap has nothing open.** `v3.0.0-alpha.6` is tagged and pushed; the
+roadmap has nothing open and there is no queued work. An untagged CHANGELOG version puts the gate
+into its release profile — `--check all` reported **45 of 45 checkers** while alpha.6 was
+untagged, including `build` and `test`, which is why a full gate run takes four minutes. Re-run
+the gate now that the tag exists and see whether that count drops; it was never measured.
 
 ## State
 
 | | |
 |---|---|
 | branch | `main` at `077562dd`, local == remote by `ls-remote` |
-| tags | latest `v3.0.0-alpha.5` = `82bff1ee`, verified on remote by `ls-remote`. **alpha.6 is not tagged.** |
+| tags | latest **`v3.0.0-alpha.6`**, verified on remote by `ls-remote` |
 | tests | **7,815 in 703 suites**, exit 0, **1 known issue** |
 | gate | `quality-gate --no-cache --check all --continue-on-failure` → 0 errors, 10–11 warnings |
 | working tree | the CHANGELOG/roadmap reconciliation for Phase G |
@@ -208,10 +209,9 @@ section now carries all of it, and each item landed where it was owed:
 - **G** — under `#### Tests`, carrying the two things a consumer can act on: the unvalidated
   `churnRate`, and `throttle(interval:)` being a delay rather than a filter.
 
-The roadmap (`project/plans/TEST_REVIEW_ROADMAP.md`) is reconciled through G. What is *not* done
-is the tag: alpha.6 has a CHANGELOG section and no `v3.0.0-alpha.6`, which is what keeps the gate
-in its release profile. Tagging should drop the checker count; that has not been measured here,
-so verify it rather than assuming.
+The roadmap (`project/plans/TEST_REVIEW_ROADMAP.md`) is reconciled through G. alpha.6 is tagged, so the release-profile
+question is now answerable: re-run the gate and compare the checker count against the 45 of 45 it
+reported while untagged.
 
 ---
 
