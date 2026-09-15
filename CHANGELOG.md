@@ -47,6 +47,20 @@ the test, not by reading the code.
   bounds from above. `transformConstraint` shifts a closure by composition instead of refusing
   it.
 
+- **`MonthDay` rejects days that do not exist in their month.** The two guards checked `month`
+  in `1...12` and `day` in `1...31` *independently*, so every impossible date in that 12×31 box
+  constructed: `MonthDay(month: 2, day: 30)`, April 31 and June 31 all succeeded. **Nothing
+  downstream caught it.** A February-30 fiscal year-end produced a *plausible* fiscal year — 15
+  March 2025 came back as fiscal 2026, exactly what a February-28 year-end gives — because
+  `FiscalCalendar` orders on `(month, day)` rather than resolving a date, so the caller had no
+  way to learn their configured year-end does not exist. Now validated against a per-month table.
+
+  **This can trap where it previously did not.** The initialiser's contract is a precondition,
+  not a throw, so code that constructed an impossible date and carried on will now halt. That is
+  the intent: the alternative is the plausible-but-wrong fiscal year it used to return. February
+  keeps 29 — a leap-day year-end is well-defined here precisely because the comparison is an
+  ordering rather than a lookup, and 15 March 2024 → fiscal 2025 either way.
+
 - **`EOQModel.calculate` no longer overflows to infinity on large inputs.** It formed
   `2 · orderingCost · annualDemand` directly; at `S = D = 1e200` that product is `2e400`, which
   is `+infinity` in a `Double`, and the square root of infinity is infinity. **The caller
@@ -87,6 +101,18 @@ the test, not by reading the code.
   really does divide total liabilities. Both now name their numerator and cross-reference each
   other, and the asymmetry is deliberate: the debt ratio asks what share of the asset base is
   owed to *anyone*, leverage asks what is owed to *lenders*.
+
+- **A clamped driver censors its distribution; it does not truncate it.** `sample` draws once
+  and applies the constraint as a pure function, so an out-of-range draw is **moved to the
+  boundary** rather than redrawn. Those are different distributions and the gap is large.
+  Measured on `Normal(1000, 100)` clamped to ±1σ over 200,000 seeded draws: standard deviation
+  **71.86** against a closed form of 71.8372, with **31.7%** of the mass sitting exactly on the
+  two boundary values as point masses. Truncating would give 53.96 and no boundary mass. A
+  percentile read off a clamped driver near its bounds is a statement about the clamp, not about
+  the model. Censoring is the right choice here — rejection sampling consumes an unpredictable
+  number of draws per value, which would make every seeded composite irreproducible in aggregate,
+  since `SumDriver` and `ProductDriver` interleave their operands on one generator — and it is
+  now documented as a choice rather than left to be inferred.
 
 - **`3.10-BondValuationGuide.md`** carries a four-row day-count table and the reason its figure
   moved from $1,043.82 to $1,043.66. The old number came from the `365.25` constant and was
