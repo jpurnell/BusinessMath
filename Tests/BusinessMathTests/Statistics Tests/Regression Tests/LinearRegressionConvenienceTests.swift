@@ -68,7 +68,7 @@ struct LinearRegressionConvenienceTests {
 
     @Test("Linear regression throws on empty data")
     func linearRegressionEmptyData() throws {
-        #expect(throws: RegressionError.self) {
+        #expect(throws: RegressionError.insufficientData(message: "X and y cannot be empty")) {
             try linearRegression(x: [], y: [])
         }
     }
@@ -78,7 +78,8 @@ struct LinearRegressionConvenienceTests {
         let x = [1.0, 2.0, 3.0]
         let y = [1.0, 2.0]
 
-        #expect(throws: RegressionError.self) {
+        #expect(throws: RegressionError.dimensionMismatch(
+            expected: "X rows (3) must equal y length", actual: "y has length 2")) {
             try linearRegression(x: x, y: y)
         }
     }
@@ -88,7 +89,9 @@ struct LinearRegressionConvenienceTests {
         let x = [1.0]
         let y = [2.0]
 
-        #expect(throws: RegressionError.self) {
+        // One observation and one predictor: two coefficients to estimate from one row.
+        #expect(throws: RegressionError.insufficientData(
+            message: "Need at least 2 observations for 1 predictors (have 1)")) {
             try linearRegression(x: x, y: y)
         }
     }
@@ -196,7 +199,8 @@ struct LinearRegressionConvenienceTests {
         let x = [1.0, 2.0, 3.0]
         let y = [1.0, 2.0, 3.0]
 
-        #expect(throws: RegressionError.self) {
+        #expect(throws: RegressionError.insufficientData(
+            message: "Polynomial degree must be ≥ 1 (got 0)")) {
             try polynomialRegression(x: x, y: y, degree: 0)
         }
     }
@@ -206,7 +210,8 @@ struct LinearRegressionConvenienceTests {
         let x = [1.0, 2.0, 3.0]
         let y = [1.0, 2.0, 3.0]
 
-        #expect(throws: RegressionError.self) {
+        #expect(throws: RegressionError.insufficientData(
+            message: "Polynomial degree must be ≥ 1 (got -1)")) {
             try polynomialRegression(x: x, y: y, degree: -1)
         }
     }
@@ -216,14 +221,17 @@ struct LinearRegressionConvenienceTests {
         let x = [1.0, 2.0, 3.0, 4.0]
         let y = [1.0, 2.0, 3.0, 4.0]
 
-        #expect(throws: RegressionError.self) {
+        // A degree-4 fit has five coefficients, and there are four points.
+        #expect(throws: RegressionError.insufficientData(
+            message: "Need at least 5 observations for degree 4 polynomial (have 4)")) {
             try polynomialRegression(x: x, y: y, degree: 4)
         }
     }
 
     @Test("Polynomial regression throws on empty data")
     func polynomialEmptyData() throws {
-        #expect(throws: RegressionError.self) {
+        #expect(throws: RegressionError.insufficientData(
+            message: "Need at least 3 observations for degree 2 polynomial (have 0)")) {
             try polynomialRegression(x: [], y: [], degree: 2)
         }
     }
@@ -233,7 +241,8 @@ struct LinearRegressionConvenienceTests {
         let x = [1.0, 2.0, 3.0]
         let y = [1.0, 2.0]
 
-        #expect(throws: RegressionError.self) {
+        #expect(throws: RegressionError.dimensionMismatch(
+            expected: "X rows (3) must equal y length", actual: "y has length 2")) {
             try polynomialRegression(x: x, y: y, degree: 2)
         }
     }

@@ -170,60 +170,62 @@ struct DepreciationTests {
 
 	// MARK: - Rejections
 
-	/// Each refusal names the input it rejected and the range it wanted.
+	/// Each refusal, written out whole: case, message, offending value and wanted range.
 	///
 	/// Eight `#expect(throws: (any Error).self)` stood here, which a `fatalError` trampoline
 	/// or an unrelated failure inside the call would satisfy just as well. Every guard in
-	/// `Depreciation.swift` throws the *same* case — `.invalidInput` — so the case alone
-	/// does not say which one fired either. `value` and `expectedRange` do: they are the
-	/// offending argument and the interval it missed, and together they identify the guard.
-	@Test("Invalid arguments are refused, each naming the argument and the range it missed")
+	/// `Depreciation.swift` raises the same case, so the case alone does not identify one
+	/// either — `value` and `expectedRange` are the offending argument and the interval it
+	/// missed, and the message is what separates two guards that share both.
+	@Test("Invalid arguments are refused, each by the guard that names it")
 	func invalidArgumentsAreRefused() {
-		func expectInvalidInput(
-			value expectedValue: String,
-			range expectedRange: String,
-			sourceLocation: SourceLocation = #_sourceLocation,
-			_ body: () throws -> Double
-		) {
-			#expect(sourceLocation: sourceLocation) {
-				_ = try body()
-			} throws: { error in
-				guard case let BusinessMathError.invalidInput(_, value, range) = error else { return false }
-				return value == expectedValue && range == expectedRange
-			}
+		// Life must be positive, and the zero and the negative meet the same guard.
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Depreciable life must be positive",
+			value: "0.0", expectedRange: "(0, ∞)")) {
+			_ = try straightLineDepreciation(cost: 100, salvage: 0, life: 0)
 		}
-
-		// Life must be positive, and the zero and the negative are rejected by the same guard.
-		expectInvalidInput(value: "0.0", range: "(0, ∞)") {
-			try straightLineDepreciation(cost: 100, salvage: 0, life: 0)
-		}
-		expectInvalidInput(value: "-5.0", range: "(0, ∞)") {
-			try straightLineDepreciation(cost: 100, salvage: 0, life: -5)
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Depreciable life must be positive",
+			value: "-5.0", expectedRange: "(0, ∞)")) {
+			_ = try straightLineDepreciation(cost: 100, salvage: 0, life: -5)
 		}
 
 		// A period beyond the asset's life, which the spreadsheet also refuses. The range
-		// carries the life, so it is the one assertion that proves the bound was read.
-		expectInvalidInput(value: "6.0", range: "[1, 5.0]") {
-			try sumOfYearsDigitsDepreciation(cost: 100, salvage: 0, life: 5, period: 6)
+		// carries the life, so it is what proves the bound was read rather than assumed.
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Period must fall within the asset's life",
+			value: "6.0", expectedRange: "[1, 5.0]")) {
+			_ = try sumOfYearsDigitsDepreciation(cost: 100, salvage: 0, life: 5, period: 6)
 		}
-		expectInvalidInput(value: "0.0", range: "[1, 5.0]") {
-			try sumOfYearsDigitsDepreciation(cost: 100, salvage: 0, life: 5, period: 0)
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Period must fall within the asset's life",
+			value: "0.0", expectedRange: "[1, 5.0]")) {
+			_ = try sumOfYearsDigitsDepreciation(cost: 100, salvage: 0, life: 5, period: 0)
 		}
 
 		// Declining balance has three separate guards, and each names itself.
-		expectInvalidInput(value: "0.5", range: "[1, ∞)") {
-			try decliningBalanceDepreciation(cost: 100, salvage: 0, life: 5, period: 0.5)
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Period must be at least 1",
+			value: "0.5", expectedRange: "[1, ∞)")) {
+			_ = try decliningBalanceDepreciation(cost: 100, salvage: 0, life: 5, period: 0.5)
 		}
-		expectInvalidInput(value: "0.0", range: "(0, ∞)") {
-			try decliningBalanceDepreciation(cost: 100, salvage: 0, life: 5, period: 1, factor: 0)
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Declining-balance factor must be positive",
+			value: "0.0", expectedRange: "(0, ∞)")) {
+			_ = try decliningBalanceDepreciation(cost: 100, salvage: 0, life: 5, period: 1, factor: 0)
 		}
 
-		expectInvalidInput(value: "1.0", range: "[3.0, ∞)") {
-			try variableDecliningBalanceDepreciation(
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "End period cannot precede the start period",
+			value: "1.0", expectedRange: "[3.0, ∞)")) {
+			_ = try variableDecliningBalanceDepreciation(
 				cost: 100, salvage: 0, life: 5, start: 3, end: 1)
 		}
-		expectInvalidInput(value: "-1.0", range: "[0, ∞)") {
-			try variableDecliningBalanceDepreciation(
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Start period cannot be negative",
+			value: "-1.0", expectedRange: "[0, ∞)")) {
+			_ = try variableDecliningBalanceDepreciation(
 				cost: 100, salvage: 0, life: 5, start: -1, end: 1)
 		}
 	}

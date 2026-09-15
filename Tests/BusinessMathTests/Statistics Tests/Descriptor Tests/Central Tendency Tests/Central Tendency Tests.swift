@@ -108,10 +108,16 @@ import OSLog
 	}
 
 	@Test("LogarithmicMean throws for non-positive values") func LLogarithmicMeanNonPositive() throws {
-		#expect(throws: BusinessMathError.self) {
+		// One guard covers both arguments, so the interpolated pair is what says which
+		// call was refused.
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Logarithmic mean requires positive values",
+			value: "x=-1.0, y=3.0", expectedRange: "(0, ∞)")) {
 			_ = try logarithmicMean(-1.0, 3.0)
 		}
-		#expect(throws: BusinessMathError.self) {
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Logarithmic mean requires positive values",
+			value: "x=2.0, y=0.0", expectedRange: "(0, ∞)")) {
 			_ = try logarithmicMean(2.0, 0.0)
 		}
 	}
@@ -253,7 +259,11 @@ struct CentralTendencyNaNInfinityTests {
 	@Test("harmonicMean rejects NaN input")
 	func harmonic_mean_rejects_nan() throws {
 		let values = [1.0, Double.nan, 3.0]
-		#expect(throws: BusinessMathError.self) {
+		// The guard is `value.magnitude > .ulpOfOne`, which NaN fails like a zero does —
+		// so the refusal is correct and its wording is not. Pinned as it stands, because
+		// a test that hides the mismatch is how the wording stays wrong.
+		#expect(throws: BusinessMathError.divisionByZero(
+			context: "Harmonic mean: value at index 1 is zero")) {
 			_ = try harmonicMean(values)
 		}
 	}
@@ -269,7 +279,9 @@ struct CentralTendencyNaNInfinityTests {
 	@Test("harmonicMean throws for zero values")
 	func harmonic_mean_throws_for_zero() throws {
 		let values = [1.0, 0.0, 3.0]
-		#expect(throws: BusinessMathError.self) {
+		// The index is in the message, which is the part that makes it actionable.
+		#expect(throws: BusinessMathError.divisionByZero(
+			context: "Harmonic mean: value at index 1 is zero")) {
 			_ = try harmonicMean(values)
 		}
 	}
@@ -291,7 +303,10 @@ struct CentralTendencyNaNInfinityTests {
 	@Test("contraharmonicMean rejects NaN input")
 	func contraharmonic_mean_rejects_nan() throws {
 		let values = [1.0, Double.nan, 3.0]
-		#expect(throws: BusinessMathError.self) {
+		// A NaN sum fails the same magnitude test a zero sum fails, and is reported the
+		// same way — see `harmonic_mean_rejects_nan` above.
+		#expect(throws: BusinessMathError.divisionByZero(
+			context: "Contraharmonic mean: sum of values is zero")) {
 			_ = try contraharmonicMean(values)
 		}
 	}
@@ -299,17 +314,24 @@ struct CentralTendencyNaNInfinityTests {
 	@Test("contraharmonicMean throws when sum is zero")
 	func contraharmonic_mean_throws_for_zero_sum() throws {
 		// When values sum to zero (e.g., x = -y), denominator is 0
-		#expect(throws: BusinessMathError.self) {
+		// The two-argument overload has its own message, naming the x = −y case.
+		#expect(throws: BusinessMathError.divisionByZero(
+			context: "Contraharmonic mean: sum of values is zero (x = -y)")) {
 			_ = try contraharmonicMean(3.0, -3.0)
 		}
 	}
 
 	@Test("logarithmicMean rejects NaN input")
 	func logarithmic_mean_rejects_nan() throws {
-		#expect(throws: BusinessMathError.self) {
+		// `nan > 0` is false, so NaN falls into the positivity guard and is named there.
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Logarithmic mean requires positive values",
+			value: "x=nan, y=3.0", expectedRange: "(0, ∞)")) {
 			_ = try logarithmicMean(Double.nan, 3.0)
 		}
-		#expect(throws: BusinessMathError.self) {
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Logarithmic mean requires positive values",
+			value: "x=2.0, y=nan", expectedRange: "(0, ∞)")) {
 			_ = try logarithmicMean(2.0, Double.nan)
 		}
 	}
@@ -358,8 +380,13 @@ struct CentralTendencyEmptyArrayTests {
 	@Test("harmonicMean throws on empty array")
 	func harmonic_mean_empty_array() throws {
 		let values: [Double] = []
-		#expect(throws: ArrayError.self) {
+		// `ArrayError` has two cases and carries no payload, so the case itself is the
+		// whole content of the claim.
+		#expect {
 			_ = try harmonicMean(values)
+		} throws: { error in
+			guard case ArrayError.emptyArray = error else { return false }
+			return true
 		}
 	}
 
@@ -373,8 +400,13 @@ struct CentralTendencyEmptyArrayTests {
 	@Test("contraharmonicMean throws on empty array")
 	func contraharmonic_mean_empty_array() throws {
 		let values: [Double] = []
-		#expect(throws: ArrayError.self) {
+		// `ArrayError` has two cases and carries no payload, so the case itself is the
+		// whole content of the claim.
+		#expect {
 			_ = try contraharmonicMean(values)
+		} throws: { error in
+			guard case ArrayError.emptyArray = error else { return false }
+			return true
 		}
 	}
 
@@ -388,8 +420,13 @@ struct CentralTendencyEmptyArrayTests {
 	@Test("arithmeticHarmonicMean throws on empty array")
 	func arithmetic_harmonic_mean_empty_array() throws {
 		let values: [Double] = []
-		#expect(throws: ArrayError.self) {
+		// `ArrayError` has two cases and carries no payload, so the case itself is the
+		// whole content of the claim.
+		#expect {
 			_ = try arithmeticHarmonicMean(values)
+		} throws: { error in
+			guard case ArrayError.emptyArray = error else { return false }
+			return true
 		}
 	}
 }

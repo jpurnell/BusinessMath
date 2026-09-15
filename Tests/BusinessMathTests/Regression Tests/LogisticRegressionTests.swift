@@ -118,9 +118,9 @@ struct LogisticRegressionTests {
 		let x: [[Double]] = (1...6).map { [Double($0)] }
 		let y: [Bool] = [false, false, false, true, true, true]
 		let model = LogisticRegression(predictors: x, outcomes: y)
-		#expect(throws: LogisticRegressionError.self) {
-			_ = try model.fit()
-		}
+		// The do/catch below already pins the case and the separating predictor's index;
+		// the `LogisticRegressionError.self` that stood here said strictly less about the
+		// same call.
 		do {
 			_ = try model.fit()
 			Issue.record("separated data was fitted")
@@ -140,7 +140,8 @@ struct LogisticRegressionTests {
 		let x: [[Double]] = [[1, 2], [1, 3], [1, 4], [0, 5], [0, 6], [0, 7], [0, 8], [0, 9]]
 		let y: [Bool] = [false, false, false, true, false, true, true, false]
 		let model = LogisticRegression(predictors: x, outcomes: y)
-		#expect(throws: LogisticRegressionError.self) { _ = try model.fit() }
+		// Column 0 is the indicator that separates; the payload names it.
+		#expect(throws: LogisticRegressionError.separation(variables: [0])) { _ = try model.fit() }
 	}
 
 	@Test("A collinear design is refused as rank deficient, not fitted arbitrarily")
@@ -150,25 +151,32 @@ struct LogisticRegressionTests {
 		let x: [[Double]] = (1...10).map { [Double($0), Double($0) * 2] }
 		let y: [Bool] = [false, false, false, false, true, false, true, true, true, true]
 		let model = LogisticRegression(predictors: x, outcomes: y)
-		#expect(throws: LogisticRegressionError.self) { _ = try model.fit() }
+		// The payload lists every column in the dependent set, intercept included — the
+		// intercept is column 0 here, so all three appear. That is the distinction
+		// between "rank deficient" and "did not converge" the type alone could not make.
+		#expect(throws: LogisticRegressionError.rankDeficient(columns: [0, 1, 2])) { _ = try model.fit() }
 	}
 
 	@Test("Malformed input is refused before any fitting happens")
 	func inputValidation() {
 		let y: [Bool] = [false, true, false]
-		#expect(throws: LogisticRegressionError.self) {
+		#expect(throws: LogisticRegressionError.malformedInput(
+			reason: "2 rows against 3 outcomes")) {
 			_ = try LogisticRegression(predictors: [[1.0], [2.0]], outcomes: y).fit()
 		}
-		#expect(throws: LogisticRegressionError.self) {
+		#expect(throws: LogisticRegressionError.malformedInput(reason: "no observations")) {
 			_ = try LogisticRegression<Double>(predictors: [], outcomes: []).fit()
 		}
 		// Ragged rows.
-		#expect(throws: LogisticRegressionError.self) {
+		#expect(throws: LogisticRegressionError.malformedInput(reason: "rows are not all 2 wide")) {
 			_ = try LogisticRegression(predictors: [[1.0, 2.0], [3.0]], outcomes: [true, false]).fit()
 		}
 		// One outcome class only: the intercept diverges, which is separation by the
 		// empty predictor set.
-		#expect(throws: LogisticRegressionError.self) {
+		// An empty variable list is separation by the intercept alone, which is exactly
+		// what a constant outcome is — and is why the case carries a list rather than
+		// a single index.
+		#expect(throws: LogisticRegressionError.separation(variables: [])) {
 			_ = try LogisticRegression(predictors: [[1.0], [2.0], [3.0]],
 									   outcomes: [true, true, true]).fit()
 		}
@@ -179,8 +187,15 @@ struct LogisticRegressionTests {
 		let x: [[Double]] = (1...10).map { [Double($0)] }
 		let y: [Bool] = [false, false, false, false, true, false, true, true, true, true]
 		let model = LogisticRegression(predictors: x, outcomes: y)
-		#expect(throws: LogisticRegressionError.self) {
+		// The gradient norm at the cut-off is whatever one Newton step leaves behind, so
+		// the case and the iteration count are what can be pinned; the norm is asserted
+		// to be a real number above the tolerance rather than to a figure.
+		#expect {
 			_ = try model.fit(maxIterations: 1, tolerance: 1e-12)
+		} throws: { error in
+			guard case let LogisticRegressionError.didNotConverge(iterations, gradientNorm) = error
+			else { return false }
+			return iterations == 1 && gradientNorm.isFinite && gradientNorm > 1e-12
 		}
 	}
 }

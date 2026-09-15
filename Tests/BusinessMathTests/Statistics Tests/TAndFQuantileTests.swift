@@ -183,50 +183,43 @@ struct TAndFQuantileTests {
 		}
 	}
 
-	/// Each rejection names the argument and the interval it fell outside.
+	/// Each rejection, written out whole.
 	///
-	/// Eleven `#expect(throws: (any Error).self)` stood here. Both quantiles throw the same
-	/// case for every guard, so `value` and `expectedRange` carry the identification — and
-	/// where even those coincide, as they do for `fQuantile`'s two degrees-of-freedom
-	/// guards (both `("0", "(0, ∞)")`), the message is the only discriminator.
-	@Test("Invalid input is rejected, naming the argument and the interval it missed")
+	/// Eleven `#expect(throws: (any Error).self)` stood here. Both quantiles raise the same
+	/// case for every guard, and `fQuantile`'s two degrees-of-freedom guards share even
+	/// `("0", "(0, ∞)")` — `"0"` and not `"0.0"`, because the parameter is an `Int` — so the
+	/// message is the only thing that says which one fired.
+	@Test("Invalid input is rejected, each by the guard that names it")
 	func invalidInputIsRejected() {
-		func expectInvalidInput(
-			value expectedValue: String,
-			range expectedRange: String,
-			message expectedMessage: String? = nil,
-			sourceLocation: SourceLocation = #_sourceLocation,
-			_ body: () throws -> Double
-		) {
-			#expect(sourceLocation: sourceLocation) {
-				_ = try body()
-			} throws: { error in
-				guard case let BusinessMathError.invalidInput(message, value, range) = error else { return false }
-				guard value == expectedValue, range == expectedRange else { return false }
-				guard let expectedMessage else { return true }
-				return message == expectedMessage
-			}
-		}
+		let probabilityMessage = "Probability must be in (0, 1) exclusive"
 
 		// A probability outside the open unit interval, for both quantiles.
 		for p in [-0.1, 0.0, 1.0, 1.5] {
-			expectInvalidInput(value: "\(p)", range: "(0, 1)") { try tQuantile(p: p, df: 5) }
-			expectInvalidInput(value: "\(p)", range: "(0, 1)") { try fQuantile(p: p, df1: 5, df2: 9) }
+			#expect(throws: BusinessMathError.invalidInput(
+				message: probabilityMessage, value: "\(p)", expectedRange: "(0, 1)")) {
+				let _: Double = try tQuantile(p: p, df: 5)
+			}
+			#expect(throws: BusinessMathError.invalidInput(
+				message: probabilityMessage, value: "\(p)", expectedRange: "(0, 1)")) {
+				let _: Double = try fQuantile(p: p, df1: 5, df2: 9)
+			}
 		}
 
-		// The degrees of freedom are `Int`, so the error reports "0" and not "0.0".
-		expectInvalidInput(value: "0", range: "(0, ∞)",
-						   message: "Degrees of freedom must be positive") {
-			try tQuantile(p: 0.5, df: 0)
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Degrees of freedom must be positive",
+			value: "0", expectedRange: "(0, ∞)")) {
+			let _: Double = try tQuantile(p: 0.5, df: 0)
 		}
 		// The F quantile has two of them, and only the message says which.
-		expectInvalidInput(value: "0", range: "(0, ∞)",
-						   message: "Numerator degrees of freedom must be positive") {
-			try fQuantile(p: 0.5, df1: 0, df2: 9)
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Numerator degrees of freedom must be positive",
+			value: "0", expectedRange: "(0, ∞)")) {
+			let _: Double = try fQuantile(p: 0.5, df1: 0, df2: 9)
 		}
-		expectInvalidInput(value: "0", range: "(0, ∞)",
-						   message: "Denominator degrees of freedom must be positive") {
-			try fQuantile(p: 0.5, df1: 5, df2: 0)
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Denominator degrees of freedom must be positive",
+			value: "0", expectedRange: "(0, ∞)")) {
+			let _: Double = try fQuantile(p: 0.5, df1: 5, df2: 0)
 		}
 	}
 }

@@ -129,10 +129,11 @@ struct TwoProportionPowerTests {
 	func refusesDegeneratePower() throws {
 		let design = Experiment<Double>.twoProportion(baseline: 0.50, minimumDetectableEffect: 0.05)
 
-		#expect(throws: ExperimentError.self) {
+		// One guard covers both ends, and the payload is the power that was asked for.
+		#expect(throws: ExperimentError.invalidPower(0.0)) {
 			_ = try design.sampleSizePerArm(power: 0.0, alpha: 0.05, tails: .two)
 		}
-		#expect(throws: ExperimentError.self) {
+		#expect(throws: ExperimentError.invalidPower(1.0)) {
 			_ = try design.sampleSizePerArm(power: 1.0, alpha: 0.05, tails: .two)
 		}
 	}
@@ -141,10 +142,10 @@ struct TwoProportionPowerTests {
 	func refusesAlphaOutsideUnitInterval() throws {
 		let design = Experiment<Double>.twoProportion(baseline: 0.50, minimumDetectableEffect: 0.05)
 
-		#expect(throws: ExperimentError.self) {
+		#expect(throws: ExperimentError.invalidAlpha(0.0)) {
 			_ = try design.sampleSizePerArm(power: 0.80, alpha: 0.0, tails: .two)
 		}
-		#expect(throws: ExperimentError.self) {
+		#expect(throws: ExperimentError.invalidAlpha(1.0)) {
 			_ = try design.sampleSizePerArm(power: 0.80, alpha: 1.0, tails: .two)
 		}
 	}
@@ -153,7 +154,7 @@ struct TwoProportionPowerTests {
 	func refusesNonPositiveEffect() throws {
 		let design = Experiment<Double>.twoProportion(baseline: 0.50, minimumDetectableEffect: 0.0)
 
-		#expect(throws: ExperimentError.self) {
+		#expect(throws: ExperimentError.nonPositiveEffect(0.0)) {
 			_ = try design.sampleSizePerArm(power: 0.80, alpha: 0.05, tails: .two)
 		}
 	}
@@ -161,12 +162,15 @@ struct TwoProportionPowerTests {
 	@Test("Refuses a baseline outside [0, 1], and an MDE that pushes the arm past 1")
 	func refusesImpossibleProportions() throws {
 		let badBaseline = Experiment<Double>.twoProportion(baseline: 1.5, minimumDetectableEffect: 0.05)
-		#expect(throws: ExperimentError.self) {
+		// The payload is the baseline itself.
+		#expect(throws: ExperimentError.invalidProportion(1.5)) {
 			_ = try badBaseline.sampleSizePerArm(power: 0.80, alpha: 0.05, tails: .two)
 		}
 
 		let overshoots = Experiment<Double>.twoProportion(baseline: 0.98, minimumDetectableEffect: 0.05)
-		#expect(throws: ExperimentError.self) {
+		// Same case, but the payload is now the *treatment* arm the baseline implies —
+		// 0.98 + 0.05 — which is what distinguishes this refusal from the one above.
+		#expect(throws: ExperimentError.invalidProportion(0.98 + 0.05)) {
 			_ = try overshoots.sampleSizePerArm(power: 0.80, alpha: 0.05, tails: .two)
 		}
 	}
@@ -190,7 +194,7 @@ struct TwoMeanPowerTests {
 		let design = Experiment<Double>.twoMean(
 			baseline: 100.0, standardDeviation: 0.0, minimumDetectableEffect: 5.0
 		)
-		#expect(throws: ExperimentError.self) {
+		#expect(throws: ExperimentError.nonPositiveStandardDeviation(0.0)) {
 			_ = try design.sampleSizePerArm(power: 0.80, alpha: 0.05, tails: .two)
 		}
 	}
@@ -288,7 +292,8 @@ struct ExperimentAnalysisTests {
 			treatmentObservations: 100, treatmentConversions: 10
 		)
 
-		#expect(throws: ExperimentError.self) {
+		// The arm is named, which is the whole point of the case.
+		#expect(throws: ExperimentError.emptyArm(arm: "control")) {
 			_ = try design.analyze(empty, alpha: 0.05)
 		}
 	}
@@ -301,7 +306,8 @@ struct ExperimentAnalysisTests {
 			treatmentObservations: 100, treatmentConversions: 10
 		)
 
-		#expect(throws: ExperimentError.self) {
+		#expect(throws: ExperimentError.conversionsExceedObservations(
+			arm: "control", conversions: 150, observations: 100)) {
 			_ = try design.analyze(impossible, alpha: 0.05)
 		}
 	}

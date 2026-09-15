@@ -20,16 +20,23 @@ struct DEAInputValidationTests {
 
     @Test("Empty DMU array throws insufficientDMUs")
     func emptyDMUArray() throws {
-        #expect(throws: DEAError.self) {
+        // `DEAError` is not `Equatable`, so the case and its payload are matched by hand.
+        #expect {
             _ = try solver.solve(dmus: [])
+        } throws: { error in
+            guard case let DEAError.insufficientDMUs(count) = error else { return false }
+            return count == 0
         }
     }
 
     @Test("Single DMU throws insufficientDMUs")
     func singleDMU() throws {
         let dmu = DMU(name: "A", inputs: [1.0], outputs: [1.0])
-        #expect(throws: DEAError.self) {
+        #expect {
             _ = try solver.solve(dmus: [dmu])
+        } throws: { error in
+            guard case let DEAError.insufficientDMUs(count) = error else { return false }
+            return count == 1
         }
     }
 
@@ -41,8 +48,11 @@ struct DEAInputValidationTests {
             DMU(name: "A", inputs: [0.0, 5.0], outputs: [1.0]),
             DMU(name: "B", inputs: [3.0, 3.0], outputs: [2.0])
         ]
-        #expect(throws: DEAError.self) {
+        #expect {
             _ = try solver.solve(dmus: dmus)
+        } throws: { error in
+            guard case let DEAError.nonPositiveValues(dmu, dimension) = error else { return false }
+            return dmu == "A" && dimension == "input[0]"
         }
     }
 
@@ -52,8 +62,11 @@ struct DEAInputValidationTests {
             DMU(name: "A", inputs: [-1.0, 5.0], outputs: [1.0]),
             DMU(name: "B", inputs: [3.0, 3.0], outputs: [2.0])
         ]
-        #expect(throws: DEAError.self) {
+        #expect {
             _ = try solver.solve(dmus: dmus)
+        } throws: { error in
+            guard case let DEAError.nonPositiveValues(dmu, dimension) = error else { return false }
+            return dmu == "A" && dimension == "input[0]"
         }
     }
 
@@ -63,8 +76,11 @@ struct DEAInputValidationTests {
             DMU(name: "A", inputs: [2.0], outputs: [0.0]),
             DMU(name: "B", inputs: [3.0], outputs: [2.0])
         ]
-        #expect(throws: DEAError.self) {
+        #expect {
             _ = try solver.solve(dmus: dmus)
+        } throws: { error in
+            guard case let DEAError.nonPositiveValues(dmu, dimension) = error else { return false }
+            return dmu == "A" && dimension == "output[0]"
         }
     }
 
@@ -74,8 +90,11 @@ struct DEAInputValidationTests {
             DMU(name: "A", inputs: [2.0], outputs: [-1.0]),
             DMU(name: "B", inputs: [3.0], outputs: [2.0])
         ]
-        #expect(throws: DEAError.self) {
+        #expect {
             _ = try solver.solve(dmus: dmus)
+        } throws: { error in
+            guard case let DEAError.nonPositiveValues(dmu, dimension) = error else { return false }
+            return dmu == "A" && dimension == "output[0]"
         }
     }
 
@@ -87,8 +106,12 @@ struct DEAInputValidationTests {
             DMU(name: "A", inputs: [2.0, 5.0], outputs: [1.0]),
             DMU(name: "B", inputs: [3.0], outputs: [2.0])
         ]
-        #expect(throws: DEAError.self) {
+        // The mismatch names the DMU that disagreed and both widths.
+        #expect {
             _ = try solver.solve(dmus: dmus)
+        } throws: { error in
+            guard case let DEAError.dimensionMismatch(expected, actual, dmu) = error else { return false }
+            return expected == 2 && actual == 1 && dmu == "B"
         }
     }
 
@@ -98,8 +121,11 @@ struct DEAInputValidationTests {
             DMU(name: "A", inputs: [2.0], outputs: [1.0, 4.0]),
             DMU(name: "B", inputs: [3.0], outputs: [2.0])
         ]
-        #expect(throws: DEAError.self) {
+        #expect {
             _ = try solver.solve(dmus: dmus)
+        } throws: { error in
+            guard case let DEAError.dimensionMismatch(expected, actual, dmu) = error else { return false }
+            return expected == 2 && actual == 1 && dmu == "B"
         }
     }
 
@@ -111,8 +137,11 @@ struct DEAInputValidationTests {
             DMU(name: "A", inputs: [], outputs: [1.0]),
             DMU(name: "B", inputs: [], outputs: [2.0])
         ]
-        #expect(throws: DEAError.self) {
+        #expect {
             _ = try solver.solve(dmus: dmus)
+        } throws: { error in
+            guard case let DEAError.emptyDimension(description) = error else { return false }
+            return description == "No input dimensions specified"
         }
     }
 
@@ -122,8 +151,11 @@ struct DEAInputValidationTests {
             DMU(name: "A", inputs: [2.0], outputs: []),
             DMU(name: "B", inputs: [3.0], outputs: [])
         ]
-        #expect(throws: DEAError.self) {
+        #expect {
             _ = try solver.solve(dmus: dmus)
+        } throws: { error in
+            guard case let DEAError.emptyDimension(description) = error else { return false }
+            return description == "No output dimensions specified"
         }
     }
 }

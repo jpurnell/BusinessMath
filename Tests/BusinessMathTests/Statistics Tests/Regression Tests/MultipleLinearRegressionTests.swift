@@ -301,7 +301,8 @@ struct MultipleLinearRegressionTests {
         let X = [[1.0]]
         let y = [3.0]
 
-        #expect(throws: RegressionError.self) {
+        #expect(throws: RegressionError.insufficientData(
+            message: "Need at least 2 observations for 1 predictors (have 1)")) {
             _ = try multipleLinearRegression(X: X, y: y)
         }
     }
@@ -311,7 +312,8 @@ struct MultipleLinearRegressionTests {
         let X = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]  // 2 observations, 3 predictors
         let y = [10.0, 20.0]
 
-        #expect(throws: RegressionError.self) {
+        #expect(throws: RegressionError.insufficientData(
+            message: "Need at least 4 observations for 3 predictors (have 2)")) {
             _ = try multipleLinearRegression(X: X, y: y)
         }
     }
@@ -321,7 +323,7 @@ struct MultipleLinearRegressionTests {
         let X: [[Double]] = []
         let y: [Double] = []
 
-        #expect(throws: RegressionError.self) {
+        #expect(throws: RegressionError.insufficientData(message: "X and y cannot be empty")) {
             _ = try multipleLinearRegression(X: X, y: y)
         }
     }
@@ -331,7 +333,8 @@ struct MultipleLinearRegressionTests {
         let X = [[1.0], [2.0], [3.0]]
         let y = [3.0, 5.0]  // Wrong length
 
-        #expect(throws: RegressionError.self) {
+        #expect(throws: RegressionError.dimensionMismatch(
+            expected: "X rows (3) must equal y length", actual: "y has length 2")) {
             _ = try multipleLinearRegression(X: X, y: y)
         }
     }
@@ -341,7 +344,8 @@ struct MultipleLinearRegressionTests {
         let X = [[1.0, 2.0], [3.0]]  // Inconsistent row lengths
         let y = [3.0, 5.0]
 
-        #expect(throws: RegressionError.self) {
+        #expect(throws: RegressionError.invalidPredictorMatrix(
+            message: "X must be rectangular (all rows same length)")) {
             _ = try multipleLinearRegression(X: X, y: y)
         }
     }
@@ -351,8 +355,9 @@ struct MultipleLinearRegressionTests {
         let X = [[1.0], [2.0], [3.0], [4.0], [5.0]]
         let y = [5.0, 5.0, 5.0, 5.0, 5.0]  // No variance
 
-        // Should throw error for no variance in y
-        #expect(throws: RegressionError.self) {
+        // No variance in y means R² is 0/0; the fit is refused rather than reported.
+        #expect(throws: RegressionError.noVariance(
+            message: "y has no variance (all values approximately equal)")) {
             _ = try multipleLinearRegression(X: X, y: y)
         }
     }

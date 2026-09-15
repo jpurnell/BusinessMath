@@ -50,21 +50,27 @@ struct NonCentralChiSquaredCDFTests {
 
 	@Test("lambda < 0 throws invalidInput")
 	func testNegativeLambdaThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Non-centrality parameter must be non-negative",
+			value: "-1.0", expectedRange: "[0, inf)")) {
 			let _: Double = try nonCentralChiSquaredCDF(x: 5.0, df: 3, lambda: -1.0)
 		}
 	}
 
 	@Test("x < 0 throws invalidInput")
 	func testNegativeXThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Chi-squared statistic must be non-negative",
+			value: "-1.0", expectedRange: "[0, inf)")) {
 			let _: Double = try nonCentralChiSquaredCDF(x: -1.0, df: 3, lambda: 5.0)
 		}
 	}
 
 	@Test("df <= 0 throws invalidInput")
 	func testZeroDfThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Degrees of freedom must be positive",
+			value: "0", expectedRange: "(0, inf)")) {
 			let _: Double = try nonCentralChiSquaredCDF(x: 5.0, df: 0, lambda: 5.0)
 		}
 	}
@@ -118,28 +124,36 @@ struct NonCentralFCDFTests {
 
 	@Test("lambda < 0 throws invalidInput")
 	func testNegativeLambdaThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Non-centrality parameter must be non-negative",
+			value: "-1.0", expectedRange: "[0, inf)")) {
 			let _: Double = try nonCentralFCDF(f: 3.0, df1: 5, df2: 20, lambda: -1.0)
 		}
 	}
 
 	@Test("f < 0 throws invalidInput")
 	func testNegativeFThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "F-statistic must be non-negative",
+			value: "-1.0", expectedRange: "[0, inf)")) {
 			let _: Double = try nonCentralFCDF(f: -1.0, df1: 5, df2: 20, lambda: 5.0)
 		}
 	}
 
 	@Test("df1 <= 0 throws invalidInput")
 	func testZeroDf1Throws() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Numerator degrees of freedom must be positive",
+			value: "0", expectedRange: "(0, inf)")) {
 			let _: Double = try nonCentralFCDF(f: 3.0, df1: 0, df2: 20, lambda: 5.0)
 		}
 	}
 
 	@Test("df2 <= 0 throws invalidInput")
 	func testZeroDf2Throws() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Denominator degrees of freedom must be positive",
+			value: "0", expectedRange: "(0, inf)")) {
 			let _: Double = try nonCentralFCDF(f: 3.0, df1: 5, df2: 0, lambda: 5.0)
 		}
 	}
@@ -189,7 +203,9 @@ struct NonCentralTCDFTests {
 
 	@Test("df <= 0 throws invalidInput")
 	func testZeroDfThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Degrees of freedom must be positive",
+			value: "0", expectedRange: "(0, inf)")) {
 			let _: Double = try nonCentralTCDF(t: 2.0, df: 0, delta: 1.0)
 		}
 	}
@@ -307,7 +323,9 @@ struct PowerAnalysisTests {
 
 	@Test("t-test: negative effect size throws invalidInput")
 	func testNegativeEffectSizeThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Effect size must be non-negative",
+			value: "-0.5", expectedRange: "[0, inf)")) {
 			let _: PowerAnalysisResult<Double> = try tTestPower(
 				effectSize: -0.5, n: 30, alpha: 0.05, tails: 2, twoSample: false
 			)
@@ -316,7 +334,9 @@ struct PowerAnalysisTests {
 
 	@Test("t-test: n <= 1 throws invalidInput")
 	func testTooSmallNThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Sample size must be greater than 1",
+			value: "1", expectedRange: "(1, inf)")) {
 			let _: PowerAnalysisResult<Double> = try tTestPower(
 				effectSize: 0.5, n: 1, alpha: 0.05, tails: 2, twoSample: false
 			)
@@ -325,7 +345,9 @@ struct PowerAnalysisTests {
 
 	@Test("t-test: invalid tails throws invalidInput")
 	func testInvalidTailsThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Number of tails must be 1 or 2",
+			value: "3", expectedRange: "{1, 2}")) {
 			let _: PowerAnalysisResult<Double> = try tTestPower(
 				effectSize: 0.5, n: 30, alpha: 0.05, tails: 3, twoSample: false
 			)
@@ -334,7 +356,9 @@ struct PowerAnalysisTests {
 
 	@Test("ANOVA: groups < 2 throws invalidInput")
 	func testTooFewGroupsThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Number of groups must be at least 2",
+			value: "1", expectedRange: "[2, inf)")) {
 			let _: PowerAnalysisResult<Double> = try anovaPower(
 				effectSize: 0.25, groups: 1, nPerGroup: 30, alpha: 0.05
 			)
@@ -343,7 +367,9 @@ struct PowerAnalysisTests {
 
 	@Test("ANOVA: nPerGroup < 2 throws invalidInput")
 	func testTooSmallNPerGroupThrows() throws {
-		#expect(throws: BusinessMathError.self) {
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Sample size per group must be at least 2",
+			value: "1", expectedRange: "[2, inf)")) {
 			let _: PowerAnalysisResult<Double> = try anovaPower(
 				effectSize: 0.25, groups: 3, nPerGroup: 1, alpha: 0.05
 			)

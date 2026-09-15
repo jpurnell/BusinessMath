@@ -168,78 +168,70 @@ struct AnnuitySolvingTests {
 
 	// MARK: - Rejections
 
-	/// Each refusal names the input it rejected, and the guard it came from.
+	/// Each refusal, written out whole.
 	///
 	/// Eleven `#expect(throws: (any Error).self)` stood here, satisfied by any throw from
-	/// anywhere inside the call. Every guard in `SolvingTheAnnuity.swift` throws
-	/// `.invalidInput`, so the case does not identify one either; `value` and
-	/// `expectedRange` usually do. Where they do not — `periodsToGrow` rejects a zero rate,
-	/// a zero present value and a zero future value with the identical pair
-	/// `("0.0", "(0, ∞)")` — the message is the only thing that tells the three apart, so
-	/// it is pinned there and only there.
-	@Test("Unsolvable combinations are refused, each naming the guard that refused it")
+	/// anywhere inside the call. Every guard in `SolvingTheAnnuity.swift` raises
+	/// `.invalidInput`, and `periodsToGrow`'s three guards share the identical
+	/// `("0.0", "(0, ∞)")` pair, so the message is load-bearing rather than decorative.
+	@Test("Unsolvable combinations are refused, each by the guard that refused it")
 	func unsolvableCombinationsAreRefused() {
-		func expectInvalidInput(
-			value expectedValue: String,
-			range expectedRange: String,
-			message expectedMessage: String? = nil,
-			sourceLocation: SourceLocation = #_sourceLocation,
-			_ body: () throws -> Double
-		) {
-			#expect(sourceLocation: sourceLocation) {
-				_ = try body()
-			} throws: { error in
-				guard case let BusinessMathError.invalidInput(message, value, range) = error else { return false }
-				guard value == expectedValue, range == expectedRange else { return false }
-				guard let expectedMessage else { return true }
-				return message == expectedMessage
-			}
-		}
-
 		// Payments that never oppose the principal: the balance only grows, so no rate
 		// above −100% balances the books. The value carries all three cash flows.
-		expectInvalidInput(value: "pv 1000.0, pmt 100.0, fv 5000.0",
-						   range: "a payment opposing the present value") {
-			try periodicRate(periods: 10, payment: 100, presentValue: 1_000, futureValue: 5_000)
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "These cash flows do not balance at any rate above −100%; check the payment's sign",
+			value: "pv 1000.0, pmt 100.0, fv 5000.0",
+			expectedRange: "a payment opposing the present value")) {
+			_ = try periodicRate(periods: 10, payment: 100, presentValue: 1_000, futureValue: 5_000)
 		}
-		expectInvalidInput(value: "0.0", range: "(0, ∞)") {
-			try periodicRate(periods: 0, payment: -100, presentValue: 1_000)
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Number of periods must be positive",
+			value: "0.0", expectedRange: "(0, ∞)")) {
+			_ = try periodicRate(periods: 0, payment: -100, presentValue: 1_000)
 		}
 
 		// No interest and no payment: the balance never changes, so no term reaches fv.
-		expectInvalidInput(value: "payment 0.0", range: "non-zero") {
-			try numberOfPeriods(rate: 0, payment: 0, presentValue: 1_000, futureValue: 2_000)
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "With no interest and no payment there is no term that changes the balance",
+			value: "payment 0.0", expectedRange: "non-zero")) {
+			_ = try numberOfPeriods(rate: 0, payment: 0, presentValue: 1_000, futureValue: 2_000)
 		}
 		// Payments exactly service the interest.
-		expectInvalidInput(value: "payment -10.0", range: "a payment that amortises the principal") {
-			try numberOfPeriods(rate: 0.01, payment: -10, presentValue: 1_000)
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "The payment exactly services the interest, so the balance never changes",
+			value: "payment -10.0",
+			expectedRange: "a payment that amortises the principal")) {
+			_ = try numberOfPeriods(rate: 0.01, payment: -10, presentValue: 1_000)
 		}
 
 		// `periodsToGrow`'s three guards are distinguishable only by message.
-		expectInvalidInput(
-			value: "0.0", range: "(0, ∞)",
-			message: "Growth rate must be positive; at zero or below the value never reaches a larger target"
-		) {
-			try periodsToGrow(rate: 0.0, presentValue: 100.0, futureValue: 200.0)
+		let rateMessage = "Growth rate must be positive; at zero or below the value never reaches a larger target"
+		#expect(throws: BusinessMathError.invalidInput(
+			message: rateMessage, value: "0.0", expectedRange: "(0, ∞)")) {
+			_ = try periodsToGrow(rate: 0.0, presentValue: 100.0, futureValue: 200.0)
 		}
-		expectInvalidInput(value: "0.0", range: "(0, ∞)", message: "Present value must be positive") {
-			try periodsToGrow(rate: 0.05, presentValue: 0.0, futureValue: 200.0)
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Present value must be positive", value: "0.0", expectedRange: "(0, ∞)")) {
+			_ = try periodsToGrow(rate: 0.05, presentValue: 0.0, futureValue: 200.0)
 		}
-		expectInvalidInput(value: "0.0", range: "(0, ∞)", message: "Future value must be positive") {
-			try periodsToGrow(rate: 0.05, presentValue: 100.0, futureValue: 0.0)
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Future value must be positive", value: "0.0", expectedRange: "(0, ∞)")) {
+			_ = try periodsToGrow(rate: 0.05, presentValue: 100.0, futureValue: 0.0)
 		}
-		expectInvalidInput(
-			value: "-0.05", range: "(0, ∞)",
-			message: "Growth rate must be positive; at zero or below the value never reaches a larger target"
-		) {
-			try periodsToGrow(rate: -0.05, presentValue: 100.0, futureValue: 200.0)
+		#expect(throws: BusinessMathError.invalidInput(
+			message: rateMessage, value: "-0.05", expectedRange: "(0, ∞)")) {
+			_ = try periodsToGrow(rate: -0.05, presentValue: 100.0, futureValue: 200.0)
 		}
 
-		expectInvalidInput(value: "0.0", range: "(0, ∞)") {
-			try nominalRate(effectiveRate: 0.1, periodsPerYear: 0)
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Compounding periods per year must be positive",
+			value: "0.0", expectedRange: "(0, ∞)")) {
+			_ = try nominalRate(effectiveRate: 0.1, periodsPerYear: 0)
 		}
-		expectInvalidInput(value: "-1.5", range: "(−1, ∞)") {
-			try nominalRate(effectiveRate: -1.5, periodsPerYear: 12)
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Effective rate must exceed −100%",
+			value: "-1.5", expectedRange: "(−1, ∞)")) {
+			_ = try nominalRate(effectiveRate: -1.5, periodsPerYear: 12)
 		}
 	}
 }
