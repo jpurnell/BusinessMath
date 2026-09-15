@@ -308,7 +308,11 @@ struct ExcelBindableParityTests {
 
 		// And a value that is not in the set is refused rather than guessed at — Excel
 		// reports #N/A.
-		#expect(throws: (any Error).self) { _ = try rank(25, in: values) }
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "The value being ranked does not appear in the set",
+			value: "25.0", expectedRange: "a member of the set")) {
+			_ = try rank(25, in: values)
+		}
 	}
 
 	@Test("PERCENTRANK reduces to three significant digits, as the spreadsheet does")
@@ -338,7 +342,15 @@ struct ExcelBindableParityTests {
 
 		// A zero or negative spread has no z-score to give, and returning one anyway
 		// would be an infinity flowing into whatever asked.
-		#expect(throws: (any Error).self) { _ = try standardize(11.0, mean: 10, stdDev: 0) }
-		#expect(throws: (any Error).self) { _ = try standardize(11.0, mean: 10, stdDev: -1) }
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Standard deviation must be positive to standardise against",
+			value: "0.0", expectedRange: "(0, ∞)")) {
+			_ = try standardize(11.0, mean: 10, stdDev: 0)
+		}
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Standard deviation must be positive to standardise against",
+			value: "-1.0", expectedRange: "(0, ∞)")) {
+			_ = try standardize(11.0, mean: 10, stdDev: -1)
+		}
 	}
 }

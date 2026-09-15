@@ -148,11 +148,21 @@ struct FormulaEvaluatorTests {
 		}
 	}
 
-	@Test("Malformed formulas are refused", arguments: [
-		"revenue -", "(revenue - cogs", "revenue - cogs)", "* revenue", "revenue $ cogs"
+	/// Five malformed formulas, and five *different* errors.
+	///
+	/// The old assertion was `#expect(throws: (any Error).self)`, which is satisfied by
+	/// all five equally — and would have gone on passing if the lexer collapsed them into
+	/// one generic failure. `FormulaError` is `Equatable`, so each expected value can be
+	/// written out in full.
+	@Test("Malformed formulas are refused, each by the error that fits it", arguments: [
+		("revenue -", FormulaError.unexpectedEnd),
+		("(revenue - cogs", FormulaError.unbalancedParentheses),
+		("revenue - cogs)", FormulaError.invalidSyntax("unexpected token after the end of the expression")),
+		("* revenue", FormulaError.invalidSyntax("an operator with nothing to its left")),
+		("revenue $ cogs", FormulaError.unexpectedCharacter("$"))
 	])
-	func malformed(formula: String) throws {
-		#expect(throws: (any Error).self) { try evaluator().evaluate(formula) }
+	func malformed(formula: String, expected: FormulaError) throws {
+		#expect(throws: expected) { try evaluator().evaluate(formula) }
 	}
 
 	/// Division follows the `/` operator exactly: period-wise, and a zero denominator gives a

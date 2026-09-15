@@ -121,10 +121,19 @@ struct QuasiRandomSamplingTests {
 
 	@Test("Sobol refuses a dimension its table does not cover")
 	func sobolRefusesUnvendoredDimensions() {
-		#expect(throws: (any Error).self) {
-			_ = try SobolSequence(dimension: SobolSequence.maximumDimension + 1)
+		// One guard covers both ends of the interval, and the value it reports is the
+		// dimension that was asked for — the only thing separating these two cases.
+		let tooLarge = SobolSequence.maximumDimension + 1
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Sobol dimension exceeds the vendored Joe & Kuo table; regenerate SobolDirectionNumbers.swift with a larger cap if more are needed",
+			value: "\(tooLarge)",
+			expectedRange: "[1, \(SobolSequence.maximumDimension)]")) {
+			_ = try SobolSequence(dimension: tooLarge)
 		}
-		#expect(throws: (any Error).self) {
+		#expect(throws: BusinessMathError.invalidInput(
+			message: "Sobol dimension exceeds the vendored Joe & Kuo table; regenerate SobolDirectionNumbers.swift with a larger cap if more are needed",
+			value: "0",
+			expectedRange: "[1, \(SobolSequence.maximumDimension)]")) {
 			_ = try SobolSequence(dimension: 0)
 		}
 		#expect(SobolSequence.maximumDimension == 256)
@@ -288,7 +297,8 @@ struct QuasiRandomSamplingTests {
 		simulation.addInput(SimulationInput(name: "opaque", sampler: { 1.0 }))
 		simulation.samplingMethod = .latinHypercube
 
-		#expect(throws: (any Error).self) { _ = try simulation.run() }
+		// The do/catch below already pins the case and the offending input's name; the
+		// `(any Error).self` that stood here asserted strictly less about the same call.
 		do {
 			_ = try simulation.run()
 			Issue.record("the run should have refused")
@@ -309,7 +319,14 @@ struct QuasiRandomSamplingTests {
 		var simulation = MonteCarloSimulation(iterations: 64, enableGPU: false) { $0[0] }
 		simulation.addInput(SimulationInput(name: "a", distribution: DistributionNormal(0, 1)))
 		simulation.samplingMethod = .latinHypercube
-		#expect(throws: (any Error).self) { _ = try simulation.run() }
+		// Latin hypercube randomises its point set, so an unseeded run is reproducible in
+		// coverage but not in values — refused by name rather than run anyway.
+		#expect {
+			_ = try simulation.run()
+		} throws: { error in
+			guard case let SimulationError.seedingUnsupported(inputName, _) = error else { return false }
+			return inputName == "latinHypercube"
+		}
 		#expect(SamplingMethod.latinHypercube.requiresSeed)
 		#expect(SamplingMethod.pseudoRandom.requiresSeed == false)
 		#expect(SamplingMethod.sobol(scrambled: false).requiresSeed == false)

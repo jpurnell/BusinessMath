@@ -299,9 +299,14 @@ struct TrendModelTests {
 
 		var model = ExponentialTrend<Double>()
 
-		// Should throw because log(0) is undefined
-		#expect(throws: (any Error).self) {
+		// `ExponentialTrend` fits in log space, so a non-positive observation has no
+		// logarithm — refused by name rather than by the `insufficientData` case its
+		// sibling guard raises.
+		#expect {
 			try model.fit(to: data)
+		} throws: { error in
+			guard case let TrendModelError.invalidData(reason) = error else { return false }
+			return reason == "Exponential trend requires all positive values"
 		}
 	}
 

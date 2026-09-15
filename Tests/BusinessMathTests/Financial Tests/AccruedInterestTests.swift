@@ -178,26 +178,49 @@ struct AccruedInterestTests {
 
 	// MARK: - Rejections
 
-	@Test("Invalid arguments are refused")
+	/// Each refusal names the argument it rejected and what it wanted instead.
+	///
+	/// Four `#expect(throws: (any Error).self)` stood here. The first two came from the
+	/// same guard and the same message, so only the interpolated settlement date tells them
+	/// apart — and that date is built here by the same interpolation the error uses, so
+	/// pinning it is exact rather than a guess about `Date`'s description format.
+	@Test("Invalid arguments are refused, each naming the argument it rejected")
 	func invalidArgumentsAreRefused() {
 		let issue = Self.date(2024, 1, 1)
 		let first = Self.date(2025, 1, 1)
-		#expect(throws: (any Error).self) {
-			let _: Double = try accruedInterest(
-				issue: issue, firstInterest: first, settlement: issue, rate: 0.05)
+
+		func expectInvalidInput(
+			value expectedValue: String,
+			range expectedRange: String,
+			sourceLocation: SourceLocation = #_sourceLocation,
+			_ body: () throws -> Double
+		) {
+			#expect(sourceLocation: sourceLocation) {
+				_ = try body()
+			} throws: { error in
+				guard case let BusinessMathError.invalidInput(_, value, range) = error else { return false }
+				return value == expectedValue && range == expectedRange
+			}
 		}
-		#expect(throws: (any Error).self) {
-			let _: Double = try accruedInterest(
-				issue: issue, firstInterest: first, settlement: Self.date(2023, 1, 1), rate: 0.05)
+
+		// Settling on the issue date: nothing has accrued yet.
+		expectInvalidInput(value: "\(issue)", range: "after \(issue)") {
+			try accruedInterest(issue: issue, firstInterest: first, settlement: issue, rate: 0.05)
 		}
-		#expect(throws: (any Error).self) {
-			let _: Double = try accruedInterest(
-				issue: issue, firstInterest: first, settlement: Self.date(2024, 6, 1), rate: -0.01)
+
+		// Settling before issue, refused by the same guard — the value is what separates them.
+		let beforeIssue = Self.date(2023, 1, 1)
+		expectInvalidInput(value: "\(beforeIssue)", range: "after \(issue)") {
+			try accruedInterest(issue: issue, firstInterest: first, settlement: beforeIssue, rate: 0.05)
 		}
-		#expect(throws: (any Error).self) {
-			let _: Double = try accruedInterest(
-				issue: issue, firstInterest: first, settlement: Self.date(2024, 6, 1),
-				rate: 0.05, par: 0)
+
+		let midYear = Self.date(2024, 6, 1)
+		expectInvalidInput(value: "-0.01", range: "[0, ∞)") {
+			try accruedInterest(issue: issue, firstInterest: first, settlement: midYear, rate: -0.01)
+		}
+		expectInvalidInput(value: "0.0", range: "(0, ∞)") {
+			try accruedInterest(issue: issue, firstInterest: first, settlement: midYear,
+								rate: 0.05, par: 0)
 		}
 	}
 }

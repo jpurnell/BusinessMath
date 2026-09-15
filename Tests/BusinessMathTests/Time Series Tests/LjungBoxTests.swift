@@ -46,8 +46,14 @@ struct LjungBoxTests {
 
     @Test("dof ≤ 0 (lags ≤ fittedParameters) throws")
     func invalidDof() throws {
-        #expect(throws: (any Error).self) {
+        // `ForecastError` is not `Equatable`, so the case and its payload are matched
+        // by hand. The payload is the whole point: two other guards in `ljungBox` throw
+        // the same case with different text.
+        #expect {
             _ = try self.series((1...10).map(Double.init)).ljungBox(lags: 2, fittedParameters: 2)
+        } throws: { error in
+            guard case let ForecastError.invalidParameter(reason) = error else { return false }
+            return reason == "lags must exceed fittedParameters (dof ≤ 0)"
         }
     }
 }

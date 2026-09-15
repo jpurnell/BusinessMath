@@ -359,10 +359,16 @@ struct BayesianICCReferenceTests {
 
 	@Test("Designs too small to decompose are refused")
 	func rejectsDegenerateDesigns() {
-		#expect(throws: (any Error).self) {
+		// One subject, and one rater: two different guards, distinguished by the context
+		// and by the count each reports.
+		#expect(throws: BusinessMathError.insufficientData(
+			required: 2, actual: 1,
+			context: "Bayesian ICC requires at least 2 subjects (rows)")) {
 			_ = try bayesianICC([[1.0, 2.0, 3.0]], model: .twoWayRandom)
 		}
-		#expect(throws: (any Error).self) {
+		#expect(throws: BusinessMathError.insufficientData(
+			required: 2, actual: 1,
+			context: "Bayesian ICC requires at least 2 raters (columns)")) {
 			_ = try bayesianICC([[1.0], [2.0], [3.0]], model: .twoWayRandom)
 		}
 	}

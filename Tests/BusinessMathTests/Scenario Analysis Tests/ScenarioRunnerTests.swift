@@ -557,6 +557,10 @@ struct ScenarioRunnerErrorPropagationTests {
 		[ .quarter(year: 2025, quarter: 1) ]
 	}
 
+	/// A type nothing in the library could ever throw, so reaching the expectation proves
+	/// the builder's own error travelled the whole way out.
+	private struct BuilderFault: Error {}
+
 	@Test("Builder errors are propagated by ScenarioRunner")
 	func builderErrorPropagation() throws {
 		let e = entity()
@@ -565,13 +569,14 @@ struct ScenarioRunnerErrorPropagationTests {
 		let scenario = FinancialScenario(name: "Base", description: "")
 		let runner = ScenarioRunner()
 
-		let faultyBuilder: ScenarioRunner.StatementBuilder = { _, periods in
-			// Create a mismatched TimeSeries to provoke an error, or throw directly.
-			struct TestError: Error {}
-			throw TestError()
+		let faultyBuilder: ScenarioRunner.StatementBuilder = { _, _ in
+			throw BuilderFault()
 		}
 
-		#expect(throws: (any Error).self) {
+		// The claim worth making is that the builder's error arrives *unchanged* — not
+		// wrapped, not replaced by a runner-level failure. `(any Error).self` could not
+		// tell those apart.
+		#expect(throws: BuilderFault.self) {
 			_ = try runner.run(scenario: scenario, entity: e, periods: ps, builder: faultyBuilder)
 		}
 	}

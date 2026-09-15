@@ -219,7 +219,10 @@ struct AsyncRunTests {
 		let task = Task { try await frozen.run() }
 		task.cancel()
 
-		await #expect(throws: (any Error).self) {
+		// Cancellation specifically — not "the run failed somehow", which is what
+		// `(any Error).self` accepted and what a genuine simulation failure would also
+		// have satisfied.
+		await #expect(throws: CancellationError.self) {
 			_ = try await task.value
 		}
 	}

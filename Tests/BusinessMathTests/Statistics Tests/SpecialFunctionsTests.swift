@@ -106,16 +106,43 @@ struct SpecialFunctionsTests {
 		}
 	}
 
-	@Test("Inverse rejects probabilities outside (0, 1)")
+	/// Each rejection names the argument and the interval it fell outside.
+	///
+	/// Seven `#expect(throws: (any Error).self)` stood here, which any throw satisfies.
+	/// Both guards raise `.invalidInput`, so `value` and `expectedRange` are what say which
+	/// one fired and on what.
+	@Test("The inverse gamma rejects out-of-range arguments by name")
 	func gammaInverseRejectsOutOfRange() {
+		func expectInvalidInput(
+			value expectedValue: String,
+			range expectedRange: String,
+			message expectedMessage: String? = nil,
+			sourceLocation: SourceLocation = #_sourceLocation,
+			_ body: () throws -> Double
+		) {
+			#expect(sourceLocation: sourceLocation) {
+				_ = try body()
+			} throws: { error in
+				guard case let BusinessMathError.invalidInput(message, value, range) = error else { return false }
+				guard value == expectedValue, range == expectedRange else { return false }
+				guard let expectedMessage else { return true }
+				return message == expectedMessage
+			}
+		}
+
+		// A probability outside the open unit interval. NaN is in the list because it
+		// satisfies no comparison, so a guard written as a range test has to reject it
+		// explicitly — and the error reports it as "nan".
 		for p in [-0.1, 0.0, 1.0, 1.5, Double.nan] {
-			#expect(throws: (any Error).self) {
-				let _: Double = try inverseRegularizedLowerIncompleteGamma(p: p, a: 2.0)
+			expectInvalidInput(value: "\(p)", range: "(0, 1)",
+							   message: "Probability must lie in the open interval (0, 1)") {
+				try inverseRegularizedLowerIncompleteGamma(p: p, a: 2.0)
 			}
 		}
 		for a in [-1.0, 0.0] {
-			#expect(throws: (any Error).self) {
-				let _: Double = try inverseRegularizedLowerIncompleteGamma(p: 0.5, a: a)
+			expectInvalidInput(value: "\(a)", range: "(0, ∞)",
+							   message: "Shape parameter must be positive") {
+				try inverseRegularizedLowerIncompleteGamma(p: 0.5, a: a)
 			}
 		}
 	}
@@ -194,18 +221,43 @@ struct SpecialFunctionsTests {
 		return Double.exp(logDensity)
 	}
 
-	@Test("Beta inverse rejects probabilities outside (0, 1) and non-positive shapes")
+	/// Each rejection names the argument and the interval it fell outside.
+	///
+	/// Seven `#expect(throws: (any Error).self)` stood here. The two shape parameters are
+	/// rejected with the identical `("0.0", "(0, ∞)")` pair when both are zero, so the
+	/// message is what distinguishes a bad `a` from a bad `b`.
+	@Test("The inverse beta rejects out-of-range arguments by name")
 	func betaInverseRejectsOutOfRange() {
-		for p in [-0.1, 0.0, 1.0, 1.5, Double.nan] {
-			#expect(throws: (any Error).self) {
-				let _: Double = try inverseRegularizedIncompleteBeta(p: p, a: 2.0, b: 3.0)
+		func expectInvalidInput(
+			value expectedValue: String,
+			range expectedRange: String,
+			message expectedMessage: String? = nil,
+			sourceLocation: SourceLocation = #_sourceLocation,
+			_ body: () throws -> Double
+		) {
+			#expect(sourceLocation: sourceLocation) {
+				_ = try body()
+			} throws: { error in
+				guard case let BusinessMathError.invalidInput(message, value, range) = error else { return false }
+				guard value == expectedValue, range == expectedRange else { return false }
+				guard let expectedMessage else { return true }
+				return message == expectedMessage
 			}
 		}
-		#expect(throws: (any Error).self) {
-			let _: Double = try inverseRegularizedIncompleteBeta(p: 0.5, a: 0.0, b: 3.0)
+
+		for p in [-0.1, 0.0, 1.0, 1.5, Double.nan] {
+			expectInvalidInput(value: "\(p)", range: "(0, 1)",
+							   message: "Probability must lie in the open interval (0, 1)") {
+				try inverseRegularizedIncompleteBeta(p: p, a: 2.0, b: 3.0)
+			}
 		}
-		#expect(throws: (any Error).self) {
-			let _: Double = try inverseRegularizedIncompleteBeta(p: 0.5, a: 2.0, b: -1.0)
+		expectInvalidInput(value: "0.0", range: "(0, ∞)",
+						   message: "Shape parameter a must be positive") {
+			try inverseRegularizedIncompleteBeta(p: 0.5, a: 0.0, b: 3.0)
+		}
+		expectInvalidInput(value: "-1.0", range: "(0, ∞)",
+						   message: "Shape parameter b must be positive") {
+			try inverseRegularizedIncompleteBeta(p: 0.5, a: 2.0, b: -1.0)
 		}
 	}
 

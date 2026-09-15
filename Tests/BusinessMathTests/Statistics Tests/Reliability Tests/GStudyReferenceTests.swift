@@ -242,10 +242,29 @@ struct GStudyReferenceTests {
 	func rejectsDegenerateDesigns() {
 		// One person or one rater leaves a degree of freedom at zero, and the mean
 		// square would be a division by it.
-		#expect(throws: (any Error).self) { _ = try gStudy([[1.0, 2.0, 3.0]]) }
-		#expect(throws: (any Error).self) { _ = try gStudy([[1.0], [2.0], [3.0]]) }
-		#expect(throws: (any Error).self) { _ = try gStudy([[Double]]()) }
-		// Ragged input is not a design at all.
-		#expect(throws: (any Error).self) { _ = try gStudy([[1.0, 2.0], [3.0]]) }
+		// The two-facet `gStudy` delegates its dimensional validation to `twoWayANOVA`,
+		// so these are that routine's errors, and each names the count it actually saw.
+		#expect(throws: BusinessMathError.insufficientData(
+			required: 2, actual: 1,
+			context: "Two-way ANOVA requires at least 2 subjects (rows)")) {
+			_ = try gStudy([[1.0, 2.0, 3.0]])
+		}
+		#expect(throws: BusinessMathError.insufficientData(
+			required: 2, actual: 1,
+			context: "Two-way ANOVA requires at least 2 raters (columns)")) {
+			_ = try gStudy([[1.0], [2.0], [3.0]])
+		}
+		#expect(throws: BusinessMathError.insufficientData(
+			required: 2, actual: 0,
+			context: "Two-way ANOVA requires at least 2 subjects (rows)")) {
+			_ = try gStudy([[Double]]())
+		}
+		// Ragged input is not a design at all, and is refused by a different case —
+		// which is the distinction `(any Error).self` could not make.
+		#expect(throws: BusinessMathError.mismatchedDimensions(
+			message: "All rows must have the same number of columns",
+			expected: "2", actual: "1")) {
+			_ = try gStudy([[1.0, 2.0], [3.0]])
+		}
 	}
 }

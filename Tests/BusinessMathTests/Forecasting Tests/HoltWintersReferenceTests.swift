@@ -331,8 +331,13 @@ struct HoltWintersReferenceTests {
 		var model = HoltWintersModel<Double>(alpha: 0.5, beta: 0.1, gamma: 0.1,
 											 seasonalPeriods: 4)
 		// Seven points cannot initialise a four-period seasonal from two cycles.
-		#expect(throws: (any Error).self) {
+		// Two full cycles of four are required; seven points give one short, and the
+		// error reports both figures.
+		#expect {
 			try model.train(values: [1, 2, 3, 4, 5, 6, 7])
+		} throws: { error in
+			guard case let ForecastError.insufficientData(required, got) = error else { return false }
+			return required == 8 && got == 7
 		}
 	}
 

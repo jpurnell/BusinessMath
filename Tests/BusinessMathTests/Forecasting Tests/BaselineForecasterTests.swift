@@ -55,9 +55,14 @@ struct BaselineForecasterTests {
 
     @Test("Seasonal-naive requires at least one full season")
     func seasonalNaiveInsufficient() throws {
-        #expect(throws: (any Error).self) {
+        // Three points against a season of four: the error carries both numbers, which
+        // is what says the season length was read rather than a default assumed.
+        #expect {
             _ = try SeasonalNaiveForecaster<Double>(seasonLength: 4)
                 .trainedForecast(from: monthly([1, 2, 3]), horizon: 2)
+        } throws: { error in
+            guard case let ForecastError.insufficientData(required, got) = error else { return false }
+            return required == 4 && got == 3
         }
     }
 

@@ -76,7 +76,17 @@ struct FormulaTVMFunctionTests {
     func irrThatCannotConvergeThrows() {
         // All-positive flows have no root. A returned zero here would be a rate,
         // and a wrong one.
-        #expect(throws: (any Error).self) {
+        // Not a convergence failure, as the test name once implied: `irr` checks for a
+        // sign change up front and refuses before iterating at all. The two are different
+        // guards with different reasons, and only one of them fires here.
+        #expect(throws: BusinessMathError.calculationFailed(
+            operation: "IRR",
+            reason: "Cash flows must contain both positive and negative values (all cash flows have the same sign)",
+            suggestions: [
+                "Ensure you have at least one negative cash flow (typically the initial investment)",
+                "Verify that you have at least one positive cash flow (returns or receipts)",
+                "Check that cash flows are correctly signed (negative for outflows, positive for inflows)"
+            ])) {
             _ = try evaluator(["flows": [100, 200, 300]]).evaluate("IRR(flows)")
         }
     }

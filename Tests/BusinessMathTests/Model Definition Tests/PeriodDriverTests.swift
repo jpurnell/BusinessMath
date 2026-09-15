@@ -136,7 +136,9 @@ struct PeriodDriverTests {
             rollforwards: [Rollforward(opening: "opening", closing: "nowhere", seed: 0)]
         )
 
-        #expect(throws: (any Error).self) {
+        // The error names both halves of the rollforward, which is what makes it
+        // actionable — and what `(any Error).self` threw away.
+        #expect(throws: PeriodDriverError.unknownAccount("nowhere", inRollforward: "opening")) {
             _ = try driver.run(over: Array(years.prefix(1)))
         }
     }

@@ -256,12 +256,12 @@ struct LinearAlgebraReferenceTests {
 		// as much a part of the contract as the factor, and a routine that returned NaNs
 		// here would poison everything downstream silently.
 		let indefinite = try DenseMatrix([[1.0, 2.0], [2.0, 1.0]])   // eigenvalues 3, -1
-		#expect(throws: (any Error).self) { _ = try indefinite.cholesky() }
+		#expect(throws: MatrixError.notPositiveDefinite) { _ = try indefinite.cholesky() }
 
 		let singular = try DenseMatrix([[1.0, 1.0], [1.0, 1.0]])     // rank 1
-		#expect(throws: (any Error).self) { _ = try singular.cholesky() }
+		#expect(throws: MatrixError.notPositiveDefinite) { _ = try singular.cholesky() }
 
 		let negative = try DenseMatrix([[-4.0]])
-		#expect(throws: (any Error).self) { _ = try negative.cholesky() }
+		#expect(throws: MatrixError.notPositiveDefinite) { _ = try negative.cholesky() }
 	}
 }

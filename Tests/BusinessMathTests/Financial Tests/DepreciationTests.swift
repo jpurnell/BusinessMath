@@ -170,30 +170,60 @@ struct DepreciationTests {
 
 	// MARK: - Rejections
 
-	@Test("Invalid arguments are refused")
+	/// Each refusal names the input it rejected and the range it wanted.
+	///
+	/// Eight `#expect(throws: (any Error).self)` stood here, which a `fatalError` trampoline
+	/// or an unrelated failure inside the call would satisfy just as well. Every guard in
+	/// `Depreciation.swift` throws the *same* case — `.invalidInput` — so the case alone
+	/// does not say which one fired either. `value` and `expectedRange` do: they are the
+	/// offending argument and the interval it missed, and together they identify the guard.
+	@Test("Invalid arguments are refused, each naming the argument and the range it missed")
 	func invalidArgumentsAreRefused() {
-		#expect(throws: (any Error).self) { _ = try straightLineDepreciation(cost: 100, salvage: 0, life: 0) }
-		#expect(throws: (any Error).self) { _ = try straightLineDepreciation(cost: 100, salvage: 0, life: -5) }
+		func expectInvalidInput(
+			value expectedValue: String,
+			range expectedRange: String,
+			sourceLocation: SourceLocation = #_sourceLocation,
+			_ body: () throws -> Double
+		) {
+			#expect(sourceLocation: sourceLocation) {
+				_ = try body()
+			} throws: { error in
+				guard case let BusinessMathError.invalidInput(_, value, range) = error else { return false }
+				return value == expectedValue && range == expectedRange
+			}
+		}
 
-		// A period beyond the asset's life, which the spreadsheet also refuses.
-		#expect(throws: (any Error).self) {
-			_ = try sumOfYearsDigitsDepreciation(cost: 100, salvage: 0, life: 5, period: 6)
+		// Life must be positive, and the zero and the negative are rejected by the same guard.
+		expectInvalidInput(value: "0.0", range: "(0, ∞)") {
+			try straightLineDepreciation(cost: 100, salvage: 0, life: 0)
 		}
-		#expect(throws: (any Error).self) {
-			_ = try sumOfYearsDigitsDepreciation(cost: 100, salvage: 0, life: 5, period: 0)
+		expectInvalidInput(value: "-5.0", range: "(0, ∞)") {
+			try straightLineDepreciation(cost: 100, salvage: 0, life: -5)
 		}
-		#expect(throws: (any Error).self) {
-			_ = try decliningBalanceDepreciation(cost: 100, salvage: 0, life: 5, period: 0.5)
+
+		// A period beyond the asset's life, which the spreadsheet also refuses. The range
+		// carries the life, so it is the one assertion that proves the bound was read.
+		expectInvalidInput(value: "6.0", range: "[1, 5.0]") {
+			try sumOfYearsDigitsDepreciation(cost: 100, salvage: 0, life: 5, period: 6)
 		}
-		#expect(throws: (any Error).self) {
-			_ = try decliningBalanceDepreciation(cost: 100, salvage: 0, life: 5, period: 1, factor: 0)
+		expectInvalidInput(value: "0.0", range: "[1, 5.0]") {
+			try sumOfYearsDigitsDepreciation(cost: 100, salvage: 0, life: 5, period: 0)
 		}
-		#expect(throws: (any Error).self) {
-			_ = try variableDecliningBalanceDepreciation(
+
+		// Declining balance has three separate guards, and each names itself.
+		expectInvalidInput(value: "0.5", range: "[1, ∞)") {
+			try decliningBalanceDepreciation(cost: 100, salvage: 0, life: 5, period: 0.5)
+		}
+		expectInvalidInput(value: "0.0", range: "(0, ∞)") {
+			try decliningBalanceDepreciation(cost: 100, salvage: 0, life: 5, period: 1, factor: 0)
+		}
+
+		expectInvalidInput(value: "1.0", range: "[3.0, ∞)") {
+			try variableDecliningBalanceDepreciation(
 				cost: 100, salvage: 0, life: 5, start: 3, end: 1)
 		}
-		#expect(throws: (any Error).self) {
-			_ = try variableDecliningBalanceDepreciation(
+		expectInvalidInput(value: "-1.0", range: "[0, ∞)") {
+			try variableDecliningBalanceDepreciation(
 				cost: 100, salvage: 0, life: 5, start: -1, end: 1)
 		}
 	}
