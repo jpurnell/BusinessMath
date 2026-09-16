@@ -54,6 +54,28 @@ internal func transposeChannels<T: Real & BinaryFloatingPoint & Sendable & Codab
     return channels
 }
 
+/// Validate, transpose, and build one scalar interpolator per channel.
+///
+/// The three steps every vector interpolator in this file opens with, written out ten
+/// times. What varies between them is the channel type and the arguments it takes, which
+/// the closure carries; what does not vary is this.
+///
+/// - Parameters:
+///   - ys: The vector samples, all of equal dimension.
+///   - makeChannel: Builds the scalar interpolator for one channel's values.
+/// - Returns: The per-channel interpolators and the dimension they were built for.
+/// - Throws: ``InterpolationError/invalidParameter(message:)`` when the vectors disagree on
+///   dimension, and whatever `makeChannel` throws.
+@inlinable
+internal func vectorChannels<T: Real & BinaryFloatingPoint & Sendable & Codable, C>(
+    _ ys: [VectorN<T>],
+    _ makeChannel: ([T]) throws -> C
+) throws -> (channels: [C], dimension: Int) {
+    let dim = try validateVectorYs(ys)
+    let transposed = transposeChannels(ys, dimension: dim)
+    return (try transposed.map(makeChannel), dim)
+}
+
 // MARK: - VectorNearestNeighborInterpolator
 
 /// Vector-output nearest-neighbor interpolation, returning the vector at the closest knot.
@@ -92,14 +114,13 @@ public struct VectorNearestNeighborInterpolator<T: Real & BinaryFloatingPoint & 
         outOfBounds: ExtrapolationPolicy<T> = .clamp
     ) throws {
         try validateXY(xs: xs, ysCount: ys.count, minimumPoints: 1)
-        let dim = try validateVectorYs(ys)
-        self.xs = xs
-        self.ys = ys
-        self.outputDimension = dim
-        let chans = transposeChannels(ys, dimension: dim)
-        self.channels = try chans.map {
+        let built = try vectorChannels(ys) {
             try NearestNeighborInterpolator(xs: xs, ys: $0, outOfBounds: outOfBounds)
         }
+        self.xs = xs
+        self.ys = ys
+        self.outputDimension = built.dimension
+        self.channels = built.channels
     }
 
     /// Evaluate the interpolator at a wrapped query point.
@@ -157,14 +178,13 @@ public struct VectorPreviousValueInterpolator<T: Real & BinaryFloatingPoint & Se
         outOfBounds: ExtrapolationPolicy<T> = .clamp
     ) throws {
         try validateXY(xs: xs, ysCount: ys.count, minimumPoints: 1)
-        let dim = try validateVectorYs(ys)
-        self.xs = xs
-        self.ys = ys
-        self.outputDimension = dim
-        let chans = transposeChannels(ys, dimension: dim)
-        self.channels = try chans.map {
+        let built = try vectorChannels(ys) {
             try PreviousValueInterpolator(xs: xs, ys: $0, outOfBounds: outOfBounds)
         }
+        self.xs = xs
+        self.ys = ys
+        self.outputDimension = built.dimension
+        self.channels = built.channels
     }
 
     /// Evaluate the interpolator at a wrapped query point.
@@ -222,14 +242,13 @@ public struct VectorNextValueInterpolator<T: Real & BinaryFloatingPoint & Sendab
         outOfBounds: ExtrapolationPolicy<T> = .clamp
     ) throws {
         try validateXY(xs: xs, ysCount: ys.count, minimumPoints: 1)
-        let dim = try validateVectorYs(ys)
-        self.xs = xs
-        self.ys = ys
-        self.outputDimension = dim
-        let chans = transposeChannels(ys, dimension: dim)
-        self.channels = try chans.map {
+        let built = try vectorChannels(ys) {
             try NextValueInterpolator(xs: xs, ys: $0, outOfBounds: outOfBounds)
         }
+        self.xs = xs
+        self.ys = ys
+        self.outputDimension = built.dimension
+        self.channels = built.channels
     }
 
     /// Evaluate the interpolator at a wrapped query point.
@@ -287,14 +306,13 @@ public struct VectorLinearInterpolator<T: Real & BinaryFloatingPoint & Sendable 
         outOfBounds: ExtrapolationPolicy<T> = .clamp
     ) throws {
         try validateXY(xs: xs, ysCount: ys.count, minimumPoints: 2)
-        let dim = try validateVectorYs(ys)
-        self.xs = xs
-        self.ys = ys
-        self.outputDimension = dim
-        let chans = transposeChannels(ys, dimension: dim)
-        self.channels = try chans.map {
+        let built = try vectorChannels(ys) {
             try LinearInterpolator(xs: xs, ys: $0, outOfBounds: outOfBounds)
         }
+        self.xs = xs
+        self.ys = ys
+        self.outputDimension = built.dimension
+        self.channels = built.channels
     }
 
     /// Evaluate the interpolator at a wrapped query point.
@@ -357,15 +375,14 @@ public struct VectorCubicSplineInterpolator<T: Real & BinaryFloatingPoint & Send
         boundary: BoundaryCondition = .natural,
         outOfBounds: ExtrapolationPolicy<T> = .clamp
     ) throws {
-        let dim = try validateVectorYs(ys)
-        self.xs = xs
-        self.ys = ys
-        self.outputDimension = dim
-        self.boundary = boundary
-        let chans = transposeChannels(ys, dimension: dim)
-        self.channels = try chans.map {
+        let built = try vectorChannels(ys) {
             try CubicSplineInterpolator(xs: xs, ys: $0, boundary: boundary, outOfBounds: outOfBounds)
         }
+        self.xs = xs
+        self.ys = ys
+        self.boundary = boundary
+        self.outputDimension = built.dimension
+        self.channels = built.channels
     }
 
     /// Evaluate the interpolator at a wrapped query point.
@@ -422,14 +439,13 @@ public struct VectorPCHIPInterpolator<T: Real & BinaryFloatingPoint & Sendable &
         ys: [VectorN<T>],
         outOfBounds: ExtrapolationPolicy<T> = .clamp
     ) throws {
-        let dim = try validateVectorYs(ys)
-        self.xs = xs
-        self.ys = ys
-        self.outputDimension = dim
-        let chans = transposeChannels(ys, dimension: dim)
-        self.channels = try chans.map {
+        let built = try vectorChannels(ys) {
             try PCHIPInterpolator(xs: xs, ys: $0, outOfBounds: outOfBounds)
         }
+        self.xs = xs
+        self.ys = ys
+        self.outputDimension = built.dimension
+        self.channels = built.channels
     }
 
     /// Evaluate the interpolator at a wrapped query point.
@@ -490,15 +506,14 @@ public struct VectorAkimaInterpolator<T: Real & BinaryFloatingPoint & Sendable &
         modified: Bool = true,
         outOfBounds: ExtrapolationPolicy<T> = .clamp
     ) throws {
-        let dim = try validateVectorYs(ys)
-        self.xs = xs
-        self.ys = ys
-        self.outputDimension = dim
-        self.modified = modified
-        let chans = transposeChannels(ys, dimension: dim)
-        self.channels = try chans.map {
+        let built = try vectorChannels(ys) {
             try AkimaInterpolator(xs: xs, ys: $0, modified: modified, outOfBounds: outOfBounds)
         }
+        self.xs = xs
+        self.ys = ys
+        self.modified = modified
+        self.outputDimension = built.dimension
+        self.channels = built.channels
     }
 
     /// Evaluate the interpolator at a wrapped query point.
@@ -559,15 +574,14 @@ public struct VectorCatmullRomInterpolator<T: Real & BinaryFloatingPoint & Senda
         tension: T = T(0),
         outOfBounds: ExtrapolationPolicy<T> = .clamp
     ) throws {
-        let dim = try validateVectorYs(ys)
-        self.xs = xs
-        self.ys = ys
-        self.outputDimension = dim
-        self.tension = tension
-        let chans = transposeChannels(ys, dimension: dim)
-        self.channels = try chans.map {
+        let built = try vectorChannels(ys) {
             try CatmullRomInterpolator(xs: xs, ys: $0, tension: tension, outOfBounds: outOfBounds)
         }
+        self.xs = xs
+        self.ys = ys
+        self.tension = tension
+        self.outputDimension = built.dimension
+        self.channels = built.channels
     }
 
     /// Evaluate the interpolator at a wrapped query point.
@@ -628,15 +642,14 @@ public struct VectorBSplineInterpolator<T: Real & BinaryFloatingPoint & Sendable
         degree: Int = 3,
         outOfBounds: ExtrapolationPolicy<T> = .clamp
     ) throws {
-        let dim = try validateVectorYs(ys)
-        self.xs = xs
-        self.ys = ys
-        self.outputDimension = dim
-        self.degree = degree
-        let chans = transposeChannels(ys, dimension: dim)
-        self.channels = try chans.map {
+        let built = try vectorChannels(ys) {
             try BSplineInterpolator(xs: xs, ys: $0, degree: degree, outOfBounds: outOfBounds)
         }
+        self.xs = xs
+        self.ys = ys
+        self.degree = degree
+        self.outputDimension = built.dimension
+        self.channels = built.channels
     }
 
     /// Evaluate the interpolator at a wrapped query point.
@@ -695,14 +708,13 @@ public struct VectorBarycentricLagrangeInterpolator<T: Real & BinaryFloatingPoin
         outOfBounds: ExtrapolationPolicy<T> = .clamp
     ) throws {
         try validateXY(xs: xs, ysCount: ys.count, minimumPoints: 1)
-        let dim = try validateVectorYs(ys)
-        self.xs = xs
-        self.ys = ys
-        self.outputDimension = dim
-        let chans = transposeChannels(ys, dimension: dim)
-        self.channels = try chans.map {
+        let built = try vectorChannels(ys) {
             try BarycentricLagrangeInterpolator(xs: xs, ys: $0, outOfBounds: outOfBounds)
         }
+        self.xs = xs
+        self.ys = ys
+        self.outputDimension = built.dimension
+        self.channels = built.channels
     }
 
     /// Evaluate the interpolator at a wrapped query point.
