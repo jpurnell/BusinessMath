@@ -732,6 +732,29 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
 
     // MARK: - Pipeline Execution
 
+    /// A 64-bit seed drawn from system entropy, for a caller that supplied none.
+    ///
+    /// `runSimulation` takes `seed:` as an optional and this is what fills it in. Passing a
+    /// seed is what makes a run reproducible; this is the documented path for callers who
+    /// want a fresh stream each time.
+    ///
+    /// This was `UInt64(arc4random()) << 32 | UInt64(arc4random())`, written out at both
+    /// call sites. Three things wrong with that and none of them a wrong answer:
+    ///
+    /// - `arc4random` is a legacy C API. `UInt64.random(in:)` draws from
+    ///   `SystemRandomNumberGenerator`, which is the same system entropy through the
+    ///   interface Swift documents.
+    /// - It took **two** 32-bit draws and assembled them by hand to make 64 bits, which
+    ///   `UInt64.random(in:)` does in one.
+    /// - It appeared twice, in the sync and async twins. A seeding rule written in two
+    ///   places is one that can be corrected in one of them.
+    ///
+    /// - Returns: A seed covering the full range of `UInt64`.
+    private static func entropySeed() -> UInt64 {
+        var generator = SystemRandomNumberGenerator() // stochastic:exempt — the documented unseeded path; pass `seed:` for reproducibility
+        return UInt64.random(in: UInt64.min ... UInt64.max, using: &generator)
+    }
+
     private func executePipeline(
         buffers: Buffers,
         iterations: Int,
@@ -750,7 +773,7 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
             commandBuffer: commandBuffer,
             buffer: buffers.rngStates,
             iterations: iterations,
-            seed: seed ?? UInt64(arc4random()) << 32 | UInt64(arc4random()) // stochastic:exempt — the documented unseeded fallback; pass `seed:` for reproducibility
+            seed: seed ?? Self.entropySeed()
         )
 
         // Step 2: Encode Monte Carlo iterations in same command buffer
@@ -788,7 +811,7 @@ public final class MonteCarloGPUDevice: @unchecked Sendable {
             commandBuffer: commandBuffer,
             buffer: buffers.rngStates,
             iterations: iterations,
-            seed: seed ?? UInt64(arc4random()) << 32 | UInt64(arc4random()) // stochastic:exempt — the documented unseeded fallback; pass `seed:` for reproducibility
+            seed: seed ?? Self.entropySeed()
         )
 
         try encodeMonteCarloIterations(
