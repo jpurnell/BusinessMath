@@ -257,8 +257,9 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
         constraints: [MultivariateConstraint<V>]
     ) throws -> MultivariateOptimizationResult<V> {
 
-        // Penalty coefficient (starts moderate, can be increased if needed)
-        let penaltyCoefficient = V.Scalar(1000)
+        // The weight the caller chose, or the historical 1000 by default. The config
+        // guarantees it is positive and finite, so no guard is needed here.
+        let penaltyCoefficient = V.Scalar(config.constraintPenaltyWeight)
 
         // Create penalized objective
         let penalizedObjective: @Sendable (V) -> V.Scalar = { point in

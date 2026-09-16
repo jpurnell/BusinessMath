@@ -109,26 +109,14 @@ public func sigma<T: Real>(rankSums: [T]) -> T {
 ///
 /// - SeeAlso: ``kendallW(_:)``
 public func friedmanChiSquare<T: Real>(_ rankings: [[T]]) -> T {
-    // Validate input
-    guard !rankings.isEmpty else { return T.nan }
-    guard let firstRow = rankings.first, !firstRow.isEmpty else { return T.nan }
+    guard let reduced = rankSums(from: rankings) else { return T.nan }
 
-    let judges = rankings.count      // n = number of rows
-    let items = firstRow.count       // k = number of columns
+    // There is no difference across treatments to detect with fewer than two of them.
+    guard reduced.items >= 2 else { return T.nan }
 
-    // Need at least 2 items
-    guard items >= 2 else { return T.nan }
-
-    // Compute rank sums (sum each column)
-    var rankSums: [T] = Array(repeating: T(0), count: items)
-    for row in rankings {
-        for (col, rank) in row.enumerated() where col < items {
-            rankSums[col] += rank
-        }
-    }
-
-    // Use the internal function
-    return friedmanChiSquareFromRankSums(rankSums: rankSums, judges: judges, items: items)
+    return friedmanChiSquareFromRankSums(
+        rankSums: reduced.sums, judges: reduced.judges, items: reduced.items
+    )
 }
 
 /// Internal function to calculate Friedman's chi-square from pre-computed rank sums.

@@ -354,60 +354,15 @@ extension LogisticRegression {
 
 	/// Solves a symmetric system by Gaussian elimination with partial pivoting.
 	///
+	/// The implementation lives in `gaussianSolve(_:_:)` — internal, so not linkable — shared with
+	/// `TransitionMatrix.solve`. Symmetry is a property of `XᵀWX` rather than something this
+	/// solve exploits — it does not use a Cholesky factorisation — so there was never
+	/// anything regression-specific here to keep separate.
+	///
 	/// - Returns: The solution, or `nil` when the matrix is singular to working
 	///   precision — which for `XᵀWX` means the design has collinear columns.
 	static func solveSymmetric(_ matrix: [[T]], _ rhs: [T]) -> [T]? {
-		let n = rhs.count
-		guard n > 0, matrix.count == n else { return nil }
-		var a = matrix
-		var b = rhs
-		var scale: T = T.zero
-		for row in a {
-			for value in row {
-				let size: T = value < T.zero ? -value : value
-				if size > scale { scale = size }
-			}
-		}
-		guard scale > T.zero else { return nil }
-		let threshold: T = scale * T.ulpOfOne * T(n * n)
-
-		for column in 0..<n {
-			var pivotRow = column
-			var best: T = T.zero
-			for row in column..<n {
-				let size: T = a[row][column] < T.zero ? -a[row][column] : a[row][column]
-				if size > best { best = size; pivotRow = row }
-			}
-			guard best > threshold else { return nil }
-			if pivotRow != column {
-				a.swapAt(pivotRow, column)
-				b.swapAt(pivotRow, column)
-			}
-			let pivot: T = a[column][column]
-			for row in (column + 1)..<n {
-				let factor: T = a[row][column] / pivot
-				guard factor.isFinite else { return nil }
-				for k in column..<n {
-					let adjustment: T = factor * a[column][k]
-					a[row][k] -= adjustment
-				}
-				let scaled: T = factor * b[column]
-				b[row] -= scaled
-			}
-		}
-
-		var solution = [T](repeating: T.zero, count: n)
-		for row in stride(from: n - 1, through: 0, by: -1) {
-			var total: T = b[row]
-			for k in (row + 1)..<n {
-				let term: T = a[row][k] * solution[k]
-				total -= term
-			}
-			let pivot: T = a[row][row]
-			guard pivot != T.zero else { return nil }
-			solution[row] = total / pivot
-		}
-		return solution.allSatisfy { $0.isFinite } ? solution : nil
+		gaussianSolve(matrix, rhs)
 	}
 
 	/// The standard errors: square roots of the diagonal of `(XᵀWX)⁻¹`.

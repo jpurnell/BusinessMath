@@ -85,26 +85,14 @@ import Numerics
 /// - SeeAlso: ``friedmanChiSquare(_:)``
 /// - SeeAlso: ``fStatistic(kendallW:items:)``
 public func kendallW<T: Real>(_ rankings: [[T]]) -> T {
-    // Validate input
-    guard !rankings.isEmpty else { return T.nan }
-    guard let firstRow = rankings.first, !firstRow.isEmpty else { return T.nan }
+    guard let reduced = rankSums(from: rankings) else { return T.nan }
 
-    let judges = rankings.count      // n = number of rows
-    let items = firstRow.count       // k = number of columns
+    // Concordance needs at least two items to be concordant about.
+    guard reduced.items >= 2 else { return T.nan }
 
-    // Need at least 2 items for concordance to be meaningful
-    guard items >= 2 else { return T.nan }
-
-    // Compute rank sums (sum each column)
-    var rankSums: [T] = Array(repeating: T(0), count: items)
-    for row in rankings {
-        for (col, rank) in row.enumerated() where col < items {
-            rankSums[col] += rank
-        }
-    }
-
-    // Calculate using the internal function
-    return kendallWFromRankSums(rankSums: rankSums, judges: judges, items: items)
+    return kendallWFromRankSums(
+        rankSums: reduced.sums, judges: reduced.judges, items: reduced.items
+    )
 }
 
 /// Internal function to calculate Kendall's W from pre-computed rank sums.

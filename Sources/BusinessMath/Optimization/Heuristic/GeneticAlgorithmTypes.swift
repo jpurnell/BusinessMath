@@ -33,7 +33,7 @@ import Numerics
 /// ## Topics
 ///
 /// ### Creating Configurations
-/// - ``init(populationSize:generations:crossoverRate:mutationRate:mutationStrength:eliteCount:tournamentSize:seed:)``
+/// - ``init(populationSize:generations:crossoverRate:mutationRate:mutationStrength:eliteCount:tournamentSize:seed:constraintPenaltyWeight:)``
 /// - ``default``
 /// - ``highPerformance``
 ///
@@ -104,6 +104,28 @@ public struct GeneticAlgorithmConfig: Sendable {
     /// When nil, uses a non-deterministic random seed.
     public let seed: UInt64?
 
+    /// Weight applied to constraint violations in a constrained solve.
+    ///
+    /// A constrained run minimises `objective(x) + weight · Σ violation(x)²`, so this number
+    /// decides how far outside the feasible region an answer is allowed to settle.
+    ///
+    /// **It has to be commensurate with the objective's scale, which is why it is a
+    /// parameter.** A penalty that is small beside the objective is negligible, and the
+    /// solve returns an infeasible point without saying so.
+    ///
+    /// **This default is `1000`, not the `100` the other constrained heuristics use.** When
+    /// 2.17.0 turned that literal into a parameter across Nelder-Mead, differential
+    /// evolution, particle swarm, simulated annealing and the island model, the genetic
+    /// algorithm was missed — it had never used `100`, so it did not match the literal being
+    /// searched for. Its own literal was `1000`, and that is preserved here so no existing
+    /// caller's results move. There is no principled reason for the two defaults to differ;
+    /// unifying them is a behaviour change and belongs to whoever decides which is right.
+    ///
+    /// A non-positive or non-finite value falls back to the default rather than being
+    /// honoured: a weight of zero deletes the constraint silently, which is worse than any
+    /// badly chosen weight.
+    public let constraintPenaltyWeight: Double
+
     // MARK: - Initialization
 
     /// Create a genetic algorithm configuration.
@@ -117,6 +139,8 @@ public struct GeneticAlgorithmConfig: Sendable {
     ///   - eliteCount: Number of elite individuals preserved (default: 2)
     ///   - tournamentSize: Tournament selection size (default: 3)
     ///   - seed: Random seed for reproducibility (default: nil)
+    ///   - constraintPenaltyWeight: Penalty weight for constrained solves (default: 1000 —
+    ///     see the property, which explains why this differs from the other heuristics)
     public init(
         populationSize: Int = 100,
         generations: Int = 100,
@@ -125,8 +149,12 @@ public struct GeneticAlgorithmConfig: Sendable {
         mutationStrength: Double = 0.1,
         eliteCount: Int = 2,
         tournamentSize: Int = 3,
-        seed: UInt64? = nil
+        seed: UInt64? = nil,
+        constraintPenaltyWeight: Double = 1000
     ) {
+        let penaltyFallback: Double = 1000
+        let penaltyIsUsable = constraintPenaltyWeight > 0 && constraintPenaltyWeight.isFinite
+        self.constraintPenaltyWeight = penaltyIsUsable ? constraintPenaltyWeight : penaltyFallback
         self.populationSize = populationSize
         self.generations = generations
         self.crossoverRate = crossoverRate

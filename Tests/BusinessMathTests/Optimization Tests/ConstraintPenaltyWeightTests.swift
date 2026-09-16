@@ -90,6 +90,39 @@ struct ConstraintPenaltyWeightTests {
 		#expect(IslandModelConfig.default.constraintPenaltyWeight.isEqual(to: shipped))
 	}
 
+	/// The sixth constrained heuristic, which the 2.17.0 parameterisation missed.
+	///
+	/// `GeneticAlgorithm` was not among the five because it had never used the literal
+	/// `100` — its own hardcoded weight was `1000`, so it did not match what was being
+	/// searched for, and it kept the literal for three more releases. Its default preserves
+	/// that `1000` so no existing caller's results move.
+	///
+	/// **There is no principled reason for the two defaults to differ.** This expectation
+	/// records the discrepancy rather than endorsing it: unifying them changes results for
+	/// every constrained GA solve, which is a decision rather than a cleanup.
+	@Test("The genetic algorithm takes the same parameter, defaulting to its own historical 1000")
+	func geneticAlgorithmIsParameterisedToo() {
+		let geneticShipped: Double = 1000
+		#expect(GeneticAlgorithmConfig.default.constraintPenaltyWeight.isEqual(to: geneticShipped))
+
+		// The same fallback contract as the other five: a weight that is not a positive
+		// multiplier is refused rather than honoured. The seed is supplied only because
+		// the config declares one — nothing here runs the algorithm — and an unseeded
+		// construction is what the determinism checker flags.
+		#expect(GeneticAlgorithmConfig(seed: 20260916, constraintPenaltyWeight: 0)
+			.constraintPenaltyWeight.isEqual(to: geneticShipped))
+		#expect(GeneticAlgorithmConfig(seed: 20260916, constraintPenaltyWeight: -5)
+			.constraintPenaltyWeight.isEqual(to: geneticShipped))
+		#expect(GeneticAlgorithmConfig(seed: 20260916, constraintPenaltyWeight: .nan)
+			.constraintPenaltyWeight.isEqual(to: geneticShipped))
+		#expect(GeneticAlgorithmConfig(seed: 20260916, constraintPenaltyWeight: .infinity)
+			.constraintPenaltyWeight.isEqual(to: geneticShipped))
+
+		let honoured: Double = 7.5
+		#expect(GeneticAlgorithmConfig(seed: 20260916, constraintPenaltyWeight: honoured)
+			.constraintPenaltyWeight.isEqual(to: honoured))
+	}
+
 	@Test("A weight that is not a positive multiplier falls back to the default")
 	func invalidWeightsAreRefused() {
 		// A zero weight removes the constraint silently, which is the one outcome worse

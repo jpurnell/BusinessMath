@@ -78,23 +78,13 @@ import Numerics
 ///
 /// - Note: The D-value is always non-negative.
 public func dValue<T: Real>(_ rankings: [[T]]) -> T {
-    // Validate input
-    guard !rankings.isEmpty else { return T(0) }
-    guard let firstRow = rankings.first, !firstRow.isEmpty else { return T(0) }
+    // Zero rather than NaN on unusable input, which is what this function has always
+    // returned and is not what its two neighbours return. See ``rankSums(from:)``.
+    guard let reduced = rankSums(from: rankings) else { return T(0) }
 
-    let judges = rankings.count      // n = number of rows
-    let items = firstRow.count       // k = number of columns
-
-    // Compute rank sums (sum each column)
-    var rankSums: [T] = Array(repeating: T(0), count: items)
-    for row in rankings {
-        for (col, rank) in row.enumerated() where col < items {
-            rankSums[col] += rank
-        }
-    }
-
-    // Use the internal function
-    return dValueFromRankSums(rankSums: rankSums, judges: judges, items: items)
+    return dValueFromRankSums(
+        rankSums: reduced.sums, judges: reduced.judges, items: reduced.items
+    )
 }
 
 /// Internal function to calculate D-value from pre-computed rank sums.
