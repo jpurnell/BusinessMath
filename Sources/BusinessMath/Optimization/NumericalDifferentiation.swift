@@ -211,83 +211,69 @@ public func solveLinearSystem<T: Real>(
 	matrix: [[T]],
 	vector: [T]
 ) throws -> [T] {
-	let n = matrix.count
+	// The elimination itself lives in `gaussianSolveDetailed(_:_:options:)`, shared with
+	// the four other callers that each used to carry a copy. What is specific to this
+	// function, and preserved exactly, is the threshold and the error taxonomy.
+	//
+	// The `1e-9` cutoff is fixed rather than scale-relative. That is a weaker criterion
+	// than the default — it calls a system singular or not depending on the units it is
+	// written in — but it is this function's published behaviour, with tests pinning the
+	// errors it raises, so it is a parameter here rather than a correction.
+	//
+	// `requireFiniteSolution` is off for the same reason: this function has never checked,
+	// and turning the check on would newly throw for callers that get an answer today.
+	let options = GaussianSolveOptions<T>(
+		criterion: .absolute(T(1) / T(1_000_000_000)),
+		requireFiniteSolution: false
+	)
+
+	switch gaussianSolveDetailed(matrix, vector, options: options) {
+	case .solved(let solution):
+		return solution
+
 	// Separated so the error names the actual condition: an empty matrix is not a mismatch,
 	// and a caller correcting a mismatch needs both counts.
-	guard n > 0 else {
+	case .failed(.emptyMatrix):
 		throw OptimizationError.invalidInput(message: "Matrix is empty")
-	}
-	guard matrix.allSatisfy({ $0.count == n }) else {
-		let widths = Set(matrix.map(\.count)).sorted()
+
+	case .failed(.notSquare(let rows, let widths)):
 		throw OptimizationError.dimensionMismatch(
-			message: "Matrix has \(n) rows but row widths \(widths); every row must have \(n)"
+			message: "Matrix has \(rows) rows but row widths \(widths); every row must have \(rows)"
+		)
+
+	case .failed(.rightHandSideMismatch(let expected, let actual)):
+		throw OptimizationError.dimensionMismatch(
+			message: "Matrix is \(expected)×\(expected) but the right-hand side has \(actual) elements"
+		)
+
+	// "Singular or nearly singular" conflated two conditions a caller can act on
+	// differently. An exactly zero column is singular and no amount of rescaling helps; a
+	// tiny-but-nonzero pivot is invertible in exact arithmetic and fails only in floating
+	// point, so reformulating or rescaling the problem may well succeed.
+	case .failed(.singular(let column)):
+		throw OptimizationError.singularMatrix(
+			message: "Column \(column) is entirely zero; the matrix is singular"
+		)
+
+	case .failed(.noScale):
+		// Every entry is zero, so the first column is zero like all the rest. Only the
+		// scale-relative criterion can report this and this function does not use it, so
+		// the case is unreachable here — handled rather than trapped, because an
+		// unreachable branch that crashes is worse than one that answers correctly.
+		throw OptimizationError.singularMatrix(
+			message: "Column 0 is entirely zero; the matrix is singular"
+		)
+
+	case .failed(.illConditioned(let column, _, _)):
+		throw OptimizationError.numericalInstability(
+			message: "Pivot in column \(column) is below 1e-9; elimination would amplify rounding error past the point of meaning"
+		)
+
+	case .failed(.nonFiniteResult):
+		throw OptimizationError.numericalInstability(
+			message: "Elimination produced a non-finite value; the system is too ill-conditioned to solve"
 		)
 	}
-	guard vector.count == n else {
-		throw OptimizationError.dimensionMismatch(
-			message: "Matrix is \(n)×\(n) but the right-hand side has \(vector.count) elements"
-		)
-	}
-
-	// Create augmented matrix [A|b]
-	var augmented = matrix.map { row in row }
-	for i in 0..<n {
-		augmented[i].append(vector[i])
-	}
-
-	// Forward elimination with partial pivoting
-	for col in 0..<n {
-		// Find pivot
-		var maxRow = col
-		var maxVal = abs(augmented[col][col])
-		for row in (col+1)..<n {
-			let val = abs(augmented[row][col])
-			if val > maxVal {
-				maxVal = val
-				maxRow = row
-			}
-		}
-
-		// "Singular or nearly singular" conflated two conditions a caller can act on
-		// differently. An exactly zero column is singular and no amount of rescaling helps; a
-		// tiny-but-nonzero pivot is invertible in exact arithmetic and fails only in floating
-		// point, so reformulating or rescaling the problem may well succeed.
-		if maxVal == T(0) {
-			throw OptimizationError.singularMatrix(
-				message: "Column \(col) is entirely zero; the matrix is singular"
-			)
-		}
-		if maxVal < T(1) / T(1_000_000_000) {
-			throw OptimizationError.numericalInstability(
-				message: "Pivot in column \(col) is below 1e-9; elimination would amplify rounding error past the point of meaning"
-			)
-		}
-
-		// Swap rows if needed
-		if maxRow != col {
-			augmented.swapAt(col, maxRow)
-		}
-
-		// Eliminate below
-		for row in (col+1)..<n {
-			let factor = augmented[row][col] / augmented[col][col]
-			for j in col...n {
-				augmented[row][j] = augmented[row][j] - factor * augmented[col][j]
-			}
-		}
-	}
-
-	// Back substitution
-	var solution = Array(repeating: T(0), count: n)
-	for i in stride(from: n-1, through: 0, by: -1) {
-		var sum = augmented[i][n]
-		for j in (i+1)..<n {
-			sum = sum - augmented[i][j] * solution[j]
-		}
-		solution[i] = sum / augmented[i][i]
-	}
-
-	return solution
 }
 
 /// Inverts a matrix using Gaussian elimination.

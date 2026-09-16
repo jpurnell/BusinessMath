@@ -281,7 +281,56 @@ struct BranchAndCutTier2Tests {
 
     // MARK: - Cut Aging and Removal
 
-    /// Aging removes cuts from the LP, and nothing a caller can see reflects that.
+    /// Aging reports what it removed, which is the contract it previously lacked.
+    ///
+    /// `CuttingPlaneStats.cutsRemoved` exists because aging had no observable effect:
+    /// `totalCutsGenerated` counts cuts *generated* rather than retained, so removal moved
+    /// nothing a caller could read, and a test could not distinguish working aging from a
+    /// feature that had been deleted.
+    @Test("Aging reports the cuts it discards, and reports none when disabled")
+    func agingReportsWhatItRemoved() throws {
+        let unaged = try solveCutRich(BranchAndBoundSolver(
+            enableCuttingPlanes: true, maxCuttingRounds: 10, enableCutAging: false))
+        let unagedStats = try #require(unaged.cuttingPlaneStats)
+        #expect(unagedStats.cutsRemoved == 0,
+                "aging was off and \(unagedStats.cutsRemoved) cuts were removed")
+
+        // At a limit of 1 every cut is discarded the round after it is added, so the count
+        // has to be positive and cannot exceed what was generated.
+        let aged = try solveCutRich(BranchAndBoundSolver(
+            enableCuttingPlanes: true, maxCuttingRounds: 10,
+            enableCutAging: true, cutAgingLimit: 1))
+        let agedStats = try #require(aged.cuttingPlaneStats)
+        #expect(agedStats.cutsRemoved > 0, "aging was on and nothing was removed")
+        #expect(agedStats.cutsRemoved <= agedStats.totalCutsGenerated,
+                "\(agedStats.cutsRemoved) removed of \(agedStats.totalCutsGenerated) generated")
+    }
+
+    /// The removal count falls monotonically as the limit is relaxed, and reaches zero.
+    ///
+    /// Measured on `cutRich`, which runs five cutting rounds and generates fourteen cuts:
+    ///
+    /// | Aging limit | off | 1 | 2 | 3 | 5 | 10 |
+    /// |---|---|---|---|---|---|---|
+    /// | **Cuts removed** | 0 | 8 | 5 | 2 | 0 | 0 |
+    ///
+    /// Zero at five and above is not a failure: a cut cannot reach an age of five in a
+    /// solve that performs five rounds, so the limit is never met. That boundary is worth
+    /// pinning because it is the one place a plausible off-by-one would show.
+    @Test("Cuts removed falls monotonically as the aging limit is relaxed",
+          arguments: [(1, 8), (2, 5), (3, 2), (5, 0), (10, 0)])
+    func removalCountFallsWithTheLimit(limit: Int, expected: Int) throws {
+        let result = try solveCutRich(BranchAndBoundSolver(
+            enableCuttingPlanes: true, maxCuttingRounds: 10,
+            enableCutAging: true, cutAgingLimit: limit))
+        let stats = try #require(result.cuttingPlaneStats)
+        #expect(stats.cutsRemoved == expected,
+                "limit \(limit) removed \(stats.cutsRemoved), not \(expected)")
+        #expect(stats.totalCutsGenerated == 14,
+                "generated \(stats.totalCutsGenerated) cuts, not 14")
+    }
+
+    /// Aging removes cuts from the LP, and nothing a caller can see reflects that.    /// Aging discards up to eight of fourteen cuts and the answer does not move.
     ///
     /// The test that stood here was named "Inactive cuts are removed after aging limit",
     /// ran a problem that generates **zero cuts**, and asserted `result.status == .optimal`.
@@ -289,18 +338,20 @@ struct BranchAndCutTier2Tests {
     /// deleted. Its own comment conceded the point: *"Exact verification requires internal
     /// state access."*
     ///
-    /// That concession is half right. Instrumenting the solver shows aging doing exactly
-    /// what it claims — at `cutAgingLimit: 1` it discards both of the previous round's cuts
-    /// every round, holding the constraint count flat at 4 where it otherwise grows to 8.
-    /// But **none of that reaches the public surface**: `totalCutsGenerated` counts cuts
-    /// *generated*, not retained, so it is unchanged by removal, and there is no
-    /// `cutsRemoved` or active-constraint count on ``CuttingPlaneStats``.
+    /// With ``CuttingPlaneStats/cutsRemoved`` that is no longer true, and the two facts can
+    /// now be separated. Aging **works** — at a limit of 1 it discards 8 of the 14 cuts
+    /// generated. Aging also **changes nothing**: the status, objective, solution and node
+    /// count are identical to a solve with aging off, at every limit.
     ///
-    /// So what is asserted here is the strongest claim the public API supports, and it is a
-    /// real one: **aging must not change the answer.** Cuts are valid inequalities, so
+    /// Those are consistent rather than contradictory, and this is the assertion that says
+    /// so. Cuts are valid inequalities — they remove no integer-feasible point — so
     /// discarding them may cost search effort but can never make a wrong solution look
-    /// right. If a future change to aging removes something load-bearing, or removes the
-    /// wrong index, this is what catches it.
+    /// right. That the node count does not move either says the discarded cuts were not
+    /// binding on this problem, which is a property of the problem and not a promise.
+    ///
+    /// If a future change removes something load-bearing, or removes at the wrong index,
+    /// this is what catches it — and the index-adjustment arithmetic in that block makes
+    /// the second a live possibility.
     @Test("Aging changes no answer, at any limit — cuts are valid, so discarding them is safe",
           arguments: [1, 2, 3, 5, 10])
     func agingNeverChangesTheAnswer(limit: Int) throws {

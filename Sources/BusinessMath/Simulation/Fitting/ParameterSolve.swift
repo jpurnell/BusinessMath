@@ -129,55 +129,22 @@ public extension PercentileParameterisable {
 
 	/// Solves `A x = b` by Gaussian elimination with partial pivoting.
 	///
-	/// Small and dense — `k` is at most four across every `*Alt` form Frontline
-	/// documents — so there is nothing to gain from the package's factorisations, and
-	/// they would need a `DenseMatrix` built and torn down at every Newton step.
+	/// Small and dense — `k` is at most four across every `*Alt` form Frontline documents —
+	/// so there is nothing to gain from the package's factorisations, and they would need a
+	/// `DenseMatrix` built and torn down at every Newton step.
+	///
+	/// The elimination itself is `gaussianSolve(_:_:options:)`, shared with four other
+	/// callers. What stays here is the **fixed `1e-12` threshold**, which is deliberate:
+	/// these systems are at most 4×4 over a known parameter range, so their scale is not in
+	/// doubt and a constant cutoff says what is meant more directly than a scale-relative
+	/// one would.
 	///
 	/// - Returns: The solution, or `nil` if the matrix is singular to working
 	///   precision, which is the solve's signal that this start is going nowhere.
 	static func solveLinear(_ matrix: [[T]], _ rightHandSide: [T]) -> [T]? {
-		let n = rightHandSide.count
-		guard n > 0, matrix.count == n, matrix.allSatisfy({ $0.count == n }) else { return nil }
-		var a = matrix
-		var b = rightHandSide
-
-		for column in 0..<n {
-			var pivotRow = column
-			var largest: T = a[column][column] < 0 ? -a[column][column] : a[column][column]
-			for row in (column + 1)..<n {
-				let magnitude: T = a[row][column] < 0 ? -a[row][column] : a[row][column]
-				if magnitude > largest { largest = magnitude; pivotRow = row }
-			}
-			let threshold: T = T(1) / T(1_000_000_000_000)
-			guard largest > threshold else { return nil }
-			a.swapAt(column, pivotRow)
-			b.swapAt(column, pivotRow)
-
-			let pivot: T = a[column][column]
-			for row in (column + 1)..<n {
-				let factor: T = a[row][column] / pivot
-				guard factor != 0 else { continue }
-				for k in column..<n {
-					let scaled: T = factor * a[column][k]
-					a[row][k] -= scaled
-				}
-				let scaledRHS: T = factor * b[column]
-				b[row] -= scaledRHS
-			}
-		}
-
-		var solution = [T](repeating: T.zero, count: n)
-		for row in stride(from: n - 1, through: 0, by: -1) {
-			var accumulated: T = b[row]
-			for k in (row + 1)..<n {
-				let term: T = a[row][k] * solution[k]
-				accumulated -= term
-			}
-			let pivot: T = a[row][row]
-			guard pivot != 0 else { return nil }
-			solution[row] = accumulated / pivot
-			guard solution[row].isFinite else { return nil }
-		}
-		return solution
+		let options = GaussianSolveOptions<T>(
+			criterion: .absolute(T(1) / T(1_000_000_000_000))
+		)
+		return gaussianSolve(matrix, rightHandSide, options: options)
 	}
 }

@@ -114,6 +114,71 @@ struct GaussianSolverParityTests {
 		#expect(logistic == nil, "the logistic solver answered an all-zero system")
 	}
 
+	/// The criterion is now a parameter, and the three in use disagree by design.
+	///
+	/// A pivot of `1e-10` in a matrix whose largest entry is 1. Before this was a parameter,
+	/// the same matrix met four different constants buried in five function bodies and got
+	/// two different answers depending on which one the caller happened to reach.
+	@Test("The three singularity criteria give three verdicts on one matrix")
+	func criteriaDisagreeByDesign() throws {
+		let matrix: [[Double]] = [[1e-10, 0], [0, 1]]
+		let rhs: [Double] = [1e-10, 1]
+
+		// Scale-relative: threshold is 1 × .ulpOfOne × 4 ≈ 8.88e-16, far below the pivot.
+		let relative = try #require(gaussianSolve(matrix, rhs), "the default criterion refused")
+		#expect(relative[0].isEqual(to: 1.0), "x was \(relative[0])")
+		#expect(relative[1].isEqual(to: 1.0), "y was \(relative[1])")
+
+		// A fixed 1e-12, as `ParameterSolve` and `SimplexSolver` use: still below the pivot.
+		let lenient = try #require(
+			gaussianSolve(matrix, rhs, options: .init(criterion: .absolute(1e-12))),
+			"the 1e-12 criterion refused")
+		#expect(lenient[0].isEqual(to: 1.0), "x was \(lenient[0])")
+
+		// A fixed 1e-9, as `solveLinearSystem` uses: above the pivot, so it refuses.
+		let strict = gaussianSolve(matrix, rhs, options: .init(criterion: .absolute(1e-9)))
+		#expect(strict == nil, "the 1e-9 criterion solved a system it should refuse")
+	}
+
+	/// The failure says which condition was met, which is what the public taxonomy needs.
+	@Test("A refusal names the column and distinguishes zero from merely small")
+	func failuresAreDistinguishable() {
+		// An exactly zero column is singular however it is measured.
+		switch gaussianSolveDetailed([[0.0, 0.0], [0.0, 1.0]], [1.0, 1.0]) {
+		case .failed(.singular(let column)):
+			#expect(column == 0, "the singular column was reported as \(column)")
+		case .failed(let other):
+			Issue.record("expected .singular, got \(other)")
+		case .solved(let x):
+			Issue.record("a singular system was solved: \(x)")
+		}
+
+		// A small-but-nonzero pivot is a different condition, and rescaling might fix it.
+		let options = GaussianSolveOptions<Double>(criterion: .absolute(1e-9))
+		switch gaussianSolveDetailed([[1e-10, 0.0], [0.0, 1.0]], [1e-10, 1.0], options: options) {
+		case .failed(.illConditioned(let column, let pivot, let threshold)):
+			#expect(column == 0, "the ill-conditioned column was \(column)")
+			#expect(pivot.isEqual(to: 1e-10), "the pivot was \(pivot)")
+			#expect(threshold.isEqual(to: 1e-9), "the threshold was \(threshold)")
+		case .failed(let other):
+			Issue.record("expected .illConditioned, got \(other)")
+		case .solved(let x):
+			Issue.record("an ill-conditioned system was solved: \(x)")
+		}
+
+		// Shape failures are separated from numerical ones, because a caller fixes them
+		// differently — and `solveLinearSystem` publishes that distinction.
+		switch gaussianSolveDetailed([[Double]](), [Double]()) {
+		case .failed(.emptyMatrix): break
+		default: Issue.record("an empty matrix was not reported as empty")
+		}
+		switch gaussianSolveDetailed([[1.0, 2.0], [3.0, 4.0]], [1.0]) {
+		case .failed(.rightHandSideMismatch(let expected, let actual)):
+			#expect(expected == 2 && actual == 1, "reported \(expected) against \(actual)")
+		default: Issue.record("a mismatched right-hand side was not reported as one")
+		}
+	}
+
 	@Test("A larger system still agrees component for component")
 	func fourByFour() throws {
 		let matrix: [[Double]] = [

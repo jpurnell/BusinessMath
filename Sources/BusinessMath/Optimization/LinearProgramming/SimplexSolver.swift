@@ -867,54 +867,18 @@ public struct SimplexSolver: Sendable {
         return prices
     }
 
-    /// Solves a dense square system by Gaussian elimination with partial pivoting.
+    /// Solves `B x = b` for a basis matrix by Gaussian elimination with partial pivoting.
     ///
-    /// - Parameters:
-    ///   - matrix: The coefficient matrix, `n × n`.
-    ///   - rhs: The right-hand side, length `n`.
-    /// - Returns: The solution, or `nil` if the matrix is singular to working precision.
+    /// The elimination is `gaussianSolve(_:_:options:)`, shared with four other callers.
+    /// The **fixed `1e-12` threshold** stays because of what this solves: the basis matrix
+    /// of a genuine basic solution is non-singular, so a small pivot is arithmetic
+    /// breakdown rather than an expected path, and a constant is the plainer way to say
+    /// "this should not happen".
+    ///
+    /// - Returns: The solution, or `nil` when the basis has broken down numerically.
     private func solveLinearSystem(matrix: [[Double]], rhs: [Double]) -> [Double]? {
-        let n = rhs.count
-        guard n > 0, matrix.count == n, matrix.allSatisfy({ $0.count == n }) else { return nil }
-        var a = matrix
-        var b = rhs
-
-        for column in 0..<n {
-            var pivotRow = column
-            var largest = abs(a[column][column])
-            for row in (column + 1)..<n where abs(a[row][column]) > largest {
-                largest = abs(a[row][column])
-                pivotRow = row
-            }
-            // The basis matrix of a genuine basic solution is non-singular, so this
-            // is a guard against arithmetic breakdown rather than an expected path.
-            guard largest > 1e-12 else { return nil }
-            a.swapAt(column, pivotRow)
-            b.swapAt(column, pivotRow)
-
-            let pivot = a[column][column]
-            for row in (column + 1)..<n {
-                let factor = a[row][column] / pivot
-                guard factor != 0 else { continue }
-                for k in column..<n {
-                    a[row][k] -= factor * a[column][k]
-                }
-                b[row] -= factor * b[column]
-            }
-        }
-
-        var solution = Array(repeating: 0.0, count: n)
-        for row in stride(from: n - 1, through: 0, by: -1) {
-            var total = b[row]
-            for k in (row + 1)..<n {
-                total -= a[row][k] * solution[k]
-            }
-            let pivot = a[row][row]
-            guard pivot != 0 else { return nil }
-            solution[row] = total / pivot
-            guard solution[row].isFinite else { return nil }
-        }
-        return solution
+        let options = GaussianSolveOptions<Double>(criterion: .absolute(1e-12))
+        return gaussianSolve(matrix, rhs, options: options)
     }
 
     /// Phase I: Find a basic feasible solution

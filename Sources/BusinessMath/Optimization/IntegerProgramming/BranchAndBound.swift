@@ -1177,6 +1177,11 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                             for index in sortedIndices {
                                 if index < currentConstraints.count {
                                     currentConstraints.remove(at: index)
+                                    // Counted here rather than from `indicesToRemove.count`:
+                                    // an index past the end of the constraint set removes
+                                    // nothing, and reporting it as removed would overstate
+                                    // the work done.
+                                    stats.cutsRemoved += 1
                                 }
                             }
 
@@ -2013,6 +2018,20 @@ public struct CuttingPlaneStats: Sendable {
     /// Number of cover cuts generated
     public let coverCuts: Int
 
+    /// Number of cuts discarded by aging — **work undone**.
+    ///
+    /// Counts cuts removed from the LP because they reached ``BranchAndBoundSolver/cutAgingLimit``
+    /// rounds of age, summed across every node. Zero when
+    /// ``BranchAndBoundSolver/enableCutAging`` is false.
+    ///
+    /// This exists because aging previously had **no observable effect at all**. Removal
+    /// does not move ``totalCutsGenerated``, which counts cuts generated rather than
+    /// retained, and nothing else on this type reflected the size of the live constraint
+    /// set — so working aging, broken aging and a deleted feature were indistinguishable
+    /// from outside. A cut that is generated, counted, and then aged out now appears in
+    /// both this and ``totalCutsGenerated``, which is why the two are not disjoint.
+    public let cutsRemoved: Int
+
     /// Root LP bound before any cuts
     public let rootLPBoundBeforeCuts: Double
 
@@ -2035,6 +2054,7 @@ public struct CuttingPlaneStats: Sendable {
     ///   - gomoryCuts: Number of Gomory fractional cuts generated (default: 0)
     ///   - mirCuts: Number of mixed-integer rounding cuts generated (default: 0)
     ///   - coverCuts: Number of cover cuts generated (default: 0)
+    ///   - cutsRemoved: Number of cuts discarded by aging (default: 0)
     ///   - rootLPBoundBeforeCuts: LP bound at root node before cut generation (default: 0.0)
     ///   - rootLPBoundAfterCuts: LP bound at root node after cut generation (default: 0.0)
     ///   - percentageGapClosed: Percentage of integrality gap closed by cuts (default: 0.0)
@@ -2046,6 +2066,7 @@ public struct CuttingPlaneStats: Sendable {
         gomoryCuts: Int = 0,
         mirCuts: Int = 0,
         coverCuts: Int = 0,
+        cutsRemoved: Int = 0,
         rootLPBoundBeforeCuts: Double = 0.0,
         rootLPBoundAfterCuts: Double = 0.0,
         percentageGapClosed: Double = 0.0
@@ -2057,6 +2078,7 @@ public struct CuttingPlaneStats: Sendable {
         self.gomoryCuts = gomoryCuts
         self.mirCuts = mirCuts
         self.coverCuts = coverCuts
+        self.cutsRemoved = cutsRemoved
         self.rootLPBoundBeforeCuts = rootLPBoundBeforeCuts
         self.rootLPBoundAfterCuts = rootLPBoundAfterCuts
         self.percentageGapClosed = percentageGapClosed
@@ -2478,6 +2500,7 @@ private class CutStatisticsTracker {
     var gomoryCuts = 0
     var mirCuts = 0
     var coverCuts = 0
+    var cutsRemoved = 0
     var rootLPBoundBeforeCuts: Double = 0.0
     var rootLPBoundAfterCuts: Double = 0.0
     var isRootNode = true
@@ -2497,6 +2520,7 @@ private class CutStatisticsTracker {
             gomoryCuts: gomoryCuts,
             mirCuts: mirCuts,
             coverCuts: coverCuts,
+            cutsRemoved: cutsRemoved,
             rootLPBoundBeforeCuts: rootLPBoundBeforeCuts,
             rootLPBoundAfterCuts: rootLPBoundAfterCuts,
             percentageGapClosed: percentClosed
