@@ -355,8 +355,8 @@ struct RiskMetricsReferenceTests {
 
 	// MARK: - Properties that need no reference
 
-	@Test("Expected shortfall is never better than value at risk")
-	func cvarIsNeverBetterThanVaR() throws {
+	@Test("Value at risk is an upper bound on expected shortfall")
+	func cvarIsBoundedAboveByVaR() throws {
 		let fixture = try Self.loadFixture()
 		for entry in fixture.cases {
 			let results = SimulationResults(values: entry.sample)

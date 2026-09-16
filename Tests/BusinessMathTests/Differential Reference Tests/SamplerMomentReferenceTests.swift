@@ -216,7 +216,7 @@ struct SamplerMomentReferenceTests {
 	}
 
 	@Test("Rejection samplers match their analytic mean and variance")
-	func rejectionSamplerMoments() {
+	func rejectionSamplerMoments() throws {
 		let n = 100_000
 
 		// Gamma(shape 2, scale 3): mean kθ = 6, variance kθ² = 18,
@@ -276,7 +276,11 @@ struct SamplerMomentReferenceTests {
 		#expect(approximatelyEqual(geometric.mean, 4.0, tolerance: 3.87e-2), "geometric(0.25) mean \(geometric.mean)")
 		#expect(approximatelyEqual(geometric.variance, 12.0, tolerance: 3.81e-1), "geometric(0.25) variance \(geometric.variance)")
 		// The support choice is part of the contract: 1/p = 4 rather than (1-p)/p = 3.
-		#expect(exactlyEqual(geometricSample.min() ?? 0, 1.0), "geometric support must start at 1")
+		//
+		// `min()` is bound rather than defaulted: `?? 0` would turn an empty sample — a
+		// broken generator, not a support question — into a failure about the support.
+		let smallestDraw = try #require(geometricSample.min(), "the sample was empty")
+		#expect(exactlyEqual(smallestDraw, 1.0), "geometric support must start at 1")
 	}
 
 	// MARK: - Discrepancies

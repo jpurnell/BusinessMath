@@ -46,11 +46,34 @@ import Numerics
 ///
 /// Reach for this rather than `Calendar.current` anywhere a calendar date is being
 /// treated as a date rather than as an instant.
-let gregorianUTC: Calendar = {
+let gregorianUTC: Calendar = gregorian(in: .gmt)
+
+/// A Gregorian calendar in an explicit time zone.
+///
+/// ## Why this has to be written at all
+///
+/// Foundation splits the two things a date calculation needs across two types and offers
+/// no constant that pairs them. `Calendar.Identifier.gregorian` fixes the calendar
+/// *system* and nothing else — `Calendar(identifier: .gregorian)` still takes
+/// `TimeZone.current` for its zone, which is why it looks deterministic and is not.
+/// `TimeZone.gmt` is the other half. There is no `Calendar.gregorianUTC` in the standard
+/// library, so the pairing is spelled out somewhere or it is spelled out everywhere.
+///
+/// This is that somewhere. ``gregorianUTC`` is the case the package almost always wants;
+/// this function exists for the zone sweeps, which need the same pairing under a zone they
+/// choose.
+///
+/// - Note: **If Foundation ever ships a combined constant, this is the single place to
+///   change.** Both this function and ``gregorianUTC`` become one-line forwards to it and
+///   no call site moves.
+///
+/// - Parameter zone: The time zone the calendar resolves dates in.
+/// - Returns: A Gregorian calendar fixed to `zone`.
+func gregorian(in zone: TimeZone) -> Calendar {
 	var calendar = Calendar(identifier: .gregorian)
-	calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .gmt
+	calendar.timeZone = zone
 	return calendar
-}()
+}
 
 /// How an interval on the calendar is converted into a fraction of a year.
 ///

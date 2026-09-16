@@ -52,9 +52,13 @@ struct ParallelOptimizerTests {
 		#expect(abs(result.solution[1] - 4.0) < 0.5, "y should be close to 4")
 	}
 
-	/// Test that multi-start finds global optimum better than single start
-	@Test("Multi-start finds better solution than single start")
-	func testMultiStartImprovement() async throws {
+	/// Multi-start must never do worse than single-start on the same seed.
+	///
+	/// Named for what is asserted. "Finds a better solution" is the hope and not the
+	/// contract: with both optimisers seeded identically, single-start can land on the
+	/// global optimum by itself, and multi-start tying is a success rather than a failure.
+	@Test("Multi-start never loses to single start")
+	func multiStartNeverLosesToSingleStart() async throws {
 		// Multi-modal function: f(x) = sin(5x) + 0.1x²
 		// Has multiple local minima (from sin oscillations) with global minimum near x ≈ -π/2
 		// This genuinely requires multi-start to avoid getting trapped in local minima
@@ -98,12 +102,17 @@ struct ParallelOptimizerTests {
 			constraints: []
 		)
 
-		// Multi-start should find a solution roughly as good or better than single-start.
-		// Both use random starting points, so allow a small tolerance margin to avoid
-		// flaky failures when single-start gets lucky on slower CI hardware.
-		let tolerance = 0.5
-		#expect(multiResult.objectiveValue <= singleResult.objectiveValue + tolerance,
-				"Multi-start should find roughly as good a solution (single: \(singleResult.objectiveValue.number(3)), multi: \(multiResult.objectiveValue.number(3)))")
+		// Multi-start must not do worse than single-start.
+		//
+		// There used to be a 0.5 tolerance here, commented "both use random starting
+		// points, so allow a small margin to avoid flaky failures when single-start gets
+		// lucky on slower CI hardware". Both optimisers take `seed: 20260812`, so the
+		// starting points are fixed and hardware cannot change either result — the comment
+		// describes a version of this test that predates the seeds. The margin was
+		// defending against flakiness that seeding had already removed, while letting a
+		// multi-start that lost by 0.4 pass a test named for it winning.
+		#expect(multiResult.objectiveValue <= singleResult.objectiveValue,
+				"multi-start \(multiResult.objectiveValue.number(3)) lost to single-start \(singleResult.objectiveValue.number(3))")
 		#expect(multiResult.success, "Multi-start should succeed")
 	}
 

@@ -42,9 +42,14 @@ struct CalendarZoneInvarianceTests {
     /// fire is indistinguishable from one that cannot.
     @Test("A function that reads the zone is detected as reading it")
     func theSweepDetectsAKnownDependence() {
-        let sweep = ZoneInvariance.sweep(input: ZoneInvariance.utc(2025, 11, 15)) { date in
-            Calendar.current.component(.day, from: date)
-        }
+        // The probe depends on the zone **by construction** — it is handed the zone and
+        // builds a calendar in it — rather than by reading `Calendar.current`. The old
+        // form was not merely ambient, it was conditionally broken: on a machine already
+        // in UTC every reading agrees, the sweep reports invariance, and this assertion
+        // fails for a reason that has nothing to do with the detector.
+        let sweep = ZoneInvariance.sweep(input: ZoneInvariance.utc(2025, 11, 15), zoned: { date, zone in
+            ZoneInvariance.calendar(in: zone).component(.day, from: date)
+        })
         #expect(!sweep.isInvariant, "the sweep is not exercising what it claims to:\n\(sweep)")
     }
 

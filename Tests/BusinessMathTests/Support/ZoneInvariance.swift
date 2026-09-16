@@ -8,6 +8,7 @@
 
 import Foundation
 import Testing
+@testable import BusinessMath
 
 /// Runs a computation under several time zones and reports whether the answer moved.
 ///
@@ -191,6 +192,46 @@ enum ZoneInvariance {
 	///   - body: The computation under test.
 	/// - Important: mutates `NSTimeZone.default`. The calling suite must be
 	///   `.serialized`.
+	/// Runs `body` once under each probe zone, handing it the zone it is being probed in.
+	///
+	/// The overload below sets `NSTimeZone.default` and leaves the body to notice, which
+	/// means a body that wants to *be* zone-dependent has to read `Calendar.current` —
+	/// ambient process state, and the one thing a deterministic test should not consult.
+	/// This form passes the zone as an argument instead, so a probe can build an explicit
+	/// calendar and depend on the zone **by construction** rather than by reaching for it.
+	///
+	/// Use this for probes that are meant to vary. Use the ambient overload for the
+	/// subject under test, which is exactly the code whose hidden zone reads are being
+	/// hunted.
+	///
+	/// - Parameters:
+	///   - input: Built **before** the sweep and passed in, so it cannot move with the
+	///     zone. See the note on the type — this separation is the point.
+	///   - body: The computation under test, given the input and the current probe zone.
+	/// - Important: mutates `NSTimeZone.default`. The calling suite must be `.serialized`.
+	static func sweep<Input: Sendable, Value: Equatable & Sendable>(
+		input: Input,
+		zoned body: (Input, TimeZone) throws -> Value
+	) rethrows -> Sweep<Value> {
+		let original = NSTimeZone.default
+		defer { NSTimeZone.default = original }
+
+		var readings: [Reading<Value>] = []
+		for name in probeZones {
+			guard let zone = TimeZone(identifier: name) else { continue }
+			NSTimeZone.default = zone
+			readings.append(Reading(zone: name, value: try body(input, zone)))
+		}
+		return Sweep(readings: readings)
+	}
+
+	/// A Gregorian calendar in an explicit zone.
+	///
+	/// Forwards to `gregorian(in:)` in `DayCountConvention.swift`, which is the one place
+	/// the package pairs a calendar system with a zone. Named here because a probe reads
+	/// better saying `ZoneInvariance.calendar(in: zone)` than reaching across for it.
+	static func calendar(in zone: TimeZone) -> Calendar { gregorian(in: zone) }
+
 	static func sweep<Input: Sendable, Value: Equatable & Sendable>(
 		input: Input,
 		_ body: (Input) throws -> Value

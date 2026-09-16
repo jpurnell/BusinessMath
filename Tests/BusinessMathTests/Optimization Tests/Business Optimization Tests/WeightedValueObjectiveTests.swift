@@ -60,20 +60,21 @@ struct WeightedValueObjectiveTests {
 	func highWeightRanksOnStrategy() throws {
 		let allocations = try Self.allocate(scale: 1.0, strategicWeight: 0.9)
 
-		#expect(
-			(allocations["platform"] ?? 0) > (allocations["cash_cow"] ?? 0),
-			"w = 0.9 funded the money project \(allocations)"
-		)
+		// Bound rather than defaulted. With `?? 0` a missing key becomes a zero, and the
+		// comparison silently stops being about the ranking the test is named for — an
+		// absent "platform" would read as "platform scored zero" and could even pass.
+		let platform = try #require(allocations["platform"], "no platform allocation in \(allocations)")
+		let cashCow = try #require(allocations["cash_cow"], "no cash_cow allocation in \(allocations)")
+		#expect(platform > cashCow, "w = 0.9 funded the money project \(allocations)")
 	}
 
 	@Test("A strategic weight near 0 ranks on money")
 	func lowWeightRanksOnMoney() throws {
 		let allocations = try Self.allocate(scale: 1.0, strategicWeight: 0.1)
 
-		#expect(
-			(allocations["cash_cow"] ?? 0) > (allocations["platform"] ?? 0),
-			"w = 0.1 funded the strategic project \(allocations)"
-		)
+		let cashCow = try #require(allocations["cash_cow"], "no cash_cow allocation in \(allocations)")
+		let platform = try #require(allocations["platform"], "no platform allocation in \(allocations)")
+		#expect(cashCow > platform, "w = 0.1 funded the strategic project \(allocations)")
 	}
 
 	// MARK: - And it has to mean the same thing in any currency unit

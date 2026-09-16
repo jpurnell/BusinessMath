@@ -245,8 +245,8 @@ struct PropertyBasedTests {
 
     // MARK: - Monotonicity Properties
 
-    @Test("Property: Tighter constraints don't improve objective (minimization)")
-    func tighterConstraintsDontImprove() throws {
+    @Test("Property: tightening a constraint cannot lower a minimum")
+    func tighterConstraintsCannotLowerTheObjective() throws {
         let solver = BranchAndBoundSolver<VectorN<Double>>()
 
         let objective: @Sendable (VectorN<Double>) -> Double = { v in

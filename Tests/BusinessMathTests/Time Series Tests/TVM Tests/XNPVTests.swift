@@ -364,10 +364,13 @@ struct XNPVTests {
 	
 	@Test("XNPV with duplicate dates aggregates correctly")
 		func xnpvDuplicateDates() throws {
+			// The components pin UTC, so this was already deterministic — but only by the
+			// reader noticing that `c.timeZone` is set. `gregorianUTC` carries the zone in
+			// the calendar, where it cannot be dropped by an edit to the components.
 			func d(_ y:Int,_ m:Int,_ day:Int) throws -> Date {
 				var c = DateComponents()
-				c.year = y; c.month = m; c.day = day; c.timeZone = TimeZone(secondsFromGMT: 0)
-				return try #require(Calendar(identifier: .gregorian).date(from: c))
+				c.year = y; c.month = m; c.day = day
+				return try #require(gregorianUTC.date(from: c))
 			}
 			let dates = [try d(2025,1,1), try d(2025,6,1), try d(2025,6,1), try d(2026,1,1)]
 			let flows = [-1000.0, 200.0, 300.0, 600.0] // two flows on same day
@@ -388,10 +391,13 @@ struct XNPVTests {
 		// `T(Int(yearsDouble))` fallback. For T == Float the cast failed and the offset
 		// was truncated to whole years — a cash flow at 0.5y was discounted as if at 0y,
 		// and one at 1.5y as if at 1y. It is now converted exactly.
+		// The zone belongs in the calendar, not on the components: `gregorianUTC` cannot
+		// have it dropped by a later edit, and `Calendar(identifier:)` alone still takes
+		// `TimeZone.current`.
 		func d(_ y: Int, _ m: Int, _ day: Int) throws -> Date {
 			var c = DateComponents()
-			c.year = y; c.month = m; c.day = day; c.timeZone = TimeZone(secondsFromGMT: 0)
-			return try #require(Calendar(identifier: .gregorian).date(from: c))
+			c.year = y; c.month = m; c.day = day
+			return try #require(gregorianUTC.date(from: c))
 		}
 
 		let dates = [try d(2025, 1, 1), try d(2025, 7, 2)]  // ~0.5 years apart

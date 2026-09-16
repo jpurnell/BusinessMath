@@ -724,7 +724,15 @@ struct TornadoDiagramAdditionalTests {
 			(try #require(projection.incomeStatement.netIncome[ps[0]]))
 		}
 
-		// Explicitly assert Tax Rate has no impact since output is pre-tax income
-		#expect(abs(tornado.impacts["Tax Rate"] ?? -1) < 1e-12)
+		// Explicitly assert Tax Rate has no impact since output is pre-tax income.
+		//
+		// The key is required rather than defaulted. `?? -1` was chosen to fail when the
+		// entry is absent, which works, but it reports "the impact was not zero" for a
+		// variable that was never measured — two different defects with one message.
+		let taxRateImpact = try #require(
+			tornado.impacts["Tax Rate"],
+			"Tax Rate was not among the measured variables: \(tornado.impacts.keys.sorted())"
+		)
+		#expect(abs(taxRateImpact) < 1e-12, "Tax Rate moved pre-tax income by \(taxRateImpact)")
 	}
 }

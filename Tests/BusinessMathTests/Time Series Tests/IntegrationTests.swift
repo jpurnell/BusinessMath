@@ -492,12 +492,14 @@ struct IntegrationTests {
 
 	// MARK: - Helper Functions
 
+	/// A UTC calendar date, built through the package's own calendar.
+	///
+	/// The zone used to be set on the components and the calendar left as
+	/// `Calendar.current`, which happens to work — the components win — but reads as though
+	/// the host's calendar matters, and stops working the moment someone drops the
+	/// `timeZone` line. `gregorianUTC` carries the zone where it cannot be lost.
 	func date(_ year: Int, _ month: Int, _ day: Int) throws -> Date {
-		var components = DateComponents()
-		components.year = year
-		components.month = month
-		components.day = day
-		components.timeZone = TimeZone(secondsFromGMT: 0)
-		return try #require(Calendar.current.date(from: components))
+		let components = DateComponents(year: year, month: month, day: day)
+		return try #require(gregorianUTC.date(from: components))
 	}
 }

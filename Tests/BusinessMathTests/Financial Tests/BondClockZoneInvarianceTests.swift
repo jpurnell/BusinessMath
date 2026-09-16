@@ -62,9 +62,13 @@ struct BondClockZoneInvarianceTests {
 	/// Tokyo, so the day-of-month alone disagrees across the probe set.
 	@Test("A function that reads the zone is detected as reading it")
 	func theSweepDetectsAKnownDependence() {
-		let sweep = ZoneInvariance.sweep(input: Self.example.maturity) { date in
-			Calendar.current.component(.day, from: date)
-		}
+		// Handed the zone rather than reading `Calendar.current`. The old form was not just
+		// ambient, it was conditionally broken: on a machine already in UTC every probe
+		// agrees, the sweep reports invariance, and this assertion fails for a reason that
+		// has nothing to do with the detector it is testing.
+		let sweep = ZoneInvariance.sweep(input: Self.example.maturity, zoned: { date, zone in
+			ZoneInvariance.calendar(in: zone).component(.day, from: date)
+		})
 		#expect(!sweep.isInvariant, "the sweep is not exercising what it claims to:\n\(sweep)")
 	}
 

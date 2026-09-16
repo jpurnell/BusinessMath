@@ -246,7 +246,11 @@ struct PortfolioTests {
 		let equalSharpe = portfolio.sharpeRatio(weights: equalWeights)
 
 		// Optimal should be at least as good as equal weights
-		#expect(optimal.sharpeRatio >= equalSharpe - 0.1)  // Allow some tolerance
+		// Strictly better. The assertion was `>= equalSharpe - 0.1`, commented "allow some
+		// tolerance" — which permits the optimiser to be *worse* than equal weights by 0.1
+		// and still pass a test named for it being better. Measured strict.
+		#expect(optimal.sharpeRatio > equalSharpe,
+				"optimal Sharpe \(optimal.sharpeRatio) did not beat equal weights \(equalSharpe)")
 	}
 
 	// MARK: - Efficient Frontier Tests
@@ -419,9 +423,32 @@ struct PortfolioDeterministicTests {
 		}
 	}
 
-	@Test("Optimizer beats equal weights on simple two-asset constant case")
+	/// Two assets that actually differ in risk, because the constant fixture cannot show this.
+	///
+	/// A ranked asset and a volatile one, uncorrelated by construction — B's swings are
+	/// symmetric about its mean and unrelated to A's — so the maximum-Sharpe portfolio is
+	/// not the equal-weighted one and the optimiser has something to find.
+	private func twoAssetWithRisk() -> (assets: [String], returns: [TimeSeries<Double>]) {
+		let periods = (0..<12).map { Period.month(year: 2024, month: $0 + 1) }
+		// A: steady 1% a month. B: 1.5% on average but swinging ±3%.
+		let a = Array(repeating: 0.010, count: 12)
+		let b: [Double] = [0.045, -0.015, 0.045, -0.015, 0.045, -0.015,
+						   0.045, -0.015, 0.045, -0.015, 0.045, -0.015]
+		return (["Steady", "Volatile"], [TimeSeries(periods: periods, values: a),
+										 TimeSeries(periods: periods, values: b)])
+	}
+
+	@Test("The optimizer beats equal weights when the assets actually differ in risk")
 	func optimizerBeatsEqualWeights() throws {
-		let (assets, rets) = twoAssetConstant()
+		// This ran on `twoAssetConstant`, whose returns have **exactly zero** variance —
+		// so every portfolio built on it has an infinite Sharpe ratio, and the assertion
+		// compared `inf` against `inf`. It could not fail, and it could not pass for the
+		// right reason either.
+		//
+		// The file already records this trap one test above, where `sharpeOfAZeroRisk
+		// Portfolio` was corrected for the same fixture. The same defect, twice, in the
+		// same file — the second copy outlived the fix to the first.
+		let (assets, rets) = twoAssetWithRisk()
 		let portfolio = Portfolio(assets: assets, returns: rets, riskFreeRate: 0.0)
 
 		let optimal = portfolio.optimizePortfolio()
@@ -429,7 +456,10 @@ struct PortfolioDeterministicTests {
 
 		#expect(optimal.assets.count == assets.count)
 		#expect(optimal.weights.count == assets.count)
-		#expect(optimal.sharpeRatio >= equalSharpe - 1e-6,
-				"Optimal portfolio should have Sharpe at least as high as equal weights in this deterministic case.")
+		// Both finite, which the old fixture could not manage, and strictly ordered.
+		#expect(optimal.sharpeRatio.isFinite, "optimal Sharpe was \(optimal.sharpeRatio)")
+		#expect(equalSharpe.isFinite, "equal-weight Sharpe was \(equalSharpe)")
+		#expect(optimal.sharpeRatio > equalSharpe,
+				"optimal \(optimal.sharpeRatio) did not beat equal weights \(equalSharpe)")
 	}
 }

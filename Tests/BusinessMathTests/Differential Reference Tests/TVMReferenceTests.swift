@@ -307,12 +307,17 @@ struct TVMReferenceTests {
 		// `xirr` had the same absolute stopping rule as `irr` and the same two
 		// consequences: an answer whose precision depended on the size of the cash
 		// flows, and outright failure once their rounding noise exceeded the bound.
-		let calendar = Calendar(identifier: .gregorian)
-		func day(_ y: Int, _ m: Int, _ d: Int) -> Date {
-			calendar.date(from: DateComponents(year: y, month: m, day: d)) ?? Date()
+		// `gregorianUTC`, not `Calendar(identifier: .gregorian)`. The latter fixes the
+		// calendar *system* and still inherits `TimeZone.current`, so the fixture dates —
+		// and therefore the year fractions `xirr` computes from them — depend on where the
+		// test runs. `?? Date()` went with it: a date that failed to build became *now*,
+		// which is a different cash-flow schedule every time it is run.
+		func day(_ y: Int, _ m: Int, _ d: Int) throws -> Date {
+			try #require(gregorianUTC.date(from: DateComponents(year: y, month: m, day: d)),
+						 "could not build \(y)-\(m)-\(d)")
 		}
-		let dates = [day(2020, 1, 1), day(2020, 6, 15), day(2021, 3, 1),
-					 day(2022, 9, 30), day(2024, 1, 15)]
+		let dates = [try day(2020, 1, 1), try day(2020, 6, 15), try day(2021, 3, 1),
+					 try day(2022, 9, 30), try day(2024, 1, 15)]
 		let base: [Double] = [-10_000, 2_500, 3_000, 4_000, 3_500]
 
 		let reference = try xirr(dates: dates, cashFlows: base)
@@ -329,12 +334,17 @@ struct TVMReferenceTests {
 
 	@Test("xnpv at the xirr is zero, relative to the size of the cash flows")
 	func xnpvAtXIRRIsZero() throws {
-		let calendar = Calendar(identifier: .gregorian)
-		func day(_ y: Int, _ m: Int, _ d: Int) -> Date {
-			calendar.date(from: DateComponents(year: y, month: m, day: d)) ?? Date()
+		// `gregorianUTC`, not `Calendar(identifier: .gregorian)`. The latter fixes the
+		// calendar *system* and still inherits `TimeZone.current`, so the fixture dates —
+		// and therefore the year fractions `xirr` computes from them — depend on where the
+		// test runs. `?? Date()` went with it: a date that failed to build became *now*,
+		// which is a different cash-flow schedule every time it is run.
+		func day(_ y: Int, _ m: Int, _ d: Int) throws -> Date {
+			try #require(gregorianUTC.date(from: DateComponents(year: y, month: m, day: d)),
+						 "could not build \(y)-\(m)-\(d)")
 		}
-		let dates = [day(2020, 1, 1), day(2020, 6, 15), day(2021, 3, 1),
-					 day(2022, 9, 30), day(2024, 1, 15)]
+		let dates = [try day(2020, 1, 1), try day(2020, 6, 15), try day(2021, 3, 1),
+					 try day(2022, 9, 30), try day(2024, 1, 15)]
 		let base: [Double] = [-10_000, 2_500, 3_000, 4_000, 3_500]
 
 		for factor in [1.0, 1e9] {

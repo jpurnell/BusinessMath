@@ -41,7 +41,7 @@
 //  Attainability bounds the score from one side only. For the constant-returns
 //  frontier with a single output, the binding combination uses at most as many
 //  units as there are inputs, so for two inputs a scan over pairs finds the true
-//  optimum. `noCombinationBeatsTheReportedScore` runs that scan and fails if it
+//  optimum. `reportedScoreIsBoundedByTheScan` runs that scan and fails if it
 //  finds a better `θ` than the solver did.
 //
 
@@ -269,8 +269,8 @@ struct DEACertificateTests {
 
 	// MARK: - Optimality in low dimension
 
-	@Test("No combination of units beats the reported score")
-	func noCombinationBeatsTheReportedScore() throws {
+	@Test("The reported score is an upper bound on every sampled combination")
+	func reportedScoreIsBoundedByTheScan() throws {
 		// For constant returns with one output, the binding combination needs at
 		// most as many units as there are inputs. With two inputs, scanning pairs is
 		// therefore a complete search — and it is a different algorithm from the

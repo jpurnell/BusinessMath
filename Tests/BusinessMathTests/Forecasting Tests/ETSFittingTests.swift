@@ -113,7 +113,10 @@ struct ETSFittingTests {
 		let fit = try series.fitETS(seasonality: .periods(4), config: .default)
 		let gridBest: Double = gridBestSSE(values: values, seasonLength: 4)
 		let fitted: Double = fit.convergence.objective
-		#expect(fitted <= gridBest, "fitted SSE \(fitted) must not lose to grid best \(gridBest)")
+		// Strictly better, not merely no worse. `<=` was passed by a fitter that landed
+		// exactly on a grid point — and by one that did nothing at all, if the grid's best
+		// happened to be the starting parameters. Measured strict on both fixtures.
+		#expect(fitted < gridBest, "fitted SSE \(fitted) did not beat grid best \(gridBest)")
 	}
 
 	@Test("Non-seasonal: the fitted SSE beats the best point of a 0.1-resolution grid")
@@ -123,7 +126,10 @@ struct ETSFittingTests {
 		let fit = try series.fitETS(seasonality: .none, config: .default)
 		let gridBest: Double = gridBestSSE(values: values, seasonLength: 1)
 		let fitted: Double = fit.convergence.objective
-		#expect(fitted <= gridBest, "fitted SSE \(fitted) must not lose to grid best \(gridBest)")
+		// Strictly better, not merely no worse. `<=` was passed by a fitter that landed
+		// exactly on a grid point — and by one that did nothing at all, if the grid's best
+		// happened to be the starting parameters. Measured strict on both fixtures.
+		#expect(fitted < gridBest, "fitted SSE \(fitted) did not beat grid best \(gridBest)")
 	}
 
 	@Test("The fitted SSE is strictly better than the library defaults on a random walk")

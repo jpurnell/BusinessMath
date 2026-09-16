@@ -178,7 +178,11 @@ struct DuPontAnalysisTests {
 		let q1ROE = try #require(dupont.roe[quarters[0]])
 		let q4ROE = try #require(dupont.roe[quarters[3]])
 
-		#expect(q4ROE >= q1ROE, "ROE should improve or stay stable as business grows")
+		// Strictly higher, not "improve or stay stable". The fixture grows the business
+		// across four quarters, so a Q4 ROE merely equal to Q1's would mean the growth
+		// produced nothing — which is the outcome this test exists to detect, and which
+		// `>=` accepted.
+		#expect(q4ROE > q1ROE, "ROE did not improve: Q1 \(q1ROE), Q4 \(q4ROE)")
 
 		// Net margin should be relatively stable (similar % margins)
 		let q1Margin = try #require(dupont.netMargin[quarters[0]])
