@@ -268,8 +268,28 @@ struct BayesianICCTests {
         let optionalRatings: [[Double?]] = Self.ratings.map { $0.map { Optional($0) } }
         let optionalResult = try bayesianICC(optionalRatings, model: .twoWayRandom, config: config)
 
-        // Should produce identical results since data is complete
-        #expect(completeResult.iccSamples == optionalResult.iccSamples)
+        // Identical results, since the data is complete and both overloads run the same
+        // sampler from the same seed.
+        //
+        // The whole result, not just `iccSamples`. The two overloads share their entire
+        // tail — merge the chains, summarise, build the result — and comparing one field
+        // left the credible interval, the variance-component means and both convergence
+        // diagnostics unchecked on the missing-data path. `BayesianICCResult` is
+        // `Equatable`, so the stronger claim costs nothing.
+        #expect(completeResult == optionalResult,
+                "complete and optional overloads diverged")
+
+        // Spelled out for the fields a failure above would otherwise report only as
+        // "not equal", since a whole-struct mismatch says nothing about which part moved.
+        #expect(completeResult.iccSamples == optionalResult.iccSamples, "icc samples differ")
+        #expect(completeResult.iccMean.isEqual(to: optionalResult.iccMean),
+                "\(completeResult.iccMean) against \(optionalResult.iccMean)")
+        #expect(completeResult.iccCredibleInterval == optionalResult.iccCredibleInterval,
+                "credible intervals differ")
+        #expect(completeResult.sigmaSubjectsMean.isEqual(to: optionalResult.sigmaSubjectsMean),
+                "subject variance means differ")
+        #expect(completeResult.effectiveSampleSizeCount == optionalResult.effectiveSampleSizeCount,
+                "effective sample sizes differ")
     }
 
     @Test("Single missing cell shifts posterior smoothly")

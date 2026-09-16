@@ -45,6 +45,145 @@ private struct GibbsRNG: RandomNumberGenerator {
 
 // MARK: - Bayesian ICC (Complete Data)
 
+/// One Gibbs draw of a variance component from its Inverse-Gamma full conditional.
+///
+/// The conjugate update is the same for all three components and both overloads: add half
+/// the observation count to the prior shape, half the sum of squares to the prior scale,
+/// and draw. It was written out six times — subject, rater and error variance, in each of
+/// the complete-data and missing-data samplers.
+///
+/// ## Why a failed draw keeps the previous value
+///
+/// `sampleInverseGamma` can fail on rare numerical trouble. Aborting the run would discard
+/// thousands of valid draws over one bad one, so the chain holds its previous value for
+/// that iteration — which is a legitimate Markov transition, not a fabricated number.
+///
+/// This was six separate `try?` expressions, each silently discarding its error. Gathering
+/// them here means the decision is made once and stated once; a silently swallowed `try?`
+/// repeated across a file is how this package previously shipped a GPU path that fell back
+/// to the CPU mid-run without telling anyone.
+///
+/// - Parameters:
+///   - sumOfSquares: Σ of the squared effects or residuals this component explains.
+///   - count: The number of terms in that sum, as `T`.
+///   - prior: The Inverse-Gamma prior for this component.
+///   - current: The value to retain if the draw fails.
+///   - rng: The chain's generator, advanced by the draw.
+/// - Returns: The new draw, or `current` when the draw could not be made.
+private func sampledVariance<T: Real, G: RandomNumberGenerator>(
+    sumOfSquares: T,
+    count: T,
+    prior: VariancePrior<T>,
+    current: T,
+    using rng: inout G
+) -> T where T: BinaryFloatingPoint {
+    let shape: T = prior.shape + count / T(2)
+    let scale: T = prior.scale + sumOfSquares / T(2)
+    // silent: MCMC sampling — retain the previous value on rare numerical failure
+    guard let sampled = try? sampleInverseGamma(shape: shape, scale: scale, using: &rng) else {
+        return current
+    }
+    return sampled
+}
+
+// MARK: - Shared by both overloads
+
+/// The intraclass correlation implied by one draw of the variance components.
+///
+/// Which components sit in the denominator is the whole content of the model choice, so it
+/// is written once rather than at each sampler's collection step.
+///
+/// - `twoWayRandom` and `oneWayRandom` divide by the **total** variance: raters are a
+///   random sample from a population, so their variance is part of the noise a future
+///   measurement faces.
+/// - `twoWayMixed` leaves the rater variance out: the raters *are* the population, so their
+///   systematic differences are a fixed effect rather than a source of error.
+///
+/// - Returns: The ICC, or zero when the denominator is not positive — every component is a
+///   variance and cannot be negative, so that happens only when all of them are zero, and
+///   an undefined ratio there is reported as no agreement rather than as a NaN.
+private func iccFromComponents<T: Real>(
+    model: ICCModel,
+    sigmaS: T,
+    sigmaR: T,
+    sigmaE: T
+) -> T {
+    let denominator: T
+    switch model {
+    case .twoWayRandom, .oneWayRandom:
+        denominator = sigmaS + sigmaR + sigmaE
+    case .twoWayMixed:
+        denominator = sigmaS + sigmaE
+    }
+    return denominator > T.zero ? sigmaS / denominator : T.zero
+}
+
+/// Merges the per-chain draws into one posterior and summarises it.
+///
+/// Both overloads — the complete-data sampler and the missing-data one — finished with the
+/// same forty-three lines: flatten the chains, check something survived the burn-in,
+/// compute the mean, median and 95% interval, average the variance components, and run the
+/// two convergence diagnostics. Identical but for two comment lines.
+///
+/// - Parameters:
+///   - allChainSigmaS: Per-chain subject-variance draws.
+///   - allChainSigmaR: Per-chain rater-variance draws.
+///   - allChainSigmaE: Per-chain error-variance draws.
+///   - allChainICC: Per-chain ICC draws, kept per-chain because R-hat compares chains
+///     against each other and cannot be computed from the merged sample.
+/// - Returns: The summarised posterior.
+/// - Throws: ``BusinessMathError/calculationFailed(operation:reason:suggestions:)`` when no
+///   draw survived thinning and burn-in, which is a configuration error rather than a
+///   result.
+private func summarisePosterior<T: Real>(
+    allChainSigmaS: [[T]],
+    allChainSigmaR: [[T]],
+    allChainSigmaE: [[T]],
+    allChainICC: [[T]]
+) throws -> BayesianICCResult<T> where T: BinaryFloatingPoint {
+    let mergedSigmaS = allChainSigmaS.flatMap { $0 }
+    let mergedSigmaR = allChainSigmaR.flatMap { $0 }
+    let mergedSigmaE = allChainSigmaE.flatMap { $0 }
+    let mergedICC = allChainICC.flatMap { $0 }
+
+    guard !mergedICC.isEmpty else {
+        throw BusinessMathError.calculationFailed(
+            operation: "Bayesian ICC",
+            reason: "No post-burn-in samples collected; increase iterations or reduce burn-in")
+    }
+
+    let iccMeanVal = mean(mergedICC)
+    let sortedICC = mergedICC.sorted()
+    let iccMedianVal = sortedICC[sortedICC.count / 2]
+
+    let lowerIdx = max(0, Int(Double(T(0.025) * T(sortedICC.count))))
+    let upperIdx = min(sortedICC.count - 1, Int(Double(T(0.975) * T(sortedICC.count))))
+    let credibleInterval = CredibleInterval(lower: sortedICC[lowerIdx], upper: sortedICC[upperIdx])
+
+    let sigmaSubjectsMeanVal = mean(mergedSigmaS)
+    let sigmaRatersMeanVal = mean(mergedSigmaR)
+    let sigmaErrorMeanVal = mean(mergedSigmaE)
+
+    let rHatVal = rHatStatistic(allChainICC)
+    let essVal = effectiveSampleSize(mergedICC)
+
+    return BayesianICCResult(
+        sigmaSubjectsSamples: mergedSigmaS,
+        sigmaRatersSamples: mergedSigmaR,
+        sigmaErrorSamples: mergedSigmaE,
+        iccSamples: mergedICC,
+        iccMean: iccMeanVal,
+        iccMedian: iccMedianVal,
+        iccCredibleInterval: credibleInterval,
+        sigmaSubjectsMean: sigmaSubjectsMeanVal,
+        sigmaRatersMean: sigmaRatersMeanVal,
+        sigmaErrorMean: sigmaErrorMeanVal,
+        rHat: rHatVal,
+        effectiveSampleSizeCount: essVal
+    )
+}
+
+
 /// Estimates the intraclass correlation coefficient using Bayesian inference via Gibbs sampling.
 ///
 /// Fits a two-way random effects model:
@@ -202,26 +341,20 @@ public func bayesianICC<T: Real>(
             for i in 0..<n {
                 ssSub += s[i] * s[i]
             }
-            let shapeS = subjectPrior.shape + nT / T(2)
-            let scaleS = subjectPrior.scale + ssSub / T(2)
-
-            // silent: MCMC sampling — retain previous value on rare numerical failure
-            if let sampled = try? sampleInverseGamma(shape: shapeS, scale: scaleS, using: &rng) {
-                sigmaS = sampled
-            }
+            sigmaS = sampledVariance(
+                sumOfSquares: ssSub, count: nT,
+                prior: subjectPrior, current: sigmaS, using: &rng
+            )
 
             // --- 5. Sample sigma_r^2 | r ---
             var ssRat = T.zero
             for j in 0..<k {
                 ssRat += r[j] * r[j]
             }
-            let shapeR = raterPrior.shape + kT / T(2)
-            let scaleR = raterPrior.scale + ssRat / T(2)
-
-            // silent: MCMC sampling — retain previous value on rare numerical failure
-            if let sampled = try? sampleInverseGamma(shape: shapeR, scale: scaleR, using: &rng) {
-                sigmaR = sampled
-            }
+            sigmaR = sampledVariance(
+                sumOfSquares: ssRat, count: kT,
+                prior: raterPrior, current: sigmaR, using: &rng
+            )
 
             // --- 6. Sample sigma_e^2 | rest ---
             var ssErr = T.zero
@@ -231,13 +364,10 @@ public func bayesianICC<T: Real>(
                     ssErr += residual * residual
                 }
             }
-            let shapeE = errorPrior.shape + T(totalN) / T(2)
-            let scaleE = errorPrior.scale + ssErr / T(2)
-
-            // silent: MCMC sampling — retain previous value on rare numerical failure
-            if let sampled = try? sampleInverseGamma(shape: shapeE, scale: scaleE, using: &rng) {
-                sigmaE = sampled
-            }
+            sigmaE = sampledVariance(
+                sumOfSquares: ssErr, count: T(totalN),
+                prior: errorPrior, current: sigmaE, using: &rng
+            )
 
             // --- Collect post-burn-in samples ---
             if iter >= config.burnIn && (iter - config.burnIn) % config.thinning == 0 {
@@ -245,16 +375,9 @@ public func bayesianICC<T: Real>(
                 chainSigmaR.append(sigmaR)
                 chainSigmaE.append(sigmaE)
 
-                let iccValue: T
-                switch model {
-                case .twoWayRandom, .oneWayRandom:
-                    let denom = sigmaS + sigmaR + sigmaE
-                    iccValue = denom > T.zero ? sigmaS / denom : T.zero
-                case .twoWayMixed:
-                    let denom = sigmaS + sigmaE
-                    iccValue = denom > T.zero ? sigmaS / denom : T.zero
-                }
-                chainICC.append(iccValue)
+                chainICC.append(
+                    iccFromComponents(model: model, sigmaS: sigmaS, sigmaR: sigmaR, sigmaE: sigmaE)
+                )
             }
         }
 
@@ -264,48 +387,11 @@ public func bayesianICC<T: Real>(
         allChainICC.append(chainICC)
     }
 
-    // Merge all chains for summary statistics
-    let mergedSigmaS = allChainSigmaS.flatMap { $0 }
-    let mergedSigmaR = allChainSigmaR.flatMap { $0 }
-    let mergedSigmaE = allChainSigmaE.flatMap { $0 }
-    let mergedICC = allChainICC.flatMap { $0 }
-
-    guard !mergedICC.isEmpty else {
-        throw BusinessMathError.calculationFailed(
-            operation: "Bayesian ICC",
-            reason: "No post-burn-in samples collected; increase iterations or reduce burn-in")
-    }
-
-    // Summary statistics
-    let iccMeanVal = mean(mergedICC)
-    let sortedICC = mergedICC.sorted()
-    let iccMedianVal = sortedICC[sortedICC.count / 2]
-
-    let lowerIdx = max(0, Int(Double(T(0.025) * T(sortedICC.count))))
-    let upperIdx = min(sortedICC.count - 1, Int(Double(T(0.975) * T(sortedICC.count))))
-    let credibleInterval = CredibleInterval(lower: sortedICC[lowerIdx], upper: sortedICC[upperIdx])
-
-    let sigmaSubjectsMeanVal = mean(mergedSigmaS)
-    let sigmaRatersMeanVal = mean(mergedSigmaR)
-    let sigmaErrorMeanVal = mean(mergedSigmaE)
-
-    // Convergence diagnostics
-    let rHatVal = rHatStatistic(allChainICC)
-    let essVal = effectiveSampleSize(mergedICC)
-
-    return BayesianICCResult(
-        sigmaSubjectsSamples: mergedSigmaS,
-        sigmaRatersSamples: mergedSigmaR,
-        sigmaErrorSamples: mergedSigmaE,
-        iccSamples: mergedICC,
-        iccMean: iccMeanVal,
-        iccMedian: iccMedianVal,
-        iccCredibleInterval: credibleInterval,
-        sigmaSubjectsMean: sigmaSubjectsMeanVal,
-        sigmaRatersMean: sigmaRatersMeanVal,
-        sigmaErrorMean: sigmaErrorMeanVal,
-        rHat: rHatVal,
-        effectiveSampleSizeCount: essVal
+    return try summarisePosterior(
+        allChainSigmaS: allChainSigmaS,
+        allChainSigmaR: allChainSigmaR,
+        allChainSigmaE: allChainSigmaE,
+        allChainICC: allChainICC
     )
 }
 
@@ -510,26 +596,20 @@ public func bayesianICC<T: Real>(
             for i in 0..<n {
                 ssSub += s[i] * s[i]
             }
-            let shapeS = subjectPrior.shape + nT / T(2)
-            let scaleS = subjectPrior.scale + ssSub / T(2)
-
-            // silent: MCMC sampling — retain previous value on rare numerical failure
-            if let sampled = try? sampleInverseGamma(shape: shapeS, scale: scaleS, using: &rng) {
-                sigmaS = sampled
-            }
+            sigmaS = sampledVariance(
+                sumOfSquares: ssSub, count: nT,
+                prior: subjectPrior, current: sigmaS, using: &rng
+            )
 
             // --- 5. Sample sigma_r^2 ---
             var ssRat = T.zero
             for j in 0..<k {
                 ssRat += r[j] * r[j]
             }
-            let shapeR = raterPrior.shape + kT / T(2)
-            let scaleR = raterPrior.scale + ssRat / T(2)
-
-            // silent: MCMC sampling — retain previous value on rare numerical failure
-            if let sampled = try? sampleInverseGamma(shape: shapeR, scale: scaleR, using: &rng) {
-                sigmaR = sampled
-            }
+            sigmaR = sampledVariance(
+                sumOfSquares: ssRat, count: kT,
+                prior: raterPrior, current: sigmaR, using: &rng
+            )
 
             // --- 6. Sample sigma_e^2 ---
             var ssErr = T.zero
@@ -541,13 +621,10 @@ public func bayesianICC<T: Real>(
                     }
                 }
             }
-            let shapeE = errorPrior.shape + T(totalObs) / T(2)
-            let scaleE = errorPrior.scale + ssErr / T(2)
-
-            // silent: MCMC sampling — retain previous value on rare numerical failure
-            if let sampled = try? sampleInverseGamma(shape: shapeE, scale: scaleE, using: &rng) {
-                sigmaE = sampled
-            }
+            sigmaE = sampledVariance(
+                sumOfSquares: ssErr, count: T(totalObs),
+                prior: errorPrior, current: sigmaE, using: &rng
+            )
 
             // --- Collect post-burn-in samples ---
             if iter >= config.burnIn && (iter - config.burnIn) % config.thinning == 0 {
@@ -555,16 +632,9 @@ public func bayesianICC<T: Real>(
                 chainSigmaR.append(sigmaR)
                 chainSigmaE.append(sigmaE)
 
-                let iccValue: T
-                switch model {
-                case .twoWayRandom, .oneWayRandom:
-                    let denom = sigmaS + sigmaR + sigmaE
-                    iccValue = denom > T.zero ? sigmaS / denom : T.zero
-                case .twoWayMixed:
-                    let denom = sigmaS + sigmaE
-                    iccValue = denom > T.zero ? sigmaS / denom : T.zero
-                }
-                chainICC.append(iccValue)
+                chainICC.append(
+                    iccFromComponents(model: model, sigmaS: sigmaS, sigmaR: sigmaR, sigmaE: sigmaE)
+                )
             }
         }
 
@@ -574,45 +644,10 @@ public func bayesianICC<T: Real>(
         allChainICC.append(chainICC)
     }
 
-    // Merge all chains
-    let mergedSigmaS = allChainSigmaS.flatMap { $0 }
-    let mergedSigmaR = allChainSigmaR.flatMap { $0 }
-    let mergedSigmaE = allChainSigmaE.flatMap { $0 }
-    let mergedICC = allChainICC.flatMap { $0 }
-
-    guard !mergedICC.isEmpty else {
-        throw BusinessMathError.calculationFailed(
-            operation: "Bayesian ICC",
-            reason: "No post-burn-in samples collected; increase iterations or reduce burn-in")
-    }
-
-    let iccMeanVal = mean(mergedICC)
-    let sortedICC = mergedICC.sorted()
-    let iccMedianVal = sortedICC[sortedICC.count / 2]
-
-    let lowerIdx = max(0, Int(Double(T(0.025) * T(sortedICC.count))))
-    let upperIdx = min(sortedICC.count - 1, Int(Double(T(0.975) * T(sortedICC.count))))
-    let credibleInterval = CredibleInterval(lower: sortedICC[lowerIdx], upper: sortedICC[upperIdx])
-
-    let sigmaSubjectsMeanVal = mean(mergedSigmaS)
-    let sigmaRatersMeanVal = mean(mergedSigmaR)
-    let sigmaErrorMeanVal = mean(mergedSigmaE)
-
-    let rHatVal = rHatStatistic(allChainICC)
-    let essVal = effectiveSampleSize(mergedICC)
-
-    return BayesianICCResult(
-        sigmaSubjectsSamples: mergedSigmaS,
-        sigmaRatersSamples: mergedSigmaR,
-        sigmaErrorSamples: mergedSigmaE,
-        iccSamples: mergedICC,
-        iccMean: iccMeanVal,
-        iccMedian: iccMedianVal,
-        iccCredibleInterval: credibleInterval,
-        sigmaSubjectsMean: sigmaSubjectsMeanVal,
-        sigmaRatersMean: sigmaRatersMeanVal,
-        sigmaErrorMean: sigmaErrorMeanVal,
-        rHat: rHatVal,
-        effectiveSampleSizeCount: essVal
+    return try summarisePosterior(
+        allChainSigmaS: allChainSigmaS,
+        allChainSigmaR: allChainSigmaR,
+        allChainSigmaE: allChainSigmaE,
+        allChainICC: allChainICC
     )
 }
