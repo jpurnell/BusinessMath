@@ -1,19 +1,6 @@
 import Foundation
 import Numerics
 
-private func absVal<T: Real>(_ x: T) -> T {
-	x < T.zero ? -x : x
-}
-
-/// Check whether a scalar parameter has converged using combined absolute + relative criteria.
-private func generalParamHasConverged<T: Real>(old: T, new: T, tolerance: T) -> Bool {
-	if new == T.zero && old == T.zero { return true }
-	let absDiff = absVal(new - old)
-	if absDiff < tolerance { return true }
-	let relDiff = absDiff / T.maximum(absVal(old), T.ulpOfOne)
-	return relDiff < tolerance
-}
-
 /// Fit a general linear mixed-effects model via REML.
 ///
 /// Estimates fixed effects (β) and the random-effects covariance matrix G
@@ -99,35 +86,18 @@ public func fitGeneralLME<T: Real>(
 	let groupIdx = grouping.groupIndices
 
 	// --- Initialize variance components from method of moments ---
-	let olsBeta = try generalOLSEstimate(xData: xData, y: y, N: N, p: p)
-	var residOLS = Array(repeating: T.zero, count: N)
-	for i in 0..<N {
-		var fitted = T.zero
-		for j in 0..<p { fitted += xData[i][j] * olsBeta[j] }
-		residOLS[i] = y[i] - fitted
-	}
-
-	// One-way ANOVA decomposition for initial sigma_e²
-	var ssWithin = T.zero
-	var ssBetween = T.zero
-	let grandMeanResid = residOLS.reduce(T.zero, +) / T(N)
-	for g in 0..<m {
-		let indices = groupIdx[g]
-		let nig = T(indices.count)
-		let groupMean = indices.reduce(T.zero) { $0 + residOLS[$1] } / nig
-		ssBetween += nig * (groupMean - grandMeanResid) * (groupMean - grandMeanResid)
-		for idx in indices {
-			let diff = residOLS[idx] - groupMean
-			ssWithin += diff * diff
-		}
-	}
-
-	let dfWithin = T(N - m)
-	var sigmaE2 = dfWithin > T.zero ? ssWithin / dfWithin : T(1)
-	sigmaE2 = T.maximum(sigmaE2, T.ulpOfOne)
-
-	let msBetween = T(m - 1) > T.zero ? ssBetween / T(m - 1) : T.zero
-	let nBar = T(N) / T(m)
+	// Method-of-moments starting values, shared with the other fitter: a one-way ANOVA
+	// decomposition of the OLS residuals. What each model does with `msBetween` is where
+	// they diverge, and that stays below.
+	let start = try mixedModelStartingValues(
+		xData: xData, y: y, groupIdx: groupIdx, N: N, p: p, m: m
+	)
+	// `start.beta` is not bound: both fitters re-estimate β by GLS on the first iteration,
+	// so the OLS estimate exists only to produce the residuals the decomposition needs.
+	let residOLS = start.residuals
+	var sigmaE2 = start.sigmaE2
+	let msBetween = start.msBetween
+	let nBar = start.nBar
 
 	// Initialize G as diagonal: G[0,0] from between-group variance,
 	// G[k,k] from between-group covariate variation for k > 0
@@ -292,10 +262,10 @@ public func fitGeneralLME<T: Real>(
 			newG = generalEnsurePSD(newG, r: r)
 
 			// Check parameter convergence
-			var allConverged = generalParamHasConverged(old: sigmaE2, new: newSigmaE2, tolerance: tolerance)
+			var allConverged = paramHasConverged(old: sigmaE2, new: newSigmaE2, tolerance: tolerance)
 			for i in 0..<r {
 				for j in i..<r {
-					if !generalParamHasConverged(old: gArr[i][j], new: newG[i][j], tolerance: tolerance) {
+					if !paramHasConverged(old: gArr[i][j], new: newG[i][j], tolerance: tolerance) {
 						allConverged = false
 					}
 				}
@@ -472,22 +442,6 @@ private struct GeneralGLSResult<T: Real & Sendable> {
 }
 
 /// OLS estimate: beta = (X'X)^{-1} X'y
-private func generalOLSEstimate<T: Real & Sendable>(
-	xData: [[T]], y: [T], N: Int, p: Int
-) throws -> [T] where T: BinaryFloatingPoint {
-	var xtx = Array(repeating: Array(repeating: T.zero, count: p), count: p)
-	var xty = Array(repeating: T.zero, count: p)
-	for i in 0..<N {
-		for j in 0..<p {
-			xty[j] += xData[i][j] * y[i]
-			for k in 0..<p {
-				xtx[j][k] += xData[i][j] * xData[i][k]
-			}
-		}
-	}
-	let xtxMat = try DenseMatrix(xtx)
-	return try xtxMat.solve(xty)
-}
 
 /// GLS estimate of beta and REML log-likelihood for the general LME model.
 private func generalGLSEstimate<T: Real & Sendable>(

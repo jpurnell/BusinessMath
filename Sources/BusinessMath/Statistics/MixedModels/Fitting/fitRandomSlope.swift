@@ -1,19 +1,6 @@
 import Foundation
 import Numerics
 
-private func absVal<T: Real>(_ x: T) -> T {
-	x < T.zero ? -x : x
-}
-
-/// Check whether a scalar parameter has converged using combined absolute + relative criteria.
-private func paramHasConverged<T: Real>(old: T, new: T, tolerance: T) -> Bool {
-	if new == T.zero && old == T.zero { return true }
-	let absDiff = absVal(new - old)
-	if absDiff < tolerance { return true }
-	let relDiff = absDiff / T.maximum(absVal(old), T.ulpOfOne)
-	return relDiff < tolerance
-}
-
 /// Fit a random intercept-and-slope linear mixed-effects model via REML.
 ///
 /// Estimates fixed effects (beta) and the random-effects covariance matrix G
@@ -97,35 +84,18 @@ public func fitRandomSlope<T: Real>(
 	}
 
 	// --- Initialize variance components from method of moments ---
-	let olsBeta = try slopeOLSEstimate(xData: xData, y: y, N: N, p: p)
-	var residOLS = Array(repeating: T.zero, count: N)
-	for i in 0..<N {
-		var fitted = T.zero
-		for j in 0..<p { fitted += xData[i][j] * olsBeta[j] }
-		residOLS[i] = y[i] - fitted
-	}
-
-	// One-way ANOVA decomposition for initial sigma_e² and sigma_u0²
-	var ssWithin = T.zero
-	var ssBetween = T.zero
-	let grandMeanResid = residOLS.reduce(T.zero, +) / T(N)
-	for g in 0..<m {
-		let indices = groupIdx[g]
-		let nig = T(indices.count)
-		let groupMean = indices.reduce(T.zero) { $0 + residOLS[$1] } / nig
-		ssBetween += nig * (groupMean - grandMeanResid) * (groupMean - grandMeanResid)
-		for idx in indices {
-			let diff = residOLS[idx] - groupMean
-			ssWithin += diff * diff
-		}
-	}
-
-	let dfWithin = T(N - m)
-	var sigmaE2 = dfWithin > T.zero ? ssWithin / dfWithin : T(1)
-	sigmaE2 = T.maximum(sigmaE2, T.ulpOfOne)
-
-	let msBetween = T(m - 1) > T.zero ? ssBetween / T(m - 1) : T.zero
-	let nBar = T(N) / T(m)
+	// Method-of-moments starting values, shared with the other fitter: a one-way ANOVA
+	// decomposition of the OLS residuals. What each model does with `msBetween` is where
+	// they diverge, and that stays below.
+	let start = try mixedModelStartingValues(
+		xData: xData, y: y, groupIdx: groupIdx, N: N, p: p, m: m
+	)
+	// `start.beta` is not bound: both fitters re-estimate β by GLS on the first iteration,
+	// so the OLS estimate exists only to produce the residuals the decomposition needs.
+	let residOLS = start.residuals
+	var sigmaE2 = start.sigmaE2
+	let msBetween = start.msBetween
+	let nBar = start.nBar
 	var g00 = msBetween > sigmaE2 ? (msBetween - sigmaE2) / nBar : T(1) / T(10)
 
 	// Initialize slope variance from between-group slope variation
@@ -440,6 +410,37 @@ public func fitRandomSlope<T: Real>(
 // MARK: - Internal Helpers
 
 /// Build V_i = Z_i G Z_i' + sigmaE2 * I for a single group.
+/// The per-group design a random-slope fit needs: `Z_i`, the rows of `X`, and one sliced
+/// global vector.
+///
+/// Built three times in this file — once against `y` for the GLS pass, once against the
+/// residuals for the EM update, and once more for AI-REML — with only the vector being
+/// sliced telling them apart. `Z_i` is `[1, z]` per row, which is what makes this a
+/// random-*slope* model rather than the general one next door.
+///
+/// - Parameters:
+///   - indices: Row indices belonging to this group.
+///   - zSlope: The slope covariate, indexed globally.
+///   - xData: The fixed-effects design, indexed globally.
+///   - values: The global vector to slice — `y`, or a residual vector.
+///   - p: Fixed-effect count.
+/// - Returns: `Z_i`, the group's rows of `X`, and the group's slice of `values`.
+private func slopeGroupDesign<T: Real>(
+	indices: [Int], zSlope: [T], xData: [[T]], values: [T], p: Int
+) -> (zi: [[T]], xiRows: [[T]], sliced: [T]) {
+	let nig = indices.count
+	var zi = Array(repeating: Array(repeating: T.zero, count: 2), count: nig)
+	var xiRows = Array(repeating: Array(repeating: T.zero, count: p), count: nig)
+	var sliced = Array(repeating: T.zero, count: nig)
+	for (localIdx, obsIdx) in indices.enumerated() {
+		zi[localIdx][0] = T(1)
+		zi[localIdx][1] = zSlope[obsIdx]
+		xiRows[localIdx] = xData[obsIdx]
+		sliced[localIdx] = values[obsIdx]
+	}
+	return (zi, xiRows, sliced)
+}
+
 private func buildVi<T: Real & Sendable>(
 	zi: [[T]], g00: T, g11: T, g01: T, sigmaE2: T, nig: Int
 ) throws -> [[T]] where T: BinaryFloatingPoint {
@@ -471,22 +472,6 @@ private struct SlopeGLSResult<T: Real & Sendable> {
 }
 
 /// OLS estimate: beta = (X'X)^{-1} X'y
-private func slopeOLSEstimate<T: Real & Sendable>(
-	xData: [[T]], y: [T], N: Int, p: Int
-) throws -> [T] where T: BinaryFloatingPoint {
-	var xtx = Array(repeating: Array(repeating: T.zero, count: p), count: p)
-	var xty = Array(repeating: T.zero, count: p)
-	for i in 0..<N {
-		for j in 0..<p {
-			xty[j] += xData[i][j] * y[i]
-			for k in 0..<p {
-				xtx[j][k] += xData[i][j] * xData[i][k]
-			}
-		}
-	}
-	let xtxMat = try DenseMatrix(xtx)
-	return try xtxMat.solve(xty)
-}
 
 /// GLS estimate of beta and REML log-likelihood for the random slope model.
 ///
@@ -506,16 +491,10 @@ private func slopeGLSEstimate<T: Real & Sendable>(
 		let indices = groupIdx[g]
 		let nig = indices.count
 
-		// Build Z_i and extract x rows and y values for this group
-		var zi = Array(repeating: Array(repeating: T.zero, count: 2), count: nig)
-		var xiRows = Array(repeating: Array(repeating: T.zero, count: p), count: nig)
-		var yi = Array(repeating: T.zero, count: nig)
-		for (localIdx, obsIdx) in indices.enumerated() {
-			zi[localIdx][0] = T(1)
-			zi[localIdx][1] = zSlope[obsIdx]
-			xiRows[localIdx] = xData[obsIdx]
-			yi[localIdx] = y[obsIdx]
-		}
+		let design = slopeGroupDesign(
+			indices: indices, zSlope: zSlope, xData: xData, values: y, p: p
+		)
+		let zi = design.zi, xiRows = design.xiRows, yi = design.sliced
 
 		// V_i = Z_i G Z_i' + sigmaE2 * I
 		let viData = try buildVi(zi: zi, g00: g00, g11: g11, g01: g01, sigmaE2: sigmaE2, nig: nig)
@@ -727,15 +706,10 @@ private func slopeAIREMLUpdate<T: Real & Sendable>(
 		let indices = groupIdx[g]
 		let nig = indices.count
 
-		var zi = Array(repeating: Array(repeating: T.zero, count: 2), count: nig)
-		var xiRows = Array(repeating: Array(repeating: T.zero, count: p), count: nig)
-		var ri = Array(repeating: T.zero, count: nig)
-		for (localIdx, obsIdx) in indices.enumerated() {
-			zi[localIdx][0] = T(1)
-			zi[localIdx][1] = zSlope[obsIdx]
-			xiRows[localIdx] = xData[obsIdx]
-			ri[localIdx] = resid[obsIdx]
-		}
+		let design = slopeGroupDesign(
+			indices: indices, zSlope: zSlope, xData: xData, values: resid, p: p
+		)
+		let zi = design.zi, xiRows = design.xiRows, ri = design.sliced
 
 		let viData = try buildVi(zi: zi, g00: g00, g11: g11, g01: g01, sigmaE2: sigmaE2, nig: nig)
 		let viMat = try DenseMatrix(viData)
