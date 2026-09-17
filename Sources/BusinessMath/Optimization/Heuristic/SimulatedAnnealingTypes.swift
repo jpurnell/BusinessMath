@@ -65,25 +65,43 @@ public struct SimulatedAnnealingConfig: Sendable {
     /// Temperature to reheat to when interval is reached
     public let reheatTemperature: Double?
 
+    /// How many neighbours are proposed at each temperature before it drops.
+    ///
+    /// The inner Markov chain, and the thing that makes annealing annealing. The method works by
+    /// letting the walker approach equilibrium *at* a temperature and only then cooling; with a
+    /// single sample per level there is no equilibrium to approach, and the schedule degenerates
+    /// into a random walk with a shrinking acceptance threshold.
+    ///
+    /// This loop ran one proposal per temperature until 2026-09-17, which capped a default run
+    /// at roughly 224 proposals however large `maxIterations` was set.
+    ///
+    /// Defaults to 40. `maxIterations` still bounds the total, so raising this shortens the
+    /// schedule rather than extending the run.
+    public let movesPerTemperature: Int
+
     /// Optional random seed for reproducibility
     public let seed: UInt64?
 
     /// Weight on the constraint-violation penalty, when `constraints:` are supplied.
     ///
-    /// Constrained solves here are handled by penalty: the optimizer minimises
-    /// `objective(x) + weight · Σ violation(x)²`, so this number decides how far outside the
-    /// feasible region an answer is allowed to settle. Raising it tightens feasibility and
-    /// steepens the surface near the boundary; lowering it does the reverse.
+    /// The **starting** weight for the augmented-Lagrangian outer loop, and no longer what
+    /// decides whether the answer is feasible.
     ///
-    /// **It has to be commensurate with the objective's scale, which is why it is a
-    /// parameter.** A penalty of 100 against an objective measured in millions is
-    /// negligible, and the solve returns an infeasible point without saying so. Until
-    /// 2.17.0 this was the literal `100` in all five constrained heuristics with no way to
-    /// change it anywhere in the optimizer tier.
+    /// It used to be exactly that: constrained solves minimised
+    /// `objective(x) + weight · Σ violation(x)²` once, and how far outside the feasible region
+    /// the answer settled came down to how this compared with the objective's magnitude. A
+    /// penalty of 100 against an objective measured in millions left a 91% constraint violation
+    /// and nothing in the result said so.
     ///
-    /// Defaults to `100`, unchanged, so no existing caller moves. A non-positive or
-    /// non-finite value falls back to that default rather than being honoured: a weight of
-    /// zero deletes the constraint silently, which is worse than any badly chosen weight.
+    /// Feasibility is now a guarantee rather than a setting — see
+    /// ``TerminationReason/infeasible`` — so this conditions the search and not the outcome. A
+    /// smaller starting weight gives a gentler first subproblem, which is the better-conditioned
+    /// place to begin on a badly scaled objective; the loop raises it only when the multipliers
+    /// are closing the gap too slowly. Measured across 0.001 to 1e12 on a well-behaved problem,
+    /// every value returns the same point in the same number of iterations.
+    ///
+    /// Defaults to `100`, unchanged. A non-positive or non-finite value falls back to that
+    /// default rather than being honoured.
     public let constraintPenaltyWeight: Double
 
     /// Create a simulated annealing configuration.
@@ -97,7 +115,10 @@ public struct SimulatedAnnealingConfig: Sendable {
     ///   - reheatInterval: Optional reheat interval (default: nil)
     ///   - reheatTemperature: Temperature for reheating (default: nil)
     ///   - seed: Optional RNG seed (default: nil)
-        ///   - constraintPenaltyWeight: Penalty weight for constrained solves (default: 100)
+        ///   - constraintPenaltyWeight: Starting weight for the augmented-Lagrangian outer
+        ///     loop on constrained solves (default: 100)
+        ///   - movesPerTemperature: Proposals in the inner Markov chain at each temperature
+        ///     before it drops (default: 40)
         public init(
         initialTemperature: Double = 100.0,
         finalTemperature: Double = 0.001,
@@ -107,8 +128,11 @@ public struct SimulatedAnnealingConfig: Sendable {
         reheatInterval: Int? = nil,
         reheatTemperature: Double? = nil,
         seed: UInt64? = nil,
-    	constraintPenaltyWeight: Double = 100
+    	constraintPenaltyWeight: Double = 100,
+    	movesPerTemperature: Int = 40
     ) {
+        // A chain of fewer than one proposal per level is not a chain.
+        self.movesPerTemperature = movesPerTemperature > 0 ? movesPerTemperature : 40
         let penaltyFallback: Double = 100
         let penaltyIsUsable = constraintPenaltyWeight > 0 && constraintPenaltyWeight.isFinite
         self.constraintPenaltyWeight = penaltyIsUsable ? constraintPenaltyWeight : penaltyFallback

@@ -15,6 +15,81 @@ Two batches, both from Tier 2 of the quality programme — the complexity list. 
 below sits in `BranchAndBoundSolver` or the machinery it calls, and none was found by reading
 the code.
 
+#### 2026-09-17 — simulated annealing was not annealing
+
+Three of the algorithm's defining features were missing. On `min ‖x‖²` from (5, 5, 5) over
+`[-20, 20]³` — convex, three-dimensional, nothing global about it — it returned a mean objective
+of **7.34** across five seeds against an optimum of **0**, in about 200 function evaluations.
+Nelder-Mead reaches 5.5e-14 on the same problem. After the fix: **0.00052**, in 9,001
+evaluations.
+
+##### Fixed
+
+- **The stagnation check ended the run during exploration and called it convergence.** It
+  terminated when `bestEnergy` had not improved by 1e-6 over 100 proposals. `bestEnergy` is
+  monotone, and at high temperature an annealing walker is *supposed* to wander without improving
+  on the best — that is the exploration the method exists for. Measured with the shipped
+  defaults: **105 evaluations, temperature still at 0.48** against a target of 0.001,
+  `converged == true`, objective 11.94. On a slow schedule it was starker — 223 evaluations at a
+  temperature of **97.8 out of an initial 100**, a run that had not meaningfully begun, reported
+  as converged.
+
+  Stagnation is now counted in **temperature levels** rather than proposals, and is only believed
+  once the schedule has cooled to a thousandth of its starting temperature. Both halves matter: a
+  first attempt that kept the level counting but allowed the exit at `T₀/10` still quit at
+  T = 5.95 and T = 2.90 with objectives of 0.154 and 0.229, while the seed that carried on to
+  T = 0.089 reached 0.0024.
+
+- **One proposal per temperature is not a Markov chain.** The loop generated a single neighbour
+  and immediately cooled, so the walker never approached equilibrium at any temperature. Even
+  discounting the stagnation exit, a default schedule allowed about 224 proposals in total,
+  however large `maxIterations` was set. There is now an inner chain of
+  `movesPerTemperature` proposals per level.
+
+- **A constant step cannot both travel and refine.** Neighbours were drawn at
+  `perturbationScale × range` regardless of temperature, so the late phase — where the method
+  should be polishing — was still proposing jumps of 8 units in a 40-unit space. Sweeping the
+  scale shows the U-shape a fixed step always produces:
+
+  | `perturbationScale` | 0.2 | 0.05 | 0.01 | 0.002 |
+  |---|---|---|---|---|
+  | mean objective | 8.42 | 0.64 | **0.025** | 34.78 |
+
+  Too coarse to refine at one end, too slow to travel at the other, with a sweet spot that
+  depends on the problem. The step is now `perturbationScale × range × √(T / T₀)` — the square
+  root because a Boltzmann walker's equilibrium spread goes as `√T`, so matching it keeps the
+  acceptance rate roughly level down the schedule rather than collapsing it early.
+
+##### Added
+
+- **`SimulatedAnnealingConfig.movesPerTemperature`**, default 40. `maxIterations` still bounds
+  the total, so raising this shortens the schedule rather than extending the run.
+
+##### Changed
+
+- **Results move for every `SimulatedAnnealing` caller.** The defaults now spend roughly 9,000
+  function evaluations where they previously spent about 200, and reach answers several orders
+  of magnitude better. Existing tests all pass unchanged.
+
+##### Documentation
+
+- **`constraintPenaltyWeight` no longer claims to decide feasibility.** Its documentation in all
+  six heuristic configs still said the weight "decides how far outside the feasible region an
+  answer is allowed to settle" — true before the augmented-Lagrangian change and false after it.
+  It is now described as what it is: the outer loop's *starting* weight, which conditions the
+  search rather than the outcome. Measured across 0.001 to 1e12 on a well-behaved problem, every
+  value returns the same point in the same number of iterations.
+
+##### Tests
+
+- **New: `SimulatedAnnealingQualityTests`** — that annealing solves a convex problem it has no
+  excuse to miss (objective below 0.05, against 7.34 before and 5.5e-14 for Nelder-Mead), that it
+  spends its budget rather than quitting after a hundred evaluations, that a run reporting
+  convergence has actually cooled, and that the reported fitness is the objective at the reported
+  point.
+
+---
+
 #### 2026-09-17 — constrained optimizers returned infeasible answers as converged
 
 Found by sweeping the optimizer tier against independent oracles. The LP solver (1,600 instances
