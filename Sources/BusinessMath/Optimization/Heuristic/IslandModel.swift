@@ -195,16 +195,40 @@ public struct IslandModel<V: VectorSpace>: MultivariateOptimizer where V.Scalar:
         constraints: [MultivariateConstraint<V>] = []
     ) throws -> MultivariateOptimizationResult<V> {
 
-        let detailedResult = optimizeDetailed(objective: objective, constraints: constraints)
+        // Unconstrained: nothing to check, and nothing to report.
+        guard !constraints.isEmpty else {
+            let detailedResult = optimizeDetailed(objective: objective)
+            return MultivariateOptimizationResult(
+                solution: detailedResult.solution,
+                value: detailedResult.bestFitness,
+                iterations: detailedResult.generations,
+                converged: false,  // Island model doesn't have explicit convergence criteria
+                gradientNorm: V.Scalar.zero,  // Not gradient-based
+                history: nil,
+                constraintViolation: V.Scalar.zero
+            )
+        }
 
-        return MultivariateOptimizationResult(
-            solution: detailedResult.solution,
-            value: detailedResult.bestFitness,
-            iterations: detailedResult.generations,
-            converged: false,  // Island model doesn't have explicit convergence criteria
-            gradientNorm: V.Scalar.zero,  // Not gradient-based
-            history: nil
-        )
+        // Constrained: the sixth caller of the shared solve, and the last to arrive.
+        //
+        // This method used to hand the constraints to `optimizeDetailed`, which penalised them
+        // internally with a fixed weight and returned whatever came back — the same defect the
+        // other five heuristics had, minus the shared `minimizeWithPenalty` that made them easy
+        // to find. Because it constructed its result without a violation, and
+        // ``MultivariateOptimizationResult/constraintViolation`` defaults to zero, the answer
+        // came back claiming to be feasible. Measured on `min 1000‖x‖²` subject to `x₀ ≥ 3`: it
+        // returned x₀ = **0.2248**, a violation of 2.78, reported as `0.0`.
+        return try penaltyConstrainedSolve(
+            objective: objective,
+            constraints: constraints,
+            options: PenaltySolveOptions(initialWeight: V.Scalar(islandConfig.constraintPenaltyWeight))
+        ) { subproblem in
+            let detailed = optimizeDetailed(objective: subproblem)
+            // The island model has no convergence criterion of its own — it runs its generations
+            // and stops — so it reports the schedule as complete rather than as convergence, and
+            // the shared solve turns that into `.maxIterations` unless the constraints are met.
+            return (detailed.solution, detailed.generations, false)
+        }
     }
 
     // MARK: - Detailed Optimization

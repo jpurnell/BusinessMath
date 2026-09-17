@@ -15,6 +15,76 @@ Two batches, both from Tier 2 of the quality programme — the complexity list. 
 below sits in `BranchAndBoundSolver` or the machinery it calls, and none was found by reading
 the code.
 
+#### 2026-09-17 — solution quality was never tested, and one optimizer lied about feasibility
+
+Every heuristic had eighteen to twenty-one tests and several asserted something about the
+solution. None caught `SimulatedAnnealing` returning a mean objective of 7.34 against an optimum
+of 0, because the tolerances they asserted against included **3.0, 5.0, 10.0, 30.0, 50.0 and
+100**. A tolerance of 50 on a solution component is a smoke test wearing a quality assertion.
+
+##### Fixed
+
+- **`IslandModel` returned infeasible points reporting a violation of zero.** It never had a
+  `minimizeWithPenalty`, so it was not one of the five converted to the shared constrained solve;
+  it handed its constraints to `optimizeDetailed`, which penalised them with a fixed weight, and
+  built its result without setting `constraintViolation` — which defaults to zero. Measured on
+  `min 1000‖x‖²` subject to `x₀ ≥ 3`: it returned **x₀ = 0.2248**, a violation of 2.78, reported
+  as `0.0`.
+
+  That default is the sharper lesson. A field whose default value is a *claim* is a fail-silent
+  trap, and it was worse than having no field at all, because a caller now had something to
+  trust. It was introduced by the previous entry's own change.
+
+  `IslandModel` is now the sixth caller of `penaltyConstrainedSolve`. On the same problem it
+  returns x₀ = 3.000000, and on conflicting bounds it reports a violation of 1.536 as
+  `.infeasible`.
+
+##### Tests
+
+- **New: `OptimizerSolutionQualityTests`** — six optimizers against eight benchmarks with
+  published optima (sphere, matyas, booth, beale, three-hump camel, rosenbrock, rastrigin,
+  ackley), five seeds each, roughly 900 runs in under six seconds. Four claims per pair: the
+  measured bar is reached at *every* seed rather than on average, no optimizer reports a value
+  below the published optimum, the reported value is the objective at the reported point, and a
+  bounded optimizer stays inside its search space.
+
+  **The bars are measured, not chosen.** Each is set above the observed worst case with headroom
+  and never trimmed to make a run pass. Where an optimizer cannot reach an optimum, the number is
+  recorded in the file rather than absorbed into a wider tolerance, because the number is the
+  finding. Mean over five seeds:
+
+  | benchmark | NelderMead | SimAnneal | DiffEvol | ParticleSwarm | GeneticAlg | IslandModel |
+  |---|---|---|---|---|---|---|
+  | sphere (3d) | 9.0e-14 | 4.0e-5 | 2.8e-3 | 5.2e-6 | 8.5e-3 | 2.6e-3 |
+  | matyas | 2.3e-15 | 1.9e-4 | 2.1e-7 | 4.2e-6 | 1.3e-2 | 3.0e-3 |
+  | booth | 6.4e-14 | 7.1e-4 | 4.1e-3 | 6.5e-4 | 3.8e-1 | 4.1e-2 |
+  | beale | 3.7e-14 | 3.6e-3 | 7.8e-5 | 9.3e-5 | 2.3e-2 | 4.3e-3 |
+  | three-hump camel | **2.99e-1** | 3.5e-4 | 5.3e-5 | 2.1e-5 | 1.5e-2 | 7.7e-4 |
+  | rosenbrock | 3.9e-14 | 5.1e-3 | 1.2e-2 | 5.8e-4 | 3.5e-2 | 1.4e-2 |
+  | rastrigin | 0.0 | 5.3e-1 | 9.0e-1 | 5.1e-2 | 9.5e-1 | 1.8e-1 |
+  | ackley | 4.4e-16 | 2.9e-3 | 2.7e-4 | 3.6e-2 | 2.1e-1 | 5.7e-2 |
+
+  Two things that table says out loud, both recorded rather than papered over:
+
+  - **Nelder-Mead's three-hump camel entry is a local method behaving correctly.** From (2, 2) it
+    descends into the local minimum near (1.7, −0.8), value 0.2986. Asserting it should find the
+    global minimum would be asserting that it is a different algorithm, so it is held to the
+    local minimum and the reason is stated.
+  - **`GeneticAlgorithm` is the weakest by orders of magnitude.** On matyas — a smooth convex
+    quadratic — it averages 1.3e-2 where differential evolution averages 2.1e-7, a factor of
+    60,000 on a problem that should not separate two population methods. `IslandModel` sharpens
+    the case: it *is* several GAs run in parallel with the best taken, and that alone recovers
+    roughly tenfold on every row. Taking the best of a handful of runs should not buy an order of
+    magnitude from a healthy optimizer, which points at run-to-run variance rather than the
+    search. This is the same shape annealing had, and it is the next thing to look at.
+
+- **`ConstrainedFeasibilityTests` extended from four optimizers to all six.** The original four
+  were the ones whose shared helper made the defect easy to find; the bug survived in exactly the
+  two it did not cover. Partial coverage of a uniform contract is how a uniform fix becomes
+  non-uniform.
+
+---
+
 #### 2026-09-17 — simulated annealing was not annealing
 
 Three of the algorithm's defining features were missing. On `min ‖x‖²` from (5, 5, 5) over

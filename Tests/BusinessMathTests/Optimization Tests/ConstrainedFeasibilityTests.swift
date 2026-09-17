@@ -38,6 +38,23 @@ import Foundation
 /// enough to justify returning a point outside the feasible set, because a threshold is a
 /// threshold: a minimum order quantity, a capital adequacy floor, a staffing level. The only
 /// legitimate slack is numerical.
+///
+/// ## Why all six, and not the four this started with
+///
+/// The first version of this suite covered `NelderMead`, `DifferentialEvolution`,
+/// `ParticleSwarm` and `SimulatedAnnealing` — the optimizers whose shared `minimizeWithPenalty`
+/// made the defect easy to find. `GeneticAlgorithm` carried the same helper and was fixed with
+/// them; `IslandModel` never had one, handed its constraints to `optimizeDetailed` instead, and
+/// so was missed entirely.
+///
+/// It was worse than merely unfixed. ``MultivariateOptimizationResult/constraintViolation``
+/// defaults to zero, and `IslandModel` built its result without setting it — so the answer came
+/// back *claiming* to be feasible. Measured on `min 1000‖x‖²` subject to `x₀ ≥ 3`: x₀ = **0.2248**,
+/// a violation of 2.78, reported as `0.0`. A defaulted field whose default is a claim is a
+/// fail-silent trap, and adding the field without covering every caller is what set it.
+///
+/// Partial coverage of a uniform contract is how a uniform fix becomes non-uniform. Every
+/// constrained entry point in the package is exercised here.
 @Suite("Constrained optimizers return feasible points")
 struct ConstrainedFeasibilityTests {
 
@@ -136,6 +153,19 @@ struct ConstrainedFeasibilityTests {
 			"SimulatedAnnealing",
 			try SimulatedAnnealing<Vec>(config: .init(seed: 20_260_917), searchSpace: space)
 				.minimize(problem.objective, from: start, constraints: problem.constraints)
+		))
+		results.append((
+			"GeneticAlgorithm",
+			try GeneticAlgorithm<Vec>(config: .init(seed: 20_260_917), searchSpace: space)
+				.minimize(problem.objective, from: start, constraints: problem.constraints)
+		))
+		results.append((
+			"IslandModel",
+			try IslandModel<Vec>(
+				gaConfig: .init(seed: 20_260_917),
+				islandConfig: IslandModelConfig(),
+				searchSpace: space
+			).minimize(problem.objective, from: start, constraints: problem.constraints)
 		))
 		return results
 	}
