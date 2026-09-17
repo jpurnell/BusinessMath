@@ -15,6 +15,36 @@ Two batches, both from Tier 2 of the quality programme — the complexity list. 
 below sits in `BranchAndBoundSolver` or the machinery it calls, and none was found by reading
 the code.
 
+#### 2026-09-17 — the gate is at zero warnings again
+
+##### Changed
+
+- **`.quality-gate.yml` declares `DebugTrace` an error-value type.** `logging.catch-without-logging`
+  flagged `ModelDebugger.swift:222` for a catch block that "neither logs the error nor rethrows".
+  It does neither in the form the checker matches, and it loses nothing: `traced(_:)` returns a
+  `DebugTrace` carrying the error to the caller, and it already calls
+  `logger.calculationFailed(value, error:)` — a custom `Logger` extension rather than the
+  `.error(`/`.warning(` the rule looks for.
+
+  The checker supports exactly this case through `logging.errorValueTypes`, and its own
+  documentation draws the line: the rule exists to find an error that *disappears* —
+  `catch { }`, `catch { return nil }` — not to object to a domain that models failure as a value.
+  It requires **every** exit of the block to produce one of the named types, not merely one of
+  them; the flagged block has a single exit and it sets `error: error`.
+
+  A declaration rather than a suppression, and deliberately in a reviewable file rather than an
+  inline marker. `DebugTrace(` appears in one file, so the statement is as narrow as the fact.
+  The alternatives were worse: a second `logger.error()` beside the call already there is
+  duplicate logging to satisfy a pattern, and renaming `calculationFailed` to `error` would
+  flatten a semantic logging API into the checker's vocabulary.
+
+  The warning was latent rather than new — that file is unchanged since `29a5eecd`. Three
+  warnings surfaced this session only when their file happened to recompile, which is worth
+  recording on its own: **a warning count from an incremental build is a statement about what
+  changed, not about the codebase.**
+
+---
+
 #### 2026-09-17 — solution quality was never tested, and one optimizer lied about feasibility
 
 Every heuristic had eighteen to twenty-one tests and several asserted something about the

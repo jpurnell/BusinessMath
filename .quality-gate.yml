@@ -25,6 +25,24 @@
 excludePatterns:
   - "**/.claude/worktrees/**"
 
+# `ModelDebugger` models failure as a value rather than by logging or rethrowing, which is the
+# case `errorValueTypes` exists for: `traced(_:)` returns a `DebugTrace` carrying the error to
+# the caller, so nothing disappears. The checker's own documentation draws the line — the rule
+# is there to catch `catch { }`, `catch { return nil }`, an error that *vanishes* — and it
+# requires that **every** exit of the block produce one of the named types. The flagged block
+# has exactly one exit and it produces a `DebugTrace` with `error: error` set.
+#
+# This is a declaration, not a suppression. `DebugTrace(` appears in one file, so the statement
+# is as narrow as the fact it records, and it is deliberately a sentence a reviewer can
+# disagree with rather than an inline marker that hides.
+#
+# It is not the alternative fixes, both of which are worse: adding a `logger.error()` beside the
+# `logger.calculationFailed(value, error:)` already there is duplicate logging to satisfy a
+# pattern, and renaming that call to `error` would flatten a semantic logging API into the
+# checker's vocabulary.
+logging:
+  errorValueTypes: ["DebugTrace"]
+
 consistency:
   # `corpusPath` is deliberately absent. It is an absolute path to a checkout that exists
   # on one machine, and this file is tracked — so naming it here would publish a home
