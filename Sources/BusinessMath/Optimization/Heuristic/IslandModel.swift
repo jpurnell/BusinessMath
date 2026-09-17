@@ -218,7 +218,9 @@ public struct IslandModel<V: VectorSpace>: MultivariateOptimizer where V.Scalar:
         // ``MultivariateOptimizationResult/constraintViolation`` defaults to zero, the answer
         // came back claiming to be feasible. Measured on `min 1000‖x‖²` subject to `x₀ ≥ 3`: it
         // returned x₀ = **0.2248**, a violation of 2.78, reported as `0.0`.
-        return try penaltyConstrainedSolve(
+        // No `try`: `penaltyConstrainedSolve` rethrows, and this optimiser's closure cannot
+        // throw. `minimize` stays `throws` for the protocol.
+        return penaltyConstrainedSolve(
             objective: objective,
             constraints: constraints,
             options: PenaltySolveOptions(initialWeight: V.Scalar(islandConfig.constraintPenaltyWeight))
