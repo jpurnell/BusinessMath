@@ -39,6 +39,13 @@ of 0, because the tolerances they asserted against included **3.0, 5.0, 10.0, 30
   returns x₀ = 3.000000, and on conflicting bounds it reports a violation of 1.536 as
   `.infeasible`.
 
+  The call does not need `try`: `penaltyConstrainedSolve` is `rethrows`, and the island model's
+  own search does not throw. `minimize` keeps `throws` for signature compatibility with its five
+  siblings, whose searches do. The same applies to `NelderMead` and `SimulatedAnnealing`; the
+  compiler emits `no calls to throwing functions occur within 'try' expression` for each, but
+  only on a build that recompiles the file, which is why it surfaced a commit later than the
+  other two.
+
 ##### Tests
 
 - **New: `OptimizerSolutionQualityTests`** — six optimizers against eight benchmarks with
