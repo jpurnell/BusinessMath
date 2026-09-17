@@ -11,6 +11,114 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+Two batches, both from Tier 2 of the quality programme — the complexity list. Every defect
+below sits in `BranchAndBoundSolver` or the machinery it calls, and none was found by reading
+the code.
+
+#### 2026-09-17 — branch-and-bound discarded feasible subtrees
+
+**Branch-and-bound discarded feasible subtrees and believed its own bound.** Three defects, all
+reaching the **default** configuration — no cutting planes, no options. Found by a randomized
+sweep against exhaustive enumeration, not by reading the code.
+
+#### Fixed
+
+- **A feasible subtree is no longer pruned as infeasible.** `SimplexRelaxationSolver` recovered
+  every constraint's coefficients by central differences at `h = 1e-8` on the closure that
+  `MultivariateConstraint.function` synthesises — including for `.linearInequality`, which stores
+  the coefficients and right-hand side **exactly**. It was deriving `[3, 7]` and `21` from an
+  expression built out of `[3, 7]` and `21`, and getting them back good to about 1e-10.
+
+  Branching is what makes that fatal. Each bound slices the polytope thinner, so a node's
+  feasible region is routinely a sliver or a single point, and a perturbation of that size in the
+  wrong direction empties it. `createBranches` compounded it by passing the **parent's fractional
+  vertex** as the point to linearise at, so every node solved a slightly different LP.
+
+  On `max 4x + 7y` subject to `7x+3y ≤ 19`, `8x+2y ≤ 27`, `3x+7y ≤ 21`, the child under `y ≥ 3`
+  has exactly one feasible point, (0, 3), where the third row is tight at 21 = 21. The same LP
+  came back **optimal at 21** from an initial guess of (0, 0) and **infeasible** from (1.75,
+  2.25) — which is what `createBranches` passes. The node was pruned, the subtree vanished, and
+  the search returned **18** with `status == .optimal`.
+
+  Linear constraints now use their stored coefficients and right-hand side directly. Genuinely
+  nonlinear constraints still linearise, which is what that path is for. The branch bounds and
+  the binary upper bounds are now `.linearInequality` rather than closures, so branching's own
+  constraints are exact too.
+
+- **The global bound is taken over every open node, not the next one in line.**
+  `updateBestBound` read `queue.peek()`, which returns whatever the *selection strategy* would
+  explore next. Under `.bestBound` that is the extremum and the two coincide, which is why it
+  looked right. Under `.depthFirst` it is the deepest node, whose bound is usually worse — and a
+  bound worse than the optimum is not a bound. It closes the relative gap around whatever
+  incumbent is in hand and stops the search.
+
+  On `min 2x + 6y + 6z` subject to `x+8y+8z ≤ 49`, `3x+8y+3z ≥ 41`, `7x+8y+5z ≤ 49`, depth-first
+  returned **36** at (0, 5, 1) with a reported gap of 5.2e-9, while (1, 5, 0) is feasible at
+  **32**. Best-bound selection returned 32 on the same problem, and depth-first did too once the
+  gap tolerance was tightened enough to stop it trusting the bound.
+
+  New `NodeQueue.bestAvailableBound(minimize:)` — O(1) under best-bound selection, where the heap
+  is already ordered by bound, O(n) otherwise.
+
+- **An integral vertex is no longer read as fractional and cut away.** A consequence of the
+  first defect rather than a separate cause: `max 2x + y` subject to `x + y ≤ 20` had its root LP
+  return `x = 19.99999834` against an `integralityTolerance` of 1e-6, so an integral optimum
+  read as fractional and a cut was derived with `f₀ = 0.99999834`, dividing by `1 − f₀ = 1.65e-6`.
+  The result removed (20, 0) and the solve returned **38**. With exact coefficients the vertex is
+  exactly 20 and no cut is attempted.
+
+#### Tests
+
+- **New: `IntegerProgramRandomizedAuditTests`** — the thing that makes this class of defect
+  surface on every run rather than on the next audit. Five instance shapes (dense, tight at a
+  lattice point, with `≥` rows, with `=` rows, binary), ten solver configurations, checked
+  against exhaustive enumeration. **5,820 checks in 1.5 seconds.** The seeds are fixed and the
+  failure message carries the instance, so a regression reproduces exactly.
+
+  The enumeration box is **derived and proven**, not chosen: with positive coefficients and
+  non-negative variables, each `≤` row gives `x_j ≤ b_i / c_ij` and the cap is the tightest such
+  row. An earlier version used a fixed box of 30 and produced three false failures — a box that
+  does not contain the optimum makes the oracle wrong rather than merely incomplete, and for a
+  minimisation it fails in the opposite direction. The suite also asserts how many checks it
+  actually ran, so a generator that drifted into producing nothing enumerable cannot pass by
+  doing nothing.
+
+- **`BranchAndCutTier2Tests`: the monotonicity claim is withdrawn.** The aging test asserted the
+  *share* of cuts discarded falls as the limit is relaxed, on the reasoning that a longer limit
+  lets each cut survive more rounds. That reasoning was wrong: the limit changes which cuts are
+  in the LP, hence the re-solve, hence how many rounds and nodes run — it moves the denominator
+  too. Measured, the share goes .700, **.710**, .649, .378, 0. The test now asserts only what
+  holds for a reason — off removes nothing, an unreachable limit removes nothing, a tight limit
+  removes something, and removal never exceeds generation — and records the counts as provenance.
+
+#### Why the quality gate did not catch this
+
+It could not, and that is the wrong place to have looked. All three are numerical-behaviour facts
+about specific inputs; no static checker over source text sees them. The gate ran the suite, the
+suite was green, and the gate reported that accurately.
+
+The gate did do the one thing available to it: `complexity` flagged `solveRelaxation` at 302 and
+`solve` at 160 against a threshold of 15 — at **note** severity, among 179 such notes, with the
+run passing. The signal named the right two functions and had no teeth.
+
+**The real answer is in `project/checklists/completed/CURRENT_OracleAudit.md`.** Branch-and-bound
+was audited with exactly the right oracle — *"exhaustive enumeration of the boxed integer
+points"* — found a suboptimal answer reported as `.optimal`, fixed it, and Tier B was marked
+complete. What differed was **coverage, not method**: that audit ran a handful of hand-chosen
+fixtures, and this sweep ran 5,820 checks. A fixture set is chosen by someone reading the code,
+so it samples the cases the author already had in mind; and every hand-chosen fixture is well
+conditioned, because nobody writes down a polytope in order to branch it into a feasible region
+that is a single point. That geometry is manufactured by the algorithm, and a fixed fixture set
+structurally cannot reach it however good its oracle.
+
+So the remedy is not another checker and not another fixture. It is that an audit of a numerical
+routine ends with a **generator and an oracle committed to the suite**, not with a checklist
+marked complete.
+
+---
+
+#### 2026-09-16 — branch-and-cut cut off the optimum
+
 **Branch-and-cut was returning the wrong answer and calling it optimal.** Found by following
 the complexity list rather than the clone list — `solveRelaxation` is the most complex function
 in the package, cognitive complexity 302 against a threshold of 15, and this was nested seven
@@ -51,8 +159,14 @@ levels inside it.
   Cutting is strictly more effective as well as correct: on the same fixture, 115 cuts over 20
   rounds against 56 before.
 
-  **If you use `BranchAndBoundSolver` with the default `enableCuttingPlanes: true`, answers may
-  change — toward the optimum.** Callers with cutting disabled are unaffected.
+  **Who was affected: callers who passed `enableCuttingPlanes: true`.** It is not the default —
+  both initialisers default it to `false`, and no call site inside the package enables it — so a
+  solver built with default options never entered the cutting loop and never saw a wrong answer.
+  For callers who did opt in, answers may change, toward the optimum.
+
+  (The commit that landed this, `81f7d733`, says in two places that cutting planes are on by
+  default. They are not. `detectCycling` and `enableCutAging` are the default-on options here;
+  `enableCuttingPlanes` is not, and the commit message overstates the reach of the defect.)
 
 - **`generateMIRCut` produced invalid cuts and now delegates.** Its rule for a continuous column
   with a negative coefficient gave `a_j / f₀`, which is **negative**, where the derivation
@@ -73,7 +187,9 @@ levels inside it.
   that scans the solution history, so it left the scan rather than the round loop it was meant to
   stop: the cycle was detected and the next round started anyway. Measured before the fix, 32
   rounds and 74 cuts with detection on and 32 and 74 with it off — identical to the integer, on
-  every fixture tried. `detectCycling` defaults to `true`, so this was inert for everyone.
+  every fixture tried. `detectCycling` defaults to `true`, so every caller who enabled cutting
+  planes was running a guard that did nothing — and the guard lives inside the cutting loop, so
+  callers on the default `enableCuttingPlanes: false` never reached it either way.
 
 #### Documentation
 
@@ -86,10 +202,15 @@ levels inside it.
 - **`IntegerOptimizationResult.objectiveValue` is the objective at the relaxation point, not at
   the reported integer point.** A point accepted as integral within `integralityTolerance` sits
   slightly off the lattice, so a solve returning `integerSolution == [2, 0, 2]`, whose objective
-  is exactly 14, reports `14.000000085084594`. The gap is bounded by the integrality tolerance
-  times the objective's coefficient sum, and for a minimisation it falls on the optimistic side —
-  it also feeds the relative-gap test that decides termination. Recorded in the tests that now
-  compare against a tolerance rather than `==`; not changed here.
+  is exactly 14, reported `14.000000085084594`.
+
+  **The diagnosis above is incomplete, and the magnitude has since changed.** That 8.5e-8 was
+  dominated not by the integrality tolerance but by the relaxation solver rebuilding each
+  constraint's coefficients with finite differences — see the entry below. With the coefficients
+  taken exactly, the same solve reports 14.0, and the largest residual across cutting budgets 0
+  through 20 is 3.6e-15, which is ordinary floating-point rounding. The structural point stands
+  — the value is evaluated at the relaxation point — but it is now a last-bit effect rather than
+  a seventh-decimal one.
 
 #### Tests
 

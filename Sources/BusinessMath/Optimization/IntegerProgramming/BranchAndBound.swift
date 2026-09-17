@@ -864,13 +864,18 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
         // Add bound constraints for integer/binary variables
         var allConstraints = constraints
 
-        // Add upper bound constraints for binary variables: x[i] ≤ 1
+        // Add upper bound constraints for binary variables: x[i] ≤ 1.
+        //
+        // Stated as `.linearInequality` rather than as a closure. The relaxation solver reads a
+        // linear constraint's coefficients and right-hand side directly and differentiates only
+        // what it must; a closure forces it to recover `[0, …, 1, …, 0]` and `1` numerically,
+        // and the ~1e-10 error that comes back can decide feasibility for a binary node, whose
+        // feasible region is a face of the unit cube.
         for i in integerSpec.binaryVariables where i < dimension {
+            var unit = Array(repeating: 0.0, count: dimension)
+            unit[i] = 1.0
             allConstraints.append(
-                .inequality(
-                    function: { v in v.toArray()[i] - 1.0 },
-                    gradient: nil
-                )
+                .linearInequality(coefficients: unit, rhs: 1.0, sense: .lessOrEqual)
             )
         }
 
@@ -1397,7 +1402,9 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
         deadline: ContinuousClock.Instant?
     ) throws -> (BranchNode<V>, BranchNode<V>) {
 
-        let value = solution.toArray()[variable]
+        let components = solution.toArray()
+        let dimension = components.count
+        let value = components[variable]
         let floor = Foundation.floor(value)
         let ceil = Foundation.ceil(value)
 
@@ -1406,12 +1413,24 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
         // This works better than trying to guess a good starting point ourselves
         let initialGuess = solution
 
+        // The branch bound as a unit vector, which both children need.
+        //
+        // Both bounds are `.linearInequality` rather than closures, and that is the difference
+        // between a correct search and one that discards its own subtrees. A closure sends the
+        // relaxation solver back to central differences to recover coefficients it was handed,
+        // at whatever point it was given — here `initialGuess`, the parent's *fractional*
+        // vertex. Every node then solves a slightly different LP, and branching is precisely the
+        // operation that makes a polytope thin enough for the difference to matter: on
+        // `max 4x + 7y` subject to `7x+3y ≤ 19`, `8x+2y ≤ 27`, `3x+7y ≤ 21`, the child under
+        // `y ≥ 3` has exactly one feasible point, and it was reported infeasible from the
+        // parent's vertex and feasible from the origin. The search returned 18 where the
+        // optimum is 21, with `status == .optimal`.
+        var unit = Array(repeating: 0.0, count: dimension)
+        unit[variable] = 1.0
+
         // Left branch: x_i ≤ floor
         let leftConstraints = parent.constraints + [
-            .inequality(
-                function: { v in v.toArray()[variable] - floor },
-                gradient: nil
-            )
+            .linearInequality(coefficients: unit, rhs: floor, sense: .lessOrEqual)
         ]
 
         let leftNode = try solveRelaxation(
@@ -1429,10 +1448,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
 
         // Right branch: x_i ≥ ceil
         let rightConstraints = parent.constraints + [
-            .inequality(
-                function: { v in ceil - v.toArray()[variable] },
-                gradient: nil
-            )
+            .linearInequality(coefficients: unit, rhs: ceil, sense: .greaterOrEqual)
         ]
 
         let rightNode = try solveRelaxation(
@@ -1531,15 +1547,19 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
         }
     }
 
-    /// Update best bound from active nodes in queue
+    /// Recompute the global bound from the open nodes.
+    ///
+    /// Takes the extremum over the whole queue rather than the bound of the node that is next
+    /// in line — see ``NodeQueue/bestAvailableBound(minimize:)`` for why those differ under
+    /// every selection strategy except best-bound, and for what it cost.
     private func updateBestBound(
         _ bestBound: inout Double,
         from queue: NodeQueue<V>,
         minimize: Bool,
         incumbent: (solution: V, value: Double)? = nil
     ) {
-        if let topNode = queue.peek() {
-            bestBound = topNode.relaxationBound
+        if let openBound = queue.bestAvailableBound(minimize: minimize) {
+            bestBound = openBound
         } else {
             // Nothing left to explore, so the incumbent is proven optimal and the
             // bound meets it.
@@ -2267,6 +2287,44 @@ struct NodeQueue<V: VectorSpace>: Sendable where V.Scalar == Double {
         }
     }
 
+    /// The best relaxation bound over **every** open node.
+    ///
+    /// The only valid global bound, and not the same thing as the bound of the node that
+    /// happens to be next in line. ``peek()`` returns whatever the *selection strategy* would
+    /// explore next: under ``NodeSelectionStrategy/bestBound`` that is the extremum and the two
+    /// coincide, which is why reading the bound off `peek()` looked right. Under
+    /// ``NodeSelectionStrategy/depthFirst`` it is the deepest node, whose bound is usually
+    /// worse, and a "bound" worse than the true optimum is not a bound at all — it closes the
+    /// relative gap around whatever incumbent is in hand and stops the search.
+    ///
+    /// Measured on `min 2x + 6y + 6z` subject to `x+8y+8z ≤ 49`, `3x+8y+3z ≥ 41` and
+    /// `7x+8y+5z ≤ 49`: depth-first returned **36** at (0, 5, 1) with a reported gap of 5.2e-9,
+    /// while (1, 5, 0) is feasible at **32**. Best-bound selection returned 32 on the same
+    /// problem, and depth-first did too once the gap tolerance was tightened enough to stop it
+    /// believing the bound.
+    ///
+    /// - Parameter minimize: Direction, which decides whether the extremum is a minimum.
+    /// - Returns: The bound, or `nil` when no node is open.
+    /// - Complexity: O(1) under best-bound selection, where the heap is already ordered by
+    ///   bound; O(n) otherwise, where the heap is ordered by something else and the extremum has
+    ///   to be looked for. Called once per explored node.
+    func bestAvailableBound(minimize: Bool) -> Double? {
+        guard let first = heap.first else { return nil }
+
+        switch strategy {
+        case .bestBound:
+            return first.relaxationBound
+        case .depthFirst, .breadthFirst, .bestEstimate:
+            var best = first.relaxationBound
+            for node in heap.dropFirst() {
+                best = minimize
+                    ? Swift.min(best, node.relaxationBound)
+                    : Swift.max(best, node.relaxationBound)
+            }
+            return best
+        }
+    }
+
     /// Extract best node according to strategy - O(log n)
     mutating func extractBest() -> BranchNode<V>? {
         guard !heap.isEmpty else { return nil }
@@ -2280,11 +2338,6 @@ struct NodeQueue<V: VectorSpace>: Sendable where V.Scalar == Double {
         siftDown(from: 0)
 
         return best
-    }
-
-    /// Peek at best node without removing - O(1)
-    func peek() -> BranchNode<V>? {
-        return heap.first
     }
 
     var isEmpty: Bool {

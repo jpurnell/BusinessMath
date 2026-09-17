@@ -14,8 +14,8 @@ struct BranchAndCutTier2Tests {
     /// The cut-configuration tests below used to run problems that generate **no cuts at
     /// all** — measured at zero, at every pool size and every aging limit — so nothing they
     /// asserted could depend on the option they were named for. This polytope is the one
-    /// `Phase1_CutValidityTests` uses, and it cuts: 30 cuts over 20 rounds at the default aging
-    /// limit, taking the tree from 17 nodes without cutting planes to 3 with them.
+    /// `Phase1_CutValidityTests` uses, and it cuts: 37 cuts over 31 rounds with aging off,
+    /// taking the tree from 17 nodes without cutting planes to 5 with them.
     ///
     /// Integer optimum **4**, attained at (1, 3), (2, 2), (3, 1) and (4, 0) — four argmaxes, so
     /// no assertion below may name a point.
@@ -309,41 +309,53 @@ struct BranchAndCutTier2Tests {
                 "\(agedStats.cutsRemoved) removed of \(agedStats.totalCutsGenerated) generated")
     }
 
-    /// The share of cuts discarded falls as the limit is relaxed, and reaches zero.
+    /// Aging removes cuts, removes none when off, and removes none when it cannot be reached.
     ///
-    /// Measured on `cutRich` at `maxCuttingRounds: 10`, after the switch to mixed-integer cuts:
+    /// Measured on `cutRich` at `maxCuttingRounds: 10`:
     ///
     /// | Aging limit | off | 1 | 2 | 3 | 5 | 10 |
     /// |---|---|---|---|---|---|---|
-    /// | **Generated** | 42 | 36 | 21 | 30 | 30 | 42 |
-    /// | **Removed** | 0 | 27 | 15 | 18 | 12 | 0 |
-    /// | **Share** | 0 | .75 | .71 | .60 | .40 | 0 |
+    /// | **Generated** | 37 | 30 | 31 | 37 | 37 | 37 |
+    /// | **Removed** | 0 | 21 | 22 | 24 | 14 | 0 |
+    /// | **Share** | 0 | .700 | **.710** | .649 | .378 | 0 |
     ///
-    /// ## Why the share and not the count
+    /// ## What this deliberately does not claim
     ///
-    /// This asserted the raw count, against the table `1→8, 2→5, 3→2, 5→0, 10→0` measured when
-    /// the loop still produced Gomory fractional cuts. Those counts were monotone, and the
-    /// monotonicity was a coincidence: the aging limit changes how many rounds run and how many
-    /// nodes are explored, so it changes the *denominator* too. Under valid cuts the counts go
-    /// `27, 15, 18, 12, 0` — not monotone, because 21 cuts were generated at limit 2 against 30
-    /// at limit 3.
+    /// **Monotonicity, in either counts or shares.** This test asserted the raw count against a
+    /// fixed table, and when that broke it was rewritten to assert the *share* falls — on the
+    /// reasoning that a longer age limit lets each cut survive more rounds, so a smaller fraction
+    /// is discarded. That reasoning is wrong, and the table above shows where: the share rises
+    /// from .700 to .710 between limits 1 and 2.
     ///
-    /// The share is monotone for a reason rather than by measurement: a longer age limit lets
-    /// each cut survive more rounds, so a smaller fraction of what was generated is discarded.
-    /// That is the claim worth pinning, and it does not move when the cut family does.
+    /// The flaw in it is that the aging limit is not a filter applied to a fixed population. It
+    /// changes which cuts are in the LP, which changes the re-solve, which changes how many
+    /// rounds run and how many nodes are explored — so it moves the denominator as well as the
+    /// numerator. Limit 1 generates 30 cuts over 7 nodes; limit 3 generates 37 over 5. Nothing
+    /// orders those.
     ///
-    /// Both endpoints are pinned separately, since they are where an off-by-one would show:
-    /// aging off discards nothing, and a limit at or above the round budget discards nothing
-    /// either, because no cut can reach that age in a solve that runs that many rounds.
-    @Test("The share of cuts discarded falls as the aging limit is relaxed")
-    func removalShareFallsWithTheLimit() throws {
+    /// So this asserts the properties that hold for a reason rather than by measurement: off
+    /// removes nothing, a limit no cut can reach removes nothing, a tight limit removes
+    /// something, and removal never exceeds generation. The counts above are provenance, not
+    /// assertions — they have moved twice already, once when cuts became valid and once when the
+    /// relaxation became exact.
+    @Test("Aging removes cuts when it can, and nothing when it cannot")
+    func agingRemovesCutsOnlyWhenReachable() throws {
         let unaged = try solveCutRich(BranchAndBoundSolver(
             enableCuttingPlanes: true, maxCuttingRounds: 10, enableCutAging: false))
         let unagedStats = try #require(unaged.cuttingPlaneStats)
         #expect(unagedStats.cutsRemoved == 0,
                 "aging off removed \(unagedStats.cutsRemoved)")
 
-        var previousShare: Double = 1.0
+        let tight = try solveCutRich(BranchAndBoundSolver(
+            enableCuttingPlanes: true, maxCuttingRounds: 10,
+            enableCutAging: true, cutAgingLimit: 1))
+        let tightStats = try #require(tight.cuttingPlaneStats)
+        #expect(tightStats.cutsRemoved > 0,
+                "a limit of 1 discards a cut the round after it is added, yet removed nothing")
+
+        // Removal can never exceed generation, at any limit. A count above the number generated
+        // would mean the index arithmetic that shifts `cutAges` after a removal had gone wrong,
+        // which is the live risk in that block.
         for limit in [1, 2, 3, 5] {
             let result = try solveCutRich(BranchAndBoundSolver(
                 enableCuttingPlanes: true, maxCuttingRounds: 10,
@@ -351,15 +363,12 @@ struct BranchAndCutTier2Tests {
             let stats = try #require(result.cuttingPlaneStats)
             let generated: Int = stats.totalCutsGenerated
             #expect(generated > 0, "limit \(limit) generated no cuts, so there is nothing to age")
-
-            let share: Double = Double(stats.cutsRemoved) / Double(generated)
-            #expect(share <= previousShare,
-                    "limit \(limit) discarded a \(share) share, up from \(previousShare)")
             #expect(stats.cutsRemoved <= generated,
                     "limit \(limit): \(stats.cutsRemoved) removed of \(generated) generated")
-            previousShare = share
         }
 
+        // A limit equal to the round budget cannot be reached: no cut survives to that age in a
+        // solve that runs that many rounds. This is the boundary an off-by-one would cross.
         let atBudget = try solveCutRich(BranchAndBoundSolver(
             enableCuttingPlanes: true, maxCuttingRounds: 10,
             enableCutAging: true, cutAgingLimit: 10))
@@ -377,7 +386,7 @@ struct BranchAndCutTier2Tests {
     /// state access."*
     ///
     /// With ``CuttingPlaneStats/cutsRemoved`` that is no longer true, and the two facts can
-    /// now be separated. Aging **works** — at a limit of 1 it discards 27 of the 36 cuts
+    /// now be separated. Aging **works** — at a limit of 1 it discards 21 of the 30 cuts
     /// generated. Aging also **changes no answer**: the status and the objective match a solve
     /// with aging off, at every limit.
     ///
@@ -437,14 +446,14 @@ struct BranchAndCutTier2Tests {
     ///
     /// | Cap | Cuts | Nodes |
     /// |---|---|---|
-    /// | 3 | 3 | 9 |
-    /// | 5 | 5 | 9 |
-    /// | 100 | 30 | 3 |
+    /// | 3 | 3 | 17 |
+    /// | 5 | 5 | 17 |
+    /// | 100 | 37 | 5 |
     ///
-    /// Thirty rather than the 14 this table used to record, because valid cuts survive their
-    /// re-solve and the loop keeps finding more to make. The uncapped figure is 30 and not 42:
-    /// 42 is what the solve generates with aging *off*, and every row here has it on by default.
-    /// That distinction is what made the old reference count unreachable.
+    /// Thirty-seven rather than the 14 this table used to record, because valid cuts survive
+    /// their re-solve and the loop keeps finding more to make. Seventeen nodes at a cap of 3 is
+    /// exactly what this problem costs with cutting planes off altogether — three cuts buy
+    /// nothing here — which is the trade the option exists to let a caller make.
     ///
     /// The node counts are the reason this matters rather than being bookkeeping: a
     /// tighter pool means a weaker relaxation and more branching, which is the trade the
@@ -461,7 +470,7 @@ struct BranchAndCutTier2Tests {
                 "\(stats.totalCutsGenerated) cuts against a cap of \(cap)")
         // And the cap has to actually bind rather than sit above what the problem produces,
         // or this asserts nothing — the failure the old version made.
-        let uncapped = 30
+        let uncapped = 37
         if cap < uncapped {
             #expect(stats.totalCutsGenerated == cap,
                     "a binding cap of \(cap) yielded \(stats.totalCutsGenerated) cuts")
