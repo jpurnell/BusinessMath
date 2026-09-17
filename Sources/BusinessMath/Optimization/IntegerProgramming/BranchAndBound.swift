@@ -1303,15 +1303,18 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                             // Only check if we have enough history
                             if solutionHistory.count > cyclingWindowSize {
                                 let recent = Array(solutionHistory.suffix(cyclingWindowSize))
-                                // Safe: cyclingWindowSize > 0 and count check ensures non-empty
-                                guard let current = recent.last else { continue }
 
-                                // Check if current solution matches any recent solution
-                                for i in 0..<(recent.count - 1) {
-                                    if areSolutionsEqual(current, recent[i], tolerance: stagnationTolerance) {
-                                        // Cycling detected - terminate
-                                        break
-                                    }
+                                // Written as one predicate rather than a `for` loop with a
+                                // `break` inside it. The loop form is what this used to be, and
+                                // its `break` bound to the scan rather than to the cutting-round
+                                // loop it was meant to stop: a cycle was found, and the next
+                                // round started anyway. Measured before the change — 32 rounds
+                                // with detection on and 32 with it off, identical to the integer.
+                                let repeatsAnEarlierVertex = recent.dropLast().contains {
+                                    areSolutionsEqual(currentSolutionArray, $0, tolerance: stagnationTolerance)
+                                }
+                                if repeatsAnEarlierVertex {
+                                    break
                                 }
                             }
                         }

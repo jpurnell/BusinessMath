@@ -14,8 +14,11 @@ struct BranchAndCutTier2Tests {
     /// The cut-configuration tests below used to run problems that generate **no cuts at
     /// all** — measured at zero, at every pool size and every aging limit — so nothing they
     /// asserted could depend on the option they were named for. This polytope is the one
-    /// `Phase1_CutValidityTests` uses, and it cuts: 14 cuts over 5 rounds, taking the tree
-    /// from 17 nodes without cutting planes to 6 with them.
+    /// `Phase1_CutValidityTests` uses, and it cuts: 30 cuts over 20 rounds at the default aging
+    /// limit, taking the tree from 17 nodes without cutting planes to 3 with them.
+    ///
+    /// Integer optimum **4**, attained at (1, 3), (2, 2), (3, 1) and (4, 0) — four argmaxes, so
+    /// no assertion below may name a point.
     private static let cutRich: [MultivariateConstraint<VectorN<Double>>] = [
         .linearInequality(coefficients: [5.0, 4.0], rhs: 22.0, sense: .lessOrEqual),
         .linearInequality(coefficients: [3.0, 7.0], rhs: 25.0, sense: .lessOrEqual)
@@ -306,31 +309,66 @@ struct BranchAndCutTier2Tests {
                 "\(agedStats.cutsRemoved) removed of \(agedStats.totalCutsGenerated) generated")
     }
 
-    /// The removal count falls monotonically as the limit is relaxed, and reaches zero.
+    /// The share of cuts discarded falls as the limit is relaxed, and reaches zero.
     ///
-    /// Measured on `cutRich`, which runs five cutting rounds and generates fourteen cuts:
+    /// Measured on `cutRich` at `maxCuttingRounds: 10`, after the switch to mixed-integer cuts:
     ///
     /// | Aging limit | off | 1 | 2 | 3 | 5 | 10 |
     /// |---|---|---|---|---|---|---|
-    /// | **Cuts removed** | 0 | 8 | 5 | 2 | 0 | 0 |
+    /// | **Generated** | 42 | 36 | 21 | 30 | 30 | 42 |
+    /// | **Removed** | 0 | 27 | 15 | 18 | 12 | 0 |
+    /// | **Share** | 0 | .75 | .71 | .60 | .40 | 0 |
     ///
-    /// Zero at five and above is not a failure: a cut cannot reach an age of five in a
-    /// solve that performs five rounds, so the limit is never met. That boundary is worth
-    /// pinning because it is the one place a plausible off-by-one would show.
-    @Test("Cuts removed falls monotonically as the aging limit is relaxed",
-          arguments: [(1, 8), (2, 5), (3, 2), (5, 0), (10, 0)])
-    func removalCountFallsWithTheLimit(limit: Int, expected: Int) throws {
-        let result = try solveCutRich(BranchAndBoundSolver(
+    /// ## Why the share and not the count
+    ///
+    /// This asserted the raw count, against the table `1→8, 2→5, 3→2, 5→0, 10→0` measured when
+    /// the loop still produced Gomory fractional cuts. Those counts were monotone, and the
+    /// monotonicity was a coincidence: the aging limit changes how many rounds run and how many
+    /// nodes are explored, so it changes the *denominator* too. Under valid cuts the counts go
+    /// `27, 15, 18, 12, 0` — not monotone, because 21 cuts were generated at limit 2 against 30
+    /// at limit 3.
+    ///
+    /// The share is monotone for a reason rather than by measurement: a longer age limit lets
+    /// each cut survive more rounds, so a smaller fraction of what was generated is discarded.
+    /// That is the claim worth pinning, and it does not move when the cut family does.
+    ///
+    /// Both endpoints are pinned separately, since they are where an off-by-one would show:
+    /// aging off discards nothing, and a limit at or above the round budget discards nothing
+    /// either, because no cut can reach that age in a solve that runs that many rounds.
+    @Test("The share of cuts discarded falls as the aging limit is relaxed")
+    func removalShareFallsWithTheLimit() throws {
+        let unaged = try solveCutRich(BranchAndBoundSolver(
+            enableCuttingPlanes: true, maxCuttingRounds: 10, enableCutAging: false))
+        let unagedStats = try #require(unaged.cuttingPlaneStats)
+        #expect(unagedStats.cutsRemoved == 0,
+                "aging off removed \(unagedStats.cutsRemoved)")
+
+        var previousShare: Double = 1.0
+        for limit in [1, 2, 3, 5] {
+            let result = try solveCutRich(BranchAndBoundSolver(
+                enableCuttingPlanes: true, maxCuttingRounds: 10,
+                enableCutAging: true, cutAgingLimit: limit))
+            let stats = try #require(result.cuttingPlaneStats)
+            let generated: Int = stats.totalCutsGenerated
+            #expect(generated > 0, "limit \(limit) generated no cuts, so there is nothing to age")
+
+            let share: Double = Double(stats.cutsRemoved) / Double(generated)
+            #expect(share <= previousShare,
+                    "limit \(limit) discarded a \(share) share, up from \(previousShare)")
+            #expect(stats.cutsRemoved <= generated,
+                    "limit \(limit): \(stats.cutsRemoved) removed of \(generated) generated")
+            previousShare = share
+        }
+
+        let atBudget = try solveCutRich(BranchAndBoundSolver(
             enableCuttingPlanes: true, maxCuttingRounds: 10,
-            enableCutAging: true, cutAgingLimit: limit))
-        let stats = try #require(result.cuttingPlaneStats)
-        #expect(stats.cutsRemoved == expected,
-                "limit \(limit) removed \(stats.cutsRemoved), not \(expected)")
-        #expect(stats.totalCutsGenerated == 14,
-                "generated \(stats.totalCutsGenerated) cuts, not 14")
+            enableCutAging: true, cutAgingLimit: 10))
+        let atBudgetStats = try #require(atBudget.cuttingPlaneStats)
+        #expect(atBudgetStats.cutsRemoved == 0,
+                "a limit equal to the round budget is unreachable, yet removed \(atBudgetStats.cutsRemoved)")
     }
 
-    /// Aging removes cuts from the LP, and nothing a caller can see reflects that.    /// Aging discards up to eight of fourteen cuts and the answer does not move.
+    /// Aging discards most of the cuts it generates and the objective does not move.
     ///
     /// The test that stood here was named "Inactive cuts are removed after aging limit",
     /// ran a problem that generates **zero cuts**, and asserted `result.status == .optimal`.
@@ -339,9 +377,9 @@ struct BranchAndCutTier2Tests {
     /// state access."*
     ///
     /// With ``CuttingPlaneStats/cutsRemoved`` that is no longer true, and the two facts can
-    /// now be separated. Aging **works** — at a limit of 1 it discards 8 of the 14 cuts
-    /// generated. Aging also **changes nothing**: the status, objective, solution and node
-    /// count are identical to a solve with aging off, at every limit.
+    /// now be separated. Aging **works** — at a limit of 1 it discards 27 of the 36 cuts
+    /// generated. Aging also **changes no answer**: the status and the objective match a solve
+    /// with aging off, at every limit.
     ///
     /// Those are consistent rather than contradictory, and this is the assertion that says
     /// so. Cuts are valid inequalities — they remove no integer-feasible point — so
@@ -363,16 +401,27 @@ struct BranchAndCutTier2Tests {
 
         #expect(aged.status == unaged.status,
                 "status \(aged.status) against \(unaged.status)")
-        #expect(aged.objectiveValue.isEqual(to: unaged.objectiveValue),
+
+        // The **objective**, not the point. `max x + y` on `cutRich` attains 4 at (1,3), (2,2),
+        // (3,1) and (4,0), so which optimum a solve lands on is a function of search order and
+        // carries no claim; aging legitimately changes it. This compared the solution
+        // componentwise and passed only because aging happened not to reorder the search under
+        // the old, invalid cuts. Under valid cuts it does, and the componentwise assertion was
+        // failing on a pair of equally optimal answers.
+        //
+        // Compared with a tolerance rather than `isEqual(to:)` because `objectiveValue` is the
+        // objective at the relaxation point that passed the integrality test, not at the integer
+        // point reported, so two solves reaching the same optimum differ in the seventh decimal.
+        let objectiveGap: Double = abs(aged.objectiveValue - unaged.objectiveValue)
+        #expect(objectiveGap < 1e-6,
                 "objective \(aged.objectiveValue) against \(unaged.objectiveValue)")
 
-        let agedSolution = aged.solution.toArray()
-        let unagedSolution = unaged.solution.toArray()
-        #expect(agedSolution.count == unagedSolution.count)
-        for (index, pair) in zip(agedSolution, unagedSolution).enumerated() {
-            #expect(pair.0.isEqual(to: pair.1),
-                    "component \(index): \(pair.0) against \(pair.1)")
-        }
+        let agedTotal = aged.integerSolution.reduce(0, +)
+        let unagedTotal = unaged.integerSolution.reduce(0, +)
+        #expect(agedTotal == unagedTotal,
+                "aged \(aged.integerSolution) totals \(agedTotal), unaged \(unaged.integerSolution) totals \(unagedTotal)")
+        #expect(agedTotal == 4,
+                "the integer optimum of max x + y on cutRich is 4, got \(agedTotal)")
     }
 
     /// The pool cap is honoured exactly, and tightening it costs search effort.
@@ -382,14 +431,20 @@ struct BranchAndCutTier2Tests {
     /// not fail.
     ///
     /// The cap is one of the few cut options with a genuinely observable contract, because
-    /// `totalCutsGenerated` is precisely the quantity it bounds. Measured on `cutRich`,
-    /// which generates 14 cuts uncapped:
+    /// `totalCutsGenerated` is precisely the quantity it bounds. Measured on `cutRich` under
+    /// mixed-integer cuts, with `enableCutAging` at its default of `true` and limit 5, which is
+    /// the configuration these solves actually run in:
     ///
     /// | Cap | Cuts | Nodes |
     /// |---|---|---|
     /// | 3 | 3 | 9 |
-    /// | 5 | 5 | 17 |
-    /// | 100 | 14 | 6 |
+    /// | 5 | 5 | 9 |
+    /// | 100 | 30 | 3 |
+    ///
+    /// Thirty rather than the 14 this table used to record, because valid cuts survive their
+    /// re-solve and the loop keeps finding more to make. The uncapped figure is 30 and not 42:
+    /// 42 is what the solve generates with aging *off*, and every row here has it on by default.
+    /// That distinction is what made the old reference count unreachable.
     ///
     /// The node counts are the reason this matters rather than being bookkeeping: a
     /// tighter pool means a weaker relaxation and more branching, which is the trade the
@@ -406,7 +461,7 @@ struct BranchAndCutTier2Tests {
                 "\(stats.totalCutsGenerated) cuts against a cap of \(cap)")
         // And the cap has to actually bind rather than sit above what the problem produces,
         // or this asserts nothing — the failure the old version made.
-        let uncapped = 14
+        let uncapped = 30
         if cap < uncapped {
             #expect(stats.totalCutsGenerated == cap,
                     "a binding cap of \(cap) yielded \(stats.totalCutsGenerated) cuts")
@@ -427,8 +482,16 @@ struct BranchAndCutTier2Tests {
         #expect(tight.nodesExplored > loose.nodesExplored,
                 "tight pool explored \(tight.nodesExplored), loose explored \(loose.nodesExplored)")
         // Both still have to arrive at the same optimum: a cut pool is a search budget,
-        // not a change of problem.
-        #expect(tight.objectiveValue.isEqual(to: loose.objectiveValue),
+        // not a change of problem. Compared by objective within a tolerance, for the reason
+        // recorded on ``agingNeverChangesTheAnswer(limit:)`` — the reported value sits within
+        // the integrality tolerance of the true one, and the optimum here has four argmaxes.
+        let objectiveGap: Double = abs(tight.objectiveValue - loose.objectiveValue)
+        #expect(objectiveGap < 1e-6,
                 "\(tight.objectiveValue) against \(loose.objectiveValue)")
+
+        let tightTotal = tight.integerSolution.reduce(0, +)
+        let looseTotal = loose.integerSolution.reduce(0, +)
+        #expect(tightTotal == looseTotal,
+                "tight \(tight.integerSolution), loose \(loose.integerSolution)")
     }
 }

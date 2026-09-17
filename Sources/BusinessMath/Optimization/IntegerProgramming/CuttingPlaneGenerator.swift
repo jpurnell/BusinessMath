@@ -4,26 +4,31 @@ import Foundation
 
 /// Represents a simplex tableau row with explicit mapping to original variable space.
 ///
-/// The row is provided in **solved form** as returned by SimplexSolver:
+/// The row is provided in **canonical form**, as `SimplexSolver`'s tableau stores it:
 /// ```
-/// x_B = b + Σ c_j x_j
+/// x_B + Σ a_j y_j = b
 /// ```
 ///
 /// where:
 /// - `x_B` is the basic variable
-/// - `x_j` are non-basic variables
-/// - `c_j` are the coefficients from the tableau
-/// - `b` is the RHS value
+/// - `y_j` are the non-basic variables, each `≥ 0`
+/// - `a_j` are the coefficients read straight from the tableau row
+/// - `b` is the right-hand side
 ///
-/// The Gomory cut generator will internally convert to canonical form for correct derivation.
+/// - Important: This header used to describe the **solved** form, `x_B = b + Σ c_j y_j`, and
+///   give an example labelled as such — while the doc on ``coefficients`` said canonical and
+///   every generator in this file read the values as canonical. The two differ by a sign on
+///   every coefficient, which is the difference between a valid cut and one that excludes
+///   feasible points, so the contradiction was worth more than a typo. The tableau is canonical;
+///   the pivot in `SimplexSolver` maintains it that way.
 ///
 /// ## Example
 /// ```swift
-/// // Simplex solved form: x0 = 2.5 + 0.25*s0 - 0.5*s1
+/// // Canonical tableau row: x0 + 0.25*s0 - 0.5*s1 = 2.5
 ///
 /// let row = SimplexRow(
 ///     rhs: 2.5,
-///     coefficients: [0.25, -0.5],       // solved form coefficients
+///     coefficients: [0.25, -0.5],       // canonical coefficients, read from the tableau
 ///     nonBasicVariableIndices: [2, 3],  // s0=var 2, s1=var 3
 ///     basicVariableIndex: 0              // x0=var 0
 /// )
@@ -205,6 +210,144 @@ public struct CuttingPlaneGenerator: Sendable {
         return cut.isWeak ? nil : cut
     }
 
+    // MARK: - Gomory Mixed-Integer Cuts
+
+    /// Generates a Gomory mixed-integer cut from a simplex row.
+    ///
+    /// The cut this package should reach for by default, and the only one of the Gomory family
+    /// that stays valid once the tableau contains rows the cutting loop itself added.
+    ///
+    /// ## Why not the fractional cut
+    ///
+    /// ``generateGomoryCut(from:totalVariableCount:)`` rounds every coefficient, and that step
+    /// is sound only if every non-basic variable in the row is integral at every
+    /// integer-feasible point. The original rows of a problem with integer coefficients and
+    /// integer right-hand sides satisfy this — their slacks are integral — so the first round
+    /// of cutting is safe. A cut row does not: its coefficients and right-hand side are
+    /// fractional, so its slack is fractional too. Deriving a fractional cut from a tableau
+    /// containing one produces an inequality that can exclude optimal integer points, which is
+    /// what branch-and-cut was doing from its second round onward.
+    ///
+    /// ## The derivation
+    ///
+    /// The row arrives in canonical form, `x_B + Σ a_j y_j = b`, with every `y_j ≥ 0` and `x_B`
+    /// integer-constrained. Writing `f₀ = frac(b)`, integrality of `x_B` forces
+    /// `Σ a_j y_j ≡ f₀ (mod 1)`, and the cut is `Σ α_j y_j ≥ f₀` with
+    ///
+    /// | column `j` | `α_j` |
+    /// |---|---|
+    /// | integer, `f_j ≤ f₀` | `f_j` |
+    /// | integer, `f_j > f₀` | `f₀(1 − f_j) / (1 − f₀)` |
+    /// | continuous, `a_j ≥ 0` | `a_j` |
+    /// | continuous, `a_j < 0` | `−f₀ a_j / (1 − f₀)` |
+    ///
+    /// where `f_j = frac(a_j)`. Both continuous rules give a non-negative `α_j`, which is what
+    /// makes the inequality a restriction on non-negative variables rather than a licence.
+    ///
+    /// Note what the continuous rule does *not* require: nothing about `y_j` being integral.
+    /// That absence is the whole point — it is why this cut may be derived from a tableau
+    /// holding earlier cuts, and the fractional cut may not.
+    ///
+    /// ## On classifying columns
+    ///
+    /// A column not named in `integerVariables` is treated as continuous. Slack columns are
+    /// never named there, so every slack takes the continuous rule — including the slacks of
+    /// rows that happen to have integer data and are therefore integral. That is deliberate:
+    /// treating an integral variable as continuous **weakens** the cut and never invalidates
+    /// it, so the conservative classification is the safe direction to be wrong in, and it
+    /// needs no bookkeeping about which rows carry integer data.
+    ///
+    /// - Parameters:
+    ///   - row: The tableau row, in canonical form, whose basic variable is integer-constrained
+    ///     and currently fractional.
+    ///   - totalVariableCount: Width of the space the returned cut is expressed over.
+    ///   - integerVariables: Original indices of the integer-constrained variables. Anything
+    ///     absent is treated as continuous.
+    ///
+    /// - Returns: The cut in `Σ c_j x_j ≤ rhs` form over `totalVariableCount` columns, or `nil`
+    ///   when the right-hand side is integral — there is nothing to cut off — or when the
+    ///   result would be too weak to be worth adding.
+    ///
+    /// - Throws: ``CuttingPlaneError/invalidTableau`` when the row's coefficients and index map
+    ///   disagree in length, or an index falls outside `totalVariableCount`.
+    ///
+    /// - Complexity: O(n) in the number of non-basic columns.
+    public func generateGomoryMixedIntegerCut(
+        from row: SimplexRow,
+        totalVariableCount: Int,
+        integerVariables: Set<Int>
+    ) throws -> CuttingPlane? {
+        let f0 = fractionalPart(row.rhs)
+
+        // Both ends matter. Below the tolerance the basic variable is already integral and
+        // there is nothing to separate; above `1 - tolerance` it is integral from the other
+        // side, and dividing by `1 - f0` there would amplify rounding without bound.
+        guard f0 >= fractionalTolerance, f0 <= 1.0 - fractionalTolerance else {
+            return nil
+        }
+
+        guard row.coefficients.count == row.nonBasicVariableIndices.count else {
+            throw CuttingPlaneError.invalidTableau
+        }
+
+        var fullCoefficients = Array(repeating: 0.0, count: totalVariableCount)
+
+        for (position, originalIndex) in row.nonBasicVariableIndices.enumerated() {
+            guard originalIndex < totalVariableCount else {
+                throw CuttingPlaneError.invalidTableau
+            }
+
+            let alpha = gomoryMixedIntegerCoefficient(
+                row.coefficients[position],
+                f0: f0,
+                isInteger: integerVariables.contains(originalIndex)
+            )
+
+            // Stored negated because `CuttingPlane` is a `≤` inequality and the derivation
+            // produces a `≥` one. A column appearing twice in the map would overwrite rather
+            // than accumulate, but the simplex basis names each non-basic column once.
+            fullCoefficients[originalIndex] = -alpha
+        }
+
+        let cut = CuttingPlane(
+            coefficients: fullCoefficients,
+            rhs: -f0,
+            type: .gomory,
+            sourceIndex: row.basicVariableIndex
+        )
+
+        return cut.isWeak ? nil : cut
+    }
+
+    /// One column's coefficient in the Gomory mixed-integer cut `Σ α_j y_j ≥ f₀`.
+    ///
+    /// Split out because three entry points need the same four-case rule and previously had two
+    /// different answers for it. The result is always non-negative, which is the property that
+    /// makes the assembled inequality a restriction on non-negative variables; a derivation
+    /// that returns a negative `α_j` has inverted that column's meaning.
+    ///
+    /// - Parameters:
+    ///   - a: The column's coefficient in the canonical row `x_B + Σ a_j y_j = b`.
+    ///   - f0: `frac(b)`, strictly between zero and one — the caller checks this, because a
+    ///     value at either end means there is no cut to make and division by `1 - f0` would be
+    ///     unbounded.
+    ///   - isInteger: Whether this column is integer-constrained. Passing `false` for a column
+    ///     that is in fact integral weakens the cut and never invalidates it, so this is the
+    ///     safe direction to be uncertain in.
+    /// - Returns: `α_j ≥ 0`.
+    private func gomoryMixedIntegerCoefficient(_ a: Double, f0: Double, isInteger: Bool) -> Double {
+        let complement: Double = 1.0 - f0
+        if isInteger {
+            let fj: Double = fractionalPart(a)
+            if fj <= f0 { return fj }
+            let numerator: Double = f0 * (1.0 - fj)
+            return numerator / complement // fp-safety:disable — caller guarantees f0 <= 1 - fractionalTolerance
+        }
+        if a >= 0.0 { return a }
+        let numerator: Double = -f0 * a
+        return numerator / complement // fp-safety:disable — caller guarantees f0 <= 1 - fractionalTolerance
+    }
+
     // MARK: - Mixed-Integer Rounding Cuts
 
     /// Generate a mixed-integer rounding (MIR) cut (DEPRECATED).
@@ -232,22 +375,23 @@ public struct CuttingPlaneGenerator: Sendable {
             return nil
         }
 
+        // Deprecated, but not left computing a wrong answer: this now applies the same
+        // Gomory mixed-integer rule as every other entry point. It cannot delegate, because it
+        // takes tableau column positions with no map to original variable space — which is the
+        // reason it is deprecated.
+        guard rhsFractional <= 1.0 - fractionalTolerance else {
+            return nil
+        }
+
         var cutCoefficients: [Double] = []
 
         for (index, coeff) in tableauRow.enumerated() {
-            if integerIndices.contains(index) {
-                // For integer variables, use fractional part
-                let frac = fractionalPart(coeff)
-                cutCoefficients.append(-frac)
-            } else {
-                // For continuous variables, use different formula
-                // MIR: continuous variables get modified coefficient
-                if coeff >= 0 {
-                    cutCoefficients.append(-coeff / (1.0 - rhsFractional))
-                } else {
-                    cutCoefficients.append(-coeff / rhsFractional)
-                }
-            }
+            let alpha = gomoryMixedIntegerCoefficient(
+                coeff,
+                f0: rhsFractional,
+                isInteger: integerIndices.contains(index)
+            )
+            cutCoefficients.append(-alpha)
         }
 
         let cutRhs = -rhsFractional
@@ -264,73 +408,54 @@ public struct CuttingPlaneGenerator: Sendable {
 
     /// Generate a mixed-integer rounding (MIR) cut from a simplex row.
     ///
-    /// MIR cuts are stronger than Gomory cuts for mixed-integer problems where
-    /// some variables are continuous. The MIR formula treats integer and continuous
-    /// variables differently based on the fractional part of the RHS.
+    /// ## This is the Gomory mixed-integer cut
     ///
-    /// Given a simplex row: x_B = b + Σ a_j x_j, the MIR cut is:
-    /// - For integer x_j: coefficient is -frac(a_j)
-    /// - For continuous x_j: coefficient depends on sign and uses division by frac(b)
+    /// Mixed-integer rounding applied to a **single** tableau row and the Gomory mixed-integer
+    /// cut are the same inequality. MIR becomes a distinct family only when it is applied to an
+    /// aggregation of several rows, which nothing in this package does. So this delegates to
+    /// ``generateGomoryMixedIntegerCut(from:totalVariableCount:integerVariables:)`` and differs
+    /// from it in one respect: the returned cut is tagged ``CutType/mixedIntegerRounding``, so
+    /// callers that separate the two in their statistics still can.
+    ///
+    /// ## What it used to compute
+    ///
+    /// A different rule, and an invalid one. For a continuous column it produced
+    /// `a_j / (1 - f₀)` when `a_j ≥ 0` and `a_j / f₀` when `a_j < 0` — the second of which is
+    /// **negative**, where the derivation requires every coefficient to be non-negative. A
+    /// negative coefficient on a non-negative variable inverts what that column contributes, and
+    /// the resulting inequality excluded feasible points. Checked against enumeration over six
+    /// rows: three were invalid, the worst excluding a feasible point by 41.
+    ///
+    /// The integer branch was wrong too, though less visibly: it used `frac(a_j)` unconditionally
+    /// where the derivation uses `f₀(1 - f_j)/(1 - f₀)` once `f_j` exceeds `f₀`.
+    ///
+    /// Nothing called this outside the generator, and no test covered it.
     ///
     /// - Parameters:
-    ///   - row: Simplex row with variable index mapping
-    ///   - totalVariableCount: Total number of variables in original problem space
-    ///   - integerVariables: Set of variable indices that must be integer
-    /// - Returns: MIR cutting plane in original variable space, or nil if no valid cut
-    /// - Throws: `CuttingPlaneError.invalidTableau` if row structure is invalid
+    ///   - row: Simplex row with variable index mapping, in canonical form.
+    ///   - totalVariableCount: Total number of variables in original problem space.
+    ///   - integerVariables: Set of variable indices that must be integer.
+    /// - Returns: The cut in original variable space, or `nil` if there is none to make.
+    /// - Throws: ``CuttingPlaneError/invalidTableau`` if the row structure is invalid.
+    /// - Complexity: O(n) in the number of non-basic columns.
     public func generateMIRCut(
         from row: SimplexRow,
         totalVariableCount: Int,
         integerVariables: Set<Int>
     ) throws -> CuttingPlane? {
-        // Check if RHS is fractional
-        let rhsFractional = fractionalPart(row.rhs)
-
-        if rhsFractional < fractionalTolerance {
-            return nil  // No cut needed for integer RHS
-        }
-
-        // Validate row structure
-        guard row.coefficients.count == row.nonBasicVariableIndices.count else {
-            throw CuttingPlaneError.invalidTableau
-        }
-
-        // Build coefficient vector in ORIGINAL VARIABLE SPACE
-        var fullCoefficients = Array(repeating: 0.0, count: totalVariableCount)
-
-        for (colIndex, originalIndex) in row.nonBasicVariableIndices.enumerated() {
-            guard originalIndex < totalVariableCount else {
-                throw CuttingPlaneError.invalidTableau
-            }
-
-            let canonicalCoeff = row.coefficients[colIndex]
-
-            // Apply MIR formula based on whether variable is integer or continuous
-            if integerVariables.contains(originalIndex) {
-                // Integer variable: use fractional part (same as Gomory)
-                let frac = fractionalPart(canonicalCoeff)
-                fullCoefficients[originalIndex] = -frac
-            } else {
-                // Continuous variable: use MIR formula
-                // If a_j >= 0: coefficient = -a_j / (1 - f_0)
-                // If a_j < 0: coefficient = -a_j / f_0
-                // where f_0 = frac(b)
-                if canonicalCoeff >= 0 {
-                    fullCoefficients[originalIndex] = -canonicalCoeff / (1.0 - rhsFractional)
-                } else {
-                    fullCoefficients[originalIndex] = -canonicalCoeff / rhsFractional
-                }
-            }
-        }
-
-        let cut = CuttingPlane(
-            coefficients: fullCoefficients,
-            rhs: -rhsFractional,
-            type: .mixedIntegerRounding,
-            sourceIndex: row.basicVariableIndex
+        let cut = try generateGomoryMixedIntegerCut(
+            from: row,
+            totalVariableCount: totalVariableCount,
+            integerVariables: integerVariables
         )
+        guard let cut else { return nil }
 
-        return cut.isWeak ? nil : cut
+        return CuttingPlane(
+            coefficients: cut.coefficients,
+            rhs: cut.rhs,
+            type: .mixedIntegerRounding,
+            sourceIndex: cut.sourceIndex
+        )
     }
 
     // MARK: - Multiple Cut Generation
@@ -432,11 +557,20 @@ public struct CuttingPlaneGenerator: Sendable {
                 basicVariableIndex: row.basicVariableIndex
             )
 
-            // Generate Gomory cuts
+            // Generate Gomory cuts.
+            //
+            // The **mixed-integer** form, not the fractional one this used to call. The
+            // fractional cut's rounding step assumes every non-basic column is integral at
+            // integer-feasible points, which the caller cannot promise: from the second cutting
+            // round onward the tableau contains the rounds before it, whose slacks are
+            // fractional. Deriving a fractional cut there produced inequalities that excluded
+            // optimal integer points, and branch-and-cut returned whatever survived and called
+            // it optimal. See ``generateGomoryMixedIntegerCut(from:totalVariableCount:integerVariables:)``.
             if enableGomory {
-                if let cut = try generateGomoryCut(
+                if let cut = try generateGomoryMixedIntegerCut(
                     from: adjustedRow,
-                    totalVariableCount: totalVariableCount
+                    totalVariableCount: totalVariableCount,
+                    integerVariables: integerVariables
                 ) {
                     cuts.append(cut)
                 }

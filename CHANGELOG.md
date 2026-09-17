@@ -9,6 +9,118 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [Unreleased]
+
+**Branch-and-cut was returning the wrong answer and calling it optimal.** Found by following
+the complexity list rather than the clone list — `solveRelaxation` is the most complex function
+in the package, cognitive complexity 302 against a threshold of 15, and this was nested seven
+levels inside it.
+
+#### Fixed
+
+- **Branch-and-cut no longer loses the integer optimum.** Cutting planes derived Gomory
+  **fractional** cuts from tableaux that already contained the cuts of earlier rounds. That
+  derivation rounds every coefficient, and the rounding is justified only when each non-basic
+  variable in the row is integral at integer-feasible points. Original rows with integer data
+  satisfy it — their slacks are integral — so the first round was sound. A cut row does not: its
+  coefficients and right-hand side are fractional, so its slack is fractional too, and from the
+  second round onward the cuts could exclude optimal integer points.
+
+  The consequence was a reported optimum that moved with the cutting budget. On
+  `max 4a + 3b + 3c` subject to three knapsack rows, all variables integer — true optimum **14**
+  at (2, 0, 2) — varying only `maxCuttingRounds`, with both termination guards off:
+
+  | `maxCuttingRounds` | reported | solution | status |
+  |---|---|---|---|
+  | cutting disabled | 14 | (2, 0, 2) | `.optimal` |
+  | 0, 1, 2 | 14 | (2, 0, 2) | `.optimal` |
+  | 3 | **12** | (0, 2, 2) | `.optimal` |
+  | 5 | **10** | (1, 1, 1) | `.optimal` |
+  | 6 | **7** | (1, 1, 0) | `.optimal` |
+  | 8 through 20 | **9** | (0, 3, 0) | `.optimal` |
+
+  Every one of those is feasible and carries `status == .optimal`, so no caller could tell. At
+  six rounds the answer was half the optimum.
+
+  The cutting loop now derives the **Gomory mixed-integer** cut, whose split rule for integer
+  and continuous columns carries no integrality premise and so stays valid on a tableau holding
+  earlier cuts. New `CuttingPlaneGenerator.generateGomoryMixedIntegerCut(from:totalVariableCount:integerVariables:)`.
+  Cuts are still tagged `.gomory` — Gomory's mixed-integer cut is a Gomory cut — so no public
+  enum changed.
+
+  Cutting is strictly more effective as well as correct: on the same fixture, 115 cuts over 20
+  rounds against 56 before.
+
+  **If you use `BranchAndBoundSolver` with the default `enableCuttingPlanes: true`, answers may
+  change — toward the optimum.** Callers with cutting disabled are unaffected.
+
+- **`generateMIRCut` produced invalid cuts and now delegates.** Its rule for a continuous column
+  with a negative coefficient gave `a_j / f₀`, which is **negative**, where the derivation
+  requires every coefficient non-negative; a negative coefficient on a non-negative variable
+  inverts what that column contributes. Checked against enumeration over seven rows: three
+  excluded feasible points, the worst by 41. Its integer branch was also wrong, using `frac(a_j)`
+  unconditionally where the rule switches to `f₀(1 - f_j)/(1 - f₀)` once `f_j` exceeds `f₀`.
+
+  Mixed-integer rounding applied to a single tableau row **is** the Gomory mixed-integer cut —
+  the families separate only under row aggregation, which this package never does — so there was
+  never cause for two derivations. `generateMIRCut` now returns the shared result under its own
+  `.mixedIntegerRounding` tag. The deprecated tableau-space
+  `generateMixedIntegerGomoryCut(tableauRow:rhs:integerIndices:basicVariableIndex:)` was carrying
+  the same wrong rule and now applies the correct one. `enableMIRCuts` defaults to `false`, so
+  only callers who opted in were affected.
+
+- **Cycling detection now terminates the cutting loop.** Its `break` sat inside the `for` loop
+  that scans the solution history, so it left the scan rather than the round loop it was meant to
+  stop: the cycle was detected and the next round started anyway. Measured before the fix, 32
+  rounds and 74 cuts with detection on and 32 and 74 with it off — identical to the integer, on
+  every fixture tried. `detectCycling` defaults to `true`, so this was inert for everyone.
+
+#### Documentation
+
+- **`SimplexRow`'s header described the wrong form.** It documented the **solved** form,
+  `x_B = b + Σ c_j y_j`, and gave an example labelled as such, while the doc on `coefficients`
+  said **canonical**, `x_B + Σ a_j y_j = b`, and every generator in the file read the values as
+  canonical. The two differ by a sign on every coefficient — the difference between a valid cut
+  and one that excludes feasible points. The tableau is canonical; the header now says so.
+
+- **`IntegerOptimizationResult.objectiveValue` is the objective at the relaxation point, not at
+  the reported integer point.** A point accepted as integral within `integralityTolerance` sits
+  slightly off the lattice, so a solve returning `integerSolution == [2, 0, 2]`, whose objective
+  is exactly 14, reports `14.000000085084594`. The gap is bounded by the integrality tolerance
+  times the objective's coefficient sum, and for a minimisation it falls on the optimistic side —
+  it also feeds the relative-gap test that decides termination. Recorded in the tests that now
+  compare against a tolerance rather than `==`; not changed here.
+
+#### Tests
+
+- **New: `GomoryMixedIntegerCutTests`** — the cut checked against an enumeration oracle rather
+  than against itself, over seven rows spanning integer and continuous columns and both signs.
+  Self-consistency would have passed the wrong formula, and did.
+- **New: `BranchAndCutBudgetIndependenceTests`** — states the property the defect violated: the
+  reported optimum may not depend on `maxCuttingRounds`. Four problems, ten budgets, aging on and
+  off; every optimum computed by exhaustive enumeration, not by this solver.
+- **`DegeneracyProtectionTests` rewritten.** All seven tests ran problems that generate **zero
+  cuts** and asserted the answer was feasible — true whether a guard runs, misfires, or is
+  deleted. One conceded it in a comment, *"statistics should show fewer than 10 cutting rounds"*,
+  directly above an assertion about the solution. The guards are now tested by comparison against
+  the same solve with the guard off.
+- **Four assertions in `Phase1_CutValidityTests` were calibrated to the defect.** They asserted
+  the integer optimum of `max x + y` over `2x + 3y ≤ 11, 4x + y ≤ 10` was **3 at (1, 2)**. It is
+  **4**, at (1, 3) and at (2, 2). They passed because the invalid cuts removed the optimum.
+- **`Phase1_CutValidityTests` "Non-violating cuts are not added" inverted.** Its fixture,
+  `max x` subject to `x ≤ 2.3`, was degenerate only for the fractional derivation, which saw
+  `frac(1.0) = 0` on the single slack column and collapsed to `0 ≥ 0.3`. The mixed-integer rule
+  keeps the continuous column whole and yields `x ≤ 2`, closing the problem at the root in one
+  cut. The negative case moved to an already-integral optimum, which genuinely has no cut to make.
+- **Two `BranchAndCutTier2Tests` claims restated.** "Cuts removed falls monotonically" pinned raw
+  counts whose monotonicity was coincidental — the aging limit changes the number of rounds and
+  nodes, so it changes the denominator too. The **share** discarded falls monotonically for a
+  reason, and that is now the assertion. "Aging changes no answer" compared the solution
+  componentwise; `max x + y` on that polytope attains 4 at four separate points, so which one a
+  solve reaches carries no claim. It now compares the objective.
+
+---
+
 ### [3.0.0-alpha.6] - 2026-09-15
 
 **Three wrong answers, one breaking convention, and two new detectors.** Everything here came

@@ -44,8 +44,15 @@ struct CutValidityTests {
     }
 
     /// `2x + 3y ≤ 11`, `4x + y ≤ 10`. Maximising `x + y` gives a fractional vertex whose
-    /// tableau carries fractional non-basic coefficients. Measured: 2 cuts, 1 round,
-    /// integer optimum 3 at (1, 2).
+    /// tableau carries fractional non-basic coefficients.
+    ///
+    /// Integer optimum **4**, attained at both (1, 3) and (2, 2), by enumeration over the box
+    /// the constraints imply. This doc and four assertions below said **3 at (1, 2)** until
+    /// 2026-09-16, because that is what the solver returned — the cutting loop was deriving
+    /// Gomory fractional cuts from tableaux containing its own earlier cuts, which is invalid,
+    /// and the optimum was being cut off. The tests were calibrated to the defect and passed
+    /// because of it. Assertions here name the objective total rather than a point, since two
+    /// points attain it.
     private static let cutGenerating: [MultivariateConstraint<VectorN<Double>>] = [
         .linearInequality(coefficients: [2.0, 3.0], rhs: 11.0, sense: .lessOrEqual),
         .linearInequality(coefficients: [4.0, 1.0], rhs: 10.0, sense: .lessOrEqual)
@@ -53,6 +60,8 @@ struct CutValidityTests {
 
     /// `5x + 4y ≤ 22`, `3x + 7y ≤ 25`. A deliberately harder polytope: measured 13 cuts
     /// over 6 rounds, and the tree goes from **17 nodes without cuts to 5 with them**.
+    ///
+    /// Integer optimum **4** for `max x + y`, attained at (1, 3), (2, 2), (3, 1) and (4, 0).
     private static let cutRich: [MultivariateConstraint<VectorN<Double>>] = [
         .linearInequality(coefficients: [5.0, 4.0], rhs: 22.0, sense: .lessOrEqual),
         .linearInequality(coefficients: [3.0, 7.0], rhs: 25.0, sense: .lessOrEqual)
@@ -190,9 +199,9 @@ struct CutValidityTests {
         // Cuts should improve bound
         expectCutsFired(result, "cut coefficients in original variable space")
         #expect(result.status == .optimal)
-        // Integer optimum of `max x + y` over 2x+3y<=11, 4x+y<=10 is 3, at (1, 2).
+        // Integer optimum of `max x + y` over 2x+3y<=11, 4x+y<=10 is 4, at (1, 3) and (2, 2).
         let total = result.integerSolution[0] + result.integerSolution[1]
-        #expect(total == 3, "integer optimum should be 3, got \(total) at \(result.integerSolution)")
+        #expect(total == 4, "integer optimum should be 4, got \(total) at \(result.integerSolution)")
     }
 
     // MARK: - Cut Violation Testing
@@ -225,9 +234,9 @@ struct CutValidityTests {
         // IP solution should be (0,0) or better
         expectCutsFired(result, "cuts violate the fractional LP optimum")
         #expect(result.status == .optimal)
-        // Integer optimum of `max x + y` over 2x+3y<=11, 4x+y<=10 is 3, at (1, 2).
+        // Integer optimum of `max x + y` over 2x+3y<=11, 4x+y<=10 is 4, at (1, 3) and (2, 2).
         let total = result.integerSolution[0] + result.integerSolution[1]
-        #expect(total == 3, "integer optimum should be 3, got \(total) at \(result.integerSolution)")
+        #expect(total == 4, "integer optimum should be 4, got \(total) at \(result.integerSolution)")
         let sol = result.integerSolution
     }
 
@@ -256,20 +265,45 @@ struct CutValidityTests {
             minimize: false
         )
 
-        // This fixture is the *negative* case, and it is worth keeping as one.
+        // This fixture used to be the *negative* case, and the switch to mixed-integer cuts
+        // turned it into one of the clearest positive ones.
         //
-        // `max x` subject to `x ≤ 2.3` has the optimal row `x = 2.3 - s`. The only
-        // non-basic coefficient is 1, whose fractional part is 0, so the Gomory cut
-        // degenerates to `0 ≥ 0.3` and is rejected as weak before it can be added. That is
-        // precisely "a cut that does not violate the current solution is not added", and
-        // the assertion is that **no** cut appears — which nothing in this file checked
-        // before, because nothing checked cut counts at all.
+        // `max x` subject to `x ≤ 2.3` has the optimal row `x + s = 2.3`. Its single non-basic
+        // column is the slack, and the **fractional** derivation looks only at `frac(1.0) = 0`,
+        // so the cut collapsed to `0 ≥ 0.3` and was thrown away as weak. Nothing was wrong with
+        // that rejection — the cut really was vacuous — but it came from a derivation that had
+        // discarded the one thing it needed. The slack is continuous, and the mixed-integer rule
+        // keeps its coefficient whole: `α = a = 1`, giving `s ≥ 0.3`, and since `s = 2.3 - x`
+        // that is exactly `x ≤ 2`. One cut, and it closes the problem at the root.
+        //
+        // So the assertion inverts: one cut, not none.
         let stats = try #require(result.cuttingPlaneStats)
-        #expect(stats.totalCutsGenerated == 0,
-                "a degenerate row should yield no cut, got \(stats.totalCutsGenerated)")
+        #expect(stats.totalCutsGenerated == 1,
+                "the slack column yields the cut x <= 2, got \(stats.totalCutsGenerated) cuts")
         #expect(result.status == .optimal)
         #expect(result.integerSolution[0] == 2,
                 "integer optimum of max x s.t. x <= 2.3 is 2, got \(result.integerSolution[0])")
+
+        // The negative case still needs somewhere to live, so here it is: an LP whose optimum is
+        // already integral has no fractional right-hand side to build a cut from, and the count
+        // must be zero rather than merely small.
+        let integralSolver = BranchAndBoundSolver<VectorN<Double>>(
+            enableCuttingPlanes: true,
+            maxCuttingRounds: 2,
+            cutTolerance: 1e-6
+        )
+        let integralResult = try integralSolver.solve(
+            objective: { v in v.toArray()[0] },
+            from: VectorN([1.0]),
+            subjectTo: [.linearInequality(coefficients: [1.0], rhs: 3.0, sense: .lessOrEqual)],
+            integerSpec: IntegerProgramSpecification.allInteger(dimension: 1),
+            minimize: false
+        )
+        let integralStats = try #require(integralResult.cuttingPlaneStats)
+        #expect(integralStats.totalCutsGenerated == 0,
+                "an already-integral optimum needs no cut, got \(integralStats.totalCutsGenerated)")
+        #expect(integralResult.integerSolution[0] == 3,
+                "integer optimum of max x s.t. x <= 3 is 3, got \(integralResult.integerSolution[0])")
     }
 
     @Test("Cut violation tolerance respected")
@@ -418,9 +452,9 @@ struct CutValidityTests {
         // Normalization shouldn't break correctness
         expectCutsFired(result, "normalised cuts preserve validity")
         #expect(result.status == .optimal)
-        // Integer optimum of `max x + y` over 2x+3y<=11, 4x+y<=10 is 3, at (1, 2).
+        // Integer optimum of `max x + y` over 2x+3y<=11, 4x+y<=10 is 4, at (1, 3) and (2, 2).
         let total = result.integerSolution[0] + result.integerSolution[1]
-        #expect(total == 3, "integer optimum should be 3, got \(total) at \(result.integerSolution)")
+        #expect(total == 4, "integer optimum should be 4, got \(total) at \(result.integerSolution)")
     }
 
     @Test("Normalization doesn't invalidate integer logic")
@@ -450,9 +484,10 @@ struct CutValidityTests {
             minimize: false
         )
 
-        // Solution should still be integer
+        // Solution should still be integer, and at the optimum — 4, at (1, 3) or (2, 2).
         let sol = result.integerSolution
-        #expect(sol[0] + sol[1] == 3, "integer optimum should be 3, got \(sol)")
+        let total = sol[0] + sol[1]
+        #expect(total == 4, "integer optimum should be 4, got \(total) at \(sol)")
     }
 
     // MARK: - Cut Effectiveness
@@ -537,9 +572,21 @@ struct CutValidityTests {
         #expect(resultWithCuts.nodesExplored < resultWithoutCuts.nodesExplored,
                 "cuts explored \(resultWithCuts.nodesExplored) nodes against \(resultWithoutCuts.nodesExplored) without")
 
-        // Cutting planes should reduce nodes explored (usually)
-        // Note: Not guaranteed for all problems, but typical
-        #expect(resultWithCuts.objectiveValue == resultWithoutCuts.objectiveValue)
+        // And the reduction must not have been bought with accuracy. Compared two ways, because
+        // the two carry different guarantees: `integerSolution` is exact, so the totals are
+        // compared as integers, while `objectiveValue` is the objective at the *relaxation*
+        // point that passed the integrality test rather than at the integer point reported, so
+        // it lands within a tolerance of the true value rather than on it. Asserting `==` there
+        // was testing the arithmetic's low-order bits, not the claim.
+        let cutTotal = resultWithCuts.integerSolution.reduce(0, +)
+        let plainTotal = resultWithoutCuts.integerSolution.reduce(0, +)
+        #expect(cutTotal == plainTotal,
+                "with cuts \(resultWithCuts.integerSolution), without \(resultWithoutCuts.integerSolution)")
+        #expect(cutTotal == 4, "integer optimum of max x + y on cutRich is 4, got \(cutTotal)")
+
+        let objectiveGap: Double = abs(resultWithCuts.objectiveValue - resultWithoutCuts.objectiveValue)
+        #expect(objectiveGap < 1e-6,
+                "objective differs by \(objectiveGap) between the two solves")
     }
 
     // MARK: - Edge Cases
