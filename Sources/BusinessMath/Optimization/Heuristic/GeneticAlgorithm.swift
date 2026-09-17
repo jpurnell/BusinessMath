@@ -252,67 +252,25 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
     /// f_penalty(x) = f(x) + penalty * Σ max(0, g(x))²
     /// ```
     /// where g(x) are constraint violations.
+    /// Minimise subject to constraints.
+    ///
+    /// Delegates to ``penaltyConstrainedSolve(objective:constraints:options:minimise:)``, which
+    /// this and four sibling optimizers each used to carry a copy of. The copies agreed on the
+    /// penalty formula and on the defect: none of them checked whether the point they returned
+    /// satisfied the constraints, so `converged` reported that the *unconstrained* search had
+    /// settled and an infeasible answer was indistinguishable from a feasible one.
     private func minimizeWithPenalty(
         _ objective: @escaping @Sendable (V) -> V.Scalar,
         constraints: [MultivariateConstraint<V>]
     ) throws -> MultivariateOptimizationResult<V> {
-
-        // The weight the caller chose, or the historical 1000 by default. The config
-        // guarantees it is positive and finite, so no guard is needed here.
-        let penaltyCoefficient = V.Scalar(config.constraintPenaltyWeight)
-
-        // Create penalized objective
-        let penalizedObjective: @Sendable (V) -> V.Scalar = { point in
-            let baseValue = objective(point)
-
-            // Calculate total penalty
-            var totalPenalty = V.Scalar.zero
-
-            for constraint in constraints {
-                switch constraint {
-                case .equality(function: let g, gradient: _):
-                    // Penalty for equality: (g(x))²
-                    let violation = g(point)
-                    totalPenalty += violation * violation
-
-                case .inequality(function: let g, gradient: _):
-                    // Penalty for inequality g(x) ≤ 0: max(0, g(x))²
-                    let violation = g(point)
-                    if violation > V.Scalar.zero {
-                        totalPenalty += violation * violation
-                    }
-
-                case .linearInequality, .linearEquality:
-                    // Linear constraints: use function property
-                    let g = constraint.function
-                    let violation = g(point)
-                    if constraint.isEquality {
-                        // Equality: (g(x))²
-                        totalPenalty += violation * violation
-                    } else {
-                        // Inequality: max(0, g(x))²
-                        if violation > V.Scalar.zero {
-                            totalPenalty += violation * violation
-                        }
-                    }
-                }
-            }
-
-            return baseValue + penaltyCoefficient * totalPenalty
+        try penaltyConstrainedSolve(
+            objective: objective,
+            constraints: constraints,
+            options: PenaltySolveOptions(initialWeight: V.Scalar(config.constraintPenaltyWeight))
+        ) { penalised in
+            let detailed = try optimizeDetailed(objective: penalised)
+            return (detailed.solution, detailed.generations, detailed.converged)
         }
-
-        // Optimize penalized objective
-        let gaResult = try optimize(objective: penalizedObjective)
-
-        // Return result with original objective value (not penalized)
-        return MultivariateOptimizationResult(
-            solution: gaResult.solution,
-            value: objective(gaResult.solution),  // Use original objective
-            iterations: gaResult.generations,
-            converged: gaResult.converged,
-            gradientNorm: V.Scalar.zero,
-            history: nil
-        )
     }
 
     // MARK: - Core Optimization

@@ -13,9 +13,10 @@ import Numerics
 /// Describes why an optimization algorithm stopped
 ///
 /// Provides richer semantics than a simple `converged: Bool` flag, allowing callers
-/// to distinguish between normal convergence, iteration limits, and numerical failures.
-/// This follows the fail-silent principle: never return ambiguous results when the
-/// algorithm's stopping condition carries meaningful information.
+/// to distinguish between normal convergence, iteration limits, numerical failures, and a
+/// constrained solve that finished outside the feasible set. This follows the fail-silent
+/// principle: never return ambiguous results when the algorithm's stopping condition carries
+/// meaningful information.
 ///
 /// ## Example
 ///
@@ -33,6 +34,8 @@ import Numerics
 ///     print("Hit iteration limit — result may not be optimal")
 /// case .numericalInstability:
 ///     print("Encountered NaN/Inf — result is best-so-far before instability")
+/// case .infeasible:
+///     print("Missed a constraint by \(result.constraintViolation) — this is the closest point found")
 /// }
 /// ```
 public enum TerminationReason: Sendable, Equatable {
@@ -42,6 +45,18 @@ public enum TerminationReason: Sendable, Equatable {
 	case maxIterations
 	/// Algorithm encountered non-finite values (NaN or Inf) in gradient computation
 	case numericalInstability
+	/// The search finished, and the point it finished on does not satisfy the constraints.
+	///
+	/// The returned solution is the **least-violating** point found, and
+	/// ``MultivariateOptimizationResult/constraintViolation`` says by how much. That is more
+	/// useful than an error: conflicting bounds are usually a modelling mistake, and seeing
+	/// which constraint is missed and by what margin is how a modeller finds it.
+	///
+	/// This case exists because a constrained solve previously reported ``converged`` on the
+	/// strength of the *unconstrained* search settling, without ever checking the constraints —
+	/// so a point outside the feasible set came back indistinguishable from one inside it, with
+	/// an objective value below anything actually attainable.
+	case infeasible
 }
 
 // MARK: - Multivariate Optimization Result
@@ -67,7 +82,22 @@ public struct MultivariateOptimizationResult<V: VectorSpace>: Sendable where V.S
 	///
 	/// Convenience property equivalent to `terminationReason == .converged`.
 	/// Maintained for backward compatibility with existing code.
+	///
+	/// - Note: Never `true` for a point that violates its constraints. A constrained solve that
+	///   finishes outside the feasible set reports ``TerminationReason/infeasible``.
 	public var converged: Bool { terminationReason == .converged }
+
+	/// How far the solution sits outside the feasible set, or zero when it is inside.
+	///
+	/// The largest violation over all constraints: `|h(x)|` for an equality and `max(0, g(x))`
+	/// for an inequality, so the units are the constraint's own. Zero for an unconstrained
+	/// solve, and for a constrained solve that landed inside the feasible set.
+	///
+	/// Reported rather than merely acted on, because the size of a miss is the diagnosis. A
+	/// violation of 3e-9 is rounding; one of 3e-2 against a bound of 3 is a solver that stopped
+	/// short; one of 2.7 against the same bound says the penalty never had the weight to reach
+	/// it. Those need different responses and the flag alone cannot tell them apart.
+	public let constraintViolation: V.Scalar
 
 	/// The gradient norm at the solution
 	public let gradientNorm: V.Scalar
@@ -87,7 +117,8 @@ public struct MultivariateOptimizationResult<V: VectorSpace>: Sendable where V.S
 		iterations: Int,
 		terminationReason: TerminationReason,
 		gradientNorm: V.Scalar,
-		history: [(iteration: Int, point: V, value: V.Scalar, gradientNorm: V.Scalar)]? = nil
+		history: [(iteration: Int, point: V, value: V.Scalar, gradientNorm: V.Scalar)]? = nil,
+		constraintViolation: V.Scalar = .zero
 	) {
 		self.solution = solution
 		self.value = value
@@ -95,6 +126,7 @@ public struct MultivariateOptimizationResult<V: VectorSpace>: Sendable where V.S
 		self.terminationReason = terminationReason
 		self.gradientNorm = gradientNorm
 		self.history = history
+		self.constraintViolation = constraintViolation
 	}
 
 	/// Creates an optimization result using a boolean convergence flag
@@ -107,7 +139,8 @@ public struct MultivariateOptimizationResult<V: VectorSpace>: Sendable where V.S
 		iterations: Int,
 		converged: Bool,
 		gradientNorm: V.Scalar,
-		history: [(iteration: Int, point: V, value: V.Scalar, gradientNorm: V.Scalar)]? = nil
+		history: [(iteration: Int, point: V, value: V.Scalar, gradientNorm: V.Scalar)]? = nil,
+		constraintViolation: V.Scalar = .zero
 	) {
 		self.solution = solution
 		self.value = value
@@ -115,6 +148,7 @@ public struct MultivariateOptimizationResult<V: VectorSpace>: Sendable where V.S
 		self.terminationReason = converged ? .converged : .maxIterations
 		self.gradientNorm = gradientNorm
 		self.history = history
+		self.constraintViolation = constraintViolation
 	}
 
 	// MARK: - Protocol Compatibility
@@ -133,6 +167,8 @@ public struct MultivariateOptimizationResult<V: VectorSpace>: Sendable where V.S
 			return "Maximum iterations reached"
 		case .numericalInstability:
 			return "Numerical instability: gradient became non-finite"
+		case .infeasible:
+			return "Infeasible: the least-violating point found still misses a constraint"
 		}
 	}
 }

@@ -322,64 +322,6 @@ public struct SimplexRelaxationSolver: RelaxationSolver {
     ///   - point: Point at which to evaluate gradient
     ///   - dimension: Number of variables
     /// - Returns: Array of linear coefficients
-    /// The exact `c` and `b` of a constraint that already knows them, in this solver's
-    /// canonical `c·x ≤ b` (or `c·x = b`) convention.
-    ///
-    /// ``MultivariateConstraint`` stores the coefficients and right-hand side of its linear
-    /// cases verbatim. Every one of them was being discarded and rebuilt by central differences
-    /// on the closure that `MultivariateConstraint/function` synthesises from those very
-    /// numbers — deriving `[3, 7]` and `21` from an expression built out of `[3, 7]` and `21`.
-    /// The round trip is not free: at a step of `1e-8` it returns coefficients good to roughly
-    /// `1e-10`, and the error depends on the point it is taken at.
-    ///
-    /// Signs follow ``MultivariateConstraint/function`` exactly, because the rest of this method
-    /// is written against that convention:
-    ///
-    /// | Case | `g(x) ≤ 0` form | returned |
-    /// |---|---|---|
-    /// | `.linearInequality(c, b, .lessOrEqual)` | `c·x - b` | `(c, b)` |
-    /// | `.linearInequality(c, b, .greaterOrEqual)` | `b - c·x` | `(-c, -b)` |
-    /// | `.linearInequality(c, b, .equal)` | `c·x - b` | `(c, b)` |
-    /// | `.linearEquality(c, b)` | `c·x - b` | `(c, b)` |
-    ///
-    /// The relation itself is not returned; the caller reads it from
-    /// ``MultivariateConstraint/isEquality``, which already distinguishes the equal cases.
-    ///
-    /// - Parameters:
-    ///   - constraint: The constraint to read.
-    ///   - dimension: The problem's dimension. Coefficient vectors shorter than this are padded
-    ///     with zeros and longer ones truncated, which is what the synthesised closure does too —
-    ///     it `zip`s against the point, so surplus entries never applied and missing ones acted
-    ///     as zero.
-    /// - Returns: The exact form, or `nil` for `.equality` and `.inequality`, which carry only a
-    ///   closure and must be differentiated.
-    private func exactLinearForm<V: VectorSpace>(
-        of constraint: MultivariateConstraint<V>,
-        dimension: Int
-    ) -> (coefficients: [Double], rhs: Double)? where V.Scalar == Double, V: Sendable {
-        func sized(_ values: [Double], negated: Bool) -> [Double] {
-            var result = Array(repeating: 0.0, count: dimension)
-            for index in 0..<Swift.min(dimension, values.count) {
-                result[index] = negated ? -values[index] : values[index]
-            }
-            return result
-        }
-
-        switch constraint {
-        case .linearInequality(let coefficients, let rhs, let sense):
-            switch sense {
-            case .lessOrEqual, .equal:
-                return (sized(coefficients, negated: false), rhs)
-            case .greaterOrEqual:
-                return (sized(coefficients, negated: true), -rhs)
-            }
-        case .linearEquality(let coefficients, let rhs):
-            return (sized(coefficients, negated: false), rhs)
-        case .equality, .inequality:
-            return nil
-        }
-    }
-
     private func extractLinearCoefficients<V: VectorSpace>(
         _ function: @escaping (V) -> V.Scalar,
         at point: V,

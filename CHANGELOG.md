@@ -15,6 +15,105 @@ Two batches, both from Tier 2 of the quality programme — the complexity list. 
 below sits in `BranchAndBoundSolver` or the machinery it calls, and none was found by reading
 the code.
 
+#### 2026-09-17 — constrained optimizers returned infeasible answers as converged
+
+Found by sweeping the optimizer tier against independent oracles. The LP solver (1,600 instances
+against vertex enumeration plus strong duality), the async LP solver (600 differential), DEA CCR
+and BCC (1,317 scores against the envelopment LP, 682 `BCC ≥ CCR` pairs) and the unconstrained
+heuristics (100 runs) all came back clean. The **constrained** path did not: 19 of 24 runs
+returned a point that violated its constraints, with `converged == true`.
+
+##### Breaking
+
+- **`TerminationReason` gains `.infeasible`.** A `switch` over it that was exhaustive will no
+  longer compile. The case is reachable only from a constrained solve.
+
+##### Fixed
+
+- **A constrained solve no longer returns an infeasible point as converged.** The constraints
+  were never checked. `converged` was passed straight through from the unconstrained search on
+  the penalised objective — it reported that the *search* had settled, which says nothing about
+  feasibility — and `value` was the unpenalised objective at a point outside the feasible set.
+
+  A fixed-weight quadratic penalty cannot do better, and that is arithmetic rather than a defect
+  in any particular search. Minimising `f(x) + w·max(0, b − x₀)²` for `min ‖x‖²` subject to
+  `x₀ ≥ b` puts the stationary point at `x₀ = bw/(1 + w)`: the only force pushing `x₀` toward the
+  bound is `w·(b − x₀)`, which must stay finite and non-zero at the solution, so `x₀` must stay
+  strictly inside. At the shipped weight of 100 that is `x₀ = 2.9702970` against a bound of 3 —
+  nine digits of agreement with the closed form.
+
+  **The reported value was biased toward looking good**, which is the damaging part: violating
+  the constraint is what made the objective small, so the number came back *below* anything
+  attainable. A caller comparing two designs preferred whichever broke its constraints hardest.
+
+  | `min k‖x‖²` s.t. `x₀ ≥ 3` | before | after |
+  |---|---|---|
+  | `k = 1` (optimum 9) | x₀ = 2.970297, value **8.8227** | x₀ = 3.000000, value 9.0000 |
+  | `k = 1000` (optimum 9000) | x₀ = 0.272727, value **74.38** | x₀ = 3.000000, value 9000.0000 |
+  | `k = 0.001` (optimum 0.009) | x₀ ≈ 2.99997 | x₀ = 3.000000, value 0.0090 |
+
+  The `k = 1000` row is the one that shows why it was a defect rather than a tuning preference:
+  a 91% constraint violation, because the weight is compared against the objective's magnitude
+  and so the answer depended on the units the caller happened to choose.
+
+  Replaced with an **augmented-Lagrangian** outer loop followed by feasibility restoration. The
+  multiplier term `λ·h(x)` supplies the force the constraint exerts at the solution, so the
+  quadratic term no longer has to manufacture it from an ever-growing weight — the boundary is
+  reached with `w` moderate and the objective stays visible beside it. Simply escalating the
+  weight was tried and is not a substitute: at `w = 10¹⁰` the penalty dwarfs the objective and
+  the search optimises feasibility alone, returning (11.02, −1.34, −3.67) for a problem whose
+  optimum is (2, 2, 2).
+
+  Restoration then corrects the point onto the feasible set, because a *search* only resolves to
+  its own tolerance and the population methods finish near a surface rather than on it —
+  differential evolution reached `Σx = 6.000041` and particle swarm `6.00075`. Each correction
+  step moves along the constraint's own normal by the amount that zeroes it: closed-form and
+  exact for a linear constraint, Newton's method for a smooth non-linear one.
+
+- **A constrained solve that cannot find a feasible point says so, and shows its work.**
+  `TerminationReason.infeasible` with the **least-violating** point found, and the miss reported
+  on `MultivariateOptimizationResult.constraintViolation`. Deliberately not an error: conflicting
+  bounds are usually a modelling mistake, and seeing which constraint is missed and by how much
+  is how a modeller finds it. On `x₀ ≥ 5` together with `x₀ ≤ 2` the result is `x₀ = 3.5` —
+  exactly midway — with a violation of 1.5 and `converged == false`.
+
+##### Added
+
+- **`MultivariateOptimizationResult.constraintViolation`** — the largest violation over all
+  constraints, in the constraint's own units, zero for a feasible or unconstrained solve. The
+  *size* of a miss is the diagnosis: 3e-9 is rounding, 3e-2 against a bound of 3 is a solver
+  that stopped short, 2.7 against the same bound is one that never had the weight to reach it.
+  A flag alone cannot tell those apart.
+
+##### Changed
+
+- **Five copies of `minimizeWithPenalty` became one.** `NelderMead`, `DifferentialEvolution`,
+  `ParticleSwarm`, `SimulatedAnnealing` and `GeneticAlgorithm` each carried the penalty formula,
+  and each carried the defect with it. They now delegate to a single
+  `penaltyConstrainedSolve`, supplying only their own unconstrained search.
+- **`SimplexRelaxationSolver`'s private `exactLinearForm` moved to the shared optimization tier**
+  and is now used by feasibility restoration too — the same "read what the caller wrote instead
+  of reconstructing it" fix, applied in a second place.
+
+##### Tests
+
+- **New: `ConstrainedFeasibilityTests`** — the contract, on six problems with closed-form
+  constrained optima across three orders of objective scale, run through four optimizers. A
+  returned point is feasible or the result says it is not; the reported value is the objective at
+  the reported point and never below what is attainable; conflicting constraints report
+  `.infeasible` with the near-miss.
+- **`ConstraintPenaltyWeightTests` inverted.** It asserted that violation falls as the weight
+  rises, and that the weight "must actually move the answer" — both true, and both describing a
+  solver that let a tuning knob decide whether its answer was admissible. The property now pinned
+  is that **feasibility does not depend on the weight**: across weights from 1 to 10¹⁰ and
+  objective scales from 1 to 10⁶, every solve returns x = 1.0 with a violation of exactly zero.
+  The config-validation tests are unchanged.
+- Two equality-constraint tests in `ParticleSwarmOptimizationTests` and `SimulatedAnnealingTests`
+  now pass on the merits rather than on the cheat: PSO's asserted `value < 3.0` had been
+  satisfied by a point off the constraint.
+
+---
+
 #### 2026-09-17 — branch-and-bound discarded feasible subtrees
 
 **Branch-and-bound discarded feasible subtrees and believed its own bound.** Three defects, all

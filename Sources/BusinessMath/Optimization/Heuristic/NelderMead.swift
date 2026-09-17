@@ -497,60 +497,28 @@ public struct NelderMead<V: VectorSpace>: MultivariateOptimizer where V.Scalar: 
     ///   - constraints: Equality/inequality constraints
     ///
     /// - Returns: Optimization result
+    /// Minimise subject to constraints.
+    ///
+    /// Delegates to ``penaltyConstrainedSolve(objective:constraints:options:minimise:)``, which
+    /// this and four sibling optimizers each used to carry a copy of. The copies agreed on the
+    /// penalty formula and on the defect: none of them checked whether the point they returned
+    /// satisfied the constraints, so `converged` reported that the *unconstrained* search had
+    /// settled and an infeasible answer was indistinguishable from a feasible one.
     private func minimizeWithPenalty(
         _ objective: @escaping @Sendable (V) -> V.Scalar,
         initialGuess: V,
         constraints: [MultivariateConstraint<V>]
     ) throws -> MultivariateOptimizationResult<V> {
-
-        // Penalty weight
-        // The weight the caller chose, or the historical 100 by default. The
-        // config guarantees it is positive and finite, so no guard is needed here.
-        let penaltyWeight = V.Scalar(config.constraintPenaltyWeight)
-
-        // Create penalized objective
-        let penalizedObjective: (V) -> V.Scalar = { solution in
-            let baseValue = objective(solution)
-
-            // Calculate constraint violations
-            var penalty = V.Scalar.zero
-            for constraint in constraints {
-                let violation: V.Scalar
-                switch constraint {
-                case .equality(function: let g, gradient: _):
-                    let gVal = g(solution)
-                    violation = gVal * gVal
-                case .inequality(function: let g, gradient: _):
-                    let gVal = g(solution)
-                    violation = max(V.Scalar.zero, gVal) * max(V.Scalar.zero, gVal)
-                case .linearInequality, .linearEquality:
-                    let g = constraint.function
-                    let gVal = g(solution)
-                    if constraint.isEquality {
-                        violation = gVal * gVal
-                    } else {
-                        violation = max(V.Scalar.zero, gVal) * max(V.Scalar.zero, gVal)
-                    }
-                }
-                penalty += violation
-            }
-
-            return baseValue + penaltyWeight * penalty
+        // No `try`: Nelder-Mead's own search does not throw, so `rethrows` makes this call
+        // non-throwing too. The enclosing method keeps `throws` for signature compatibility with
+        // the five siblings, whose searches do.
+        penaltyConstrainedSolve(
+            objective: objective,
+            constraints: constraints,
+            options: PenaltySolveOptions(initialWeight: V.Scalar(config.constraintPenaltyWeight))
+        ) { penalised in
+            let detailed = optimizeDetailed(objective: penalised, initialGuess: initialGuess)
+            return (detailed.solution, detailed.iterations, detailed.converged)
         }
-
-        // Run optimization with penalized objective
-        let detailedResult = optimizeDetailed(
-            objective: penalizedObjective,
-            initialGuess: initialGuess
-        )
-
-        return MultivariateOptimizationResult(
-            solution: detailedResult.solution,
-            value: objective(detailedResult.solution),  // Return unpenalized value
-            iterations: detailedResult.iterations,
-            converged: detailedResult.converged,
-            gradientNorm: V.Scalar.zero,
-            history: nil
-        )
     }
 }
