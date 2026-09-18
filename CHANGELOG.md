@@ -16,6 +16,112 @@ treated as a marker for *code no one has an oracle for*, and every entry below w
 building an independent second opinion and differencing against it. None was found by reading
 the code, and the suite was green throughout.
 
+#### 2026-09-18 — a maximisation that found nothing reported the best possible value
+
+`BranchAndBoundSolver.solve` constructs its result in **five** places — the root's unbounded
+relaxation, the node budget, the time budget, the gap termination, and the two ordinary exits.
+Four can be reached with no incumbent, and each answered "what is the objective value when
+nothing was found" on its own.
+
+##### Fixed
+
+- **The no-solution sentinel ignored the sense.** Every no-incumbent exit reported
+  `objectiveValue: +∞` whatever direction was being solved. For a **maximisation** that is the
+  best conceivable value, so the obvious caller —
+
+  ```swift
+  if result.objectiveValue > bestSoFar { adopt(result) }
+  ```
+
+  — adopts a solve that explored one node, found nothing, and returned the initial guess. The
+  contradiction is visible without knowing the right answer: the same result carried
+  `objectiveValue: +∞` beside `bestBound: -∞`, an answer beating the bound that was supposed to
+  dominate it.
+
+  The convention was already settled one layer down — `SimplexRelaxationSolver` reports the
+  *worst* value for the sense when infeasible and the *best* when unbounded, and its tests pin
+  it. `solve` used the unbounded convention while reporting `status: .infeasible`.
+
+- **A failed solve returned a point the caller never supplied.** With variable shifting active
+  the no-incumbent exit applied the *inverse* shift to `initialGuess` — which was never shifted,
+  because the search runs on `shiftedInitialGuess`. A solve started `from: [0, 0]` on a problem
+  with lower bounds at `-5` handed back `[-5, -5]`, and differed from the same solve with
+  shifting switched off.
+
+- Both were fixed by routing all five exits through one `makeResult`, which unshifts the
+  incumbent, applies the sense-correct sentinel and computes the gap in one place.
+
+##### Changed
+
+- `solve` went from 470 lines at cognitive complexity **160** to 60. The linearity check and the
+  variable-shift setup are now `validateProblemLinearity` and `shiftedProblem`; the twice-written
+  incumbent comparison is `improves(_:on:minimize:)`. A commented-out debug block was deleted.
+
+##### Tests
+
+- **New: `SolveResultInvariantsTests`** — the sentinel across all three no-incumbent exits in both
+  senses, the shift regression compared against the same solve with shifting disabled, and the
+  law underneath both: a reported value never beats its own bound.
+
+---
+
+#### 2026-09-18 — a Monte Carlo draw that could not be evaluated counted as zero
+
+`MonteCarloExpressionModel.toClosure()` caught every ``EvaluationError`` and returned `0.0`.
+`MonteCarloSimulation` uses that closure as its CPU path, so this is a simulation result rather
+than an internal detail.
+
+##### Fixed
+
+- The interpreter is careful — `sqrt` of a negative, `log` of a non-positive and division by zero
+  each **throw**, naming what went wrong — and all of it was discarded for a number the model
+  never produced. `0.0` is a sample like any other: it averages in, pulls the mean toward zero,
+  and nothing downstream can distinguish it from a real draw. Measured on `log(x)` over 300 draws
+  spanning `[-1, 3]`:
+
+  | | |
+  |---|---|
+  | draws that threw | **75** |
+  | zeros substituted | **75** |
+  | mean reported | 0.0707 |
+  | mean over the draws actually defined | 0.0943 |
+  | non-finite samples signalling trouble | **none** |
+
+  A 25% error in the reported mean with no symptom at all. Now returns `Double.nan`, which
+  propagates through every mean, variance and quantile taken from the samples, so a model with an
+  unhandled domain error reports as broken rather than as slightly different. ``evaluate(inputs:)``
+  remains the throwing route for callers who need to know *which* error occurred.
+
+##### Changed
+
+- `BytecodeInterpreter.evaluate` went from cognitive complexity **104 to 41** by folding the
+  stack guard repeated in all twenty-two cases into `popTwo`/`popOne`, and it got **44% faster**
+  doing it. Measured at `-O` over 2,000,000 evaluations of a mixed program:
+
+  | variant | 2M evaluations |
+  |---|---|
+  | as it was | 0.4002s |
+  | pop helpers, no capacity hint | 0.3206s |
+  | pop helpers + `reserveCapacity(maxStackDepth())` | **0.2249s** |
+
+  **The debug build says the opposite, and says it confidently.** At `-Onone` the same change
+  measures *34% slower* — `@inline(__always)` is advisory there, so each helper becomes a real
+  call with `inout` exclusivity checking. Not a different magnitude, a different sign. The
+  refactor was nearly reverted on that number; only the release measurement settled it, and the
+  reason is now recorded on the function.
+
+##### Tests
+
+- **New: `BytecodeErrorContractTests`** — which instructions refuse a value rather than inventing
+  one, that ``BytecodeOptimizer`` never folds a throwing operation into a constant, and the
+  quarter-invalid sweep above kept as a measurement.
+- `power` is **deliberately** left unguarded, and that is now pinned rather than left to be
+  rediscovered: `(-1) ^ 0.5` returns NaN and `0 ^ -1` returns infinity where `sqrt` and `divide`
+  throw. A non-finite result is loud, so it is not the fail-silent case those guards exist for,
+  and guarding it would change what `x ^ y` means for every existing model.
+
+---
+
 #### 2026-09-18 — the bytecode optimizer miscompiled every expression containing a ternary
 
 `BytecodeOptimizer.algebraicSimplificationPass` models the stack in order to recognise

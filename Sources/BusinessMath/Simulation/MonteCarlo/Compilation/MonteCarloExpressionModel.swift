@@ -146,7 +146,31 @@ public struct MonteCarloExpressionModel: Sendable {
     ///
     /// Useful for interoperability with existing MonteCarloSimulation API.
     ///
-    /// - Returns: Closure that evaluates the model
+    /// ## What happens when a draw cannot be evaluated
+    ///
+    /// The result type is `Double`, not `Double?` or a throwing call, because that is the shape
+    /// ``MonteCarloSimulation`` takes. So a draw the interpreter refuses — `log` of a
+    /// non-positive, `sqrt` of a negative, division by zero, an input index the model does not
+    /// have — has to come back as *some* `Double`, and the only honest choice is one that no
+    /// arithmetic produces: **`Double.nan`**.
+    ///
+    /// This used to return `0.0`, and that was a defect rather than a detail. `0.0` is a sample
+    /// value like any other: it averages in, it shifts the mean toward zero, and nothing
+    /// downstream can tell it apart from a draw the model really produced. Measured on
+    /// `log(x)` over 300 draws spanning `[-1, 3]`, a quarter of which are outside the domain:
+    /// the reported mean was **0.0707** where the mean over the defined draws is **0.0943**, and
+    /// not one sample was non-finite. A 25% error with no symptom.
+    ///
+    /// `NaN` has the opposite property. It propagates through every mean, variance and quantile
+    /// taken from the samples, so a model with an unhandled domain error reports as broken
+    /// instead of as slightly different — which is what the package's fail-silent rule asks for
+    /// when a signature has no room to throw.
+    ///
+    /// Use ``evaluate(inputs:)`` when you need to know *which* error occurred; it throws an
+    /// ``EvaluationError`` that names it.
+    ///
+    /// - Returns: A closure evaluating the model, returning `Double.nan` for any input the model
+    ///   cannot be evaluated at.
     ///
     /// ## Example
     ///
@@ -161,8 +185,8 @@ public struct MonteCarloExpressionModel: Sendable {
         return { inputs in
             do {
                 return try BytecodeInterpreter.evaluate(bytecode: capturedBytecode, inputs: inputs)
-            } catch { // logging: bytecode evaluation failure returns zero as safe default
-                return 0.0
+            } catch { // logging: no value exists for this draw, and NaN is the only Double that says so
+                return Double.nan
             }
         }
     }
@@ -199,6 +223,43 @@ public struct MonteCarloExpressionModel: Sendable {
 /// Used by MonteCarloExpressionModel for validation and fallback execution.
 enum BytecodeInterpreter {
 
+    /// Takes the two operands of a binary instruction off the stack, in source order.
+    ///
+    /// Returned as `(a, b)` for an instruction written `a op b`, which is the reverse of the pop
+    /// order — the right operand was pushed last. Getting that backwards silently transposes
+    /// `subtract`, `divide`, `power` and every comparison, so it is written once here rather
+    /// than thirteen times in the switch below.
+    ///
+    /// - Parameter stack: The evaluation stack, shortened by two.
+    /// - Returns: The left and right operands.
+    /// - Throws: ``EvaluationError/stackUnderflow`` if fewer than two values are available.
+    @inline(__always)
+    private static func popTwo(_ stack: inout [Double]) throws -> (Double, Double) {
+        guard stack.count >= 2 else { throw EvaluationError.stackUnderflow }
+        let b = stack.removeLast()
+        let a = stack.removeLast()
+        return (a, b)
+    }
+
+    /// Takes the single operand of a unary instruction off the stack.
+    ///
+    /// - Parameter stack: The evaluation stack, shortened by one.
+    /// - Returns: The operand.
+    /// - Throws: ``EvaluationError/stackUnderflow`` if the stack is empty.
+    @inline(__always)
+    private static func popOne(_ stack: inout [Double]) throws -> Double {
+        guard let value = stack.popLast() else { throw EvaluationError.stackUnderflow }
+        return value
+    }
+
+    /// Tolerance for `equal` and `notEqual`.
+    ///
+    /// Absolute, and shared with ``BytecodeOptimizer``'s constant folding so that optimising a
+    /// comparison cannot change which way it goes. Being absolute, it treats values below it as
+    /// equal whatever their ratio — a deliberate choice for a comparison operator in a modelling
+    /// language, where the quantities compared are amounts rather than ulps.
+    private static let comparisonEpsilon = 1e-10
+
     /// Evaluates bytecode with the given inputs
     ///
     /// - Parameters:
@@ -206,8 +267,24 @@ enum BytecodeInterpreter {
     ///   - inputs: Array of input values
     /// - Returns: The computed result
     /// - Throws: EvaluationError if evaluation fails
+    ///
+    /// ## Shape, and what it costs
+    ///
+    /// A flat dispatch over the instruction set. The per-case stack guard that used to be written
+    /// out twenty-two times now lives in ``popTwo(_:)`` and ``popOne(_:)``, which is not only
+    /// shorter: measured at `-O` over 2,000,000 evaluations of a mixed program, the interpreter
+    /// went from **0.400s to 0.321s** on that change alone, and to **0.225s** with the
+    /// `reserveCapacity` below — 44% faster in total.
+    ///
+    /// **A debug measurement says the opposite and must not be believed here.** At `-Onone`,
+    /// `@inline(__always)` is advisory, so each helper becomes a real call with `inout`
+    /// exclusivity checking and the same change measures *34% slower*. Not a different
+    /// magnitude — a different sign. Benchmark this function at `-O` or not at all.
     static func evaluate(bytecode: [Bytecode], inputs: [Double]) throws -> Double {
         var stack: [Double] = []
+        // The compiler already knows how deep this program goes, so the stack is allocated once
+        // rather than grown. Worth 30% on its own — see above.
+        stack.reserveCapacity(bytecode.maxStackDepth())
 
         for instruction in bytecode {
             switch instruction {
@@ -220,133 +297,97 @@ enum BytecodeInterpreter {
             case .constant(let value):
                 stack.append(value)
 
-            // Binary operations
+            // Binary arithmetic.
             case .add:
-                guard stack.count >= 2 else { throw EvaluationError.stackUnderflow }
-                let b = stack.removeLast()
-                let a = stack.removeLast()
+                let (a, b) = try popTwo(&stack)
                 stack.append(a + b)
 
             case .subtract:
-                guard stack.count >= 2 else { throw EvaluationError.stackUnderflow }
-                let b = stack.removeLast()
-                let a = stack.removeLast()
+                let (a, b) = try popTwo(&stack)
                 stack.append(a - b)
 
             case .multiply:
-                guard stack.count >= 2 else { throw EvaluationError.stackUnderflow }
-                let b = stack.removeLast()
-                let a = stack.removeLast()
+                let (a, b) = try popTwo(&stack)
                 stack.append(a * b)
 
             case .divide:
-                guard stack.count >= 2 else { throw EvaluationError.stackUnderflow }
-                let b = stack.removeLast()
-                let a = stack.removeLast()
+                let (a, b) = try popTwo(&stack)
                 guard b != 0 else { throw EvaluationError.divisionByZero }
                 stack.append(a / b)
 
             case .power:
-                guard stack.count >= 2 else { throw EvaluationError.stackUnderflow }
-                let b = stack.removeLast()
-                let a = stack.removeLast()
+                // Unguarded, unlike `sqrt` and `divide`, and that asymmetry is pinned by
+                // `BytecodeErrorContractTests`: `(-1) ^ 0.5` returns NaN and `0 ^ -1` returns
+                // infinity. Non-finite is loud — it propagates through every statistic taken
+                // downstream — so it is not the fail-silent case those guards exist to prevent.
+                let (a, b) = try popTwo(&stack)
                 stack.append(pow(a, b))
 
             case .min:
-                guard stack.count >= 2 else { throw EvaluationError.stackUnderflow }
-                let b = stack.removeLast()
-                let a = stack.removeLast()
+                let (a, b) = try popTwo(&stack)
                 stack.append(Swift.min(a, b))
 
             case .max:
-                guard stack.count >= 2 else { throw EvaluationError.stackUnderflow }
-                let b = stack.removeLast()
-                let a = stack.removeLast()
+                let (a, b) = try popTwo(&stack)
                 stack.append(Swift.max(a, b))
 
-            // Unary operations
+            // Unary.
             case .negate:
-                guard stack.count >= 1 else { throw EvaluationError.stackUnderflow }
-                let a = stack.removeLast()
-                stack.append(-a)
+                stack.append(-(try popOne(&stack)))
 
             case .abs:
-                guard stack.count >= 1 else { throw EvaluationError.stackUnderflow }
-                let a = stack.removeLast()
-                stack.append(abs(a))
+                stack.append(abs(try popOne(&stack)))
 
             case .sqrt:
-                guard stack.count >= 1 else { throw EvaluationError.stackUnderflow }
-                let a = stack.removeLast()
+                let a = try popOne(&stack)
                 guard a >= 0 else { throw EvaluationError.invalidOperation("sqrt of negative") }
                 stack.append(sqrt(a))
 
             case .log:
-                guard stack.count >= 1 else { throw EvaluationError.stackUnderflow }
-                let a = stack.removeLast()
+                let a = try popOne(&stack)
                 guard a > 0 else { throw EvaluationError.invalidOperation("log of non-positive") }
                 stack.append(log(a))
 
             case .exp:
-                guard stack.count >= 1 else { throw EvaluationError.stackUnderflow }
-                let a = stack.removeLast()
-                stack.append(exp(a))
+                stack.append(exp(try popOne(&stack)))
 
             case .sin:
-                guard stack.count >= 1 else { throw EvaluationError.stackUnderflow }
-                let a = stack.removeLast()
-                stack.append(sin(a))
+                stack.append(sin(try popOne(&stack)))
 
             case .cos:
-                guard stack.count >= 1 else { throw EvaluationError.stackUnderflow }
-                let a = stack.removeLast()
-                stack.append(cos(a))
+                stack.append(cos(try popOne(&stack)))
 
             case .tan:
-                guard stack.count >= 1 else { throw EvaluationError.stackUnderflow }
-                let a = stack.removeLast()
-                stack.append(tan(a))
+                stack.append(tan(try popOne(&stack)))
 
-            // Comparison operations
+            // Comparisons, which push 1.0 or 0.0 so that a condition is a value like any other.
             case .lessThan:
-                guard stack.count >= 2 else { throw EvaluationError.stackUnderflow }
-                let b = stack.removeLast()
-                let a = stack.removeLast()
+                let (a, b) = try popTwo(&stack)
                 stack.append(a < b ? 1.0 : 0.0)
 
             case .greaterThan:
-                guard stack.count >= 2 else { throw EvaluationError.stackUnderflow }
-                let b = stack.removeLast()
-                let a = stack.removeLast()
+                let (a, b) = try popTwo(&stack)
                 stack.append(a > b ? 1.0 : 0.0)
 
             case .lessOrEqual:
-                guard stack.count >= 2 else { throw EvaluationError.stackUnderflow }
-                let b = stack.removeLast()
-                let a = stack.removeLast()
+                let (a, b) = try popTwo(&stack)
                 stack.append(a <= b ? 1.0 : 0.0)
 
             case .greaterOrEqual:
-                guard stack.count >= 2 else { throw EvaluationError.stackUnderflow }
-                let b = stack.removeLast()
-                let a = stack.removeLast()
+                let (a, b) = try popTwo(&stack)
                 stack.append(a >= b ? 1.0 : 0.0)
 
             case .equal:
-                guard stack.count >= 2 else { throw EvaluationError.stackUnderflow }
-                let b = stack.removeLast()
-                let a = stack.removeLast()
-                let epsilon = 1e-10
-                stack.append(abs(a - b) < epsilon ? 1.0 : 0.0)
+                let (a, b) = try popTwo(&stack)
+                stack.append(abs(a - b) < comparisonEpsilon ? 1.0 : 0.0)
 
             case .notEqual:
-                guard stack.count >= 2 else { throw EvaluationError.stackUnderflow }
-                let b = stack.removeLast()
-                let a = stack.removeLast()
-                let epsilon = 1e-10
-                stack.append(abs(a - b) >= epsilon ? 1.0 : 0.0)
+                let (a, b) = try popTwo(&stack)
+                stack.append(abs(a - b) >= comparisonEpsilon ? 1.0 : 0.0)
 
-            // Conditional operation
+            // Conditional. All three operands are already on the stack — the compiler emits
+            // them before `select` — so this chooses between two values that have both been
+            // computed, rather than deciding which to compute.
             case .select:
                 guard stack.count >= 3 else { throw EvaluationError.stackUnderflow }
                 let falseValue = stack.removeLast()

@@ -1,9 +1,8 @@
-# Handoff — 2026-09-18 (Tier 2, the three named items closed)
+# Handoff — 2026-09-18 (Tier 2: five items closed, four defects)
 
-**`main` is the tip of this commit, pushed.** The three items the last session named — the
-bytecode `evaluate` area, `RobustOptimizer`/`CuttingPlaneMaster`, and `solveRelaxation` — are all
-closed. Two more defects found, one clean sweep recorded, and the package's worst complexity
-score cut from **291 to 55**.
+**Two sessions of Tier 2 in one day.** The three items named first — the bytecode optimizer,
+`RobustOptimizer`/`CuttingPlaneMaster`, and `solveRelaxation` — shipped as `e70829ac`. Then
+`solve` (160 → 60, two defects) and `MonteCarloExpressionModel.evaluate` (one defect).
 
 The work queue is **`project/plans/TIER2_COMPLEXITY_QUEUE.md`**. That file is the plan; this file
 is the state and the traps.
@@ -36,67 +35,71 @@ Tagging does not change what the gate runs — measured both ways on `346a50ad`.
 
 ## 1. Resume here
 
-**Nothing is half-finished.** The three named items are closed, the suite is green, and the
-working tree is clean. Pick the next target from `project/plans/TIER2_COMPLEXITY_QUEUE.md`.
-
-The method has not changed and has not stopped paying: **open a function by building an
-independent oracle, not by reading it.** Across the whole sweep, every defect was found by
+Pick the next target from `project/plans/TIER2_COMPLEXITY_QUEUE.md`, and **open it by building an
+independent oracle, not by reading it.** Across the whole sweep every defect was found by
 differencing against a second opinion and none by inspection, with a green 7,800-test suite
 endorsing each wrong answer throughout.
 
-Highest unexamined scores, after this session's work:
+Highest unexamined scores after this session:
 
 | Score | Function | Where |
 |---:|---|---|
-| 160 | `solve` | `IntegerProgramming/BranchAndBound.swift:315` — the outer search, next to the one just decomposed |
 | 131 | `icc` | `Statistics/Descriptors/Agreement/iccMissingData.swift:80` |
 | 131 | `fitGeneralLME` | `Statistics/MixedModels/Fitting/fitGeneralLME.swift:28` — already fixed twice by oracle, so a third look is cheap |
 | 121 | `generalAIREMLUpdate` | same file, line 653 |
-| 104 | `evaluate` | `MonteCarlo/Compilation/MonteCarloExpressionModel.swift:209` — **still unexamined**; the differential test written for this area found the optimizer defect on the way and never reached it |
 | 101 | `bayesianICC` | `Statistics/Estimation/bayesianICC.swift:415` |
+| 95 | `extractVariableShift` | `IntegerProgramming/VariableShift.swift:207` — and the shift machinery just produced a defect one layer up |
+| 85 | `gStudy` | `Statistics/Reliability/gStudy.swift:133` |
 
 Re-run the gate rather than trusting that table after any refactor.
 
 ## 2. What closed, and what it cost
 
-### The bytecode optimizer miscompiled every ternary
+### Shipped as `e70829ac`
 
-`BytecodeOptimizer.algebraicSimplificationPass`'s `default:` branch popped **one** operand
-whatever the instruction's arity. `select` takes three and the thirteen binary operators take
-two, so each left operands on the stack for the *next* instruction's identity rules to match
-against. `(1.0 + (input[0] ? -0.0 : 7.0))` optimised into a program computing
-`input0 ? 1.0 : 7.0` — 0.0 where the answer is 8.0. Replaced with an exhaustive
-`operandCount(of:)`, so adding a `Bytecode` case now fails to compile until its arity is stated.
+- **The bytecode optimizer miscompiled every ternary.** `algebraicSimplificationPass`'s
+  `default:` branch popped one operand whatever the arity, so `select` (three) and the thirteen
+  binary operators left operands for the next instruction's identity rules to claim.
+  `(1.0 + (input[0] ? -0.0 : 7.0))` optimised into `input0 ? 1.0 : 7.0`.
+- **The cutting-plane certificate was not a certificate.** `CuttingPlaneMaster` read its lower
+  bound from the model minimised over the *trust region*. `min |x − 1000|` from `x = 0` returned
+  `x = 100` with `optimalityGap: 0.0, converged: true`, after one round.
+- **`solveRelaxation` 291 → 55**, stages extracted into `BranchAndBoundCutting.swift`.
+- **`RobustOptimizer` audited, clean.** The LP route was confirmed to fire by instrumentation
+  (8 of 8 cases), not assumed — iteration count does *not* separate the two routes.
 
-Found by `BytecodeDifferentialTests`, which carries its own recursive tree-walker because
-`Expression` ships no evaluator: 13 disagreements in 2,000 expressions, now 6,000 clean. Both
-minimal reproducers were **confirmed to fail against the pre-fix source**, not assumed to.
+### Since that commit
 
-### The cutting-plane certificate was not a certificate
+- **`solve`: 160 → 60, two defects.** Five separate result constructions, each answering "what do
+  I report when nothing was found" on its own. Every no-incumbent exit reported
+  `objectiveValue: +∞` regardless of sense, so a **maximisation** that found nothing reported the
+  best conceivable value — beside a `bestBound` of `-∞`, an answer beating its own bound. And the
+  no-incumbent exit applied the *inverse* variable shift to `initialGuess`, which was never
+  shifted: a solve started `from: [0, 0]` with lower bounds at `-5` returned `[-5, -5]`. All five
+  exits now route through one `makeResult`.
+- **`MonteCarloExpressionModel.toClosure()` counted an unevaluable draw as `0.0`.** The
+  interpreter throws for `sqrt` of a negative, `log` of a non-positive and division by zero; the
+  closure discarded all of it for a number the model never produced, and `MonteCarloSimulation`
+  uses that closure as its CPU path. On `log(x)` over 300 draws spanning `[-1, 3]`, 75 threw, 75
+  became zero, the reported mean was 0.0707 against 0.0943 over the defined draws, and **no
+  sample was non-finite**. Now `Double.nan`, which propagates.
 
-`CuttingPlaneMaster` read its lower bound from the model minimised *over the trust region*.
-Restricting a minimisation can only raise its value, so that is not a bound on anything outside
-the box the method drew itself. In the default configuration `min |x − 1000|` from `x = 0`
-returned `x = 100` with `optimalityGap: 0.0` and `converged: true`, after one round.
+### `evaluate`: decided, and the measurement is the lesson
 
-The bound now comes from a second master solve over the caller's constraints alone — where
-Kelley's method takes it — and the trust region doubles on a boundary step instead of only ever
-shrinking. Every pre-existing test placed its optimum inside the first trust region, which is
-why none could see it.
+`evaluate` is a flat 22-case dispatch table whose score came from a stack guard repeated in every
+case. Folding those into two `@inline(__always)` pop helpers takes it **104 → 41** — and makes it
+**44% faster**, not slower:
 
-### `solveRelaxation`: 529 lines and complexity 291 → 258 lines and 55
+| variant | 2M evaluations, `-O` |
+|---|---|
+| as it was | 0.4002s |
+| pop helpers, no capacity hint | 0.3206s |
+| pop helpers + `reserveCapacity(maxStackDepth())` | **0.2249s** |
 
-The round loop was a pipeline with no names on its stages. Each is now a method in
-`BranchAndBoundCutting.swift`. Behaviour is a lift, verified against the 215 tests in 34
-integer-programming suites the sweep had already built.
-
-### `RobustOptimizer`: clean
-
-`linearRobustCounterpart` (complexity 59) got a hand-derived minimax, its maximising mirror, a
-grid-confirmed three-scenario problem, and the law that the reported value is attained at the
-reported point. **No defect.** The LP route was confirmed to fire by instrumentation (8 of 8
-cases) rather than assumed — iteration count does *not* separate the two routes, so that is not
-the signal to read.
+**The debug measurement said 34% *slower* and was nearly acted on.** At `-Onone`,
+`@inline(__always)` is advisory, so every helper becomes a real call with `inout` exclusivity
+checking. Debug and release disagreed on the *sign*, not the size. Benchmark anything in this
+package at `-O` or not at all — the note is now on the function itself.
 
 ## 3. What this session did
 

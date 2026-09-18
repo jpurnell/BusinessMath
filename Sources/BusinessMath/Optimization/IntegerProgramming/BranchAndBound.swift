@@ -321,77 +321,22 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
     ) throws -> IntegerOptimizationResult<V> {
 
         // Step 0a: Validate linearity if requested
-        if validateLinearity && V.self == VectorN<Double>.self {
-            let dimension = initialGuess.toArray().count
-            let initialPoint = initialGuess
-
-            // Validate objective linearity
-            let _ = try validateLinearModel(
-                objective,
-                dimension: dimension,
-                at: initialPoint
-            )
-
-            // Validate constraint linearity (for closure-based constraints)
-            for constraint in constraints {
-                switch constraint {
-                case .inequality(let f, _), .equality(let f, _):
-                    let _ = try validateLinearModel(
-                        f,
-                        dimension: dimension,
-                        at: initialPoint
-                    )
-                case .linearInequality, .linearEquality:
-                    // Already linear by construction
-                    continue
-                }
-            }
-        }
+        try validateProblemLinearity(
+            objective: objective,
+            constraints: constraints,
+            at: initialGuess
+        )
 
         // Step 0b: Apply variable shifting if requested and needed
-        var shiftedObjective = objective
-        var shiftedConstraints = constraints
-        var shiftedInitialGuess = initialGuess
-        var variableShift: VariableShift? = nil
-
-        if enableVariableShifting && V.self == VectorN<Double>.self {
-            // Safe casts protected by type check above
-            if let doubleConstraints = constraints as? [MultivariateConstraint<VectorN<Double>>],
-               let doubleGuess = initialGuess as? VectorN<Double> {
-                let dimension = initialGuess.toArray().count
-                let shift = try extractVariableShift(
-                    from: doubleConstraints,
-                    dimension: dimension
-                )
-
-                if shift.needsShift {
-                    variableShift = shift
-
-                    // Transform objective: f(x) → f(y + shift)
-                    shiftedObjective = { (y: V) -> Double in
-                        guard let yDouble = y as? VectorN<Double>,
-                              let x = shift.unshiftPoint(yDouble) as? V else {
-                            return objective(y)  // Fallback to original if cast fails
-                        }
-                        return objective(x)
-                    }
-
-                    // Transform constraints
-                    shiftedConstraints = try constraints.compactMap { constraint -> MultivariateConstraint<V>? in
-                        guard let doubleConstraint = constraint as? MultivariateConstraint<VectorN<Double>> else {
-                            return constraint
-                        }
-                        let transformed = try shift.transformConstraint(doubleConstraint)
-                        return transformed as? MultivariateConstraint<V> ?? constraint
-                    }
-
-                    // Transform initial guess
-                    if let shiftedDouble = shift.shiftPoint(doubleGuess) as? V {
-                        shiftedInitialGuess = shiftedDouble
-                    }
-                }
-            }
-        }
+        let prepared = try shiftedProblem(
+            objective: objective,
+            constraints: constraints,
+            initialGuess: initialGuess
+        )
+        let shiftedObjective = prepared.objective
+        let shiftedConstraints = prepared.constraints
+        let shiftedInitialGuess = prepared.initialGuess
+        let variableShift = prepared.shift
 
         // Monotonic: every use below is an elapsed interval or a time-limit check, and a
         // wall clock can be adjusted mid-solve. See ``Duration/inSeconds``.
@@ -461,15 +406,22 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
         // Check if root LP is unbounded (has finite bound but no solution)
         // This indicates the problem may be unbounded even for integers
         if rootNode.relaxationSolution == nil && !rootNode.relaxationBound.isInfinite {
-            // Unbounded LP - return with the safe bound
-            return IntegerOptimizationResult(
-                solution: initialGuess,
-                objectiveValue: minimize ? -.infinity : .infinity,
+            // Unbounded LP - return with the safe bound.
+            //
+            // The status is `.infeasible`: the *relaxation* is unbounded, but no integer point
+            // was found, and the value reported has to answer to the status rather than to the
+            // relaxation. This used to carry `minimize ? -.infinity : .infinity` — the sentinel
+            // for an unbounded solve — so the result said "no solution" and "unboundedly good"
+            // at the same time.
+            return makeResult(
+                incumbent: nil,
+                fallback: initialGuess,
+                unshift: safeUnshift,
                 bestBound: bestBound,  // Use the safe finite bound
-                relativeGap: .infinity,
-                nodesExplored: nodesExplored,
                 status: .infeasible,  // No integer solutions found
-                solveTime: (clock.now - startTime).inSeconds,
+                nodesExplored: nodesExplored,
+                minimize: minimize,
+                elapsed: (clock.now - startTime).inSeconds,
                 integerSpec: integerSpec,
                 cuttingPlaneStats: nil
             )
@@ -491,24 +443,15 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
 
             // Check termination conditions
             if nodesExplored >= maxNodes {
-                let gap = incumbent.map { abs($0.value - bestBound) / max(abs($0.value), 1.0) } ?? .infinity
-
-                // Unshift solution if variable shifting was applied
-                let finalSolution: V
-                if variableShift != nil, let inc = incumbent {
-                    finalSolution = safeUnshift(inc.solution)
-                } else {
-                    finalSolution = incumbent?.solution ?? initialGuess
-                }
-
-                return IntegerOptimizationResult(
-                    solution: finalSolution,
-                    objectiveValue: incumbent?.value ?? .infinity,
+                return makeResult(
+                    incumbent: incumbent,
+                    fallback: initialGuess,
+                    unshift: safeUnshift,
                     bestBound: bestBound,
-                    relativeGap: gap,
-                    nodesExplored: nodesExplored,
                     status: .nodeLimit,
-                    solveTime: (clock.now - startTime).inSeconds,
+                    nodesExplored: nodesExplored,
+                    minimize: minimize,
+                    elapsed: (clock.now - startTime).inSeconds,
                     integerSpec: integerSpec,
                     cuttingPlaneStats: enableCuttingPlanes ? cutStats.createStats(integerOptimum: incumbent?.value) : nil
                 )
@@ -525,24 +468,15 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
             // there is no sentinel to forget. `.zero` falls through to the comparison and
             // expires immediately, which is now the correct answer rather than the bug.
             if let limit = timeLimit, (clock.now - startTime) > limit {
-                let gap = incumbent.map { abs($0.value - bestBound) / max(abs($0.value), 1.0) } ?? .infinity
-
-                // Unshift solution if variable shifting was applied
-                let finalSolution: V
-                if variableShift != nil, let inc = incumbent {
-                    finalSolution = safeUnshift(inc.solution)
-                } else {
-                    finalSolution = incumbent?.solution ?? initialGuess
-                }
-
-                return IntegerOptimizationResult(
-                    solution: finalSolution,
-                    objectiveValue: incumbent?.value ?? .infinity,
+                return makeResult(
+                    incumbent: incumbent,
+                    fallback: initialGuess,
+                    unshift: safeUnshift,
                     bestBound: bestBound,
-                    relativeGap: gap,
-                    nodesExplored: nodesExplored,
                     status: .timeLimit,
-                    solveTime: (clock.now - startTime).inSeconds,
+                    nodesExplored: nodesExplored,
+                    minimize: minimize,
+                    elapsed: (clock.now - startTime).inSeconds,
                     integerSpec: integerSpec,
                     cuttingPlaneStats: enableCuttingPlanes ? cutStats.createStats(integerOptimum: incumbent?.value) : nil
                 )
@@ -564,13 +498,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
             if integerSpec.isIntegerFeasible(solution, tolerance: integralityTolerance) {
                 // Found integer solution - update incumbent
                 let value = shiftedObjective(solution)
-                let shouldUpdate: Bool
-                if let inc = incumbent {
-                    shouldUpdate = minimize ? value < inc.value : value > inc.value
-                } else {
-                    shouldUpdate = true
-                }
-                if shouldUpdate {
+                if Self.improves(value, on: incumbent, minimize: minimize) {
                     incumbent = (solution, value)
                 }
                 updateBestBound(&bestBound, from: queue, minimize: minimize, incumbent: incumbent)
@@ -579,24 +507,17 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                 if let inc = incumbent {
                     let gap = abs(inc.value - bestBound) / max(abs(inc.value), 1.0)
                     if gap < relativeGapTolerance {
-                        // Unshift solution if variable shifting was applied
-                        let finalSolution: V
-                        if variableShift != nil {
-                            finalSolution = safeUnshift(inc.solution)
-                        } else {
-                            finalSolution = inc.solution
-                        }
-
-                        return IntegerOptimizationResult(
-                            solution: finalSolution,
-                            objectiveValue: inc.value,
+                        return makeResult(
+                            incumbent: inc,
+                            fallback: initialGuess,
+                            unshift: safeUnshift,
                             bestBound: bestBound,
-                            relativeGap: gap,
-                            nodesExplored: nodesExplored,
                             status: .optimal,
-                            solveTime: (clock.now - startTime).inSeconds,
+                            nodesExplored: nodesExplored,
+                            minimize: minimize,
+                            elapsed: (clock.now - startTime).inSeconds,
                             integerSpec: integerSpec,
-                    cuttingPlaneStats: enableCuttingPlanes ? cutStats.createStats(integerOptimum: incumbent?.value) : nil
+                            cuttingPlaneStats: enableCuttingPlanes ? cutStats.createStats(integerOptimum: incumbent?.value) : nil
                         )
                     }
                 }
@@ -629,13 +550,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                 constraints: shiftedConstraints,
                 integerSpec: integerSpec
             ) {
-                let shouldUpdateFromRounding: Bool
-                if let inc = incumbent {
-                    shouldUpdateFromRounding = minimize ? rounded.value < inc.value : rounded.value > inc.value
-                } else {
-                    shouldUpdateFromRounding = true
-                }
-                if shouldUpdateFromRounding {
+                if Self.improves(rounded.value, on: incumbent, minimize: minimize) {
                     incumbent = (solution: rounded.solution, value: rounded.value)
                 }
                 // Deliberately no bound update and no termination check here: this node
@@ -706,54 +621,44 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
 
         // Step 6: Return result
         guard let final = incumbent else {
-            // No solution found - return original initial guess (unshifted if needed)
-            let finalSolution: V
-            if variableShift != nil {
-                finalSolution = safeUnshift(initialGuess)
-            } else {
-                finalSolution = initialGuess
-            }
-
-            return IntegerOptimizationResult(
-                solution: finalSolution,
-                objectiveValue: .infinity,
+            // The caller's own starting point, returned as given. It was never shifted — the
+            // search runs on `shiftedInitialGuess` — so unshifting it here displaced it by the
+            // shift vector: a solve started `from: [0, 0]` on a problem with lower bounds at
+            // `-5` handed back `[-5, -5]`, a point the caller never named.
+            return makeResult(
+                incumbent: nil,
+                fallback: initialGuess,
+                unshift: safeUnshift,
                 bestBound: bestBound,
-                relativeGap: .infinity,
-                nodesExplored: nodesExplored,
                 status: .infeasible,
-                solveTime: (clock.now - startTime).inSeconds,
+                nodesExplored: nodesExplored,
+                minimize: minimize,
+                elapsed: (clock.now - startTime).inSeconds,
                 integerSpec: integerSpec,
-                    cuttingPlaneStats: enableCuttingPlanes ? cutStats.createStats(integerOptimum: incumbent?.value) : nil
+                cuttingPlaneStats: enableCuttingPlanes ? cutStats.createStats(integerOptimum: incumbent?.value) : nil
             )
         }
 
         let gap = abs(final.value - bestBound) / max(abs(final.value), 1.0)
         let status: IntegerSolutionStatus = gap < relativeGapTolerance ? .optimal : .feasible
 
-        // Debug: print gap calculation
-        // if initialGuess.toArray().count <= 5 {
-        //     print("=== Final Result ===")
-        //     print("Incumbent value: \(final.value)")
-        //     print("Best bound: \(bestBound)")
-        //     print("Gap: \(gap) (tolerance: \(relativeGapTolerance))")
-        //     print("Status: \(status)")
-        //     print("Nodes explored: \(nodesExplored)")
-        // }
+        let result = makeResult(
+            incumbent: final,
+            fallback: initialGuess,
+            unshift: safeUnshift,
+            bestBound: bestBound,
+            status: status,
+            nodesExplored: nodesExplored,
+            minimize: minimize,
+            elapsed: (clock.now - startTime).inSeconds,
+            integerSpec: integerSpec,
+            cuttingPlaneStats: enableCuttingPlanes ? cutStats.createStats(integerOptimum: final.value) : nil
+        )
 
-        // Unshift solution if variable shifting was applied
-        let finalSolution: V
-        if variableShift != nil {
-            finalSolution = safeUnshift(final.solution)
-        } else {
-            finalSolution = final.solution
-        }
-
-        // Create cutting plane statistics if enabled
-        let stats: CuttingPlaneStats? = enableCuttingPlanes ? cutStats.createStats(integerOptimum: final.value) : nil
-
-        // Post-solve verification: validate final solution
+        // Post-solve verification, against the caller's own objective and constraints rather
+        // than the shifted ones — the point being checked is the point being returned.
         let verification = verifySolution(
-            finalSolution,
+            result.solution,
             objective: objective,
             constraints: constraints,
             integerSpec: integerSpec,
@@ -770,17 +675,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
             #endif
         }
 
-        return IntegerOptimizationResult(
-            solution: finalSolution,
-            objectiveValue: final.value,
-            bestBound: bestBound,
-            relativeGap: gap,
-            nodesExplored: nodesExplored,
-            status: status,
-            solveTime: (clock.now - startTime).inSeconds,
-            integerSpec: integerSpec,
-            cuttingPlaneStats: stats
-        )
+        return result
     }
 
     /// Solve mixed-integer program with explicit LinearFunction objective
@@ -840,6 +735,208 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
     }
 
     // MARK: - Private Helper Methods
+
+    /// Refuses a problem whose objective or constraints are not linear, when asked to.
+    ///
+    /// Only meaningful for `VectorN<Double>`, because ``validateLinearModel(_:dimension:at:)``
+    /// probes a closure by evaluating it at constructed points and needs a concrete vector type
+    /// to construct them from. `.linearInequality` and `.linearEquality` carry their
+    /// coefficients, so there is nothing to discover about them.
+    ///
+    /// - Parameters:
+    ///   - objective: The objective to probe.
+    ///   - constraints: The constraints to probe, closure-carrying ones only.
+    ///   - initialGuess: The point to probe about.
+    /// - Throws: Whatever ``validateLinearModel(_:dimension:at:)`` throws when a function does
+    ///   not reproduce its own affine model — which is the refusal, not a failure.
+    private func validateProblemLinearity(
+        objective: @Sendable @escaping (V) -> Double,
+        constraints: [MultivariateConstraint<V>],
+        at initialGuess: V
+    ) throws {
+        guard validateLinearity, V.self == VectorN<Double>.self else { return }
+
+        let dimension = initialGuess.toArray().count
+        _ = try validateLinearModel(objective, dimension: dimension, at: initialGuess)
+
+        for constraint in constraints {
+            switch constraint {
+            case .inequality(let f, _), .equality(let f, _):
+                _ = try validateLinearModel(f, dimension: dimension, at: initialGuess)
+            case .linearInequality, .linearEquality:
+                // Already linear by construction.
+                continue
+            }
+        }
+    }
+
+    /// The problem as the search will see it, shifted into the non-negative orthant if it must be.
+    ///
+    /// The simplex method assumes `x ≥ 0`, so a variable whose lower bound is negative has to be
+    /// translated before the relaxation can be solved at all. Everything moves together — the
+    /// objective becomes `f(y + shift)`, each constraint is rewritten in `y`, and the starting
+    /// point is translated — so that the search is over an equivalent problem rather than a
+    /// different one.
+    ///
+    /// Returns the originals untouched when no shift is needed or the vector type is not
+    /// `VectorN<Double>`, with `shift` nil. **That nil is the signal the caller reads to decide
+    /// whether a point needs mapping back**, so the two must be produced together, which is why
+    /// this returns all four rather than setting four `var`s at the call site.
+    ///
+    /// - Parameters:
+    ///   - objective: The caller's objective.
+    ///   - constraints: The caller's constraints.
+    ///   - initialGuess: The caller's starting point.
+    /// - Returns: The transformed problem and the shift that produced it, or the originals and
+    ///   `nil`.
+    /// - Throws: From ``extractVariableShift(from:dimension:)`` or
+    ///   ``VariableShift/transformConstraint(_:)``.
+    private func shiftedProblem(
+        objective: @Sendable @escaping (V) -> Double,
+        constraints: [MultivariateConstraint<V>],
+        initialGuess: V
+    ) throws -> (
+        objective: @Sendable (V) -> Double,
+        constraints: [MultivariateConstraint<V>],
+        initialGuess: V,
+        shift: VariableShift?
+    ) {
+        let unchanged = (objective, constraints, initialGuess, VariableShift?.none)
+
+        guard enableVariableShifting, V.self == VectorN<Double>.self,
+              let doubleConstraints = constraints as? [MultivariateConstraint<VectorN<Double>>],
+              let doubleGuess = initialGuess as? VectorN<Double> else { return unchanged }
+
+        let dimension = initialGuess.toArray().count
+        let shift = try extractVariableShift(from: doubleConstraints, dimension: dimension)
+        guard shift.needsShift else { return unchanged }
+
+        // f(y) = f(y + shift), so the value reported is always in the caller's own units.
+        let translatedObjective: @Sendable (V) -> Double = { y in
+            guard let yDouble = y as? VectorN<Double>,
+                  let x = shift.unshiftPoint(yDouble) as? V else {
+                return objective(y)  // Fallback to original if cast fails
+            }
+            return objective(x)
+        }
+
+        let translatedConstraints = try constraints.compactMap { constraint -> MultivariateConstraint<V>? in
+            guard let doubleConstraint = constraint as? MultivariateConstraint<VectorN<Double>> else {
+                return constraint
+            }
+            let transformed = try shift.transformConstraint(doubleConstraint)
+            return transformed as? MultivariateConstraint<V> ?? constraint
+        }
+
+        let translatedGuess = (shift.shiftPoint(doubleGuess) as? V) ?? initialGuess
+
+        return (translatedObjective, translatedConstraints, translatedGuess, shift)
+    }
+
+    /// Whether a candidate improves on the incumbent, in the sense being solved.
+    ///
+    /// Absent an incumbent, anything is an improvement — which is the case that makes writing
+    /// this out twice tempting and writing it out twice a liability, since the two copies must
+    /// agree on the sense, on the strictness of the comparison, and on what an empty incumbent
+    /// means.
+    ///
+    /// Strict: a tie leaves the incumbent standing. That is what keeps the answer stable under
+    /// the order nodes come off the queue, which ties in integer programming are common enough
+    /// to matter — symmetric variables produce them routinely.
+    ///
+    /// - Parameters:
+    ///   - value: The candidate's objective value.
+    ///   - incumbent: The best found so far, or `nil`.
+    ///   - minimize: The sense.
+    /// - Returns: `true` if the candidate should replace the incumbent.
+    private static func improves(
+        _ value: Double,
+        on incumbent: (solution: V, value: Double)?,
+        minimize: Bool
+    ) -> Bool {
+        guard let incumbent else { return true }
+        return minimize ? value < incumbent.value : value > incumbent.value
+    }
+
+    /// The objective value a result carries when the search found no integer solution.
+    ///
+    /// The **worst** value for the sense, so that a caller comparing two results never prefers
+    /// one that found nothing. ``SimplexRelaxationSolver`` has used this convention since it was
+    /// written — infeasible takes the worst value, unbounded takes the best — and its tests pin
+    /// it; `solve` is now consistent with the solver it delegates to.
+    ///
+    /// Getting this backwards is not a cosmetic difference. Every no-incumbent exit used to
+    /// report `+∞` whatever the sense, so a **maximisation** that found nothing reported the
+    /// best conceivable value, and `if result.objectiveValue > bestSoFar` adopted it.
+    ///
+    /// - Parameter minimize: The sense the solve was run in.
+    /// - Returns: `+∞` when minimising, `-∞` when maximising.
+    private static func valueWhenNothingFound(minimize: Bool) -> Double {
+        minimize ? .infinity : -.infinity
+    }
+
+    /// Assembles the one result type this method returns, from wherever it returns it.
+    ///
+    /// ## Why this is a function
+    ///
+    /// `solve` has five exits — the root's unbounded relaxation, the node budget, the time
+    /// budget, the gap termination, and the two ordinary ends — and each used to build its own
+    /// ``IntegerOptimizationResult``. Four can be reached with no incumbent, and they disagreed
+    /// about what that means:
+    ///
+    /// - three reported `objectiveValue: +∞` regardless of sense, so a maximisation that found
+    ///   nothing claimed the best possible value, contradicting its own `bestBound` of `-∞`;
+    /// - the no-incumbent exit applied ``VariableShift/unshiftPoint(_:)`` to the caller's
+    ///   *original* `initialGuess`, which was never shifted — a solve started `from: [0, 0]` on
+    ///   a problem with lower bounds at `-5` returned `[-5, -5]`, a point the caller never named.
+    ///
+    /// Both are the same kind of mistake: a value computed correctly for one context, used in
+    /// another. Five copies of an exit is what makes that easy, so there is now one.
+    ///
+    /// - Parameters:
+    ///   - incumbent: The best integer-feasible point found, in *shifted* coordinates when a
+    ///     shift is in force, or `nil` if none was found.
+    ///   - fallback: The point to report when there is no incumbent. Always in the caller's own
+    ///     coordinates, and therefore never unshifted.
+    ///   - unshift: Maps a searched point back to the caller's coordinates. Applied to the
+    ///     incumbent only.
+    ///   - bestBound: The bound the search proved.
+    ///   - status: How the search ended.
+    ///   - nodesExplored: Nodes taken off the queue.
+    ///   - minimize: The sense, which decides the no-incumbent sentinel.
+    ///   - elapsed: Wall-clock seconds, already measured.
+    ///   - integerSpec: The specification solved against.
+    ///   - cuttingPlaneStats: Statistics, or `nil` where the caller has none to report.
+    /// - Returns: The assembled result.
+    private func makeResult(
+        incumbent: (solution: V, value: Double)?,
+        fallback: V,
+        unshift: (V) -> V,
+        bestBound: Double,
+        status: IntegerSolutionStatus,
+        nodesExplored: Int,
+        minimize: Bool,
+        elapsed: Double,
+        integerSpec: IntegerProgramSpecification,
+        cuttingPlaneStats: CuttingPlaneStats?
+    ) -> IntegerOptimizationResult<V> {
+        let solution = incumbent.map { unshift($0.solution) } ?? fallback
+        let value = incumbent?.value ?? Self.valueWhenNothingFound(minimize: minimize)
+        let gap = incumbent.map { abs($0.value - bestBound) / max(abs($0.value), 1.0) } ?? .infinity
+
+        return IntegerOptimizationResult(
+            solution: solution,
+            objectiveValue: value,
+            bestBound: bestBound,
+            relativeGap: gap,
+            nodesExplored: nodesExplored,
+            status: status,
+            solveTime: elapsed,
+            integerSpec: integerSpec,
+            cuttingPlaneStats: cuttingPlaneStats
+        )
+    }
+
 
     /// Solve continuous relaxation at a node using pluggable RelaxationSolver
     ///
