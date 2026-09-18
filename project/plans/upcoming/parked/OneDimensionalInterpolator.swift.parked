@@ -1,0 +1,73 @@
+//
+//  OneDimensionalInterpolator.swift
+//  BusinessMath
+//
+//  The shape every interpolator in this package shares, stated once.
+//
+
+import Foundation
+import Numerics
+
+/// An interpolator over a one-dimensional domain, queried by a bare coordinate.
+///
+/// ``Interpolator`` is deliberately general: its query point is any `VectorSpace`, so it
+/// serves a heightmap and a volume as readily as a time series. Every interpolator this
+/// package actually ships is one-dimensional, and each of them had independently added the
+/// same two members — a `callAsFunction(_:)` taking a bare `Scalar`, and the
+/// `callAsFunction(at:)` that unwraps a ``Vector1D`` and forwards to it — along with
+/// `inputDimension = 1`.
+///
+/// Conforming to this protocol supplies both, and the dimension with them. A type states
+/// how to evaluate at a coordinate; the unwrapping is not its business.
+public protocol OneDimensionalInterpolator: Interpolator where Point == Vector1D<Scalar> {
+	/// Evaluate the interpolant at a coordinate.
+	///
+	/// - Parameter t: The coordinate to evaluate at.
+	/// - Returns: The interpolated value.
+	func callAsFunction(_ t: Scalar) -> Value
+}
+
+public extension OneDimensionalInterpolator {
+	/// One, by construction: the domain of a one-dimensional interpolator is a line.
+	var inputDimension: Int { 1 }
+
+	/// Unwraps the query and forwards to ``callAsFunction(_:)``.
+	///
+	/// - Parameter query: The coordinate, wrapped as a ``Vector1D``.
+	/// - Returns: The interpolated value.
+	func callAsFunction(at query: Vector1D<Scalar>) -> Value {
+		callAsFunction(query.value)
+	}
+}
+
+/// A vector-valued interpolator that works one channel at a time.
+///
+/// Interpolating a sequence of vectors is interpolating each component independently and
+/// reassembling — there is no coupling between channels in any method this package
+/// implements. Every vector interpolator therefore holds an array of scalar interpolators
+/// and evaluates by mapping over it, and all ten of them had written that out.
+///
+/// The output dimension comes from the channel count rather than being stored alongside it,
+/// because the two cannot disagree if only one of them exists.
+public protocol ChannelwiseVectorInterpolator: OneDimensionalInterpolator
+where Value == VectorN<Scalar> {
+	/// The scalar interpolator applied to each component.
+	associatedtype Channel: OneDimensionalInterpolator
+		where Channel.Scalar == Scalar, Channel.Value == Scalar
+
+	/// One interpolator per component of the output vectors.
+	var channels: [Channel] { get }
+}
+
+public extension ChannelwiseVectorInterpolator {
+	/// The number of components in the output, which is the number of channels.
+	var outputDimension: Int { channels.count }
+
+	/// Evaluate every channel at `t` and reassemble the vector.
+	///
+	/// - Parameter t: The coordinate to evaluate at.
+	/// - Returns: The interpolated vector.
+	func callAsFunction(_ t: Scalar) -> VectorN<Scalar> {
+		VectorN(channels.map { $0(t) })
+	}
+}
