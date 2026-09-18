@@ -212,6 +212,32 @@ extension DistributionF: SeedableDistribution {
 
 
 extension DistributionF: ContinuousDistribution {
+	/// The density: √((d₁x)^d₁ · d₂^d₂ / (d₁x + d₂)^(d₁+d₂)) / (x·B(d₁/2, d₂/2)).
+	///
+	/// Assembled in logs, which here is not an optimisation: at even moderate degrees of
+	/// freedom `(d₁x)^d₁` overflows a `Double` while the density is an ordinary number, and
+	/// the direct expression returns `inf/inf`.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		let n1 = Double(df1), n2 = Double(df2)
+		guard n1 > 0, n2 > 0 else { return Double.nan }
+		guard x > 0 else {
+			// Three-way at zero, as everywhere a shape sits under a power of x.
+			if n1 > 2 { return 0 }
+			return n1.isEqual(to: 2) ? 1 : Double.infinity
+		}
+		let logBeta = Double.logGamma(n1 / 2) + Double.logGamma(n2 / 2)
+			- Double.logGamma((n1 + n2) / 2)
+		let logDensity = (n1 / 2) * Double.log(n1) + (n2 / 2) * Double.log(n2)
+			+ (n1 / 2 - 1) * Double.log(x)
+			- ((n1 + n2) / 2) * Double.log(n2 + n1 * x)
+			- logBeta
+		return Double.exp(logDensity)
+	}
+
 	/// P(X ≤ x) for this F distribution.
 	public func cdf(_ x: Double) -> Double {
 		totalizedResult { try fCDF(f: x, df1: df1, df2: df2) }

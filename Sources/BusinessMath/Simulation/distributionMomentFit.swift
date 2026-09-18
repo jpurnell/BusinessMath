@@ -214,6 +214,31 @@ public struct DistributionMomentFit: ContinuousDistribution, Sendable {
 		return location + scale * signed
 	}
 
+	/// The density, as the magnitude of the CDF's slope.
+	///
+	/// **The second of the two densities in this module taken numerically, and declared.** The
+	/// CDF here is `Φ(z(x))` where `z` is whichever Johnson transform the moment fit selected
+	/// — bounded, unbounded, log-normal or normal — so a closed form would be four chain
+	/// rules behind a family switch, and a fifth the day a family is added. Differentiating
+	/// the CDF keeps one source of truth for what this distribution *is*.
+	///
+	/// The magnitude is taken because a reflected fit has a decreasing CDF in `x`; the
+	/// density is positive either way.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard scale > 0 else { return 0 }
+		// Stepped in units of the fitted scale, so the difference is resolved the same way
+		// whatever the distribution's spread.
+		let step = scale * 1e-6
+		guard step > 0 else { return 0 }
+		let slope = (cdf(x + step) - cdf(x - step)) / (2 * step)
+		guard slope.isFinite else { return 0 }
+		return Swift.abs(slope)
+	}
+
 	/// The probability that a draw falls at or below `x`.
 	///
 	/// - Parameter x: Any value.

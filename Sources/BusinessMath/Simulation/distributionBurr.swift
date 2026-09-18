@@ -71,6 +71,27 @@ public struct DistributionBurr12: ContinuousDistribution, Sendable {
 		self.negativeInverseShape2 = -1 / shape2
 	}
 
+	/// The density: (ck/σ)·z^(c−1)·(1 + z^c)^(−k−1) on x > μ, for z = (x − μ)/σ.
+	///
+	/// Assembled in logs: `z^(c−1)` and `(1 + z^c)^(−k−1)` move against each other across the
+	/// tail, and forming either alone reaches the ends of a `Double` while their product
+	/// stays ordinary.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard scale > 0, shape1 > 0, shape2 > 0 else { return Double.nan }
+		guard x > location else { return 0 }
+		let z: Double = (x - location) * inverseScale
+		guard z > 0 else { return 0 }
+		let raised: Double = Double.pow(z, shape1)
+		let logDensity = Double.log(shape1 * shape2 * inverseScale)
+			+ (shape1 - 1) * Double.log(z)
+			- (shape2 + 1) * Foundation.log1p(raised)
+		return Double.exp(logDensity)
+	}
+
 	/// P(X ≤ x), zero at or below `location`.
 	public func cdf(_ x: Double) -> Double {
 		guard x > location else { return 0 }
@@ -171,6 +192,26 @@ public struct DistributionDagum: ContinuousDistribution, Sendable {
 		self.inverseScale = 1 / scale
 		self.negativeInverseShape1 = -1 / shape1
 		self.negativeInverseShape2 = -1 / shape2
+	}
+
+	/// The density: (ak/σ)·z^(−a−1)·(1 + z^(−a))^(−k−1) on x > μ, for z = (x − μ)/σ.
+	///
+	/// The Burr III, or Dagum — the Burr XII with its shape inverted, which is why the signs
+	/// on the exponents differ and the structure does not.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard scale > 0, shape1 > 0, shape2 > 0 else { return Double.nan }
+		guard x > location else { return 0 }
+		let z: Double = (x - location) * inverseScale
+		guard z > 0 else { return 0 }
+		let raised: Double = Double.pow(z, -shape1)
+		let logDensity = Double.log(shape1 * shape2 * inverseScale)
+			- (shape1 + 1) * Double.log(z)
+			- (shape2 + 1) * Foundation.log1p(raised)
+		return Double.exp(logDensity)
 	}
 
 	/// P(X ≤ x), zero at or below `location`.

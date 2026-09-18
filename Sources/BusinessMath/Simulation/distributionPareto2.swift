@@ -89,6 +89,23 @@ public struct DistributionPareto2: ContinuousDistribution, Sendable {
 		return numerator / denominator
 	}
 
+	/// The density: (q/λ)(1 + x/λ)^(−q−1) on x ≥ 0, and zero below.
+	///
+	/// The Lomax form — a Pareto shifted to start at zero. Assembled in logs through
+	/// `log1p`, for the reason `cdf(_:)` gives: at a small `x` the power sits a hair under
+	/// one and the direct expression loses its significant digits.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard scale > 0, shape > 0 else { return Double.nan }
+		guard x >= 0 else { return 0 }
+		let logDensity = Double.log(shape * inverseScale)
+			- (shape + 1) * Foundation.log1p(x * inverseScale)
+		return Double.exp(logDensity)
+	}
+
 	/// The probability that a draw falls at or below `x`.
 	///
 	/// - Parameter x: Any value; negative returns 0, since the support starts at zero.

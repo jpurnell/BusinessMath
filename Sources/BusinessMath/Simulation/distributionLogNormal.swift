@@ -152,6 +152,21 @@ extension DistributionLogNormal: SeedableDistribution {
 
 
 extension DistributionLogNormal: ContinuousDistribution {
+	/// The density: e^(−(ln x − μ)²/(2σ²)) / (xσ√(2π)) on x > 0, and zero below.
+	///
+	/// The parameters are those of the *underlying normal*, which is why they are named
+	/// `logMean` and `logStdDev`: a log-normal's own mean is `e^(μ + σ²/2)`.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard logStdDev > 0 else { return Double.nan }
+		guard x > 0 else { return 0 }
+		let z = (Double.log(x) - logMean) / logStdDev
+		return Double.exp(-z * z / 2) / (x * logStdDev * (2 * Double.pi).squareRoot())
+	}
+
 	/// P(X ≤ x) for this log-normal.
 	///
 	/// `logMean` and `logStdDev` are the parameters of the *underlying normal* — the

@@ -39,7 +39,7 @@ private let logger = Logger(subsystem: "com.businessmath", category: "Continuous
 ///
 /// ## Conforming
 ///
-/// Two functions and a typealias. Both samplers come from the protocol.
+/// Three functions and a typealias. Both samplers come from the protocol.
 ///
 /// ```swift
 /// struct Kumaraswamy: ContinuousDistribution {
@@ -53,8 +53,18 @@ private let logger = Logger(subsystem: "com.businessmath", category: "Continuous
 ///     func quantile(_ p: Double) -> Double {
 ///         Double.pow(1 - Double.pow(1 - p, 1 / b), 1 / a)
 ///     }
+///
+///     func pdf(_ x: Double) -> Double {
+///         guard x > 0, x < 1 else { return 0 }
+///         return a * b * Double.pow(x, a - 1) * Double.pow(1 - Double.pow(x, a), b - 1)
+///     }
 /// }
 /// ```
+///
+/// The density is written out rather than left to a default, and that is deliberate — see
+/// ``pdf(_:)``. A protocol that defaulted it by differentiating `cdf(_:)` would let an
+/// unconverted type ship a silently approximate density, which is the failure this module
+/// has already had once.
 ///
 /// The `typealias` is worth stating explicitly. `T` is inferable from `cdf` and
 /// `quantile` alone, but once both samplers are defaulted there is little left to
@@ -76,6 +86,7 @@ private let logger = Logger(subsystem: "com.businessmath", category: "Continuous
 /// ### Describing the distribution
 /// - ``cdf(_:)``
 /// - ``quantile(_:)``
+/// - ``pdf(_:)``
 public protocol ContinuousDistribution<T>: SeedableDistribution {
 
 	/// The cumulative distribution function: P(X ≤ x).
@@ -95,6 +106,39 @@ public protocol ContinuousDistribution<T>: SeedableDistribution {
 	///   caller that needs a bound should read the support directly.
 	/// - Returns: The `x` for which `cdf(x) == p`.
 	func quantile(_ p: T) -> T
+
+	/// The probability density at `x` — the derivative of `cdf(_:)`.
+	///
+	/// A continuous distribution has a density by definition, and this protocol did not ask
+	/// for one until 2026-09-18. Six of its forty-four conformers had written one anyway; the
+	/// other thirty-eight had a CDF and a quantile and no way to answer "how likely is a draw
+	/// to fall *near* here", which is the question every plot, every likelihood and every
+	/// rejection sampler asks.
+	///
+	/// ## The contract
+	///
+	/// - **Non-negative everywhere**, and **zero outside the support** rather than undefined.
+	///   A caller plotting across a range should not have to know where the support ends.
+	/// - **The derivative of `cdf(_:)`.** `ContinuousDensityTests` checks exactly that for
+	///   every conformer, by central difference, which is what makes the pair honest rather
+	///   than merely both present. Matching one published value does not: an implementation
+	///   can be wrong twice and still hit a point.
+	/// - **Assembled in logs** wherever the normalising constant can overflow.
+	///   `Γ((ν+1)/2)/Γ(ν/2)` overflows a `Double` around ν = 340 while the density it belongs
+	///   to is an ordinary number near one.
+	/// - **`infinity` where the density genuinely is unbounded** — a chi-squared with one
+	///   degree of freedom at zero, a Weibull with k < 1, a beta with α < 1. That is what the
+	///   density *is*, and the tests expect it.
+	/// - **`nan` for invalid parameters**, matching what `cdf(_:)` already answers.
+	///
+	/// There is deliberately **no default implementation**. One that differentiated `cdf(_:)`
+	/// numerically would compile everywhere at once and let an unconverted type ship a
+	/// silently approximate density — which is how `chi2pdf` computed a cumulative sum for
+	/// long enough to be found twice.
+	///
+	/// - Parameter x: Any finite value, inside the support or not.
+	/// - Returns: The density at `x`, which is non-negative.
+	func pdf(_ x: T) -> T
 }
 
 extension ContinuousDistribution {

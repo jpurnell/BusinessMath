@@ -186,6 +186,28 @@ extension DistributionT: SeedableDistribution {
 
 
 extension DistributionT: ContinuousDistribution {
+	/// The density: Γ((ν+1)/2)/(√(νπ)·Γ(ν/2)) · (1 + t²/ν)^(−(ν+1)/2).
+	///
+	/// Assembled in logs. The normalising constant is a ratio of gammas that overflows a
+	/// `Double` around ν = 340 while the density it belongs to is a perfectly ordinary
+	/// number near one — `Γ((ν+1)/2)/Γ(ν/2)` grows only like `√(ν/2)` while each half
+	/// overflows on its own. `DistributionStudentT.pdf(_:)` says the same thing about the
+	/// same constant.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, strictly positive everywhere.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		let nu = Double(degreesOfFreedom)
+		guard nu > 0 else { return Double.nan }
+		let half = nu / 2
+		let halfPlus = (nu + 1) / 2
+		let normaliser = Double.logGamma(halfPlus) - Double.logGamma(half)
+			- Double.log(nu * Double.pi) / 2
+		let logDensity = normaliser - halfPlus * Foundation.log1p(x * x / nu)
+		return Double.exp(logDensity)
+	}
+
 	/// P(X ≤ x) for Student's *t* with this many degrees of freedom.
 	///
 	/// The underlying `tCDF(t:df:)` throws on a non-positive `df`. That cannot

@@ -61,6 +61,16 @@ public struct DistributionErf: ContinuousDistribution, Sendable {
 	/// The mean, which is zero: this family is centred by definition.
 	public var mean: Double { 0 }
 
+	/// The density, by way of the normal this distribution is a reparameterisation of.
+	///
+	/// Delegates rather than restates, exactly as `cdf(_:)` below does: the error-function
+	/// form *is* a normal with σ = 1/(h√2), and two copies of the normal density would be
+	/// two things to keep in step.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, strictly positive everywhere.
+	public func pdf(_ x: Double) -> Double { normal.pdf(x) }
+
 	/// The probability that a draw falls at or below `x`.
 	///
 	/// - Parameter x: Any value.

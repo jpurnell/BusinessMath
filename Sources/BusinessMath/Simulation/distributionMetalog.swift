@@ -273,6 +273,38 @@ public struct DistributionMetalog: ContinuousDistribution, Sendable {
 		return Self.fromUnbounded(unbounded, boundedness)
 	}
 
+	/// The density: `1 / q′(p)` at `p = cdf(x)`.
+	///
+	/// **The one density in this module taken numerically, and deliberately.** A metalog is
+	/// defined by its *quantile* — there is no closed-form CDF, which is why `cdf(_:)` below
+	/// bisects — and the density of a quantile-defined distribution is the reciprocal of that
+	/// quantile's slope. The differentiation happens on `quantile(_:)`, which *is* closed
+	/// form and smooth, so the central difference is accurate; it is not a shortcut around a
+	/// formula that exists.
+	///
+	/// The alternative was to differentiate the metalog basis by hand. That is closed form
+	/// and it is also a second place for the coefficients to be interpreted, which is the
+	/// kind of duplication this module has already been bitten by.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		if x <= Self.lowerLimit(boundedness) { return 0 }
+		if x >= Self.upperLimit(boundedness) { return 0 }
+
+		let p = cdf(x)
+		guard p > 0, p < 1 else { return 0 }
+
+		// Stepped in probability, and kept clear of both ends: the quantile is unbounded
+		// there for an unbounded metalog, and a difference across an infinity is not one.
+		let step = Swift.min(1e-6, Swift.min(p, 1 - p) / 2)
+		guard step > 0 else { return 0 }
+		let slope = (quantile(p + step) - quantile(p - step)) / (2 * step)
+		guard slope.isFinite, slope > 0 else { return 0 }
+		return 1 / slope
+	}
+
 	/// The probability that a draw falls at or below `x`.
 	///
 	/// No closed form exists, so this bisects on the quantile function, which the

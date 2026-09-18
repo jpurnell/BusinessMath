@@ -187,6 +187,22 @@ extension DistributionPareto: SeedableDistribution {
 
 
 extension DistributionPareto: ContinuousDistribution {
+	/// The density: αxₘ^α / x^(α+1) on x ≥ xₘ, and zero below.
+	///
+	/// Assembled in logs: `xₘ^α` overflows for a large shape on a scale above one, while the
+	/// density itself stays ordinary.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard scale > 0, shape > 0 else { return Double.nan }
+		guard x >= scale else { return 0 }
+		let logDensity = Double.log(shape) + shape * Double.log(scale)
+			- (shape + 1) * Double.log(x)
+		return Double.exp(logDensity)
+	}
+
 	/// P(X ≤ x) = 1 − (scale/x)^shape, zero below `scale`.
 	///
 	/// `scale` is the minimum of the support — Pareto's *x*ₘ — and `shape` is the

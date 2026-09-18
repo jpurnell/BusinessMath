@@ -107,6 +107,32 @@ extension DistributionTriangular: SeedableDistribution {
 
 
 extension DistributionTriangular: ContinuousDistribution {
+	/// The density: two straight lines meeting at the mode, zero outside `[a, b]`.
+	///
+	/// The peak is 2/(b − a) whatever the mode — the area has to be one, so the triangle's
+	/// height is fixed by its base alone.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		let a = low, b = high, c = base
+		guard b > a, c >= a, c <= b else { return Double.nan }
+		guard x >= a, x <= b else { return 0 }
+		let span = b - a
+		if x < c {
+			let left = c - a
+			guard left > 0 else { return 0 }
+			return 2 * (x - a) / (span * left)
+		}
+		if x > c {
+			let right = b - c
+			guard right > 0 else { return 0 }
+			return 2 * (b - x) / (span * right)
+		}
+		return 2 / span
+	}
+
 	/// P(X ≤ x) for the triangle on `[low, high]` with its mode at `base`.
 	///
 	/// Two parabolic arcs meeting at the mode, where the CDF equals

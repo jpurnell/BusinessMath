@@ -102,6 +102,25 @@ public struct DistributionHypSecant: ContinuousDistribution, Sendable {
 	/// `1/spread`, used by ``cdf(_:)``.
 	private let inverseSpread: Double
 
+	/// The density: sech(z) / (2s) scaled, for z = π(x − μ)/(2s).
+	///
+	/// Written through `cosh` rather than `1/cosh`, and guarded on overflow: past an argument
+	/// of about 710 `cosh` is infinite and the density is legitimately zero, which is the
+	/// limit rather than a failure.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, strictly positive on the finite range.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard scale > 0 else { return Double.nan }
+		let exponent: Double = (x - loc) * inverseSpread
+		let cosine = Double.cosh(exponent)
+		guard cosine.isFinite, cosine > 0 else { return 0 }
+		let denominator: Double = Double.pi * cosine
+		guard denominator > 0 else { return 0 }
+		return inverseSpread / denominator
+	}
+
 	/// P(X ≤ x).
 	public func cdf(_ x: Double) -> Double {
 		let exponent: Double = (x - loc) * inverseSpread

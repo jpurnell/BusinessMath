@@ -55,6 +55,26 @@ public struct DistributionErlang: ContinuousDistribution, Sendable {
 		self.inverseScale = 1 / scale
 	}
 
+	/// The density: x^(k−1)·e^(−x/θ) / (Γ(k)·θ^k) on x > 0 — the gamma, with a whole shape.
+	///
+	/// An Erlang *is* a gamma whose shape is an integer, so the density is the same formula.
+	/// It is written out rather than delegated because this type stores its stages as an
+	/// `Int` and reaching for a `DistributionGamma` to answer would build one per call.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard scale > 0, shape > 0 else { return Double.nan }
+		guard x > 0 else {
+			if shape > 1 { return 0 }
+			return shape.isEqual(to: 1) ? inverseScale : Double.infinity
+		}
+		let logDensity = (shape - 1) * Double.log(x) - x * inverseScale
+			- Double.logGamma(shape) + shape * Double.log(inverseScale)
+		return Double.exp(logDensity)
+	}
+
 	/// P(X ≤ x), zero at or below the origin.
 	public func cdf(_ x: Double) -> Double {
 		guard x > 0 else { return 0 }
@@ -125,6 +145,22 @@ public struct DistributionPearson5: ContinuousDistribution, Sendable {
 		guard alpha > 0, alpha.isFinite, beta > 0, beta.isFinite else { return nil }
 		self.alpha = alpha
 		self.beta = beta
+	}
+
+	/// The density: β^α·x^(−α−1)·e^(−β/x) / Γ(α) on x > 0 — the inverse gamma.
+	///
+	/// The CDF is the *upper* incomplete gamma at β/x, which is why the sign of the exponent
+	/// and the direction of the ratio both invert relative to the gamma above.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard alpha > 0, beta > 0 else { return Double.nan }
+		guard x > 0 else { return 0 }
+		let logDensity = alpha * Double.log(beta) - (alpha + 1) * Double.log(x)
+			- beta / x - Double.logGamma(alpha)
+		return Double.exp(logDensity)
 	}
 
 	/// P(X ≤ x), zero at or below the origin.
@@ -200,6 +236,29 @@ public struct DistributionPearson6: ContinuousDistribution, Sendable {
 		self.alpha2 = alpha2
 		self.beta = beta
 		self.inverseBeta = 1 / beta
+	}
+
+	/// The density: the beta-prime, `(x/β)^(α₁−1) / (β·B(α₁,α₂)·(1 + x/β)^(α₁+α₂))`.
+	///
+	/// The CDF maps `y = x/β` to `y/(1+y)` and takes a regularized incomplete beta there, so
+	/// the density carries that map's derivative — `1/(1+y)²` — folded into the exponent.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard alpha1 > 0, alpha2 > 0, beta > 0 else { return Double.nan }
+		guard x > 0 else {
+			if alpha1 > 1 { return 0 }
+			return alpha1.isEqual(to: 1) ? alpha2 * inverseBeta : Double.infinity
+		}
+		let y: Double = x * inverseBeta
+		let logBeta = Double.logGamma(alpha1) + Double.logGamma(alpha2)
+			- Double.logGamma(alpha1 + alpha2)
+		let logDensity = (alpha1 - 1) * Double.log(y)
+			- (alpha1 + alpha2) * Foundation.log1p(y)
+			- logBeta + Double.log(inverseBeta)
+		return Double.exp(logDensity)
 	}
 
 	/// P(X ≤ x), zero at or below the origin.

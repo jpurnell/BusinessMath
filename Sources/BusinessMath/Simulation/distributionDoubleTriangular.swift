@@ -103,6 +103,26 @@ public struct DistributionDoubleTriangular: ContinuousDistribution, Sendable {
 	/// `1/(1 − p)`, finite because `p` is strictly below one.
 	private let inverseComplement: Double
 
+	/// The density: two quadratic arms meeting at the mode, zero outside `[min, max]`.
+	///
+	/// The CDF is quadratic on each side rather than linear, so the density is a pair of
+	/// straight lines rising *to* the boundaries and vanishing at the mode — the opposite
+	/// shape to an ordinary triangular, which is the whole point of the distribution.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard max > min, likely >= min, likely <= max else { return Double.nan }
+		guard x >= min, x <= max else { return 0 }
+		if x <= likely {
+			let fraction: Double = (x - min) * inverseLowerSpan
+			return 2 * p * fraction * inverseLowerSpan
+		}
+		let fraction: Double = (max - x) * inverseUpperSpan
+		return 2 * (1 - p) * fraction * inverseUpperSpan
+	}
+
 	/// P(X ≤ x), zero below the support and one above it.
 	public func cdf(_ x: Double) -> Double {
 		guard x > min else { return 0 }

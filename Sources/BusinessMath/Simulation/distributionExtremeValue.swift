@@ -58,6 +58,23 @@ public struct DistributionMaxExtreme: ContinuousDistribution, Sendable {
 		self.inverseScale = 1 / scale
 	}
 
+	/// The density: e^(−z − e^(−z)) / σ, for z = (x − μ)/σ.
+	///
+	/// The Gumbel for maxima. In the far left tail `e^(−z)` overflows while the density is
+	/// legitimately zero, so the exponent is formed once and checked rather than
+	/// exponentiated twice.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, strictly positive on the finite range.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard scale > 0 else { return Double.nan }
+		let z: Double = (x - location) * inverseScale
+		let inner = Double.exp(-z)
+		guard inner.isFinite else { return 0 }
+		return inverseScale * Double.exp(-z - inner)
+	}
+
 	/// P(X ≤ x).
 	public func cdf(_ x: Double) -> Double {
 		let standardised: Double = (x - location) * inverseScale
@@ -124,6 +141,22 @@ public struct DistributionMinExtreme: ContinuousDistribution, Sendable {
 		self.location = location
 		self.scale = scale
 		self.inverseScale = 1 / scale
+	}
+
+	/// The density: e^(z − e^(z)) / σ, for z = (x − μ)/σ.
+	///
+	/// The Gumbel for minima — the maxima form reflected, which is why the signs differ and
+	/// nothing else does.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, strictly positive on the finite range.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard scale > 0 else { return Double.nan }
+		let z: Double = (x - location) * inverseScale
+		let inner = Double.exp(z)
+		guard inner.isFinite else { return 0 }
+		return inverseScale * Double.exp(z - inner)
 	}
 
 	/// P(X ≤ x).
@@ -201,6 +234,24 @@ public struct DistributionFrechet: ContinuousDistribution, Sendable {
 		self.shape = shape
 		self.inverseScale = 1 / scale
 		self.negativeInverseShape = -1 / shape
+	}
+
+	/// The density: (α/σ)·z^(−1−α)·e^(−z^(−α)) on x > μ, for z = (x − μ)/σ.
+	///
+	/// Assembled in logs: `z^(−1−α)` reaches the ends of a `Double` for a large shape near
+	/// the location while the density is ordinary a little further out.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard scale > 0, shape > 0 else { return Double.nan }
+		guard x > location else { return 0 }
+		let z: Double = (x - location) * inverseScale
+		guard z > 0 else { return 0 }
+		let raised = Double.pow(z, -shape)
+		let logDensity = Double.log(shape * inverseScale) - (1 + shape) * Double.log(z) - raised
+		return Double.exp(logDensity)
 	}
 
 	/// P(X ≤ x), zero at or below `location`.

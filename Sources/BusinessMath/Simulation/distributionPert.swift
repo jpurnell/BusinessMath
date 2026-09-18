@@ -144,6 +144,23 @@ public struct DistributionPert: ContinuousDistribution, Sendable {
 		return weighted / divisor
 	}
 
+	/// The density, by way of the beta this distribution is a reparameterisation of.
+	///
+	/// Delegates rather than restates, for the reason `cdf(_:)` below does: PERT *is* a beta
+	/// on `[min, max]` with shapes derived from the mode and `lambda`, and two copies of the
+	/// beta density would be two things to keep in step. The `inverseWidth` factor is the
+	/// change of variable — a density scales when its support is stretched, where a CDF does
+	/// not.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard max > min else { return Double.nan }
+		guard x >= min, x <= max else { return 0 }
+		return beta.pdf((x - min) * inverseWidth) * inverseWidth
+	}
+
 	/// The probability that a draw falls at or below `x`.
 	///
 	/// - Parameter x: Any value. Outside `[min, max]` this returns 0 or 1.

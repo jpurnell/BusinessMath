@@ -109,6 +109,10 @@ struct SeededStreamRegressionTests {
 			typealias T = Double
 			func cdf(_ x: Double) -> Double { x <= 0 ? 0 : -Double.expMinusOne(-x) }
 			func quantile(_ p: Double) -> Double { -Double.log(onePlus: -p) }
+			// A standard exponential's density. Required since 2026-09-18 and unused by
+			// this test, which is about how many words the default sampler draws — but it
+			// is the right one, so the control stays a control.
+			func pdf(_ x: Double) -> Double { x <= 0 ? 0 : Double.exp(-x) }
 		}
 
 		let distribution = Inherited()

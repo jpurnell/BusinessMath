@@ -182,6 +182,26 @@ extension DistributionWeibull: SeedableDistribution {
 
 
 extension DistributionWeibull: ContinuousDistribution {
+	/// The density: (k/λ)(x/λ)^(k−1)·e^(−(x/λ)^k) on x > 0, and zero below.
+	///
+	/// At zero the three shapes differ, and the difference is real rather than a boundary
+	/// convention: unbounded below k = 1, exactly 1/λ at k = 1, and zero above.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard shape > 0, scale > 0 else { return Double.nan }
+		guard x > 0 else {
+			if shape > 1 { return 0 }
+			return shape == 1 ? 1 / scale : Double.infinity
+		}
+		let ratio = x / scale
+		let logDensity = Double.log(shape / scale) + (shape - 1) * Double.log(ratio)
+			- Double.pow(ratio, shape)
+		return Double.exp(logDensity)
+	}
+
 	/// P(X ≤ x) = 1 − exp(−(x/scale)^shape).
 	public func cdf(_ x: Double) -> Double {
 		guard shape > 0, scale > 0 else { return Double.nan }

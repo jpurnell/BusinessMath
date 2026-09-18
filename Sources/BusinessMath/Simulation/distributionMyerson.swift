@@ -217,6 +217,43 @@ public struct DistributionMyerson: ContinuousDistribution, Sendable {
 		return mode + upperArm * shifted * inverseAsymmetryLessOne
 	}
 
+	/// The density, by the chain rule on `cdf(_:)`.
+	///
+	/// **In closed form, not numerically.** Myerson is defined by its quantile, which is the
+	/// case the proposal named as the one where a numerical derivative would be legitimate —
+	/// but its CDF is written out here rather than root-found, so the derivative is too.
+	///
+	/// Symmetric: a normal density at the mode. Otherwise the CDF is `Φ(z·ln(1 + d)/ln b)`
+	/// for `d` the scaled deviation, so the density is that normal density times
+	/// `z/(ln b · (1 + d))` times the scaling — each factor one link of the chain.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero beyond the bounded end of the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+
+		if isSymmetric {
+			let standardised: Double = (x - mode) * inverseSymmetricScale
+			let normal = Double.exp(-standardised * standardised / 2)
+				/ (2 * Double.pi).squareRoot()
+			return normal * inverseSymmetricScale
+		}
+
+		let deviation: Double = x - mode
+		let scaled: Double = deviation * inverseUpperArm
+		let displacement: Double = scaled * asymmetryLessOne
+		let inner: Double = 1 + displacement
+		// Past the bounded end there is no density, for the same reason `cdf(_:)` saturates.
+		guard inner > 0 else { return 0 }
+
+		let logInner: Double = Foundation.log1p(displacement)
+		let standard: Double = z * logInner * inverseLogAsymmetry
+		let normal = Double.exp(-standard * standard / 2) / (2 * Double.pi).squareRoot()
+		// d(standard)/dx: the logarithm's derivative, then the scaling into `displacement`.
+		let chain = z * inverseLogAsymmetry / inner * asymmetryLessOne * inverseUpperArm
+		return normal * Swift.abs(chain)
+	}
+
 	/// The probability that a draw falls at or below `x`.
 	///
 	/// - Parameter x: Any finite value. Outside the support this returns 0 or 1

@@ -78,6 +78,28 @@ public struct DistributionJohnsonSB: ContinuousDistribution, Sendable {
 		self.inverseShape2 = 1 / shape2
 	}
 
+	/// The density of the bounded Johnson S\u{42}.
+	///
+	/// The CDF is `Φ(γ + δ·ln(y/(1−y)))` for `y` the position in `[0, 1]`, so the density is
+	/// that normal density times the logit's derivative, `δ/(y(1−y))`, times `1/(max − min)`
+	/// for the change of variable.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard shape2 > 0, max > min else { return Double.nan }
+		guard x > min, x < max else { return 0 }
+		let y: Double = (x - min) * inverseWidth
+		let complement: Double = 1 - y
+		guard y > 0, complement > 0 else { return 0 }
+		let z: Double = shape1 + shape2 * Double.log(y / complement)
+		let normal = Double.exp(-z * z / 2) / (2 * Double.pi).squareRoot()
+		let denominator: Double = y * complement
+		guard denominator > 0 else { return 0 }
+		return normal * shape2 * inverseWidth / denominator
+	}
+
 	/// P(X ≤ x), zero at or below `min` and one at or above `max`.
 	public func cdf(_ x: Double) -> Double {
 		guard x > min else { return 0 }
@@ -168,6 +190,24 @@ public struct DistributionJohnsonSU: ContinuousDistribution, Sendable {
 		self.inverseShape2 = 1 / shape2
 	}
 
+	/// The density of the unbounded Johnson S\u{55}.
+	///
+	/// The CDF is `Φ(γ + δ·asinh(y))` for `y = (x − ξ)/λ`, so the density is that normal
+	/// density times `δ/√(1 + y²)` — the derivative of `asinh` — times `1/λ`.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, strictly positive everywhere.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard shape2 > 0, scale > 0 else { return Double.nan }
+		let y: Double = (x - location) * inverseScale
+		let z: Double = shape1 + shape2 * Double.asinh(y)
+		let normal = Double.exp(-z * z / 2) / (2 * Double.pi).squareRoot()
+		let stretch: Double = (1 + y * y).squareRoot()
+		guard stretch > 0 else { return 0 }
+		return normal * shape2 * inverseScale / stretch
+	}
+
 	/// P(X ≤ x).
 	public func cdf(_ x: Double) -> Double {
 		let y: Double = (x - location) * inverseScale
@@ -241,6 +281,29 @@ public struct DistributionFatigueLife: ContinuousDistribution, Sendable {
 		self.shape = shape
 		self.inverseScale = 1 / scale
 		self.inverseShape = 1 / shape
+	}
+
+	/// The density of the Birnbaum–Saunders (fatigue-life) distribution.
+	///
+	/// The CDF is `Φ((√y − 1/√y)/γ)` for `y = (x − μ)/β`, so the density is that normal
+	/// density times the inner derivative — `(√y + 1/√y) / (2γy)` — by the chain rule.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard scale > 0, shape > 0 else { return Double.nan }
+		guard x > location else { return 0 }
+		let y: Double = (x - location) * inverseScale
+		let root: Double = y.squareRoot()
+		guard root > 0 else { return 0 }
+		let difference: Double = (root - 1 / root) * inverseShape
+		let normal = Double.exp(-difference * difference / 2) / (2 * Double.pi).squareRoot()
+		// d/dx of (√y − 1/√y)/γ, with dy/dx = 1/β folded in.
+		let twiceY: Double = 2 * y
+		guard twiceY > 0 else { return 0 }
+		let innerDerivative = (root + 1 / root) * inverseShape * inverseScale / twiceY
+		return normal * innerDerivative
 	}
 
 	/// P(X ≤ x), zero at or below `location`.

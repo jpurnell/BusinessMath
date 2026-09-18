@@ -76,6 +76,21 @@ public struct DistributionBetaGeneralised: ContinuousDistribution, Sendable {
 		return min + width * fraction
 	}
 
+	/// The density, by way of the unit beta this stretches onto `[min, max]`.
+	///
+	/// The `inverseWidth` factor is the change of variable: a density scales when its support
+	/// is stretched, where a CDF does not. Leaving it out is the classic error here and would
+	/// integrate to `max − min` instead of one.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard max > min else { return Double.nan }
+		guard x >= min, x <= max else { return 0 }
+		return beta.pdf((x - min) * inverseWidth) * inverseWidth
+	}
+
 	/// The probability that a draw falls at or below `x`.
 	///
 	/// - Parameter x: Any value; outside `[min, max]` this returns 0 or 1.
@@ -196,6 +211,15 @@ public struct DistributionBetaSubjective: ContinuousDistribution, Sendable {
 
 	/// The second shape parameter of the underlying Beta.
 	public var shape2: Double { scaled.shape2 }
+
+	/// The density, by way of the generalised beta this is parameterised into.
+	///
+	/// Delegates, exactly as `cdf(_:)` and `quantile(_:)` below do — the subjective form is a
+	/// way of *choosing* shapes from a mode and a mean, not a different distribution.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double { scaled.pdf(x) }
 
 	/// The probability that a draw falls at or below `x`.
 	///

@@ -141,6 +141,28 @@ public struct DistributionCumul: ContinuousDistribution, Sendable {
 	/// `1/(ps[i] − ps[i−1])` for each segment, or zero where the segment is flat.
 	private let inverseRises: [Double]
 
+	/// The density: piecewise **constant**, and exactly so.
+	///
+	/// The CDF interpolates linearly between the given points, so its derivative is the rise
+	/// over the run on each segment — a step function. No numerical differentiation is needed
+	/// or wanted here: the exact answer is one subtraction.
+	///
+	/// At a knot the density jumps, and the left-hand segment's value is returned. That is a
+	/// choice rather than a fact — the derivative does not exist at the join — and it matches
+	/// the half-open convention `cdf(_:)` walks the segments with.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard x >= lower, x <= upper else { return 0 }
+		for i in 1..<xs.count where x <= xs[i] {
+			let rise: Double = ps[i] - ps[i - 1]
+			return rise * inverseSpans[i - 1]
+		}
+		return 0
+	}
+
 	/// P(X ≤ x), by linear interpolation between the knots.
 	public func cdf(_ x: Double) -> Double {
 		guard x > lower else { return 0 }

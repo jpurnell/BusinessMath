@@ -62,6 +62,29 @@ public struct DistributionLogLogistic: ContinuousDistribution, Sendable {
 		self.inverseShape = 1 / shape
 	}
 
+	/// The density: (β/α)z^(β−1) / (1 + z^β)² on x > μ, for z = (x − μ)/α.
+	///
+	/// Assembled in logs. Unbounded at the location when the shape is below one, finite when
+	/// it is exactly one, zero above — the same three-way split as the Weibull, and for the
+	/// same reason.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard scale > 0, shape > 0 else { return Double.nan }
+		guard x > location else { return 0 }
+		let z: Double = (x - location) * inverseScale
+		guard z > 0 else {
+			if shape > 1 { return 0 }
+			return shape.isEqual(to: 1) ? inverseScale : Double.infinity
+		}
+		let logDensity = Double.log(shape * inverseScale)
+			+ (shape - 1) * Double.log(z)
+			- 2 * Foundation.log1p(Double.pow(z, shape))
+		return Double.exp(logDensity)
+	}
+
 	/// P(X ≤ x), zero at or below `location`.
 	public func cdf(_ x: Double) -> Double {
 		guard x > location else { return 0 }
@@ -142,6 +165,21 @@ public struct DistributionReciprocal: ContinuousDistribution, Sendable {
 		guard span > 0, span.isFinite else { return nil }
 		self.logRange = span
 		self.inverseLogRange = 1 / span
+	}
+
+	/// The density: 1 / (x·ln(max/min)) on `[min, max]`, and zero outside.
+	///
+	/// The log-uniform: uniform in the *logarithm*, so the density falls as 1/x. It is the
+	/// right prior for a quantity whose order of magnitude is what is uncertain.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard min > 0, max > min else { return Double.nan }
+		guard x >= min, x <= max else { return 0 }
+		guard x > 0 else { return 0 }
+		return inverseLogRange / x
 	}
 
 	/// P(X ≤ x), zero below the support and one above it.

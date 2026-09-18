@@ -17,11 +17,15 @@ struct DistributionProtocolTests {
 
 	// MARK: - Synthetic conformers
 
-	/// Exponential(λ), stated only as a CDF and a quantile.
+	/// Exponential(λ), stated as a CDF, a quantile and a density.
 	///
 	/// It implements neither `next()` nor `next(using:)`. If the protocol's default
 	/// is missing or wrong, this type stops compiling or stops sampling correctly,
 	/// and no real distribution has to be disturbed to find out.
+	///
+	/// The density became a requirement on 2026-09-18 and is written out here for the same
+	/// reason the rest is: a minimal conformer should state exactly what the protocol asks
+	/// for, so that what the protocol asks for stays visible in one place.
 	struct MinimalExponential: ContinuousDistribution {
 		typealias T = Double
 		let rate: Double
@@ -32,6 +36,10 @@ struct DistributionProtocolTests {
 
 		func quantile(_ p: Double) -> Double {
 			-Double.log(1 - p) / rate
+		}
+
+		func pdf(_ x: Double) -> Double {
+			x <= 0 ? 0 : rate * Double.exp(-rate * x)
 		}
 	}
 

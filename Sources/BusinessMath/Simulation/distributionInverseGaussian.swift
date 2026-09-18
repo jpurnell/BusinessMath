@@ -64,6 +64,25 @@ public struct DistributionInverseGaussian: ContinuousDistribution, Sendable {
 		self.inverseMu = 1 / mu
 	}
 
+	/// The density: √(λ/2πx³) · e^(−λ(x−μ)²/(2μ²x)) on x > 0, and zero at or below.
+	///
+	/// Assembled in logs: `x³` under a root and an exponential of a ratio both reach the ends
+	/// of a `Double` well before the density does.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard mu > 0, lambda > 0 else { return Double.nan }
+		guard x > 0 else { return 0 }
+		let displacement = x - mu
+		let twoPi: Double = 2 * Double.pi
+		let logDensity = 0.5 * (Double.log(lambda) - Double.log(twoPi))
+			- 1.5 * Double.log(x)
+			- lambda * displacement * displacement / (2 * mu * mu * x)
+		return Double.exp(logDensity)
+	}
+
 	/// P(X ≤ x), zero at or below the origin.
 	public func cdf(_ x: Double) -> Double {
 		guard x > 0 else { return 0 }

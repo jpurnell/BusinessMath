@@ -67,6 +67,21 @@ public struct DistributionCauchy: ContinuousDistribution, Sendable {
 		self.inverseScale = 1 / scale
 	}
 
+	/// The density: 1 / (πγ(1 + z²)), for z = (x − x₀)/γ.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, strictly positive everywhere.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard scale > 0 else { return Double.nan }
+		let z = (x - location) * inverseScale
+		// π(1 + z²) never reaches zero, but the floor is named rather than argued from the
+		// algebra — the reader checking for a division by zero should not have to derive it.
+		let denominator: Double = Double.pi * (1 + z * z)
+		guard denominator > 0 else { return 0 }
+		return inverseScale / denominator
+	}
+
 	/// P(X ≤ x).
 	public func cdf(_ x: Double) -> Double {
 		let standardised: Double = (x - location) * inverseScale
@@ -162,6 +177,21 @@ public struct DistributionLaplace: ContinuousDistribution, Sendable {
 		self.inverseScale = 1 / scale
 	}
 
+	/// The density: e^(−|x − μ|/b) / 2b.
+	///
+	/// Symmetric about the location, and the only continuous density here with a corner: its
+	/// derivative jumps at `x = μ`, which is a fact about the distribution rather than a
+	/// numerical artefact, and the reason a central-difference check of the CDF is taken
+	/// slightly off the peak.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, strictly positive everywhere.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard scale > 0 else { return Double.nan }
+		return 0.5 * inverseScale * Double.exp(-Swift.abs(x - location) * inverseScale)
+	}
+
 	/// P(X ≤ x).
 	public func cdf(_ x: Double) -> Double {
 		let standardised: Double = (x - location) * inverseScale
@@ -225,6 +255,29 @@ public struct DistributionLevy: ContinuousDistribution, Sendable {
 		guard location.isFinite, scale > 0, scale.isFinite else { return nil }
 		self.location = location
 		self.scale = scale
+	}
+
+	/// The density: √(c/2π) · e^(−c/(2(x−μ))) / (x−μ)^(3/2) on x > μ, and zero at or below.
+	///
+	/// The heaviest tail in this file: the Lévy has no finite mean, so a sample average of
+	/// draws from it does not converge and a density plot is the only honest summary.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard scale > 0 else { return Double.nan }
+		let displacement = x - location
+		guard displacement > 0 else { return 0 }
+		let twoPi: Double = 2 * Double.pi
+		let twiceDisplacement: Double = 2 * displacement
+		guard twiceDisplacement > 0 else { return 0 }
+		// A difference of logs rather than the log of a ratio: no constant divisor to
+		// justify, and the two terms stay the same size.
+		let logDensity = 0.5 * (Double.log(scale) - Double.log(twoPi))
+			- scale / twiceDisplacement
+			- 1.5 * Double.log(displacement)
+		return Double.exp(logDensity)
 	}
 
 	/// P(X ≤ x), zero at or below `location`.

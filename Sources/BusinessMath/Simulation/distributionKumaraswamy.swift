@@ -94,6 +94,35 @@ public struct DistributionKumaraswamy: ContinuousDistribution, Sendable {
 	private let inverseShape1: Double
 	private let inverseShape2: Double
 
+	/// The density: abz^(a−1)(1 − z^a)^(b−1) / (max − min), for z the position in `[0, 1]`.
+	///
+	/// Unbounded at an endpoint when the corresponding shape is below one — at `min` for
+	/// `a < 1`, at `max` for `b < 1` — which is the beta's behaviour and is what the
+	/// distribution is for.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard shape1 > 0, shape2 > 0, max > min else { return Double.nan }
+		guard x >= min, x <= max else { return 0 }
+		let z: Double = (x - min) * inverseWidth
+		if z <= 0 {
+			return shape1 < 1 ? Double.infinity
+				: (shape1.isEqual(to: 1) ? shape2 * inverseWidth : 0)
+		}
+		if z >= 1 {
+			return shape2 < 1 ? Double.infinity
+				: (shape2.isEqual(to: 1) ? shape1 * inverseWidth : 0)
+		}
+		let inner = 1 - Double.pow(z, shape1)
+		guard inner > 0 else { return 0 }
+		let logDensity = Double.log(shape1) + Double.log(shape2)
+			+ (shape1 - 1) * Double.log(z)
+			+ (shape2 - 1) * Double.log(inner)
+		return Double.exp(logDensity) * inverseWidth
+	}
+
 	/// P(X ≤ x), zero below the support and one above it.
 	public func cdf(_ x: Double) -> Double {
 		guard x > min else { return 0 }

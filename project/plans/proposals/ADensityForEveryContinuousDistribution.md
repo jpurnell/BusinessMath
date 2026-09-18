@@ -1,6 +1,8 @@
 # Design Proposal — A density for every continuous distribution
 
-**Status:** Proposed, 2026-09-18
+**Status:** **Implemented, 2026-09-18.** The requirement is on the protocol, every conformer
+answers it, and `ContinuousDensityTests` holds all forty-six to the four properties in §4.
+What §3's inventory got wrong is recorded in §8.
 **Author:** Session of 2026-09-18, arising from the `chi2pdf` repair in `f8782443`
 **Area:** `Simulation/ContinuousDistribution` and its 44 conformers
 
@@ -160,3 +162,52 @@ validates and throws, the method answers `nan` or `infinity`.
 or gamma at zero the density is unbounded below a shape of one, finite at exactly one, and
 zero above. Implementations that return zero at the boundary for all shapes are wrong in the
 first case and will pass a test that only checks non-negativity.
+
+
+---
+
+## 8. What shipped, and where §3 was wrong
+
+**The count was 44; it is 46.** `DistributionMyerson` and `DistributionGeneral` were both
+miscounted — the first listed under "empirical or fitted" among "the two fitted forms" without
+being named, the second not listed at all despite already having a density. The inventory was
+assembled by reading, and reading miscounts.
+
+**Two densities are numerical, and say so in their own documentation**, as §3 required:
+
+| | Why |
+|---|---|
+| `DistributionMetalog.pdf` | quantile-defined, so the density *is* `1/q′(p)` — a real derivative rather than a shortcut |
+| `DistributionMomentFit.pdf` | its transform is a family switch, so there is no single closed form to write |
+
+**`Erf` and `MomentFit` were grouped together in §3 and did not belong together.** `Erf`
+delegates to the normal it wraps, exactly as predicted. `MomentFit` does not delegate, because
+which distribution it would delegate *to* is chosen at fit time from the moments.
+
+### Three things the harness needed that §4 did not anticipate
+
+**A coverage test, not just property tests.** Most of these initialisers are failable and two
+throw. A subject built with `if let` and one wrong argument would have vanished from the suite
+rather than failed in it — the harness would have got shorter and stayed green.
+`testEveryConformerIsCovered` names all forty-six, and a `nil` becomes a subject that keeps its
+name and answers `nan`, so it fails loudly instead of disappearing.
+
+**No parameter may be 0 or 1.** Found by perturbation rather than by review: deleting
+`DistributionDagum`'s scale factor from its density changed **nothing**, because the subject
+was built with `scale: 1` and the dropped term was `log(1)`. A density that forgets its
+change-of-variable Jacobian is off by `1/β`, and at β = 1 that error is invisible. The same
+holds for a dropped location at 0 and a dropped shape term at γ = 0. Every subject now uses a
+non-zero location and a scale that is neither one nor shared.
+
+**The harness was checked by breaking things.** Three densities were deliberately perturbed —
+a 2% factor, a swapped `alpha1`/`alpha2`, a dropped Jacobian — and the suite had to go red for
+each. Two did immediately; the third is the Dagum case above, and it passed. A harness that
+goes green on its first run has demonstrated nothing until something wrong has been shown to
+make it red.
+
+### One thing §3 caused and §7 predicted
+
+Inserting forty-six methods mechanically split thirty-seven `cdf(_:)` doc comments in half, the
+summary line going to the new `pdf(_:)` and the CDF left undocumented. The gate caught every
+one. Worth stating because the repair is not the interesting part: **a bulk insertion into a
+documented file damages the documentation around it**, and nothing in the build notices.

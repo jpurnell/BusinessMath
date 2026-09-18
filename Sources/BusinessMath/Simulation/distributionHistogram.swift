@@ -114,6 +114,25 @@ public struct DistributionHistogram: ContinuousDistribution, Sendable {
 		return total
 	}
 
+	/// The density: piecewise **constant**, one value per bin, and exact.
+	///
+	/// The CDF rises linearly across each bin, so the density is that bin's share of the mass
+	/// divided by its width. A histogram's density is the thing a histogram *is*; computing
+	/// it numerically would be differentiating a straight line.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard x >= min, x <= max, binWidth > 0 else { return 0 }
+		let position: Double = (x - min) * inverseBinWidth
+		var index = Int(position)
+		if index >= weights.count { index = weights.count - 1 }
+		guard index >= 0, index + 1 < cumulative.count else { return 0 }
+		let rise: Double = cumulative[index + 1] - cumulative[index]
+		return rise * inverseBinWidth
+	}
+
 	/// The probability that a draw falls at or below `x`.
 	///
 	/// - Parameter x: Any value; outside `[min, max]` this returns 0 or 1.

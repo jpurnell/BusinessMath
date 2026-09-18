@@ -255,6 +255,26 @@ extension DistributionBeta: SeedableDistribution {
 }
 
 extension DistributionBeta: ContinuousDistribution {
+	/// The density: x^(α−1)(1−x)^(β−1) / B(α, β) on `[0, 1]`, and zero outside.
+	///
+	/// Assembled in logs — the beta function is a ratio of gammas and overflows long before
+	/// the density does — and unbounded at an endpoint when the corresponding shape is below
+	/// one, which is a fact about the distribution rather than a boundary convention.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard alpha > 0, beta > 0 else { return Double.nan }
+		guard x >= 0, x <= 1 else { return 0 }
+		if x <= 0 { return alpha < 1 ? Double.infinity : (alpha == 1 ? beta : 0) }
+		if x >= 1 { return beta < 1 ? Double.infinity : (beta == 1 ? alpha : 0) }
+		let logBeta = Double.logGamma(alpha) + Double.logGamma(beta)
+			- Double.logGamma(alpha + beta)
+		let logDensity = (alpha - 1) * Double.log(x) + (beta - 1) * Double.log(1 - x) - logBeta
+		return Double.exp(logDensity)
+	}
+
 	/// P(X ≤ x) = I_x(α, β), the regularized incomplete beta.
 	public func cdf(_ x: Double) -> Double {
 		totalizedResult { try regularizedIncompleteBeta(x: x, a: alpha, b: beta) }

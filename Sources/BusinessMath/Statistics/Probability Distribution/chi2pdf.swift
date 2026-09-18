@@ -47,6 +47,9 @@ public func chi2pdf<T: Real>(x: T, dF: Int) -> T {
 	// Delegates rather than keeping the old body, so a caller who does not read the warning
 	// still gets a correct answer. The unbounded point at zero becomes infinity here, where
 	// the free function throws, because this signature has no way to report it.
+	// The only throw is the unbounded point at zero below two degrees of freedom, and this
+	// signature has no way to report it — the else branch answers that case directly.
+	// silent: the sole error case is handled by the else branch below
 	guard let density = try? chiSquaredPDF(x: x, df: dF) else {
 		guard x == T.zero, dF < 2, dF > 0 else { return T.zero }
 		return T.infinity

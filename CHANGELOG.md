@@ -11,6 +11,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### 2026-09-18 — every continuous distribution now has a density
+
+`ContinuousDistribution` required `cdf(_:)` and `quantile(_:)` and nothing else. A continuous
+distribution has a probability density by definition, and the protocol did not ask for one.
+
+##### Fixed
+
+- **`chi2pdf(x:dF:)` computed a cumulative sum, not a density.** Its body summed the density at
+  0.001, 0.002, … up to `x` and multiplied by the step, so `chi2pdf(x: 10, dF: 3)` answered
+  0.98144 — the CDF at 10 — where the density is 0.0085. It is now deprecated and delegates to
+  the new `chiSquaredPDF(x:df:)`, so a caller who ignores the warning still gets a correct
+  number. **This is a different value from the one previous versions returned**, because the
+  previous value was wrong.
+
+  The same defect had been found once before and fixed in the wrong direction: `chi2cdf` used to
+  be `1 - chi2pdf(x:dF:)`, that was recognised as nonsense, `chi2cdf` was deleted and
+  `chiSquaredCDF(x:df:)` written — while `chi2pdf` was left exported and wrong.
+
+##### Added
+
+- **`pdf(_:)` is a requirement of `ContinuousDistribution`, with no default implementation.**
+  A default that numerically differentiated `cdf(_:)` would have compiled everywhere and let any
+  unconverted type ship a silently approximate density — the failure above, wearing a new hat.
+  Without a default the compiler enumerates every type that owes one.
+- **All forty-six conformers implement it.** Closed forms throughout, assembled in logs wherever
+  the normalising constant can overflow, `infinity` where the density genuinely is unbounded, and
+  zero outside the support rather than undefined. Two are numerical and **say so in their own
+  documentation**: `DistributionMetalog` (quantile-defined, so the density *is* `1/q′(p)`) and
+  `DistributionMomentFit` (its transform is a family switch, so there is no one closed form).
+- **`ContinuousDensityTests`** holds every conformer to four properties — the density equals the
+  CDF's slope by central difference, is non-negative and finite, is zero outside the support, and
+  integrates to one by Simpson. The derivative check is the one that matters: it ties each
+  density to a CDF the suite already tests, where matching a single published value cannot, since
+  an implementation can be wrong twice and still hit one point.
+
+##### Notes for the next reader
+
+- **Two quadrature exclusions are declared, never silent.** Cauchy and Lévy have tails that decay
+  too slowly for a truncated uniform Simpson to reach one; each states its reason at the site.
+- **No test parameter here is 0 or 1, deliberately.** A density that forgets its
+  change-of-variable Jacobian is off by `1/β`, and at β = 1 that factor is 1. This was found by
+  perturbation: deleting `DistributionDagum`'s scale factor changed nothing while the subject's
+  scale was one, and the suite stayed green on a density that was now wrong.
+
+---
+
 Tier 2 of the quality programme — the complexity list. A high cognitive-complexity score is
 treated as a marker for *code no one has an oracle for*, and every entry below was found by
 building an independent second opinion and differencing against it. None was found by reading

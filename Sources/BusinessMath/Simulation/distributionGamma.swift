@@ -299,6 +299,26 @@ extension DistributionGamma: SeedableDistribution {
 }
 
 extension DistributionGamma: ContinuousDistribution {
+	/// The density: x^(k−1)·e^(−x/θ) / (Γ(k)·θ^k) on x > 0, and zero below.
+	///
+	/// Assembled in logs — `Γ(k)·θ^k` overflows long before the density does — and
+	/// three-way at zero: unbounded below a shape of one, exactly 1/θ at one, zero above.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard rate > 0, shape > 0 else { return Double.nan }
+		let theta = scale
+		guard x > 0 else {
+			if shape > 1 { return 0 }
+			return shape == 1 ? 1 / theta : Double.infinity
+		}
+		let logDensity = (shape - 1) * Double.log(x) - x / theta
+			- Double.logGamma(shape) - shape * Double.log(theta)
+		return Double.exp(logDensity)
+	}
+
 	/// P(X ≤ x) for Gamma(shape `r`, **rate** `λ`).
 	///
 	/// This type is rate-parameterised, so the scale handed to
