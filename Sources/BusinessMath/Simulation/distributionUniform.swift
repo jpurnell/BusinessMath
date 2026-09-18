@@ -106,6 +106,24 @@ extension DistributionUniform: SeedableDistribution {
 
 
 extension DistributionUniform: ContinuousDistribution {
+	/// The density: 1/(b − a) inside the interval and zero outside.
+	///
+	/// The endpoints are included, which is a convention rather than a fact — a continuous
+	/// distribution assigns them no probability either way — and it is the one that makes a
+	/// plot of the density look like the rectangle it is.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		let lower = Swift.min(min, max)
+		let upper = Swift.max(min, max)
+		let span = upper - lower
+		guard span > 0 else { return x == lower ? Double.infinity : 0 }
+		guard x >= lower, x <= upper else { return 0 }
+		return 1 / span
+	}
+
 	/// P(X ≤ x): zero below the lower bound, one above the upper, linear between.
 	public func cdf(_ x: Double) -> Double {
 		let lower = Swift.min(min, max)

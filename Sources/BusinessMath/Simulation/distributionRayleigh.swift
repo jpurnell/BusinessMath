@@ -138,6 +138,18 @@ extension DistributionRayleigh: SeedableDistribution {
 
 
 extension DistributionRayleigh: ContinuousDistribution {
+    /// The density: (x/σ²)·e^(−x²/(2σ²)) on x ≥ 0, and zero below.
+    ///
+    /// - Parameter x: Any finite value.
+    /// - Returns: The density, zero outside the support.
+    public func pdf(_ x: Double) -> Double {
+        guard x.isFinite else { return 0 }
+        guard scale > 0 else { return Double.nan }
+        guard x >= 0 else { return 0 }
+        let ratio = x / scale
+        return (ratio / scale) * Double.exp(-ratio * ratio / 2)
+    }
+
     /// P(X ≤ x) = 1 − exp(−x² / 2σ²).
     public func cdf(_ x: Double) -> Double {
         guard scale > 0 else { return Double.nan }

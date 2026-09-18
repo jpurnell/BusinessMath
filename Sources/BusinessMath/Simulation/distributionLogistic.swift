@@ -117,6 +117,24 @@ extension DistributionLogistic: ContinuousDistribution {
 		return factor * stdDev
 	}
 
+	/// The density: e^(−z) / (s(1 + e^(−z))²), for z = (x − μ)/s.
+	///
+	/// Written through `sech²` in effect — the symmetric form `1/(4s·cosh²(z/2))` — because
+	/// the direct expression loses the far tail to overflow in `exp(−z)` while the density
+	/// there is merely small.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, strictly positive everywhere.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		let scale = logisticScale
+		guard scale > 0 else { return Double.nan }
+		let half = (x - mean) / (2 * scale)
+		let cosine = Double.cosh(half)
+		guard cosine.isFinite, cosine > 0 else { return 0 }
+		return 1 / (4 * scale * cosine * cosine)
+	}
+
 	/// P(X ≤ x) = 1 / (1 + exp(−(x − μ)/s)).
 	public func cdf(_ x: Double) -> Double {
 		let scale = logisticScale

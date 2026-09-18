@@ -119,6 +119,17 @@ extension DistributionNormal: SeedableDistribution {
 
 
 extension DistributionNormal: ContinuousDistribution {
+	/// The density: e^(−z²/2) / (σ√(2π)), for z = (x − μ)/σ.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, strictly positive everywhere.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard stdDev > 0 else { return Double.nan }
+		let z = (x - mean) / stdDev
+		return Double.exp(-z * z / 2) / (stdDev * (2 * Double.pi).squareRoot())
+	}
+
 	/// P(X ≤ x) for this normal.
 	public func cdf(_ x: Double) -> Double {
 		normalCDF(x: x, mean: mean, stdDev: stdDev)

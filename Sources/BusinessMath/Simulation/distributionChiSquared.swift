@@ -288,6 +288,36 @@ extension DistributionChiSquared: SeedableDistribution {
 }
 
 extension DistributionChiSquared: ContinuousDistribution {
+	/// The density at `x`: x^(ν/2 − 1) · e^(−x/2) / (2^(ν/2) · Γ(ν/2)).
+	///
+	/// Assembled in logs, for the reason ``chiSquaredPDF(x:df:)`` gives: the denominator
+	/// overflows a `Double` around ν = 400 while the density it belongs to is an ordinary
+	/// number near 0.02.
+	///
+	/// Written here rather than delegating, for the same reason `cdf(_:)` below does not
+	/// delegate: the free function throws on a non-positive `ν` and on the unbounded point
+	/// at zero, and this method has nowhere to send either. It answers `nan` for the first
+	/// and `infinity` for the second, both of which are what the density *is*.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard degreesOfFreedom > 0 else { return Double.nan }
+		guard x > 0 else {
+			// Below two degrees of freedom the density is unbounded at zero; at exactly two
+			// it is ½; above, zero.
+			if degreesOfFreedom > 2 { return 0 }
+			return degreesOfFreedom == 2 ? 0.5 : Double.infinity
+		}
+		let shape: Double = degreesOfFreedom / 2
+		let logDensity: Double = (shape - 1) * Double.log(x)
+			- x / 2
+			- shape * Double.log(2)
+			- Double.logGamma(shape)
+		return Double.exp(logDensity)
+	}
+
 	/// P(X ≤ x) = P(ν/2, x/2).
 	///
 	/// Calls ``regularizedLowerIncompleteGamma(a:x:)`` directly rather than

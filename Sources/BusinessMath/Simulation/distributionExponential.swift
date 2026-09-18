@@ -71,6 +71,17 @@ extension DistributionExponential: SeedableDistribution {
 
 
 extension DistributionExponential: ContinuousDistribution {
+	/// The density: λe^(−λx) on x ≥ 0, and zero below.
+	///
+	/// - Parameter x: Any finite value.
+	/// - Returns: The density, zero outside the support.
+	public func pdf(_ x: Double) -> Double {
+		guard x.isFinite else { return 0 }
+		guard λ > 0 else { return Double.nan }
+		guard x >= 0 else { return 0 }
+		return λ * Double.exp(-λ * x)
+	}
+
 	/// P(X ≤ x) = 1 − e^(−λx), zero for negative `x`.
 	public func cdf(_ x: Double) -> Double {
 		exponentialCDF(x, λ: λ)
