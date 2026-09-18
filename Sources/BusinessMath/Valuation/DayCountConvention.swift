@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftDeterminism
 import Numerics
 
 /// A cached calendar, Gregorian and fixed to UTC.
@@ -46,7 +47,18 @@ import Numerics
 ///
 /// Reach for this rather than `Calendar.current` anywhere a calendar date is being
 /// treated as a date rather than as an instant.
-let gregorianUTC: Calendar = gregorian(in: .gmt)
+///
+/// ## Where this now comes from
+///
+/// `SwiftDeterminism` vends `Calendar.gregorianUTC`, and this is an alias for it rather than a
+/// second implementation. The module was already linked to this target when the local version was
+/// written on 2026-09-10 — one `import` away, five weeks after `FormattingEnvironment.posix`
+/// shipped the same calendar — and was not found, because a calendar does not advertise itself
+/// from under a type named for formatting. The vended spelling exists because of that.
+///
+/// The name stays so the thirty-nine call sites do not move, and because the doc comment above
+/// is the argument for using it.
+let gregorianUTC: Calendar = .gregorianUTC
 
 /// A Gregorian calendar in an explicit time zone.
 ///

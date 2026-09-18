@@ -56,7 +56,7 @@ var dependencies: [Package.Dependency] = [
 	// Distributions stay here — that package produces bits, this one gives them meaning.
 	.package(
 		url: "https://github.com/jpurnell/SwiftDeterminism.git",
-		from: "1.0.0"
+		from: "1.2.0"
 	)
 ]
 
