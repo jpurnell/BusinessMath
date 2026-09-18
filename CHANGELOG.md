@@ -15,6 +15,47 @@ Two batches, both from Tier 2 of the quality programme — the complexity list. 
 below sits in `BranchAndBoundSolver` or the machinery it calls, and none was found by reading
 the code.
 
+#### 2026-09-17 — the solver's choices depended on Swift's per-process hash seed
+
+`IntegerProgramSpecification.allIntegerVariables` is a `Set<Int>`, and Swift randomises set
+iteration order **per process**. Four places iterated one of these sets and let the order decide
+something, so the same problem solved in two processes explored a different tree.
+
+##### Fixed
+
+- **Bound constraints were appended to the LP in set order**, so the tableau's row order differed
+  between processes — and with it the pivots, the vertex chosen among ties, and the entire search
+  downstream. The most consequential of the four, and not a tie-break at all.
+- **`mostFractionalVariable` and pseudo-cost branching** both keep the best candidate with a
+  strict `>`, so on a tie the first-encountered variable won. Ties are ordinary in integer
+  programming: symmetric variables, equal fractionality, equal pseudo-cost scores.
+- **The feasibility reporter** assembled its violation messages in set order.
+
+All four now iterate `.sorted()`, so ties break toward the lowest variable index, deterministically.
+
+##### How it surfaced, and what that says
+
+Not from a unit test, and no unit test could have. Swift's hash seed is fixed for the life of a
+process, so solving the same problem twice inside one test agrees with itself however the
+iteration is ordered.
+
+It surfaced from **`doc-run`**, which executes each documentation article twice in *separate
+processes* and compares the output. `5.8d-LinearFunctionAPI.md` prints `nodesExplored` on seven
+lines and was failing roughly one run in three, with three to six of those lines differing. A
+reproducibility checker on documentation turned out to be the package's only cross-process
+determinism test.
+
+After the fix: four consecutive clean `doc-run` passes.
+
+##### Tests
+
+- **New: `BranchingDeterminismTests`** — the rule that replaces set order, stated as something a
+  single process *can* check: a tie in fractionality breaks toward the lower index, a three-way
+  tie toward the lowest, selection is stable under repetition, and a solve reports the same node
+  count twice.
+
+---
+
 #### 2026-09-17 — every other finite difference in the package had the same bug
 
 Having found it in `numericalGradient`, the obvious question was how many siblings shared the

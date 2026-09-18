@@ -871,7 +871,11 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
         // what it must; a closure forces it to recover `[0, …, 1, …, 0]` and `1` numerically,
         // and the ~1e-10 error that comes back can decide feasibility for a binary node, whose
         // feasible region is a face of the unit cube.
-        for i in integerSpec.binaryVariables where i < dimension {
+        // Sorted, and this one matters most of the four. These constraints are appended to the
+        // LP in iteration order, so an unsorted set gave the tableau a different row order in
+        // every process — and with it different pivots, a different vertex chosen among ties,
+        // and a different search downstream.
+        for i in integerSpec.binaryVariables.sorted() where i < dimension {
             var unit = Array(repeating: 0.0, count: dimension)
             unit[i] = 1.0
             allConstraints.append(
@@ -1491,7 +1495,9 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
             var bestVariable: Int? = nil
             var bestScore = -Double.infinity
 
-            for variable in spec.allIntegerVariables {
+            // Sorted, for the reason given on `mostFractionalVariable`: pseudo-cost scores tie
+            // just as readily as fractionalities, and set order is a per-process coin flip.
+            for variable in spec.allIntegerVariables.sorted() {
                 let value = arr[variable]
                 let fractionalPart = abs(value - round(value))
 
@@ -1797,7 +1803,8 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
         }
 
         // Check 2: Binary constraints
-        for i in integerSpec.binaryVariables {
+        // Sorted so the reported violations arrive in a stable order.
+        for i in integerSpec.binaryVariables.sorted() {
             let value = arr[i]
             if value < -lpTolerance || value > 1.0 + lpTolerance {
                 violations.append("Binary variable[\(i)] out of range [0,1]: \(value)")

@@ -140,7 +140,11 @@ public struct IntegerProgramSpecification: Sendable {
         var maxIndex: Int? = nil
 
         // Check all integer-restricted variables
-        for i in allIntegerVariables {
+        // Sorted, not raw set order. `allIntegerVariables` is a `Set<Int>` and Swift randomises
+        // set iteration **per process**, so a tie — two variables equally fractional, which is
+        // ordinary in an integer program — was broken by the hash seed. The same problem solved
+        // in two processes then explored a different tree and reported a different node count.
+        for i in allIntegerVariables.sorted() {
             guard i < values.count else { continue }
             let value = values[i]
             let fractionalPart = abs(value - round(value))
