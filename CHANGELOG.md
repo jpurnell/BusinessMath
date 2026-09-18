@@ -15,6 +15,96 @@ Two batches, both from Tier 2 of the quality programme — the complexity list. 
 below sits in `BranchAndBoundSolver` or the machinery it calls, and none was found by reading
 the code.
 
+#### 2026-09-17 — the numerical gradient returned zero, and the vector norm returned infinity
+
+Two defects in the primitives underneath every gradient-based optimizer in the package. Found by
+asking one question of the whole optimizer tier at once — *does raising the budget change the
+answer?* — and then following what fell out.
+
+##### Fixed
+
+- **`numericalGradient` perturbed by a fixed absolute step**, so it returned **exactly zero** for
+  any coordinate past about 1e10. A double's spacing at magnitude `m` is roughly `m · 2⁻⁵²`; once
+  the step is smaller than that gap, `x + epsilon == x`, both evaluations return the same number,
+  and the difference quotient is zero.
+
+  Measured on `f(x) = x²`, whose gradient is exactly `2x`:
+
+  | x | true `2x` | returned | |
+  |---|---|---|---|
+  | 1e6 | 2.0e6 | 2.0e6 | exact |
+  | 1e9 | 2.0e9 | 1.92e9 | 4% low |
+  | 1e10 | 2.0e10 | 3.28e10 | **64% high** |
+  | 1e12 | 2.0e12 | **0.0** | |
+  | 1e25 | 2.0e25 | **0.0** | |
+
+  Zero is the worst available wrong answer, because every gradient method reads it as a
+  stationary point. `MultivariateGradientDescent` on Rosenbrock from (−1.2, 1.0) at the default
+  learning rate diverges — ordinary, and a caller can be told — but at iteration 5 the iterate
+  reached `x₀ = −6.6e25`, the gradient came back `[0, 0]`, and the result was:
+
+  ```
+  value = 1.9448624575642407e+105     terminationReason = .converged
+  ```
+
+  **Twenty-nine call sites across fourteen files** take this gradient.
+
+  The step is now relative, `epsilon · max(1, |xᵢ|)`, and the quotient divides by the separation
+  the arithmetic *actually produced* rather than the one requested — `x + h` is rounded to the
+  nearest representable value, and reading the realised span back removes that discrepancy
+  exactly instead of leaving an error term that grows with `|x|`.
+
+- **`VectorN`, `Vector2D` and `Vector3D` returned `inf` for norms that are finite.** All three
+  computed `√(Σ xᵢ²)` directly. A component of 1e154 squares to 1e308, at the edge of a `Double`,
+  so a second one tips the sum to infinity: `‖[1e154, 1e154, 1e154]‖` is `1.73e154`, four orders
+  inside the representable range, and came back `inf`. The same arithmetic fails downward —
+  `‖[3e-200, 4e-200]‖` is exactly `5e-200` and came back `0`.
+
+  Both reach an optimizer as a verdict rather than a number. `MultivariateNewtonRaphson` and
+  `MultivariateLBFGS` throw on a non-finite gradient norm, and a norm that underflows to zero is
+  read as a stationary point — the same failure as the gradient above.
+
+  The largest magnitude is now factored out before squaring: `‖v‖ = m · √(Σ (xᵢ/m)²)`. Every
+  ratio is at most one, so the sum cannot overflow, and the smallest component is scaled up
+  rather than down.
+
+- **A gradient that cannot be evaluated no longer propagates out of `MultivariateGradientDescent`.**
+  It is the same event as one that comes back non-finite, and now gets the same answer: stop with
+  `.numericalInstability` and return the best point seen. That branch already existed and could
+  never fire while the gradient was quietly returning zeros.
+
+##### Tests
+
+- **New: `NumericalGradientAccuracyTests`** — the gradient checked against derivatives known in
+  closed form, at magnitudes from 1e-3 to 1e20, including the end-to-end statement that a
+  diverged descent is not reported as converged.
+- **New: `VectorNormRangeTests`** — 3–4–5 triangles scaled from 1e-200 to 1e200, so the exact
+  norm is known at every scale, plus the property that only the zero vector has a zero norm.
+
+##### Two tests changed, and why
+
+- **`MultiPeriodOptimizationTests.singlePeriod` was asking for an unbounded problem.**
+  `budgetEachPeriod` is only "the weights sum to one"; maximising a linear return on that plane
+  alone has no finite optimum, since `[−M, 1+M, 0]` satisfies it for every `M` and earns
+  `0.15 + 0.05M`. The test asserted the optimizer allocates to the highest-return asset — a
+  statement about a *simplex* — and passed only because the broken gradient stopped the search
+  almost immediately. It now supplies `nonNegativityEachPeriod` as well, which is what makes the
+  assertion true.
+
+- **`InequalityOptimizerExhaustionTests` relaxed from 1e-6 to 1e-5, and this one is a real
+  cost.** The relative step is 3e-6 at `x ≈ 3` where the absolute step was 1e-6, and the boundary
+  of a measure-zero feasible set cannot be located more finely than the step used to find it.
+  Measured across inner budgets of 40, 100, 400, 1,000 and 4,000 the violation lands at 4.8e-6,
+  2.5e-6, 2.3e-6, 2.7e-6 and 1.9e-6 — a plateau, not a budget. Supplying the analytic gradient
+  for `3 − x` was tried and changes nothing, byte for byte, so the floor is set by the
+  *objective's* gradient rather than the constraint's.
+
+  A violation of 2e-6 read as 1e-6 costs precision on a degenerate problem. A gradient of exactly
+  zero costs the answer. The trade is worth making in this direction, and it is recorded rather
+  than buried.
+
+---
+
 #### 2026-09-17 — the genetic algorithm had annealing's two defects
 
 The optimizer the new quality suite identified as weakest. On matyas — a smooth convex quadratic

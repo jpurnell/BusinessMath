@@ -142,7 +142,28 @@ struct InequalityOptimizerExhaustionTests {
 
 		let result = try Self.optimizer(inner: 40).minimize(Self.objective, from: Self.start,
 															subjectTo: constraints)
-		#expect(result.constraintViolation <= 1e-6,
+
+		// The bar is 1e-5, not the 1e-6 it was until 2026-09-17, and the reason is a deliberate
+		// trade made elsewhere rather than a slip here.
+		//
+		// `numericalGradient` used to perturb by a fixed absolute step. That is exact enough at
+		// `x ≈ 3` and returns **exactly zero** once a coordinate passes about 1e10, because the
+		// step falls below the spacing between representable doubles — which gradient descent
+		// read as a stationary point and reported as convergence at an objective of 1e105. The
+		// step is now relative, `epsilon · max(1, |x|)`, so at `x ≈ 3` it is 3e-6 rather than
+		// 1e-6, and the boundary of a measure-zero feasible set cannot be located more finely
+		// than the step used to find it.
+		//
+		// Measured across inner budgets of 40, 100, 400, 1,000 and 4,000: the violation lands at
+		// 4.8e-6, 2.5e-6, 2.3e-6, 2.7e-6 and 1.9e-6. It plateaus rather than converging, so this
+		// is a floor and not a budget. Supplying the analytic gradient for `3 - x` — which is
+		// trivially `[-1, 0]` — was tried and changes nothing: the numbers are identical, so the
+		// floor is set by the *objective's* gradient, which this test also passes as a bare
+		// closure.
+        //
+		// The trade is worth making in this direction. A violation of 2e-6 read as 1e-6 costs
+		// precision on a degenerate problem; a gradient of exactly zero costs the answer.
+		#expect(result.constraintViolation <= 1e-5,
 				"violation is \(result.constraintViolation); the point (3, 0) is feasible and must read as such")
 		let solution = result.solution.toArray()
 		#expect(abs(solution[0] - 3.0) < 1e-4, "x is \(solution[0]), not 3")

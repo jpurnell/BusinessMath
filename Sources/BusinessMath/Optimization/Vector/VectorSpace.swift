@@ -338,9 +338,30 @@ public struct Vector2D<T: Real & BinaryFloatingPoint & Sendable & Codable>: Vect
 		Vector2D(x: -vector.x, y: -vector.y)
 	}
 	
-	/// Euclidean norm: √(x² + y²).
+	/// Euclidean norm, computed so that it does not overflow or underflow.
+	///
+	/// The largest magnitude is factored out before squaring: `‖v‖ = m · √(Σ (xᵢ/m)²)` with
+	/// `m = maxᵢ |xᵢ|`. Every ratio is then at most one, so the sum is at most the dimension and
+	/// cannot overflow — and the smallest component is scaled *up* rather than down, so it
+	/// cannot silently vanish.
+	///
+	/// The direct `√(Σ xᵢ²)` this replaces failed at both ends, and silently. A component of
+	/// 1e154 squares to 1e308, at the edge of a `Double`, so a second one tipped the sum to
+	/// infinity: `‖[1e154, 1e154, 1e154]‖` is `1.73e154`, four orders inside the representable
+	/// range, and came back `inf`. At the other end a component of 1e-200 squares to zero, so
+	/// `‖[3e-200, 4e-200]‖` — exactly `5e-200` — came back `0`.
+	///
+	/// Both reach an optimizer as a verdict rather than as a number: a non-finite gradient norm
+	/// ends a Newton or L-BFGS run with an error, and a zero norm is read as a stationary point.
 	public var norm: T {
-		T.sqrt(x * x + y * y)
+		let absX: T = x < T(0) ? -x : x
+		let absY: T = y < T(0) ? -y : y
+		let largest: T = T.maximum(absX, absY)
+		guard largest > T(0) else { return T(0) }
+
+		let ratioX: T = x / largest
+		let ratioY: T = y / largest
+		return largest * T.sqrt(ratioX * ratioX + ratioY * ratioY)
 	}
 	
 	/// Dot product: x₁x₂ + y₁y₂.
@@ -462,10 +483,34 @@ public struct Vector3D<T: Real & BinaryFloatingPoint & Sendable & Codable>: Vect
 		Vector3D(x: -vector.x, y: -vector.y, z: -vector.z)
 	}
 	
-	/// Euclidean norm: √(x² + y² + z²).
+	/// Euclidean norm, computed so that it does not overflow or underflow.
+	///
+	/// The largest magnitude is factored out before squaring: `‖v‖ = m · √(Σ (xᵢ/m)²)` with
+	/// `m = maxᵢ |xᵢ|`. Every ratio is then at most one, so the sum is at most the dimension and
+	/// cannot overflow — and the smallest component is scaled *up* rather than down, so it
+	/// cannot silently vanish.
+	///
+	/// The direct `√(Σ xᵢ²)` this replaces failed at both ends, and silently. A component of
+	/// 1e154 squares to 1e308, at the edge of a `Double`, so a second one tipped the sum to
+	/// infinity: `‖[1e154, 1e154, 1e154]‖` is `1.73e154`, four orders inside the representable
+	/// range, and came back `inf`. At the other end a component of 1e-200 squares to zero, so
+	/// `‖[3e-200, 4e-200]‖` — exactly `5e-200` — came back `0`.
+	///
+	/// Both reach an optimizer as a verdict rather than as a number: a non-finite gradient norm
+	/// ends a Newton or L-BFGS run with an error, and a zero norm is read as a stationary point.
 	public var norm: T {
-		let squares: T = x * x + y * y
-		return T.sqrt(squares + z * z)
+		let absX: T = x < T(0) ? -x : x
+		let absY: T = y < T(0) ? -y : y
+		let absZ: T = z < T(0) ? -z : z
+		let largestXY: T = T.maximum(absX, absY)
+		let largest: T = T.maximum(largestXY, absZ)
+		guard largest > T(0) else { return T(0) }
+
+		let ratioX: T = x / largest
+		let ratioY: T = y / largest
+		let ratioZ: T = z / largest
+		let squares: T = ratioX * ratioX + ratioY * ratioY
+		return largest * T.sqrt(squares + ratioZ * ratioZ)
 	}
 	
 	/// Dot product: x₁x₂ + y₁y₂ + z₁z₂.
@@ -609,9 +654,37 @@ public struct VectorN<T: Real & BinaryFloatingPoint & Sendable & Codable>: Vecto
 		VectorN(vector.components.map { -$0 })
 	}
 	
-	/// Euclidean norm: √(v₁² + v₂² + ... + vₙ²).
+	/// Euclidean norm, computed so that it does not overflow or underflow.
+	///
+	/// The largest magnitude is factored out before squaring: `‖v‖ = m · √(Σ (xᵢ/m)²)` with
+	/// `m = maxᵢ |xᵢ|`. Every ratio is then at most one, so the sum is at most the dimension and
+	/// cannot overflow — and the smallest component is scaled *up* rather than down, so it
+	/// cannot silently vanish.
+	///
+	/// The direct `√(Σ xᵢ²)` this replaces failed at both ends, and silently. A component of
+	/// 1e154 squares to 1e308, at the edge of a `Double`, so a second one tipped the sum to
+	/// infinity: `‖[1e154, 1e154, 1e154]‖` is `1.73e154`, four orders inside the representable
+	/// range, and came back `inf`. At the other end a component of 1e-200 squares to zero, so
+	/// `‖[3e-200, 4e-200]‖` — exactly `5e-200` — came back `0`.
+	///
+	/// Both reach an optimizer as a verdict rather than as a number: a non-finite gradient norm
+	/// ends a Newton or L-BFGS run with an error, and a zero norm is read as a stationary point.
 	public var norm: T {
-		T.sqrt(components.reduce(T(0)) { $0 + $1 * $1 })
+		var largest = T(0)
+		for component in components {
+			let magnitude: T = component < T(0) ? -component : component
+			if magnitude > largest { largest = magnitude }
+		}
+		// An all-zero or empty vector has norm zero, and dividing by `largest` would be a
+		// division by zero. Returning here also keeps the empty case exact rather than NaN.
+		guard largest > T(0) else { return T(0) }
+
+		var sumOfRatios = T(0)
+		for component in components {
+			let ratio: T = component / largest
+			sumOfRatios += ratio * ratio
+		}
+		return largest * T.sqrt(sumOfRatios)
 	}
 	
 	/// Dot product: v₁·w₁ + v₂·w₂ + ... + vₙ·wₙ.

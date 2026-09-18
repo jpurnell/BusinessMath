@@ -319,7 +319,34 @@ public struct MultivariateGradientDescent<V: VectorSpace> where V.Scalar: Real {
 
 		for iteration in 0..<maxIterations {
 			// Compute gradient
-			let grad = try gradient(x)
+			// A gradient that cannot be evaluated is the same event as one that comes back
+			// non-finite, and gets the same answer: stop, and hand back the best point seen
+			// rather than the one the iteration ran off to.
+			//
+			// It has to be caught rather than propagated because `numericalGradient` now throws
+			// where it used to return a silent zero. On a diverging run the objective overflows
+			// and the difference quotient is no longer finite — which is exactly the condition
+			// the guard below was written for, and it could never fire while the gradient was
+			// quietly returning `[0, 0]` and the optimizer was reading that as a stationary
+			// point. That combination returned an objective of 1e105 labelled `.converged`.
+			let grad: V
+			do {
+				grad = try gradient(x)
+			} catch let failure as OptimizationError {
+				// Only the numeric failure is translated. Anything else — a dimension mismatch,
+				// a malformed point — is a programming error, and turning it into
+				// `.numericalInstability` would report a bug in the caller's setup as a property
+				// of their problem.
+				guard case .nonFiniteValue = failure else { throw failure }
+				return MultivariateOptimizationResult(
+					solution: bestX,
+					value: bestValue,
+					iterations: iteration,
+					terminationReason: .numericalInstability,
+					gradientNorm: V.Scalar.infinity,
+					history: history
+				)
+			}
 			let gradNorm = grad.norm
 
 			// Check for numerical stability - return best solution found so far if gradient becomes non-finite
@@ -494,7 +521,34 @@ public struct MultivariateGradientDescent<V: VectorSpace> where V.Scalar: Real {
 
 		for iteration in 1...maxIterations {
 			// Compute gradient
-			let grad = try gradient(x)
+			// A gradient that cannot be evaluated is the same event as one that comes back
+			// non-finite, and gets the same answer: stop, and hand back the best point seen
+			// rather than the one the iteration ran off to.
+			//
+			// It has to be caught rather than propagated because `numericalGradient` now throws
+			// where it used to return a silent zero. On a diverging run the objective overflows
+			// and the difference quotient is no longer finite — which is exactly the condition
+			// the guard below was written for, and it could never fire while the gradient was
+			// quietly returning `[0, 0]` and the optimizer was reading that as a stationary
+			// point. That combination returned an objective of 1e105 labelled `.converged`.
+			let grad: V
+			do {
+				grad = try gradient(x)
+			} catch let failure as OptimizationError {
+				// Only the numeric failure is translated. Anything else — a dimension mismatch,
+				// a malformed point — is a programming error, and turning it into
+				// `.numericalInstability` would report a bug in the caller's setup as a property
+				// of their problem.
+				guard case .nonFiniteValue = failure else { throw failure }
+				return MultivariateOptimizationResult(
+					solution: bestX,
+					value: bestValue,
+					iterations: iteration,
+					terminationReason: .numericalInstability,
+					gradientNorm: V.Scalar.infinity,
+					history: history
+				)
+			}
 			let gradNorm = grad.norm
 
 			// Check for numerical stability - return best solution found so far if gradient becomes non-finite

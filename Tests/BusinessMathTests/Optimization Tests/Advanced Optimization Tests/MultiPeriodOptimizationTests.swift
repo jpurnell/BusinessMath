@@ -469,10 +469,25 @@ import Testing
 
 		let returns = VectorN([0.10, 0.15, 0.12])
 
+		// Non-negativity is load-bearing here, not decoration. `budgetEachPeriod` is only
+		// "the weights sum to one", and maximising a linear return on that plane alone is
+		// **unbounded**: the weights [-M, 1+M, 0] satisfy the budget for every M and earn
+		// 0.15 + 0.05M. The assertion below — that the optimizer puts everything into the
+		// highest-return asset — is a statement about a simplex, and a simplex needs both
+		// constraints.
+		//
+		// This test asked for the unbounded problem until 2026-09-17 and passed anyway, because
+		// the numerical gradient returned exactly zero once an iterate grew past about 1e10 and
+		// the search stopped almost at once. With the gradient fixed the run diverges, which is
+		// the correct answer to the question that was being asked.
+		var constraints: [MultiPeriodConstraint<VectorN<Double>>] = [.budgetEachPeriod]
+		constraints.append(
+			contentsOf: MultiPeriodConstraint<VectorN<Double>>.nonNegativityEachPeriod(dimension: 3))
+
 		let result = try optimizer.optimize(
 			objective: { weights in weights.dot(returns) },
 			initialState: VectorN([1.0/3.0, 1.0/3.0, 1.0/3.0]),
-			constraints: [.budgetEachPeriod],
+			constraints: constraints,
 			minimize: false
 		)
 
@@ -481,7 +496,7 @@ import Testing
 
 		// Should allocate to highest return asset
 		let weights = result.trajectory[0].toArray()
-		#expect(weights[1] > 0.90, "Should allocate to highest return")
+		#expect(weights[1] > 0.90, "Should allocate to highest return, got \(weights)")
 	}
 
 	/// Test 12: Constraint satisfaction check
