@@ -15,6 +15,70 @@ Two batches, both from Tier 2 of the quality programme — the complexity list. 
 below sits in `BranchAndBoundSolver` or the machinery it calls, and none was found by reading
 the code.
 
+#### 2026-09-17 — the genetic algorithm had annealing's two defects
+
+The optimizer the new quality suite identified as weakest. On matyas — a smooth convex quadratic
+— it averaged **1.3e-2** where differential evolution averages 2.1e-7, on a comparable budget.
+Two causes, both the same shape as the ones found in `SimulatedAnnealing`.
+
+##### Fixed
+
+- **`generations` had no effect whatsoever.** A convergence check terminated the run when the
+  best fitness had not improved by 1e-6 over ten generations. `bestFitness` is monotone, and a
+  ten-generation plateau is ordinary in a genetic algorithm — so it fired at generation 10 of a
+  configured 100, on every seed. Measured: `generations` of 100, 400 and 1600 all returned the
+  same answer after the same **1,006 evaluations**.
+
+  The window is now a quarter of the configured run, floored at twenty. Swept before it was
+  chosen: at 25 the default budget reaches 1.24e-3 on matyas, and at 50 or above the run goes to
+  completion for 1.11e-3 — an 11% gain for nearly four times the evaluations, so the early exit
+  earns its place at this window.
+
+- **The mutation width never narrowed.** Offspring were perturbed by
+  `mutationStrength × range` at every generation — a tenth of the search range, two units on a
+  `[-10, 10]` axis. Once the population is within two units of the optimum, every mutation
+  overshoots, and the run plateaus at whatever crossover alone can reach.
+
+  The width is now a schedule with a **half-life of 25 generations**, floored at a hundredth of
+  the configured strength. It is threaded through both the CPU and the GPU path, because the GPU
+  kernels take `mutationStrength` too and a scheduled CPU run beside an unscheduled GPU run would
+  not be the same algorithm.
+
+  `IslandModel` inherits all of it — it *is* several genetic algorithms with the best result
+  taken, which is why it had been beating plain GA tenfold on every benchmark.
+
+  | benchmark | before | after | |
+  |---|---|---|---|
+  | sphere (3d) | 8.5e-3 | **6.2e-5** | 137× |
+  | three-hump camel | 1.5e-2 | **5.0e-4** | 30× |
+  | booth | 3.8e-1 | **7.2e-2** | 5.3× |
+  | matyas | 1.3e-2 | **2.7e-3** | 4.8× |
+  | beale | 2.3e-2 | **9.3e-3** | 2.5× |
+  | rosenbrock | 3.5e-2 | **2.0e-2** | 1.8× |
+  | rastrigin | 9.5e-1 | **5.5e-1** | 1.7× |
+  | ackley | 2.1e-1 | **1.3e-1** | 1.6× |
+
+##### On the shape of the schedule
+
+The first attempt decayed to a hundredth of the width across `config.generations` — a *fraction
+of the configured run*, so a thirty-generation run narrowed exactly as fast as a
+sixteen-hundred-generation one. It scored better on this table (sphere 1.2e-5, booth 4.9e-3) and
+**failed an existing test**: the ten-dimensional benchmark in `GeneticAlgorithmTests` starts at
+`‖x‖² = 250` with thirty generations to cross it, and came back at 17.4 against a bar of 5.0. A
+schedule needs a characteristic scale in generations, not a fraction of the budget.
+
+The half-life costs sharpness on the easy unimodal problems and buys back Rosenbrock, whose
+narrow curved valley rewards sustained travel. Every benchmark still improves on the original,
+and no existing bar was loosened to get there.
+
+##### Tests
+
+- `OptimizerSolutionQualityTests` bars re-measured for `GeneticAlgorithm` and `IslandModel`,
+  since the old ones were taken from the broken implementation and would no longer have asserted
+  anything. GA's unimodal bar tightens from 2.0 to 1.0 and `IslandModel`'s from 2e-1 to 3e-2.
+
+---
+
 #### 2026-09-17 — the gate is at zero warnings again
 
 ##### Changed
