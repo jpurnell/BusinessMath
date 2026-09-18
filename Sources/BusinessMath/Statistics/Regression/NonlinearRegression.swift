@@ -699,14 +699,25 @@ public func numericalGradient<T: Real & Sendable & Codable>(
 		var paramsPlus = params.toArray()
 		var paramsMinus = params.toArray()
 
-		paramsPlus[i] = paramsPlus[i] + h
-		paramsMinus[i] = paramsMinus[i] - h
+		// Scaled to the parameter's own magnitude. A model's parameters carry the data's units,
+		// so a fit to revenue in whole currency units sits exactly where a fixed step stops
+		// working: measured against the exact derivative of `x²`, this was 0.16% wrong at 1e9
+		// and returned **exactly zero** at 1e12. See `differentiationStep`.
+		let step = differentiationStep(h, at: paramsPlus[i])
+		paramsPlus[i] = paramsPlus[i] + step
+		paramsMinus[i] = paramsMinus[i] - step
 
-		// Central difference: (f(x+h) - f(x-h)) / (2h)
+		// Central difference over the separation actually realised, not the one requested.
+		let realisedSpan = paramsPlus[i] - paramsMinus[i]
+		guard realisedSpan != T(0) else {
+			throw OptimizationError.nonFiniteValue(
+				message: "Parameter \(i) could not be perturbed: the value is not finite")
+		}
+
 		let fPlus = f(VectorN(paramsPlus))
 		let fMinus = f(VectorN(paramsMinus))
 
-		let gradI = (fPlus - fMinus) / (T(2) * h)
+		let gradI = (fPlus - fMinus) / realisedSpan
 		gradient.append(gradI)
 	}
 

@@ -303,8 +303,17 @@ public struct GradientDescentOptimizer<T>: Optimizer where T: Real & Sendable & 
 		_ f: (T) -> T,
 		at x: T
 	) -> T {
-		let h = stepSize
-		return (f(x + h) - f(x - h)) / (2 * h)
+		// Scaled to the argument, for the reason in `differentiationStep`: a fixed step cannot
+		// perturb a value whose spacing exceeds it, so both evaluations return the same number
+		// and the derivative comes back as exactly zero — which a descent reads as a stationary
+		// point and reports as convergence.
+		let h = differentiationStep(stepSize, at: x)
+		let forward = x + h
+		let backward = x - h
+		// Divide by the separation actually realised rather than the one requested.
+		let realisedSpan = forward - backward
+		guard realisedSpan != T(0) else { return T(0) }
+		return (f(forward) - f(backward)) / realisedSpan
 	}
 
 	/// Clamps a value to be within bounds.

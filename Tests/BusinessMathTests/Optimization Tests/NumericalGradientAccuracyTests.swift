@@ -143,6 +143,75 @@ struct NumericalGradientAccuracyTests {
 		}
 	}
 
+	// MARK: - The other differentiators in the package
+
+	/// The Hessian fails earlier than the gradient, and for a sharper reason.
+	///
+	/// A second difference is `f(x+h) - 2f(x) + f(x-h)`, three numbers of comparable size whose
+	/// leading digits cancel. With an absolute step the surviving digits run out far sooner than
+	/// they do for a first difference: measured on `f(x) = x²`, whose second derivative is
+	/// exactly 2 everywhere, the old implementation returned **0.0 from a magnitude of 1e6** —
+	/// six orders earlier than the gradient's 1e12.
+	///
+	/// Zero is worse here than it is for a gradient. Newton's method *divides* by the second
+	/// derivative.
+	@Test("The Hessian is accurate at every magnitude", arguments: magnitudes)
+	func hessianIsAccurateAtScale(_ magnitude: Double) throws {
+		// f(x) = x², so ∂²f/∂x² is exactly 2 at every point.
+		let square: @Sendable (Vec) -> Double = { point in
+			let a = point.toArray()
+			return a[0] * a[0]
+		}
+
+		let hessian = try numericalHessian(square, at: Vec([magnitude]))
+		let computed: Double = hessian[0][0]
+		let expected: Double = 2
+		let relativeError: Double = abs(computed - expected) / expected
+
+		#expect(relativeError < 1e-4,
+				"at |x| ≈ \(magnitude): second derivative is \(computed), exactly \(expected)")
+	}
+
+	/// Recovering a linear function's coefficients by differencing has the same exposure.
+	///
+	/// `StandardLinearFunction.fromClosure` extracts each coefficient with a *forward* difference
+	/// at a fixed 1e-8 — an even smaller step than the gradient's, so it degrades sooner. On
+	/// `f(x) = 3x + 7`, whose coefficient is exactly 3: 0.7% low at 1e6 and **exactly zero from
+	/// 1e9**.
+	@Test("Linear coefficients are recovered at every magnitude", arguments: magnitudes)
+	func linearCoefficientsAreRecoveredAtScale(_ magnitude: Double) throws {
+		let line: @Sendable (Vec) -> Double = { point in 3.0 * point.toArray()[0] + 7.0 }
+
+		let extracted = try StandardLinearFunction<Vec>.fromClosure(line, dimension: 1, at: Vec([magnitude]))
+		let computed: Double = extracted.coefficients[0]
+		let expected: Double = 3
+		let relativeError: Double = abs(computed - expected) / expected
+
+		#expect(relativeError < 1e-4,
+				"at |x| ≈ \(magnitude): coefficient is \(computed), exactly \(expected)")
+	}
+
+	/// The regression tier keeps its own gradient, and it had the same step.
+	///
+	/// Reached through `NonlinearRegression`'s fitting, where the parameters are whatever the
+	/// data's units make them — a model fitted to revenue in whole currency units sits at a
+	/// magnitude where this mattered. Measured on `f(x) = x²`: 0.16% wrong at 1e9 and exactly
+	/// zero at 1e12.
+	@Test("The regression gradient is accurate at every magnitude", arguments: magnitudes)
+	func regressionGradientIsAccurateAtScale(_ magnitude: Double) throws {
+		let square: @Sendable (VectorN<Double>) -> Double = { point in
+			let a = point.toArray()
+			return a[0] * a[0]
+		}
+
+		let computed: Double = try numericalGradient(square, at: VectorN([magnitude]), h: 1e-5).toArray()[0]
+		let expected: Double = 2 * magnitude
+		let relativeError: Double = abs(computed - expected) / abs(expected)
+
+		#expect(relativeError < 1e-4,
+				"at |x| ≈ \(magnitude): derivative is \(computed), exactly \(expected)")
+	}
+
 	/// Gradient descent does not report convergence on a run that diverged.
 	///
 	/// The end-to-end statement of the same defect. The learning rate here is genuinely too large

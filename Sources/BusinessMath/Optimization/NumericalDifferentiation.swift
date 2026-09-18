@@ -10,6 +10,47 @@ import Numerics
 
 // MARK: - Numerical Differentiation for VectorSpace Types
 
+/// The step to perturb one coordinate by, scaled to that coordinate's magnitude.
+///
+/// The single place this package decides how far to step for a finite difference, because the
+/// answer was previously spelled out independently in six of them and four got it wrong.
+///
+/// ## Why the step cannot be a constant
+///
+/// A `Double`'s spacing at magnitude `m` is about `m · 2⁻⁵²`. A fixed step smaller than that gap
+/// cannot move the value at all — `x + h == x` exactly — so both evaluations return the same
+/// number and the difference is **zero**. That is the worst available wrong answer for a
+/// derivative, because every method that consumes one reads zero as a stationary point.
+///
+/// Measured against derivatives known in closed form, with the absolute steps these sites used:
+///
+/// | site | first wrong | exactly zero |
+/// |---|---|---|
+/// | ``numericalGradient(_:at:epsilon:)`` | 1e9, 4% | 1e12 |
+/// | ``numericalHessian(_:at:epsilon:)`` | — | **1e6** |
+/// | `StandardLinearFunction.fromClosure` | 1e6, 0.7% | 1e9 |
+/// | `numericalGradient` in the regression tier | 1e6 | 1e12 |
+///
+/// The Hessian fails soonest because a second difference subtracts three numbers of comparable
+/// size and the leading digits cancel; a first difference only subtracts two.
+///
+/// ## Why `max(1, |x|)` rather than `|x|`
+///
+/// A purely relative step is zero at the origin, which is the one place a derivative is most
+/// often wanted. Flooring the scale at one keeps the step finite there and leaves the
+/// small-argument behaviour exactly as it was.
+///
+/// - Parameters:
+///   - epsilon: The relative step, as a fraction of the coordinate's magnitude.
+///   - coordinate: The coordinate about to be perturbed.
+/// - Returns: A step of `epsilon · max(1, |coordinate|)`.
+internal func differentiationStep<T: Real>(_ epsilon: T, at coordinate: T) -> T {
+	let magnitude: T = coordinate < T(0) ? -coordinate : coordinate
+	let scale: T = T.maximum(T(1), magnitude)
+	return epsilon * scale
+}
+
+
 /// Computes the gradient of a scalar function using central finite differences.
 ///
 /// The gradient ∇f at point x is approximated using:
@@ -70,9 +111,7 @@ public func numericalGradient<V: VectorSpace>(
 		//
 		// `max(1, |xᵢ|)` rather than `|xᵢ|` so the step stays finite at the origin, where a
 		// purely relative step would be zero.
-		let magnitude: V.Scalar = components[i] < V.Scalar(0) ? -components[i] : components[i]
-		let scale: V.Scalar = V.Scalar.maximum(V.Scalar(1), magnitude)
-		let step: V.Scalar = epsilon * scale
+		let step: V.Scalar = differentiationStep(epsilon, at: components[i])
 
 		var forwardComponents = components
 		var backwardComponents = components
@@ -165,11 +204,15 @@ public func numericalHessian<V: VectorSpace>(
 		for j in i..<dimension {  // Symmetric matrix, only compute upper triangle
 			if i == j {
 				// Diagonal elements: ∂²f/∂xᵢ² ≈ [f(x+2εeᵢ) - 2f(x) + f(x-2εeᵢ)] / (4ε²)
+				// Scaled to the coordinate, for the reason in `differentiationStep`. A second
+				// difference is the most exposed of the lot: with a fixed step this returned
+				// exactly zero from a magnitude of 1e6, and Newton's method divides by it.
+				let step = differentiationStep(epsilon, at: components[i])
 				var forwardComponents = components
 				var backwardComponents = components
 
-				forwardComponents[i] = forwardComponents[i] + epsilon
-				backwardComponents[i] = backwardComponents[i] - epsilon
+				forwardComponents[i] = forwardComponents[i] + step
+				backwardComponents[i] = backwardComponents[i] - step
 
 				guard let forwardPoint = V.fromArray(forwardComponents),
 					  let backwardPoint = V.fromArray(backwardComponents) else {
@@ -184,7 +227,7 @@ public func numericalHessian<V: VectorSpace>(
 					throw OptimizationError.nonFiniteValue(message: "Function returned non-finite value")
 				}
 
-				let secondDerivative = (forwardValue - V.Scalar(2) * centerValue + backwardValue) / (epsilon * epsilon)
+				let secondDerivative = (forwardValue - V.Scalar(2) * centerValue + backwardValue) / (step * step)
 				hessian[i][i] = secondDerivative
 			} else {
 				// Off-diagonal elements: ∂²f/∂xᵢ∂xⱼ using four-point formula
@@ -193,17 +236,23 @@ public func numericalHessian<V: VectorSpace>(
 				var mpComponents = components  // x - εeᵢ + εeⱼ
 				var mmComponents = components  // x - εeᵢ - εeⱼ
 
-				ppComponents[i] += epsilon
-				ppComponents[j] += epsilon
+				// Each axis is scaled to its own coordinate, so a mixed partial between a
+				// coordinate of 1 and one of 1e9 steps appropriately in both rather than
+				// sensibly in one and not at all in the other.
+				let stepI = differentiationStep(epsilon, at: components[i])
+				let stepJ = differentiationStep(epsilon, at: components[j])
 
-				pmComponents[i] += epsilon
-				pmComponents[j] -= epsilon
+				ppComponents[i] += stepI
+				ppComponents[j] += stepJ
 
-				mpComponents[i] -= epsilon
-				mpComponents[j] += epsilon
+				pmComponents[i] += stepI
+				pmComponents[j] -= stepJ
 
-				mmComponents[i] -= epsilon
-				mmComponents[j] -= epsilon
+				mpComponents[i] -= stepI
+				mpComponents[j] += stepJ
+
+				mmComponents[i] -= stepI
+				mmComponents[j] -= stepJ
 
 				guard let ppPoint = V.fromArray(ppComponents),
 					  let pmPoint = V.fromArray(pmComponents),
@@ -221,7 +270,7 @@ public func numericalHessian<V: VectorSpace>(
 					throw OptimizationError.nonFiniteValue(message: "Function returned non-finite value")
 				}
 
-				let mixedDerivative = (fpp - fpm - fmp + fmm) / (V.Scalar(4) * epsilon * epsilon)
+				let mixedDerivative = (fpp - fpm - fmp + fmm) / (V.Scalar(4) * stepI * stepJ)
 				hessian[i][j] = mixedDerivative
 				hessian[j][i] = mixedDerivative  // Symmetric
 			}

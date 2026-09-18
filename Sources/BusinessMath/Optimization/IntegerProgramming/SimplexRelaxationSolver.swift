@@ -331,17 +331,31 @@ public struct SimplexRelaxationSolver: RelaxationSolver {
         let h = V.Scalar(1e-8)
 
         for i in 0..<dimension {
+            // Scaled to the coordinate. This path only runs for a constraint or objective that
+            // is genuinely just a closure — the linear cases are read exactly by
+            // `exactLinearForm` — but a branch-and-bound node can hand it a coordinate of any
+            // magnitude, and a fixed step below that magnitude's spacing returns exactly zero.
+            // See `differentiationStep`.
+            let step = differentiationStep(h, at: point.toArray()[i])
+
             var pointPlus = point.toArray()
-            pointPlus[i] += Double(h)
+            pointPlus[i] += step
             let vecPlus = V.fromArray(pointPlus) ?? point
 
             var pointMinus = point.toArray()
-            pointMinus[i] -= Double(h)
+            pointMinus[i] -= step
             let vecMinus = V.fromArray(pointMinus) ?? point
+
+            // The separation actually realised, not the one requested.
+            let realisedSpan = pointPlus[i] - pointMinus[i]
+            guard realisedSpan != 0 else {
+                coeffs.append(0)
+                continue
+            }
 
             let fPlus = function(vecPlus)
             let fMinus = function(vecMinus)
-            let derivative = (fPlus - fMinus) / (2.0 * Double(h))
+            let derivative = (fPlus - fMinus) / realisedSpan
 
             coeffs.append(derivative)
         }

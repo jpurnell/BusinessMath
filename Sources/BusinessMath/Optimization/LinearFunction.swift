@@ -159,14 +159,28 @@ extension StandardLinearFunction {
 
         for i in 0..<dimension {
             var pointPlus = point.toArray()
-            pointPlus[i] += h
+            // Scaled to the coordinate. At a fixed 1e-8 this returned a coefficient 0.7% low at
+            // a magnitude of 1e6 and **exactly zero** from 1e9, because the step fell below the
+            // spacing between representable doubles and the two evaluations agreed. See
+            // `differentiationStep` for the full table.
+            let step = differentiationStep(h, at: pointPlus[i])
+            pointPlus[i] += step
 
             guard let vecPlus = V.fromArray(pointPlus) else {
                 throw OptimizationError.invalidInput(message: "Failed to create perturbed vector")
             }
 
+            // Divide by the separation the arithmetic actually produced: `x + step` rounds to
+            // the nearest representable value, and reading it back removes that discrepancy
+            // rather than leaving an error term that grows with the coordinate.
+            let realisedStep = pointPlus[i] - point.toArray()[i]
+            guard realisedStep != 0 else {
+                throw OptimizationError.nonFiniteValue(
+                    message: "Coordinate \(i) could not be perturbed: the point is not finite")
+            }
+
             // Forward difference: df/dx_i ≈ (f(x + h*e_i) - f(x)) / h
-            let derivative = (function(vecPlus) - function(point)) / h // fp-safety:disable — h = 1e-8 (constant)
+            let derivative = (function(vecPlus) - function(point)) / realisedStep
             coeffs.append(derivative)
         }
 

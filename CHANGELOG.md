@@ -15,6 +15,64 @@ Two batches, both from Tier 2 of the quality programme — the complexity list. 
 below sits in `BranchAndBoundSolver` or the machinery it calls, and none was found by reading
 the code.
 
+#### 2026-09-17 — every other finite difference in the package had the same bug
+
+Having found it in `numericalGradient`, the obvious question was how many siblings shared the
+shape. The package spells out a finite difference in **seven** places. One was already correct,
+two are on bounded domains where a fixed step is sound, and **four were wrong** — each verified
+against a derivative known in closed form rather than judged by inspection.
+
+##### Fixed
+
+| site | first wrong | exactly zero |
+|---|---|---|
+| `numericalHessian` | — | **1e6** |
+| `StandardLinearFunction.fromClosure` | 1e6, 0.7% low | 1e9 |
+| `numericalGradient` (regression tier) | 1e6 | 1e12 |
+| `GradientDescentOptimizer` / `AsyncGradientDescentOptimizer` | *(scalar, same shape)* | |
+| `SimplexRelaxationSolver.extractLinearCoefficients` | *(closure fallback only)* | |
+
+- **`numericalHessian` fails soonest of all, at 1e6.** A second difference subtracts three
+  numbers of comparable size, so the leading digits cancel and the surviving ones run out six
+  orders earlier than for a first difference. Zero matters more here too: Newton's method
+  *divides* by the second derivative. Its mixed partials now scale each axis to its own
+  coordinate, so a cross-term between a coordinate of 1 and one of 1e9 steps sensibly in both
+  rather than in only one.
+
+- **`StandardLinearFunction.fromClosure`** used a *forward* difference at a fixed 1e-8 — a
+  smaller step than the gradient's, so it degraded sooner. On `f(x) = 3x + 7`, whose coefficient
+  is exactly 3, it returned 2.98 at 1e6 and 0.0 from 1e9.
+
+- **The regression tier's own `numericalGradient`** had the same step. Its exposure is not
+  hypothetical: a model's parameters carry the data's units, so a fit to revenue in whole
+  currency units sits exactly where this stops working.
+
+##### Added
+
+- **`differentiationStep(_:at:)`** — the single place the package now decides how far to step,
+  because the answer was previously spelled out independently in six places and four got it
+  wrong. `epsilon · max(1, |x|)`, with the floor at one so the step stays finite at the origin.
+  Every site divides by the separation the arithmetic *realised* rather than the one requested.
+
+##### Left alone, deliberately
+
+- **`NewtonRaphsonOptimizer.finiteDifferences` was already correct** —
+  `max(baseH, baseH · (1 + |x|))`, with a comment naming the reason. The right pattern was in the
+  codebase the whole time, which is what makes its absence elsewhere a defect rather than a house
+  style.
+- **`Portfolio`** steps weights by 0.001, and weights are normalised to roughly [0, 1]. A fixed
+  step on a bounded domain is sound; the coarseness is an accuracy question, not this one.
+- **`LinearityValidation`** samples a fixed [-10, 10] box by construction, so its step cannot
+  fall below the spacing of what it perturbs.
+
+##### Tests
+
+`NumericalGradientAccuracyTests` extended from the gradient alone to the Hessian, the linear
+coefficient extraction and the regression gradient, each against a closed form across magnitudes
+from 1e-3 to 1e20.
+
+---
+
 #### 2026-09-17 — the numerical gradient returned zero, and the vector norm returned infinity
 
 Two defects in the primitives underneath every gradient-based optimizer in the package. Found by
