@@ -1,5 +1,8 @@
 import Testing
 import Foundation
+// `MultivariateConstraint` is generic over `Vec: VectorSpace` whose `Scalar: Real`, so a
+// stored property of that type needs `Double: Real` visible here, not merely re-exported.
+import RealModule
 @testable import BusinessMath
 
 /// A constrained optimizer must return a point that satisfies its constraints, or say it could not.

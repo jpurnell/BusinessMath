@@ -927,111 +927,57 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                 var currentResult = result
                 var currentSolution = solution
                 var roundsPerformed = 0
-                var generatedCuts: Set<String> = []  // For deduplication
 
-                // Cut aging tracking: map from cut index to (roundAdded, lastActiveRound)
+                // Cut signatures already added at this node, so a cut generated twice is
+                // carried once.
+                var generatedCuts: Set<String> = []
+
+                // Per-cut age records: which constraint row, when added, when last active.
                 var cutAges: [(constraintIndex: Int, roundAdded: Int, lastActiveRound: Int)] = []
 
-                // Stagnation and cycling detection
+                // Round-over-round history, read by the stagnation and cycling tests.
                 var boundHistory: [Double] = []
                 var solutionHistory: [[Double]] = []
-
-                // Helper to check solution equality
-                func areSolutionsEqual(_ a: [Double], _ b: [Double], tolerance: Double) -> Bool {
-                    guard a.count == b.count else { return false }
-                    return zip(a, b).allSatisfy { abs($0 - $1) < tolerance }
-                }
 
                 let cutGenerator = CuttingPlaneGenerator(
                     fractionalTolerance: integralityTolerance,
                     weakCutTolerance: cutTolerance
                 )
 
+                // One round is a pipeline, and each stage below is a named method on this type
+                // — see `BranchAndBoundCutting.swift` for what each does and why. Read as a
+                // sequence of `guard`s: every way out of the loop is stated here, at the loop's
+                // own level, rather than buried in a scan that a `break` can bind to by mistake.
                 for _ in 0..<maxCuttingRounds {
-                    // Check if solution is fractional for integer variables
                     let solutionArray = currentSolution.toArray()
-                    var hasFractional = false
 
-                    for i in 0..<min(dimension, solutionArray.count) {
-                        // Check if this variable should be integer
-                        let shouldBeInteger = integerSpec.integerVariables.contains(i) ||
-                                            integerSpec.binaryVariables.contains(i)
+                    // Nothing fractional means nothing to separate.
+                    guard hasFractionalIntegerVariable(
+                        solutionArray,
+                        integerSpec: integerSpec,
+                        dimension: dimension
+                    ) else { break }
 
-                        guard shouldBeInteger else { continue }
-
-                        // Check if value is fractional
-                        let value = solutionArray[i]
-                        let fractionalPart = value - floor(value)
-
-                        if fractionalPart > integralityTolerance && fractionalPart < 1.0 - integralityTolerance {
-                            hasFractional = true
-                            break
-                        }
-                    }
-
-                    // If no fractional variables, stop cutting
-                    guard hasFractional else {
-                        break
-                    }
-
-                    // Generate cuts from tableau
+                    // Gomory and MIR cuts are read off the tableau, so a solver that does not
+                    // produce one — the nonlinear relaxation, for instance — cannot be cut.
                     guard let simplexResult = currentResult.simplexResult,
                           let tableau = simplexResult.tableau,
-                          let basis = simplexResult.basis else {
-                        // No tableau available (might be nonlinear solver)
-                        break
-                    }
+                          let basis = simplexResult.basis else { break }
 
-                    var cutsThisRound: [CuttingPlane] = []
-
-                    // Compute total variable count (including slacks)
-                    // Tableau columns = all variables + RHS, so subtract 1
+                    // Tableau columns are the variables plus the right-hand side.
                     let totalVariableCount = tableau.columnCount - 1
-
-                    // Compute non-basic variable indices
-                    // (all variables except those in the basis)
                     let basisSet = Set(basis)
                     let nonBasicIndices = (0..<totalVariableCount).filter { !basisSet.contains($0) }
 
-                    // Build SimplexRow objects for fractional basic variables
-                    var simplexRows: [SimplexRow] = []
+                    let simplexRows = fractionalSimplexRows(
+                        tableau: tableau,
+                        basis: basis,
+                        solution: solutionArray,
+                        integerSpec: integerSpec,
+                        totalVariableCount: totalVariableCount,
+                        nonBasicIndices: nonBasicIndices
+                    )
 
-                    for (rowIndex, basicVarIndex) in basis.enumerated() {
-                        guard basicVarIndex < solutionArray.count else { continue }
-
-                        let value = solutionArray[basicVarIndex]
-                        let fractionalPart = value - floor(value)
-
-                        // Only generate cut if this variable is fractional and should be integer
-                        let shouldBeInteger = integerSpec.integerVariables.contains(basicVarIndex) ||
-                                            integerSpec.binaryVariables.contains(basicVarIndex)
-
-                        guard shouldBeInteger &&
-                              fractionalPart > integralityTolerance &&
-                              fractionalPart < 1.0 - integralityTolerance else {
-                            continue
-                        }
-
-                        // Extract tableau row (coefficients of non-basic variables)
-                        let fullTableauRow = tableau.getRow(rowIndex)
-
-                        // Tableau row includes RHS in last column - extract only variable coefficients
-                        let allCoefficients = Array(fullTableauRow.prefix(totalVariableCount))
-
-                        // Extract only coefficients corresponding to non-basic variables
-                        let nonBasicCoefficients = nonBasicIndices.map { allCoefficients[$0] }
-
-                        let simplexRow = SimplexRow(
-                            rhs: value,
-                            coefficients: nonBasicCoefficients,
-                            nonBasicVariableIndices: nonBasicIndices,
-                            basicVariableIndex: basicVarIndex
-                        )
-
-                        simplexRows.append(simplexRow)
-                    }
-
-                    // Generate cuts using new API with configuration
                     var generatedCutList = try cutGenerator.generateCuts(
                         from: simplexRows,
                         currentSolution: solutionArray,
@@ -1041,232 +987,53 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                         enableMIR: enableMIRCuts
                     )
 
-                    // Generate cover cuts if enabled
                     if enableCoverCuts {
-                        // Try to generate cover cuts from knapsack-like constraints
-                        for constraint in constraints {
-                            // Cover cuts only work on linear inequality constraints with binary variables
-                            if case .linearInequality(let coefficients, let rhs, let sense) = constraint,
-                               sense == .lessOrEqual {
-                                // Check if all variables in this constraint are binary
-                                var isBinaryKnapsack = true
-                                for i in 0..<min(coefficients.count, dimension) {
-                                    if coefficients[i] != 0.0 {
-                                        // Check if variable should be binary
-                                        if !integerSpec.binaryVariables.contains(i) {
-                                            isBinaryKnapsack = false
-                                            break
-                                        }
-                                    }
-                                }
-
-                                // Generate cover cut for binary knapsack constraints
-                                if isBinaryKnapsack && coefficients.count <= dimension {
-                                    if let coverCut = try cutGenerator.generateCoverCut(
-                                        weights: coefficients,
-                                        capacity: rhs,
-                                        solution: solutionArray
-                                    ) {
-                                        generatedCutList.append(coverCut)
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Process generated cuts
-                    for var cut in generatedCutList {
-                        // Normalize cut if enabled
-                        if normalizeCuts {
-                            // Compute norm of coefficients based on cutScalingNorm parameter
-                            let norm: Double
-                            switch cutScalingNorm {
-                            case .euclidean:
-                                // L2 norm: sqrt(sum of squares)
-                                norm = sqrt(cut.coefficients.reduce(0.0) { $0 + $1 * $1 })
-                            case .infinity:
-                                // L∞ norm: max absolute value
-                                norm = cut.coefficients.map { abs($0) }.max() ?? 0.0
-                            }
-
-                            // Check if cut has meaningful coefficients
-                            guard norm > cutCoefficientThreshold else {
-                                // Skip cut with tiny coefficients
-                                continue
-                            }
-
-                            // Normalize: divide coefficients and RHS by norm
-                            let normalizedCoeffs = cut.coefficients.map { $0 / norm } // fp-safety:disable — norm > cutCoefficientThreshold per guard above
-                            let normalizedRHS = cut.rhs / norm // fp-safety:disable — norm > cutCoefficientThreshold per guard above
-
-                            cut = CuttingPlane(
-                                coefficients: normalizedCoeffs,
-                                rhs: normalizedRHS,
-                                type: cut.type,
-                                sourceIndex: cut.sourceIndex
-                            )
-                        }
-
-                        // Deduplicate: check if we've seen this cut before
-                        let cutSignature = "\(cut.coefficients.map { $0.number(6) }.joined(separator:",")):\(cut.rhs.number(6))"
-
-                        if !generatedCuts.contains(cutSignature) {
-                            cutsThisRound.append(cut)
-                            generatedCuts.insert(cutSignature)
-                        }
-                    }
-
-                    // If no cuts generated, stop
-                    guard !cutsThisRound.isEmpty else {
-                        break
-                    }
-
-                    // Filter dominated cuts if enabled
-                    var filteredCuts = cutsThisRound
-                    if filterDominatedCuts {
-                        filteredCuts = []
-
-                        for cut in cutsThisRound {
-                            var isDominated = false
-
-                            // Check against existing cuts this round
-                            for existingCut in filteredCuts {
-                                if isCutDominated(cut, by: existingCut, tolerance: 1e-8) {
-                                    isDominated = true
-                                    break
-                                }
-                            }
-
-                            // Also check if cut is parallel to existing ones (same coefficients, weaker RHS)
-                            if !isDominated {
-                                for existingCut in filteredCuts {
-                                    if areCutsParallel(cut, existingCut, tolerance: 1e-8) {
-                                        // Keep the stronger cut (smaller RHS for <= constraints)
-                                        if cut.rhs >= existingCut.rhs {
-                                            isDominated = true
-                                            break
-                                        }
-                                    }
-                                }
-                            }
-
-                            if !isDominated {
-                                filteredCuts.append(cut)
-                            }
-                        }
-                    }
-
-                    // Check pool size limit if enabled
-                    var cutsToAdd = filteredCuts
-                    if maxCutPoolSize > 0 && stats.totalCutsGenerated >= maxCutPoolSize {
-                        // Pool is full - don't add more cuts
-                        break
-                    } else if maxCutPoolSize > 0 {
-                        // Limit how many cuts we add to not exceed pool size
-                        let remaining = maxCutPoolSize - stats.totalCutsGenerated
-                        if filteredCuts.count > remaining {
-                            cutsToAdd = Array(filteredCuts.prefix(remaining))
-                        }
-                    }
-
-                    // Remove aged cuts if aging is enabled
-                    if enableCutAging && roundsPerformed > 0 {
-                        // Find cuts that have exceeded their age limit
-                        var indicesToRemove: Set<Int> = []
-                        for (_, cutAge) in cutAges.enumerated() {
-                            let age = roundsPerformed - cutAge.lastActiveRound
-                            if age >= cutAgingLimit {
-                                indicesToRemove.insert(cutAge.constraintIndex)
-                            }
-                        }
-
-                        // Remove aged cuts from constraints (in reverse order to maintain indices)
-                        if !indicesToRemove.isEmpty {
-                            let sortedIndices = indicesToRemove.sorted(by: >)
-                            for index in sortedIndices {
-                                if index < currentConstraints.count {
-                                    currentConstraints.remove(at: index)
-                                    // Counted here rather than from `indicesToRemove.count`:
-                                    // an index past the end of the constraint set removes
-                                    // nothing, and reporting it as removed would overstate
-                                    // the work done.
-                                    stats.cutsRemoved += 1
-                                }
-                            }
-
-                            // Update cutAges array to reflect removed constraints
-                            cutAges.removeAll { indicesToRemove.contains($0.constraintIndex) }
-
-                            // Adjust remaining indices
-                            for removedIndex in sortedIndices {
-                                for i in 0..<cutAges.count {
-                                    if cutAges[i].constraintIndex > removedIndex {
-                                        cutAges[i].constraintIndex -= 1
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Add cuts as new constraints
-                    for cut in cutsToAdd {
-                        // A cut comes off a tableau row, so its support is whatever was
-                        // non-basic there — structural variables *and* slacks. Imposing it
-                        // over the structural variables alone drops the slack terms and
-                        // keeps a right-hand side that was never theirs, which is how this
-                        // used to emit `0 ≤ -0.7071`: false at every point, so the LP went
-                        // infeasible on the first cut and the round was discarded. Project
-                        // it first, and skip any cut that will not project.
-                        guard let projected = tableau.projectToStructuralSpace(
-                            coefficients: cut.coefficients,
-                            rhs: cut.rhs
-                        ) else { continue }
-
-                        let structuralCoefficients = Array(projected.coefficients.prefix(dimension))
-
-                        // Convert CuttingPlane to MultivariateConstraint
-                        // Cut is: sum(coefficients[i] * x[i]) <= rhs
-                        let cutConstraint = MultivariateConstraint<V>.linearInequality(
-                            coefficients: structuralCoefficients,
-                            rhs: projected.rhs,
-                            sense: .lessOrEqual
+                        generatedCutList += try coverCuts(
+                            from: constraints,
+                            solution: solutionArray,
+                            integerSpec: integerSpec,
+                            dimension: dimension,
+                            generator: cutGenerator
                         )
-                        currentConstraints.append(cutConstraint)
-
-                        // Track this cut for aging if enabled
-                        if enableCutAging {
-                            let constraintIndex = currentConstraints.count - 1
-                            cutAges.append((
-                                constraintIndex: constraintIndex,
-                                roundAdded: roundsPerformed,
-                                lastActiveRound: roundsPerformed
-                            ))
-                        }
-
-                        // Update statistics by type
-                        stats.totalCutsGenerated += 1
-                        switch cut.type {
-                        case .gomory:
-                            stats.gomoryCuts += 1
-                        case .mixedIntegerRounding:
-                            stats.mirCuts += 1
-                        case .cover:
-                            stats.coverCuts += 1
-                        case .clique:
-                            break
-                        }
                     }
 
-                    // Re-solve LP with augmented constraints
+                    let freshCuts = normalisedAndDeduplicated(generatedCutList, seen: &generatedCuts)
+                    guard !freshCuts.isEmpty else { break }
+
+                    let filteredCuts = withoutDominatedCuts(freshCuts)
+
+                    // `nil` is the pool being full, which ends the loop; an empty array would
+                    // only mean this round contributed nothing.
+                    guard let cutsToAdd = withinPoolBudget(
+                        filteredCuts,
+                        alreadyGenerated: stats.totalCutsGenerated
+                    ) else { break }
+
+                    if enableCutAging && roundsPerformed > 0 {
+                        removeAgedCuts(
+                            from: &currentConstraints,
+                            ages: &cutAges,
+                            round: roundsPerformed,
+                            stats: stats
+                        )
+                    }
+
+                    appendCuts(
+                        cutsToAdd,
+                        to: &currentConstraints,
+                        ages: &cutAges,
+                        tableau: tableau,
+                        dimension: dimension,
+                        round: roundsPerformed,
+                        stats: stats
+                    )
+
                     do {
-                        // Use warm start if enabled: use previous solution as initial guess
-                        let nextInitialGuess: V
-                        if enableWarmStart {
-                            // Convert VectorN<Double> to V for warm start
-                            nextInitialGuess = V.fromArray(currentSolution.toArray()) ?? initialGuess
-                        } else {
-                            nextInitialGuess = initialGuess
-                        }
+                        // Warm starting hands the previous vertex back as the starting point,
+                        // which is only sound because the cuts added are valid there or nearby.
+                        let nextInitialGuess: V = enableWarmStart
+                            ? (V.fromArray(currentSolution.toArray()) ?? initialGuess)
+                            : initialGuess
 
                         let resolvedResult = try relaxationSolver.solveRelaxation(
                             objective: objective,
@@ -1277,56 +1044,18 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
                         )
 
                         guard resolvedResult.status == .optimal,
-                              let newSolution = resolvedResult.solution else {
-                            // LP became infeasible after adding cuts - stop
-                            break
-                        }
+                              let newSolution = resolvedResult.solution else { break }
 
                         currentResult = resolvedResult
                         currentSolution = newSolution
                         roundsPerformed += 1
 
-                        // Stagnation detection: check if bound improved
-                        if detectStagnation {
-                            boundHistory.append(resolvedResult.objectiveValue)
-
-                            // Need at least 2 bounds to compare
-                            if boundHistory.count >= 2 {
-                                let previousBound = boundHistory[boundHistory.count - 2]
-                                // Safe: count check above guarantees at least 2 elements
-                                let currentBound = boundHistory[boundHistory.count - 1]
-                                let improvement = abs(currentBound - previousBound)
-
-                                // If improvement is negligible, terminate
-                                if improvement < stagnationTolerance {
-                                    break
-                                }
-                            }
-                        }
-
-                        // Cycling detection: check for repeated solutions
-                        if detectCycling {
-                            let currentSolutionArray = newSolution.toArray()
-                            solutionHistory.append(currentSolutionArray)
-
-                            // Only check if we have enough history
-                            if solutionHistory.count > cyclingWindowSize {
-                                let recent = Array(solutionHistory.suffix(cyclingWindowSize))
-
-                                // Written as one predicate rather than a `for` loop with a
-                                // `break` inside it. The loop form is what this used to be, and
-                                // its `break` bound to the scan rather than to the cutting-round
-                                // loop it was meant to stop: a cycle was found, and the next
-                                // round started anyway. Measured before the change — 32 rounds
-                                // with detection on and 32 with it off, identical to the integer.
-                                let repeatsAnEarlierVertex = recent.dropLast().contains {
-                                    areSolutionsEqual(currentSolutionArray, $0, tolerance: stagnationTolerance)
-                                }
-                                if repeatsAnEarlierVertex {
-                                    break
-                                }
-                            }
-                        }
+                        if cuttingShouldStop(
+                            bound: resolvedResult.objectiveValue,
+                            solution: newSolution.toArray(),
+                            bounds: &boundHistory,
+                            solutions: &solutionHistory
+                        ) { break }
 
                     } catch { // logging: LP re-solve failed after cut — stop cutting rounds
                         break
@@ -1850,7 +1579,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
     ///   - cut2: The potentially dominating cut
     ///   - tolerance: Numerical tolerance for comparisons
     /// - Returns: true if cut1 is dominated by cut2
-    private func isCutDominated(_ cut1: CuttingPlane, by cut2: CuttingPlane, tolerance: Double) -> Bool {
+    func isCutDominated(_ cut1: CuttingPlane, by cut2: CuttingPlane, tolerance: Double) -> Bool {
         guard cut1.coefficients.count == cut2.coefficients.count else {
             return false
         }
@@ -1875,7 +1604,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
     ///   - cut2: Second cut
     ///   - tolerance: Numerical tolerance for comparisons
     /// - Returns: true if cuts are parallel
-    private func areCutsParallel(_ cut1: CuttingPlane, _ cut2: CuttingPlane, tolerance: Double) -> Bool {
+    func areCutsParallel(_ cut1: CuttingPlane, _ cut2: CuttingPlane, tolerance: Double) -> Bool {
         guard cut1.coefficients.count == cut2.coefficients.count else {
             return false
         }
@@ -2555,7 +2284,7 @@ private class CutPool: @unchecked Sendable {
 // MARK: - Cut Statistics Tracker
 
 /// Mutable statistics tracker for cutting plane generation during solve
-private class CutStatisticsTracker {
+class CutStatisticsTracker {
     var totalCutsGenerated = 0
     var cuttingRounds = 0
     var lpResolves = 0

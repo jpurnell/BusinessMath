@@ -11,9 +11,163 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
-Two batches, both from Tier 2 of the quality programme — the complexity list. Every defect
-below sits in `BranchAndBoundSolver` or the machinery it calls, and none was found by reading
-the code.
+Tier 2 of the quality programme — the complexity list. A high cognitive-complexity score is
+treated as a marker for *code no one has an oracle for*, and every entry below was found by
+building an independent second opinion and differencing against it. None was found by reading
+the code, and the suite was green throughout.
+
+#### 2026-09-18 — the bytecode optimizer miscompiled every expression containing a ternary
+
+`BytecodeOptimizer.algebraicSimplificationPass` models the stack in order to recognise
+algebraic identities. Its `default:` branch — the one handling every operator it has no rewrite
+for — popped **exactly one** operand whatever the instruction was. That is right for the eight
+unary functions, wrong for the thirteen binary ones, and wrong by two for `select`.
+
+##### Fixed
+
+- **Unconsumed operands were left visible to the next instruction**, where that instruction's
+  identity rules matched against a value that was never theirs. The smallest case:
+
+  ```
+  (1.0 + (input[0] ? -0.0 : 7.0))
+    compiled  [constant(1.0), input(0), constant(-0.0), constant(7.0), select, add]
+    optimised [constant(1.0), input(0), constant(7.0), select]
+  ```
+
+  The `-0.0` belongs to `select`. `add` found it exposed, applied the sound
+  `a + (-0.0) → a` identity, and deleted both — leaving a program that computes
+  `input0 ? 1.0 : 7.0` and answers **0.0 where the answer is 8.0**. The binary operators fail
+  the same way: `1.0 + max(-0.0, x)` optimised to `max(1.0, x)`.
+
+  Replaced with an `operandCount(of:)` table whose switch is **exhaustive on purpose** — adding
+  a case to `Bytecode` now fails to compile until its arity is stated, rather than silently
+  inheriting whatever the `default:` branch happened to do.
+
+- **Stack underflow dropped the instruction.** Every `guard … else { continue }` in both passes
+  now returns the input bytecode unchanged. A pass that cannot model the stack must not rewrite.
+
+##### Tests
+
+- **New: `BytecodeDifferentialTests`** — `Expression` ships no evaluator, so the suite carries an
+  independent recursive tree-walker and gets two differentials from one generator: the tree-walk
+  against `interpret(compile(e))` (clean — the compiler was never at fault) and
+  `interpret(compile(e))` against `interpret(optimize(compile(e)))`, which failed on **13 of
+  2,000** expressions. Now 6,000 evaluations, clean.
+- Both minimal reproducers are pinned as an explicit regression, and both were confirmed to fail
+  against the pre-fix source rather than assumed to.
+- Also pins that conditionals do **not** short-circuit: all three operands are evaluated, so
+  `if x >= 0 then sqrt(x) else 0` throws for negative `x`. Recorded rather than changed — the GPU
+  kernels the bytecode also targets have no branch to be lazy with.
+
+---
+
+#### 2026-09-18 — the cutting-plane optimality certificate was not a certificate
+
+`CuttingPlaneMaster` documents its gap as "a certificate rather than a guess". It was neither,
+whenever the optimum lay outside the initial trust region.
+
+##### Fixed
+
+- **The lower bound was read from the model minimised over the trust region.** Restricting a
+  minimisation can only raise its value, so that number is not a bound on anything outside the
+  box the method drew itself. In the default configuration, `min |x − 1000|` from `x = 0`
+  returned:
+
+  | | |
+  |---|---|
+  | `solution` | 100 |
+  | `objectiveValue` | 900 |
+  | `optimalityGap` | **0.0** |
+  | `converged` | **true** |
+  | `isCertified` | **true** |
+  | `iterations` | 1 |
+
+  A claim of proven optimality after one round, 900 from the answer. The cut at `x = 0` is exact
+  along the whole descending branch, so the model's value at the corner equalled the objective's
+  and the gap closed on a floor that was never a floor. `lowerBound` only ever rises, so one such
+  round poisoned every round after it.
+
+  The bound now comes from a **second master solve over the caller's constraints alone**, which
+  is where Kelley's method takes it. An unrestricted model can be unbounded below — with one cut
+  it always is — and that is reported as an infinite gap rather than papered over.
+
+- **The trust region could only shrink.** It now doubles when a step improves and ends on the
+  boundary, so a far optimum is reached in a logarithmic number of rounds. Capped at 1e12 to keep
+  the master's rows finite.
+
+- **Documentation corrected.** `minimize`'s parameter documentation said constraints were
+  "linearised about `start`". They are *verified* linear about `start`, and a nonlinear one is
+  refused outright — which is the better behaviour and was not what the doc described.
+
+##### Tests
+
+- **New: an optimum beyond the first trust region is still found**, across targets straddling the
+  default half-width — 50 (always worked), 150, 400 and 1000 (all returned the corner).
+- **New: the claimed lower bound is below the true minimum**, for objectives whose minimum is
+  known by construction. This is the type's documented claim stated as something that can fail.
+- **New: the constrained branch has an answer to check.** Every existing test in the file passed
+  `subjectTo: []`, so the rows built from caller constraints were unexercised. `min |x − 3|`
+  subject to `x ≤ 1` has its optimum pushed onto the boundary at `x = 1`, value 2.
+- `budgetExhaustion` changed, and the reason is recorded in the test: it asserted a *finite* gap
+  after two rounds, and that finite number came from the defect. Two one-sided cuts leave the
+  model genuinely unbounded below, so `∞` is the honest answer; the finite-gap branch is covered
+  at five rounds, where the cuts bracket the kink. Measured, not chosen.
+
+---
+
+#### 2026-09-18 — `solveRelaxation` decomposed, 291 → 55
+
+The highest cognitive-complexity score in the package, by a factor of nearly two, and the
+function Tier 2 was opened for. 529 lines, of which all but eighty were the body of a single
+`for _ in 0..<maxCuttingRounds` loop.
+
+##### Changed
+
+- The round is a pipeline — find a fractional variable, take cuts off the tableau, normalise,
+  deduplicate, drop the dominated, trim to the pool budget, retire the stale, add what survives,
+  re-solve, decide whether to continue — and each stage is now a named method in a new
+  `BranchAndBoundCutting.swift`. `solveRelaxation` is 258 lines and **complexity 55**; every way
+  out of the round loop is now stated at the loop's own level.
+
+  This is not cosmetic. Three of the defects found in this file during the sweep were *scope*
+  errors — a `break` bound to an inner scan rather than the round loop, a bound read from the
+  wrong collection, a `Set` iterated where order decided the answer — and all three are mistakes
+  a two-hundred-line loop body makes easy.
+
+- `CutStatisticsTracker`, `isCutDominated` and `areCutsParallel` widened from `private` to
+  internal so the extracted stages can reach them. No public surface changed.
+
+- Behaviour is unchanged by construction: every method is a lift, verified against the 215 tests
+  in 34 integer-programming suites the sweep had already built, and then the full suite.
+
+---
+
+#### 2026-09-18 — `RobustOptimizer` audited, and found clean
+
+`linearRobustCounterpart` (complexity 59) detects that a robust problem is secretly a linear
+program and solves it by a completely different route from the general augmented-Lagrangian
+path, without telling the caller which ran. The existing suites checked that the answer was
+*feasible*; nothing said what it should be.
+
+##### Tests
+
+- **New: `RobustCounterpartOracleTests`** — a hand-derived two-scenario minimax (the crossing of
+  `6 − 4x₀` and `2 + 6x₀`, exactly 4.4 at `x₀ = 0.4`), the maximising mirror of it, a
+  three-scenario budget problem derived on paper *and* confirmed by a 160 000-point grid, and the
+  law that `worstCaseObjective` must be attained at `solution` by the reported `ω`.
+- **The linear route was confirmed to fire, not assumed to.** With a `print` on its success
+  return it fired on 8 of 8 oracle cases. Iteration count does not separate the two routes —
+  both finish in six or seven — so that is not the signal to read. A test pins that the two
+  routes agree on a model perturbed by `10⁻³·x₀²`, which is enough curvature for the detector to
+  decline and too little to move the answer.
+- **No defect found.** Recorded because a clean sweep is a result: it is what makes the next
+  entry's defect informative rather than expected.
+
+---
+
+Everything below this line predates 2026-09-18.
+
+#### The earlier batches — `BranchAndBoundSolver` and the machinery it calls
 
 #### 2026-09-17 — the solver's choices depended on Swift's per-process hash seed
 

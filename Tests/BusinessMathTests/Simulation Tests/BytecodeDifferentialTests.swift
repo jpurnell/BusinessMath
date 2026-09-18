@@ -192,7 +192,7 @@ struct BytecodeDifferentialTests {
 		var checked = 0
 		var failures: [String] = []
 
-		for _ in 0..<400 {
+		for _ in 0..<1_200 {
 			let expression = Self.generate(&rng, depth: 4, inputCount: 3)
 			guard let bytecode = try? BytecodeCompiler.compile(expression) else { continue }
 
@@ -206,7 +206,7 @@ struct BytecodeDifferentialTests {
 			}
 		}
 
-		#expect(checked > 1_500, "only \(checked) evaluations ran")
+		#expect(checked > 5_000, "only \(checked) evaluations ran")
 		let report = failures.prefix(4).joined(separator: "\n")
 		#expect(failures.isEmpty, "\(failures.count) of \(checked) disagreed:\n\(report)")
 	}
@@ -217,7 +217,7 @@ struct BytecodeDifferentialTests {
 		var checked = 0
 		var failures: [String] = []
 
-		for _ in 0..<400 {
+		for _ in 0..<1_200 {
 			let expression = Self.generate(&rng, depth: 4, inputCount: 3)
 			guard let bytecode = try? BytecodeCompiler.compile(expression) else { continue }
 			let optimised = BytecodeOptimizer.optimize(bytecode)
@@ -232,9 +232,61 @@ struct BytecodeDifferentialTests {
 			}
 		}
 
-		#expect(checked > 1_500, "only \(checked) evaluations ran")
+		#expect(checked > 5_000, "only \(checked) evaluations ran")
 		let report = failures.prefix(4).joined(separator: "\n")
 		#expect(failures.isEmpty, "\(failures.count) of \(checked) disagreed:\n\(report)")
+	}
+
+	// MARK: - The miscompilation the sweep found
+
+	/// Every instruction leaves the stack as deep as its arity says, minimised.
+	///
+	/// The random sweep above found this, and would find it again, but a sweep reports a
+	/// symptom in whatever tangled expression it happened to generate. These two are the
+	/// smallest expressions that exhibit it, one per arity that was wrong.
+	///
+	/// `algebraicSimplificationPass` used to pop exactly **one** operand for any instruction it
+	/// had no rewrite for. `select` takes three and the comparisons and `max`/`min` take two, so
+	/// each of them left operands on the stack where the *next* instruction could see them — and
+	/// the next instruction's identity rules, which are individually sound, then matched against
+	/// a value that was never theirs.
+	///
+	/// Both cases below are exact: no tolerance, no epsilon. A miscompilation does not produce a
+	/// slightly different number, it produces the answer to a different question.
+	@Test("An operator consumes all of its operands, not one of them")
+	func everyOperatorConsumesItsWholeArity() throws {
+		// Ternary. The `-0.0` is `select`'s true branch; `add` used to claim it under
+		// `a + (-0.0) → a`, and the optimised program computed `input0 ? 1.0 : 7.0`.
+		let ternary = BusinessMath.Expression.binary(
+			.add,
+			.constant(1.0),
+			.conditional(.input(0), .constant(-0.0), .constant(7.0))
+		)
+
+		// Binary. The `-0.0` is `max`'s left operand; `add` used to claim it under the mirrored
+		// `(-0.0) + a → a`, and the optimised program computed `max(input0, ...)` with the
+		// constant 1.0 swallowed.
+		let binary = BusinessMath.Expression.binary(
+			.add,
+			.constant(1.0),
+			.binary(.max, .constant(-0.0), .input(0))
+		)
+
+		for expression in [ternary, binary] {
+			let plain = try BytecodeCompiler.compile(expression)
+			let optimised = BytecodeOptimizer.optimize(plain)
+
+			for inputs in [[0.0], [1.0], [-3.0], [7.5]] {
+				let before = try BytecodeInterpreter.evaluate(bytecode: plain, inputs: inputs)
+				let after = try BytecodeInterpreter.evaluate(bytecode: optimised, inputs: inputs)
+				// Bit patterns, not values. The pass's contract is that no rewrite changes a
+				// result *in any bit*, and the sign of zero is the bit that matters here: the
+				// additive identities are chosen precisely because `a + (-0.0)` preserves a
+				// `-0.0` that `a + 0.0` would not. Compared with `==`, those two would pass.
+				#expect(before.bitPattern == after.bitPattern,
+						"\(expression) at \(inputs): \(before) unoptimised, \(after) optimised")
+			}
+		}
 	}
 
 	/// A conditional evaluates every branch, so a guard cannot protect the branch it guards.
@@ -256,8 +308,11 @@ struct BytecodeDifferentialTests {
 		)
 		let bytecode = try BytecodeCompiler.compile(guarded)
 
+		// Exact, deliberately: `sqrt` is correctly rounded and 9 is a perfect square, so 3.0 is
+		// the answer rather than an approximation of it. Spelled `isEqual(to:)` so that reads as
+		// a decision.
 		let positive = try BytecodeInterpreter.evaluate(bytecode: bytecode, inputs: [9.0])
-		#expect(positive == 3.0, "sqrt(9) is 3, got \(positive)")
+		#expect(positive.isEqual(to: 3.0), "sqrt(9) is 3, got \(positive)")
 
 		// The guard says this branch is not taken, and it is evaluated anyway.
 		#expect(throws: EvaluationError.self,

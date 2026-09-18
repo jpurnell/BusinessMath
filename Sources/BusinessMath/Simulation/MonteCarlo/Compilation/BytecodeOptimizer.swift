@@ -77,6 +77,58 @@ public struct BytecodeOptimizer {
         case computed([Bytecode])
     }
 
+    /// How many values an instruction takes off the stack.
+    ///
+    /// ## Why this is written out rather than defaulted
+    ///
+    /// ``algebraicSimplificationPass(_:)`` models the stack in order to recognise identities,
+    /// and a model that pops the wrong number of operands does not merely miss a rewrite — it
+    /// leaves a value exposed to an instruction it does not belong to. That pass's `default:`
+    /// branch used to pop exactly one operand whatever the instruction was: right for the eight
+    /// unary functions, wrong for the thirteen binary ones, and wrong by two for `select`. A
+    /// randomized differential test found it as a **miscompilation**:
+    ///
+    /// ```
+    /// (1.0 + (input[0] ? -0.0 : 7.0))
+    ///   compiled  [constant(1.0), input(0), constant(-0.0), constant(7.0), select, add]
+    ///   optimised [constant(1.0), input(0), constant(7.0), select]
+    /// ```
+    ///
+    /// The `-0.0` belongs to `select`, but `add` found it on top of the stack, matched the
+    /// sound `a + (-0.0) → a` identity against it, and deleted both — leaving a program that
+    /// computes `input0 ? 1.0 : 7.0`, answering 0.0 where the answer is 8.0. The identity was
+    /// never the problem; the stack discipline underneath it was.
+    ///
+    /// The switch is **exhaustive on purpose**. A `default:` here would hand the next
+    /// instruction added to ``Bytecode`` whatever arity happened to be convenient, which is the
+    /// exact failure being fixed. Adding a case to that enum must not compile until its arity
+    /// is stated here.
+    ///
+    /// - Parameter instruction: The instruction to measure.
+    /// - Returns: The number of stack values it consumes: 0 for a push, 1 unary, 2 binary, 3
+    ///   for the ternary `select`.
+    private static func operandCount(of instruction: Bytecode) -> Int {
+        switch instruction {
+        // Pushes — they consume nothing.
+        case .input, .constant:
+            return 0
+
+        // Unary.
+        case .negate, .abs, .sqrt, .log, .exp, .sin, .cos, .tan:
+            return 1
+
+        // Binary: arithmetic, the two selectors, then the comparisons.
+        case .add, .subtract, .multiply, .divide, .power,
+             .min, .max,
+             .lessThan, .greaterThan, .lessOrEqual, .greaterOrEqual, .equal, .notEqual:
+            return 2
+
+        // Ternary: condition, true value, false value.
+        case .select:
+            return 3
+        }
+    }
+
     /// Extract bytecode sequence from a stack value
     private static func extractBytecode(_ value: StackValue) -> [Bytecode] {
         switch value {
@@ -137,7 +189,7 @@ public struct BytecodeOptimizer {
 
             case .add, .subtract, .multiply, .divide, .power, .min, .max,
                  .lessThan, .greaterThan, .lessOrEqual, .greaterOrEqual, .equal, .notEqual:
-                guard stack.count >= 2 else { continue }
+                guard stack.count >= 2 else { return bytecode }
                 let right = stack.removeLast()
                 let left = stack.removeLast()
 
@@ -158,7 +210,7 @@ public struct BytecodeOptimizer {
                 }
 
             case .negate, .abs, .sqrt, .log, .exp, .sin, .cos, .tan:
-                guard stack.count >= 1 else { continue }
+                guard stack.count >= 1 else { return bytecode }
                 let operand = stack.removeLast()
 
                 // Try constant folding, declined where the interpreter would throw.
@@ -174,7 +226,7 @@ public struct BytecodeOptimizer {
                 }
 
             case .select:
-                guard stack.count >= 3 else { continue }
+                guard stack.count >= 3 else { return bytecode }
                 let falseValue = stack.removeLast()
                 let trueValue = stack.removeLast()
                 let condition = stack.removeLast()
@@ -296,7 +348,7 @@ public struct BytecodeOptimizer {
                 stack.append(.single(instruction))
 
             case .add:
-                guard stack.count >= 2 else { continue }
+                guard stack.count >= 2 else { return bytecode }
                 let right = stack.removeLast()
                 let left = stack.removeLast()
 
@@ -328,7 +380,7 @@ public struct BytecodeOptimizer {
                 }
 
             case .subtract:
-                guard stack.count >= 2 else { continue }
+                guard stack.count >= 2 else { return bytecode }
                 let right = stack.removeLast()
                 let left = stack.removeLast()
 
@@ -348,7 +400,7 @@ public struct BytecodeOptimizer {
                 }
 
             case .multiply:
-                guard stack.count >= 2 else { continue }
+                guard stack.count >= 2 else { return bytecode }
                 let right = stack.removeLast()
                 let left = stack.removeLast()
 
@@ -380,7 +432,7 @@ public struct BytecodeOptimizer {
                 }
 
             case .divide:
-                guard stack.count >= 2 else { continue }
+                guard stack.count >= 2 else { return bytecode }
                 let right = stack.removeLast()
                 let left = stack.removeLast()
 
@@ -398,12 +450,18 @@ public struct BytecodeOptimizer {
                 }
 
             default:
-                // Other operations - no simplification supported yet
-                guard stack.count >= 1 else { continue }
-                let operand = stack.removeLast()
+                // No simplification for this operator — but its operands must still come off
+                // the stack, *all* of them. Popping one and calling it done is what left a
+                // ternary's operands exposed to the next instruction; see `operandCount(of:)`.
+                let arity = operandCount(of: instruction)
+                guard stack.count >= arity else { return bytecode }
+                let operands = Array(stack.suffix(arity))
+                stack.removeLast(arity)
 
                 var sequence: [Bytecode] = []
-                sequence.append(contentsOf: extractBytecode(operand))
+                for operand in operands {
+                    sequence.append(contentsOf: extractBytecode(operand))
+                }
                 sequence.append(instruction)
                 stack.append(.computed(sequence))
             }

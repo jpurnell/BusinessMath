@@ -112,7 +112,10 @@ public struct CuttingPlaneMaster<V: VectorSpace>: Sendable where V.Scalar == Dou
 	///   - objective: The function to minimise. Assumed convex; a nonconvex objective
 	///     produces cuts that are not valid under-estimators and the gap means nothing.
 	///   - start: Initial point.
-	///   - constraints: Caller constraints, linearised about `start`.
+	///   - constraints: Caller constraints. Each must be linear; linearity is *verified* about
+	///     `start` rather than assumed, and a constraint that fails the check is refused with
+	///     ``OptimizationError/invalidInput(message:)`` rather than linearised and enforced
+	///     somewhere other than where it was written.
 	/// - Returns: The best point found, with its optimality gap.
 	/// - Throws: `OptimizationError` if the problem cannot be set up or the objective is
 	///   not finite at the starting point.
@@ -185,7 +188,31 @@ public struct CuttingPlaneMaster<V: VectorSpace>: Sendable where V.Scalar == Dou
 				break
 			}
 
-			lowerBound = Swift.max(lowerBound, solved.modelValue)
+			// The bound comes from a *second* solve, over the caller's constraints alone.
+			//
+			// The model's minimum bounds the objective's minimum only when it was taken over
+			// the whole feasible set. The solve above minimises over the trust region as well,
+			// and restricting a minimisation can only raise its value — so its answer is not a
+			// bound, and using it as one is what let `min |x − 1000|` from `x = 0` return the
+			// corner at `x = 100` with `optimalityGap: 0.0` and `converged: true`, after a
+			// single round. The cut at 0 is exact along the whole descending branch, so the
+			// model's value at the corner equalled the objective's and the gap closed on a
+			// floor that was never a floor. `lowerBound` only ever rises, so one such round
+			// poisoned every round after it.
+			//
+			// An unrestricted model can be unbounded below — with one cut it always is — and
+			// the simplex solver says so by not returning `.optimal`. That is not a failure:
+			// it is the honest statement that nothing has been proved yet, and the gap stays
+			// infinite until a cut pattern closes the model from below.
+			if let bounding = try solveMaster(
+				cuts: cuts,
+				linearConstraints: linearConstraints,
+				centre: centre,
+				trustRegion: nil,
+				dimension: dimension
+			) {
+				lowerBound = Swift.max(lowerBound, bounding.modelValue)
+			}
 
 			guard let candidatePoint = V.fromArray(solved.point) else {
 				throw OptimizationError.invalidInput(message: "Failed to rebuild the candidate")
@@ -256,6 +283,14 @@ public struct CuttingPlaneMaster<V: VectorSpace>: Sendable where V.Scalar == Dou
 			// follow the candidate.
 			if candidateValue < centreValue {
 				centre = solved.point
+				// The step improved and ended on the boundary, so the box — not the model —
+				// is what stopped it. Widening lets the walk cover ground geometrically
+				// instead of one half-width per round, which is the difference between
+				// reaching an optimum 10 000 away and exhausting the budget short of it.
+				// Capped so a runaway cannot make the master's rows non-finite.
+				if solved.isTrustRegionBinding {
+					trustRegion = Swift.min(trustRegion * 2, Self.trustRegionCeiling)
+				}
 			} else {
 				trustRegion = trustRegion / 2
 				centre = incumbent
@@ -284,9 +319,9 @@ public struct CuttingPlaneMaster<V: VectorSpace>: Sendable where V.Scalar == Dou
 		cuts: [(value: Double, slope: [Double], point: [Double])],
 		linearConstraints: [(coefficients: [Double], constant: Double, isEquality: Bool)],
 		centre: [Double],
-		trustRegion: Double,
+		trustRegion: Double?,
 		dimension: Int
-	) throws -> (point: [Double], modelValue: Double)? {
+	) throws -> (point: [Double], modelValue: Double, isTrustRegionBinding: Bool)? {
 
 		// Columns: [x₀⁺, x₀⁻, …, t⁺, t⁻]. Both the decision variables and the model value
 		// are free, and the simplex method assumes non-negative columns, so each is
@@ -322,17 +357,20 @@ public struct CuttingPlaneMaster<V: VectorSpace>: Sendable where V.Scalar == Dou
 			rows.append(SimplexConstraint(coefficients: row, relation: relation, rhs: -constraint.constant))
 		}
 
-		// Trust region, as a box about the centre.
-		for i in 0..<dimension {
-			var upper = [Double](repeating: 0, count: variableCount)
-			upper[i] = 1
-			upper[dimension + i] = -1
-			rows.append(SimplexConstraint(coefficients: upper, relation: .lessOrEqual, rhs: centre[i] + trustRegion))
+		// Trust region, as a box about the centre — omitted entirely when `trustRegion` is
+		// nil, which is how the bounding solve asks for the model's true minimum.
+		if let trustRegion {
+			for i in 0..<dimension {
+				var upper = [Double](repeating: 0, count: variableCount)
+				upper[i] = 1
+				upper[dimension + i] = -1
+				rows.append(SimplexConstraint(coefficients: upper, relation: .lessOrEqual, rhs: centre[i] + trustRegion))
 
-			var lower = [Double](repeating: 0, count: variableCount)
-			lower[i] = -1
-			lower[dimension + i] = 1
-			rows.append(SimplexConstraint(coefficients: lower, relation: .lessOrEqual, rhs: trustRegion - centre[i]))
+				var lower = [Double](repeating: 0, count: variableCount)
+				lower[i] = -1
+				lower[dimension + i] = 1
+				rows.append(SimplexConstraint(coefficients: lower, relation: .lessOrEqual, rhs: trustRegion - centre[i]))
+			}
 		}
 
 		var objectiveCoefficients = [Double](repeating: 0, count: variableCount)
@@ -352,10 +390,31 @@ public struct CuttingPlaneMaster<V: VectorSpace>: Sendable where V.Scalar == Dou
 			point.append(solved.solution[i] - solved.solution[dimension + i])
 		}
 		let modelValue = solved.solution[positiveEpigraph] - solved.solution[negativeEpigraph]
-		return (point, modelValue)
+
+		// Whether the answer is pressed against the box rather than sitting inside it. The
+		// step solve reads this to decide whether to widen; with no box there is nothing to
+		// press against.
+		var isTrustRegionBinding = false
+		if let trustRegion {
+			let edgeMargin = Swift.max(Self.masterTolerance, trustRegion * 1e-9)
+			for i in 0..<dimension where abs(point[i] - centre[i]) >= trustRegion - edgeMargin {
+				isTrustRegionBinding = true
+			}
+		}
+
+		return (point, modelValue, isTrustRegionBinding)
 	}
 
 	// MARK: - Cuts
+
+	/// Widest the trust region may grow to.
+	///
+	/// The region doubles while steps keep ending on its boundary, which is what lets a far
+	/// optimum be reached in a logarithmic number of rounds rather than a linear one. A cap
+	/// keeps the box's rows finite: the master builds `centre[i] ± trustRegion` as simplex
+	/// right-hand sides, and an infinite one is not a constraint, it is a `NaN` waiting for a
+	/// subtraction.
+	private static var trustRegionCeiling: Double { 1e12 }
 
 	/// Accuracy the master is solved to, matching what finite-difference cut
 	/// coefficients actually carry. Solving tighter than the data asks Phase I to drive
