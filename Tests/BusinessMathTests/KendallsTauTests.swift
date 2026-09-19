@@ -184,4 +184,63 @@ struct KendallsTauTests {
         guard denominator > 0 else { return nil }
         return Double(concordant - discordant) / denominator
     }
+	// MARK: - An external reference
+
+	/// Values from SciPy 1.17.1 `kendalltau(x, y, variant='b')`.
+	///
+	/// The suite's other assertions check the `n log n` form against the quadratic definition,
+	/// which is the right oracle for *that* question — it is the only way to catch a wrong
+	/// inversion count or a mishandled tie correction. But both forms are this package's own
+	/// reading of tau-b, so agreeing with each other says nothing about whether the reading is
+	/// the standard one. Only something outside the package can say that.
+	///
+	/// The cases are chosen where the two conventions could differ: ties in one variable, ties in
+	/// both, and a variable that is nearly constant. Clean data agrees under any convention and
+	/// would prove nothing.
+	///
+	/// Note `perfect` and `reversed`: SciPy returns `±0.9999999999999999` where this returns
+	/// exactly `±1`, because it forms the denominator as a product of square roots where this
+	/// takes the square root of the product. Ours is the closer of the two to the exact answer,
+	/// so the comparison is made at 1e-12 rather than by equality.
+	/// One SciPy case: the two variables and the value SciPy reports.
+	///
+	/// A named type rather than a tuple, and hoisted out of the `@Test` macro, because eight
+	/// four-element tuples of mixed integer and floating-point literals inside `arguments:`
+	/// defeated the type checker outright — "unable to type-check this expression in reasonable
+	/// time", on the *local* compiler. The macro expands its argument into generic closures with
+	/// far less to anchor on than the source line suggests, so a literal array that is fine as a
+	/// plain `let` is not fine there.
+	struct SciPyCase: Sendable {
+		let name: String
+		let x: [Double]
+		let y: [Double]
+		let reference: Double
+	}
+
+	static let sciPyCases: [SciPyCase] = [
+		SciPyCase(name: "perfect", x: [1, 2, 3, 4, 5], y: [1, 2, 3, 4, 5],
+				  reference: 0.9999999999999999),
+		SciPyCase(name: "reversed", x: [1, 2, 3, 4, 5], y: [5, 4, 3, 2, 1],
+				  reference: -0.9999999999999999),
+		SciPyCase(name: "one crossing", x: [1, 2, 3, 4, 5], y: [1, 3, 2, 5, 4],
+				  reference: 0.6),
+		SciPyCase(name: "tied in x only", x: [1, 1, 2, 2], y: [1, 2, 3, 4],
+				  reference: 0.8164965809277261),
+		SciPyCase(name: "tied in both, identical", x: [1, 1, 2, 2], y: [1, 1, 2, 2],
+				  reference: 1.0),
+		SciPyCase(name: "ties throughout", x: [1, 1, 1, 2, 2, 3], y: [1, 2, 2, 2, 3, 3],
+				  reference: 0.7272727272727273),
+		SciPyCase(name: "y nearly constant", x: [1, 2, 3, 4, 5, 6], y: [1, 1, 1, 1, 1, 2],
+				  reference: 0.5773502691896257),
+		SciPyCase(name: "binary against binary", x: [0, 0, 1, 1, 1, 0], y: [0, 1, 1, 1, 0, 0],
+				  reference: 0.3333333333333333)
+	]
+
+	@Test("Tau-b matches SciPy on tie-heavy data", arguments: KendallsTauTests.sciPyCases)
+	func matchesSciPy(testCase: SciPyCase) throws {
+		let tau = try kendallsTau(testCase.x, vs: testCase.y)
+		let gap = abs(tau - testCase.reference)
+		#expect(gap < 1e-12,
+				"\(testCase.name): SciPy gives \(testCase.reference), this gives \(tau)")
+	}
 }
