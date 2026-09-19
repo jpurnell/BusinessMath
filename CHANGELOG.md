@@ -13,6 +13,79 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Tier 2 of the quality programme, continued past `v3.0.0-alpha.7`.
 
+#### 2026-09-19 — ICC(1,1) returned the ICC(2,1) figure
+
+There are two functions named `icc`: one takes `[[T]]` and computes the coefficient from ANOVA
+mean squares, the other takes `[[T?]]` and fits the same two-way model by EM so missing cells can
+be tolerated. Hand a complete matrix to the second and both answer the same question about the
+same numbers, which makes them a differential. The EM one had no oracle at all.
+
+Checked against Shrout & Fleiss (1979) Table 1 — six subjects, four judges, published
+ICC(1,1) = .17, ICC(2,1) = .29, ICC(3,1) = .71. The ANOVA overload reproduces all three to twelve
+decimal places.
+
+##### Fixed
+
+- **`.oneWayRandom` carried the `.twoWayRandom, .absolute` formula, character for character**, so
+  the EM overload returned the same number for both models. A one-way design has no separable
+  rater effect: rater variation is part of the noise a subject is measured against, so it comes
+  out of the *subject* term as well as sitting in the denominator.
+
+  ```
+  MSW = MSE + r²                        (within-subject MS, raters pooled into noise)
+  s²(one-way) = (MSR − MSW)/k = s² − r²/k
+  ```
+
+  On the ANOVA components of that matrix the corrected formula gives **0.1657417684054754** —
+  the published .17 exactly. The shared formula gave **0.28976**, their ICC(2,1), overstating
+  agreement by three quarters.
+
+- **The iteration budget expired on three quarters of ordinary cases.** `maxIterations` defaulted
+  to 200; on the same matrix the EM needs up to **668** iterations with one cell missing and up to
+  **1263** with two. Eighteen of the twenty-four single-cell deletions therefore returned
+  `converged: false` beside an estimate that was in fact very nearly right — indistinguishable,
+  to a caller who does not inspect the flag, from a converged one. Missing cells are the entire
+  reason this overload exists. Default raised to **5000**.
+
+  Convergence on the variance components rather than on the likelihood was tried first, on the
+  theory that the criterion was at fault. It is **slower** — 904 and 1597 on the same two cases —
+  so the budget was the thing to change. EM is simply slow on a crossed design.
+
+##### Documented
+
+- **`logLikelihood` is not the mixed model's log-likelihood**, and now says so. It is computed as
+  though every observed cell were an independent draw from `N(mu, s² + r² + e²)`: the total
+  variance is right and the correlation subjects and raters induce between cells — the entire
+  model — is absent. It works as a convergence criterion because it moves with the parameters,
+  but it cannot be used for a likelihood-ratio test. The true marginal likelihood needs the
+  `n·k × n·k` covariance and its determinant, which the crossed design with missing cells has no
+  closed form for.
+
+- **The two overloads disagree by about 0.06 on identical complete data, and that is ML bias
+  rather than a defect.** EM maximises the likelihood; ANOVA (equivalently REML, for a balanced
+  complete design) does not. Measured: subject component 2.0714 against 2.5556 (ratio 0.811,
+  against the `(n−1)/n` = 0.833 the design predicts), rater 3.8799 against 5.2444 (0.740 against
+  `(k−1)/k` = 0.750), residual rising to take up the slack. Pinned with a loose bound so a
+  *change* in the gap is noticed. **Open question for a future session: whether the EM should be
+  made REML so the two overloads agree.**
+
+##### Changed
+
+- `icc` (the EM overload) went from cognitive complexity **131 to 73**. `ratingLayout(of:)` holds
+  every way the matrix can be refused, `iccFromVarianceComponents(...)` is arithmetic on three
+  numbers that can be checked against a published table without running an EM, and
+  `conditionalEffects(...)` is the ICE E-step. The M-step and initialisation were left inline
+  deliberately — they are one estimator, and this is the file's numerical core.
+
+##### Tests
+
+- **New: `ICCAgreementOracleTests`** — the published coefficients for both overloads, the one-way
+  formula recomputed from the result's own components, the ML divergence pinned with its measured
+  size, every single-cell deletion converging under the default budget, and single absences
+  perturbing the estimate rather than breaking it.
+
+---
+
 #### 2026-09-19 — a negatively-bounded model was answered at zero, and called optimal
 
 `BranchAndBoundSolver` delegates to a simplex method that assumes `x ≥ 0`, so a variable with a

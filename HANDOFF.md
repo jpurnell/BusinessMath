@@ -1,4 +1,4 @@
-# Handoff — 2026-09-19 (Tier 2: six items closed, seven defects)
+# Handoff — 2026-09-19 (Tier 2: seven items closed, nine defects)
 
 **Six items of Tier 2 closed, seven defects.** The bytecode optimizer,
 `RobustOptimizer`/`CuttingPlaneMaster` and `solveRelaxation` shipped as `e70829ac`; `solve`
@@ -76,7 +76,19 @@ Re-run the gate rather than trusting that table after any refactor.
 - **`RobustOptimizer` audited, clean.** The LP route was confirmed to fire by instrumentation
   (8 of 8 cases), not assumed — iteration count does *not* separate the two routes.
 
-### `extractVariableShift` — 95 → 21, three defects (this commit)
+### `icc` (EM overload) — 131 → 73, two defects
+
+- **`.oneWayRandom` carried the `.twoWayRandom, .absolute` formula character for character**, so
+  ICC(1,1) returned the ICC(2,1) figure — 0.28976 where Shrout & Fleiss (1979) publish .17,
+  overstating agreement by three quarters. The one-way subject term is `s² − r²/k`, not `s²`.
+- **`maxIterations` defaulted to 200 where the EM needs up to 1263.** Eighteen of twenty-four
+  single-cell deletions expired, returning `converged: false` with an estimate that was nearly
+  right. Raised to 5000. Parameter-based convergence was tried and is *slower*.
+- `logLikelihood` is an **independence approximation**, not the model's likelihood, and now says
+  so. **Open: whether the EM should be REML** so the two `icc` overloads agree on complete data —
+  they currently differ by ~0.06, which is ML bias tracking `(n-1)/n` and `(k-1)/k`.
+
+### `extractVariableShift` — 95 → 21, three defects
 
 - **`enableVariableShifting` defaulted to `false`**, and it is the only thing between the
   simplex's implicit `x ≥ 0` and a model that says otherwise. `x ≥ -3, minimise x` returned

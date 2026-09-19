@@ -29,7 +29,19 @@ public struct ICCMissingDataResult<T: Real & Sendable>: Sendable, Equatable {
 	public let iterations: Int
 	/// Whether the EM algorithm converged within the iteration limit.
 	public let converged: Bool
-	/// Log-likelihood at the final parameter estimates.
+	/// Working log-likelihood at the final parameter estimates, under an independence
+	/// approximation.
+	///
+	/// **Not the mixed model's log-likelihood.** It is computed as though every observed cell
+	/// were an independent draw from `N(mu, sigma_s^2 + sigma_r^2 + sigma_e^2)` — the total
+	/// variance is right, but the correlation that subjects and raters induce between cells,
+	/// which is the entire model, is absent.
+	///
+	/// It serves as the EM's convergence criterion, where it works because it moves with the
+	/// parameters, and it is reported here for diagnostics. Do not use it for a likelihood-ratio
+	/// test or to compare models: the true marginal likelihood needs the `n·k × n·k` covariance
+	/// `sigma_s^2 Z_s Z_s' + sigma_r^2 Z_r Z_r' + sigma_e^2 I` and its determinant, which the
+	/// crossed design with missing cells has no closed form for.
 	public let logLikelihood: T
 	/// Number of subjects with at least one observed rating.
 	public let subjects: Int
@@ -37,6 +49,249 @@ public struct ICCMissingDataResult<T: Real & Sendable>: Sendable, Equatable {
 	public let raters: Int
 	/// Total number of observed (non-nil) cells.
 	public let observedCells: Int
+}
+
+/// The E-step: conditional means of the subject and rater effects, given the current parameters.
+///
+/// Crossed random effects are not conditionally independent of one another — `E[s_i]` depends on
+/// the rater effects of the raters who scored subject `i`, and `E[r_j]` on the subject effects of
+/// the subjects rater `j` scored. With missing cells there is no closed form for both at once, so
+/// they are solved by **Iterative Conditional Expectations**: hold the raters fixed and update
+/// the subjects, hold the subjects fixed and update the raters, and repeat.
+///
+/// Each update is the standard shrinkage estimator. For subject `i` with `n_i` observations,
+///
+/// ```
+/// E[s_i] = (s² / (s² + e²/n_i)) · (x̄_i − mu − r̄_i)
+/// ```
+///
+/// where the shrinkage factor pulls a subject with few ratings toward zero — which is the whole
+/// reason a mixed model is used on incomplete data rather than a per-subject mean.
+///
+/// Ten sweeps, fixed. The alternation converges geometrically and the outer EM re-enters here
+/// every iteration, so the inner loop does not need to be run to convergence itself.
+///
+/// - Parameters:
+///   - ratings: The rating matrix, `nil` where absent.
+///   - activeSubjects: Row indices with at least one observation.
+///   - activeRaters: Column indices with at least one observation.
+///   - subjectCounts: Observations per row.
+///   - raterCounts: Observations per column.
+///   - rows: Total row count, which sizes the returned arrays.
+///   - columns: Total column count, likewise.
+///   - mu: The current grand mean.
+///   - sigmaS2: The current between-subjects variance.
+///   - sigmaR2: The current between-raters variance.
+///   - sigmaE2: The current residual variance.
+/// - Returns: `E[s_i]` per row and `E[r_j]` per column, zero at inactive indices.
+internal func conditionalEffects<T: Real>(
+	ratings: [[T?]],
+	activeSubjects: [Int],
+	activeRaters: [Int],
+	subjectCounts: [Int],
+	raterCounts: [Int],
+	rows: Int,
+	columns: Int,
+	mu: T,
+	sigmaS2: T,
+	sigmaR2: T,
+	sigmaE2: T
+) -> (subjects: [T], raters: [T]) {
+	var eS = [T](repeating: T.zero, count: rows)
+	var eR = [T](repeating: T.zero, count: columns)
+
+	let iceSweeps = 10
+	for _ in 0..<iceSweeps {
+		for i in activeSubjects {
+			guard subjectCounts[i] > 0 else { continue }
+			let ni = T(subjectCounts[i])
+			var sumX = T.zero
+			var sumR = T.zero
+			for j in activeRaters {
+				if let val = ratings[i][j] {
+					sumX += val
+					sumR += eR[j]
+				}
+			}
+			let xBarI = sumX / ni
+			let rBarI = sumR / ni
+			let shrinkage = sigmaS2 / (sigmaS2 + sigmaE2 / ni)
+			eS[i] = shrinkage * (xBarI - mu - rBarI)
+		}
+
+		for j in activeRaters {
+			guard raterCounts[j] > 0 else { continue }
+			let kj = T(raterCounts[j])
+			var sumX = T.zero
+			var sumS = T.zero
+			for i in activeSubjects {
+				if let val = ratings[i][j] {
+					sumX += val
+					sumS += eS[i]
+				}
+			}
+			let xBarJ = sumX / kj
+			let sBarJ = sumS / kj
+			let shrinkage = sigmaR2 / (sigmaR2 + sigmaE2 / kj)
+			eR[j] = shrinkage * (xBarJ - mu - sBarJ)
+		}
+	}
+
+	return (eS, eR)
+}
+
+/// The coefficient implied by a set of variance components, for each model and agreement type.
+///
+/// Separated out because it is the part that is *arithmetic on three numbers* — it can be
+/// checked against a published table without running an EM, and a caller can apply it to
+/// components obtained any other way.
+///
+/// | Model | Agreement | Formula |
+/// |---|---|---|
+/// | ICC(1,1) | either | `(s² − r²/k) / ((s² − r²/k) + r² + e²)` |
+/// | ICC(2,1) | absolute | `s² / (s² + r² + e²)` |
+/// | ICC(2,1) | consistency | `s² / (s² + e²)` |
+/// | ICC(3,1) | either | `s² / (s² + e²)` |
+///
+/// ## The one-way row is not the two-way row
+///
+/// It used to be — `.oneWayRandom` carried the `.twoWayRandom, .absolute` line character for
+/// character, so both models returned the same number. A one-way design has no separable rater
+/// effect: rater variation is part of the noise a subject is measured against, so it comes out
+/// of the *subject* term as well as sitting in the denominator. Writing the one-way
+/// decomposition in two-way components,
+///
+/// ```
+/// MSW = MSE + r²                       (within-subject MS, raters pooled into noise)
+/// s²(one-way) = (MSR − MSW)/k = s² − r²/k
+/// ```
+///
+/// On the ANOVA components of Shrout & Fleiss (1979) Table 1 that gives 0.16574 — their
+/// published .17 — where the shared formula gave 0.28976, their ICC(2,1), overstating agreement
+/// by three quarters.
+///
+/// The one-way subject term goes negative when raters vary more than subjects. That is the model
+/// reporting no subject signal, and like every ANOVA variance estimate it is read as zero.
+///
+/// - Parameters:
+///   - model: Which ICC model is being asked for.
+///   - agreement: Absolute or consistency. Ignored for the one-way and mixed models, which have
+///     one formula each.
+///   - sigmaS2: The between-subjects variance component.
+///   - sigmaR2: The between-raters variance component.
+///   - sigmaE2: The residual variance component.
+///   - raters: The number of raters with observed data, as a scalar.
+/// - Returns: The coefficient, or zero where the components leave no variance to divide by.
+internal func iccFromVarianceComponents<T: Real>(
+	model: ICCModel,
+	agreement: ICCAgreement,
+	sigmaS2: T,
+	sigmaR2: T,
+	sigmaE2: T,
+	raters: T
+) -> T {
+	switch (model, agreement) {
+	case (.oneWayRandom, _):
+		let raterShare: T = raters > T.zero ? sigmaR2 / raters : T.zero
+		let oneWaySubjects: T = T.maximum(T.zero, sigmaS2 - raterShare)
+		let denominator: T = oneWaySubjects + sigmaR2 + sigmaE2
+		return denominator > T.zero ? oneWaySubjects / denominator : T.zero
+
+	case (.twoWayRandom, .absolute):
+		let denominator: T = sigmaS2 + sigmaR2 + sigmaE2
+		return denominator > T.zero ? sigmaS2 / denominator : T.zero
+
+	case (.twoWayRandom, .consistency), (.twoWayMixed, _):
+		// The mixed model treats raters as fixed, so rater spread is never in the denominator;
+		// two-way random with consistency asks the same question of random raters.
+		let denominator: T = sigmaS2 + sigmaE2
+		return denominator > T.zero ? sigmaS2 / denominator : T.zero
+	}
+}
+
+/// Which cells of a rating matrix are present, and which subjects and raters are usable.
+///
+/// Separated from the estimator because it is the part that *refuses* — every way this function
+/// can decline a matrix is here, in one place, rather than interleaved with the arithmetic that
+/// assumes it succeeded.
+///
+/// A subject or rater with no observations at all is excluded rather than rejected: it
+/// contributes nothing to any variance component, and dropping it is what lets a matrix with an
+/// entirely absent column still be estimated from the rest.
+///
+/// - Parameter ratings: The subjects-by-raters matrix, `nil` where a rating is absent.
+/// - Returns: The presence mask, per-subject and per-rater observation counts, the indices that
+///   survive, and the total number of observed cells.
+/// - Throws: `BusinessMathError.mismatchedDimensions` if rows differ in length, and
+///   `BusinessMathError.insufficientData` when nothing is observed or fewer than two subjects or
+///   raters have any data.
+internal func ratingLayout<T>(
+	of ratings: [[T?]]
+) throws -> (
+	observed: [[Bool]],
+	subjectCounts: [Int],
+	raterCounts: [Int],
+	activeSubjects: [Int],
+	activeRaters: [Int],
+	totalObserved: Int
+) {
+	let nRows = ratings.count
+	guard nRows >= 1 else {
+		throw BusinessMathError.insufficientData(
+			required: 2, actual: 0,
+			context: "ICC requires at least 2 subjects (rows)")
+	}
+
+	let kCols = ratings[0].count
+	guard kCols >= 1 else {
+		throw BusinessMathError.insufficientData(
+			required: 2, actual: 0,
+			context: "ICC requires at least 2 raters (columns)")
+	}
+
+	for i in 1..<nRows {
+		guard ratings[i].count == kCols else {
+			throw BusinessMathError.mismatchedDimensions(
+				message: "All rows must have the same number of columns",
+				expected: "\(kCols)", actual: "\(ratings[i].count)")
+		}
+	}
+
+	var observed = [[Bool]](repeating: [Bool](repeating: false, count: kCols), count: nRows)
+	var subjectCounts = [Int](repeating: 0, count: nRows)
+	var raterCounts = [Int](repeating: 0, count: kCols)
+	var totalObserved = 0
+
+	for i in 0..<nRows {
+		for j in 0..<kCols where ratings[i][j] != nil {
+			observed[i][j] = true
+			subjectCounts[i] += 1
+			raterCounts[j] += 1
+			totalObserved += 1
+		}
+	}
+
+	guard totalObserved > 0 else {
+		throw BusinessMathError.insufficientData(
+			required: 1, actual: 0,
+			context: "ICC requires at least some observed data")
+	}
+
+	let activeSubjects = (0..<nRows).filter { subjectCounts[$0] > 0 }
+	let activeRaters = (0..<kCols).filter { raterCounts[$0] > 0 }
+
+	guard activeSubjects.count >= 2 else {
+		throw BusinessMathError.insufficientData(
+			required: 2, actual: activeSubjects.count,
+			context: "ICC requires at least 2 subjects with observed data")
+	}
+	guard activeRaters.count >= 2 else {
+		throw BusinessMathError.insufficientData(
+			required: 2, actual: activeRaters.count,
+			context: "ICC requires at least 2 raters with observed data")
+	}
+
+	return (observed, subjectCounts, raterCounts, activeSubjects, activeRaters, totalObserved)
 }
 
 /// Computes the intraclass correlation coefficient for data with missing values.
@@ -57,7 +312,7 @@ public struct ICCMissingDataResult<T: Real & Sendable>: Sendable, Equatable {
 ///
 /// | Model | Agreement | Formula |
 /// |---|---|---|
-/// | ICC(1,1) | absolute | sigma_s^2 / (sigma_s^2 + sigma_r^2 + sigma_e^2) |
+/// | ICC(1,1) | either | (sigma_s^2 - sigma_r^2/k) / ((sigma_s^2 - sigma_r^2/k) + sigma_r^2 + sigma_e^2) |
 /// | ICC(2,1) | absolute | sigma_s^2 / (sigma_s^2 + sigma_r^2 + sigma_e^2) |
 /// | ICC(2,1) | consistency | sigma_s^2 / (sigma_s^2 + sigma_e^2) |
 /// | ICC(3,1) | absolute | sigma_s^2 / (sigma_s^2 + sigma_e^2) |
@@ -69,7 +324,18 @@ public struct ICCMissingDataResult<T: Real & Sendable>: Sendable, Equatable {
 ///     `nil` indicates a missing observation.
 ///   - model: The ICC model type (see ``ICCModel``).
 ///   - agreement: The agreement type (see ``ICCAgreement``).
-///   - maxIterations: Maximum number of EM iterations (default 200).
+///   - maxIterations: Maximum number of EM iterations (default 5000).
+///
+///     Measured on the Shrout & Fleiss (1979) matrix, six subjects by four raters: with one
+///     cell removed the EM needs up to **668** iterations to settle, and with two removed up
+///     to **1263**. The old default of 200 therefore expired on **18 of the 24** single-cell
+///     deletions, returning `converged: false` alongside an estimate that was in fact very
+///     nearly right — a result a caller who does not check the flag cannot distinguish from a
+///     converged one.
+///
+///     This is EM being EM rather than anything wrong with the criterion. Convergence on the
+///     variance components instead of on the likelihood was tried and is *slower* — 904 and
+///     1597 on the same two cases — so the budget is the thing to raise.
 ///   - tolerance: Convergence threshold for relative log-likelihood
 ///     change (default 1e-8).
 /// - Returns: An ``ICCMissingDataResult`` containing the ICC estimate,
@@ -81,81 +347,21 @@ public func icc<T: Real>(
 	_ ratings: [[T?]],
 	model: ICCModel,
 	agreement: ICCAgreement,
-	maxIterations: Int = 200,
+	maxIterations: Int = 5_000,
 	tolerance: T = T(1) / T(100_000_000)
 ) throws -> ICCMissingDataResult<T> {
 
-	// --- Validate dimensions ---
-
+	let layout = try ratingLayout(of: ratings)
 	let nRows = ratings.count
-	guard nRows >= 1 else {
-		throw BusinessMathError.insufficientData(
-			required: 2, actual: 0,
-			context: "ICC requires at least 2 subjects (rows)")
-	}
-
-	let kCols = ratings[0].count
-	guard kCols >= 1 else {
-		throw BusinessMathError.insufficientData(
-			required: 2, actual: 0,
-			context: "ICC requires at least 2 raters (columns)")
-	}
-
-	// Validate balanced design (all rows same length)
-	for i in 1..<nRows {
-		guard ratings[i].count == kCols else {
-			throw BusinessMathError.mismatchedDimensions(
-				message: "All rows must have the same number of columns",
-				expected: "\(kCols)", actual: "\(ratings[i].count)")
-		}
-	}
-
-	// --- Build observation mask and count observations ---
-
-	// observed[i][j] == true if ratings[i][j] is non-nil
-	var observed = [[Bool]](repeating: [Bool](repeating: false, count: kCols), count: nRows)
-	// n_i = number of observed ratings for subject i
-	var nObs = [Int](repeating: 0, count: nRows)
-	// k_j = number of observed ratings for rater j
-	var kObs = [Int](repeating: 0, count: kCols)
-	var totalObs = 0
-
-	for i in 0..<nRows {
-		for j in 0..<kCols {
-			if ratings[i][j] != nil {
-				observed[i][j] = true
-				nObs[i] += 1
-				kObs[j] += 1
-				totalObs += 1
-			}
-		}
-	}
-
-	guard totalObs > 0 else {
-		throw BusinessMathError.insufficientData(
-			required: 1, actual: 0,
-			context: "ICC requires at least some observed data")
-	}
-
-	// Identify subjects and raters with at least one observation
-	let activeSubjects = (0..<nRows).filter { nObs[$0] > 0 }
-	let activeRaters = (0..<kCols).filter { kObs[$0] > 0 }
-
+	let kCols = ratings.first?.count ?? 0
+	let observed = layout.observed
+	let nObs = layout.subjectCounts
+	let kObs = layout.raterCounts
+	let totalObs = layout.totalObserved
+	let activeSubjects = layout.activeSubjects
+	let activeRaters = layout.activeRaters
 	let n = activeSubjects.count
 	let k = activeRaters.count
-
-	guard n >= 2 else {
-		throw BusinessMathError.insufficientData(
-			required: 2, actual: n,
-			context: "ICC requires at least 2 subjects with observed data")
-	}
-
-	guard k >= 2 else {
-		throw BusinessMathError.insufficientData(
-			required: 2, actual: k,
-			context: "ICC requires at least 2 raters with observed data")
-	}
-
 	let nT = T(n)
 	let kT = T(k)
 	let totalObsT = T(totalObs)
@@ -251,51 +457,21 @@ public func icc<T: Real>(
 
 		// ---- E-step: Iterative Conditional Expectations (ICE) ----
 
-		var eS = [T](repeating: T.zero, count: nRows)
-		var eR = [T](repeating: T.zero, count: kCols)
-
-		// ICE: alternate updating E[s_i] and E[r_j] for several sweeps
-		let iceSweeps = 10
-		for _ in 0..<iceSweeps {
-			// Update E[s_i | x_obs, theta]
-			for i in activeSubjects {
-				guard nObs[i] > 0 else { continue }
-				let ni = T(nObs[i])
-				// x_bar_i. - mu - r_bar_i.
-				// where x_bar_i. is mean of observed x_ij for subject i
-				// r_bar_i. is mean of E[r_j] for raters observed on subject i
-				var sumX = T.zero
-				var sumR = T.zero
-				for j in activeRaters {
-					if let val = ratings[i][j] {
-						sumX += val
-						sumR += eR[j]
-					}
-				}
-				let xBarI = sumX / ni
-				let rBarI = sumR / ni
-				let shrinkage = sigmaS2 / (sigmaS2 + sigmaE2 / ni)
-				eS[i] = shrinkage * (xBarI - mu - rBarI)
-			}
-
-			// Update E[r_j | x_obs, theta]
-			for j in activeRaters {
-				guard kObs[j] > 0 else { continue }
-				let kj = T(kObs[j])
-				var sumX = T.zero
-				var sumS = T.zero
-				for i in activeSubjects {
-					if let val = ratings[i][j] {
-						sumX += val
-						sumS += eS[i]
-					}
-				}
-				let xBarJ = sumX / kj
-				let sBarJ = sumS / kj
-				let shrinkage = sigmaR2 / (sigmaR2 + sigmaE2 / kj)
-				eR[j] = shrinkage * (xBarJ - mu - sBarJ)
-			}
-		}
+		let expectations = conditionalEffects(
+			ratings: ratings,
+			activeSubjects: activeSubjects,
+			activeRaters: activeRaters,
+			subjectCounts: nObs,
+			raterCounts: kObs,
+			rows: nRows,
+			columns: kCols,
+			mu: mu,
+			sigmaS2: sigmaS2,
+			sigmaR2: sigmaR2,
+			sigmaE2: sigmaE2
+		)
+		let eS = expectations.subjects
+		let eR = expectations.raters
 
 		// Second moments: E[s_i^2] and E[r_j^2]
 		var eS2 = [T](repeating: T.zero, count: nRows)
@@ -396,29 +572,14 @@ public func icc<T: Real>(
 	let finalSigmaR2 = sigmaR2 < zeroThreshold ? T.zero : sigmaR2
 	let finalSigmaE2 = sigmaE2 < zeroThreshold ? T.zero : sigmaE2
 
-	let iccValue: T
-	switch (model, agreement) {
-	case (.oneWayRandom, _):
-		// ICC(1,1) = sigma_s^2 / (sigma_s^2 + sigma_r^2 + sigma_e^2)
-		let denom = finalSigmaS2 + finalSigmaR2 + finalSigmaE2
-		iccValue = denom > T.zero ? finalSigmaS2 / denom : T.zero
-	case (.twoWayRandom, .absolute):
-		// ICC(2,1) absolute = sigma_s^2 / (sigma_s^2 + sigma_r^2 + sigma_e^2)
-		let denom = finalSigmaS2 + finalSigmaR2 + finalSigmaE2
-		iccValue = denom > T.zero ? finalSigmaS2 / denom : T.zero
-	case (.twoWayRandom, .consistency):
-		// ICC(2,1) consistency = sigma_s^2 / (sigma_s^2 + sigma_e^2)
-		let denom = finalSigmaS2 + finalSigmaE2
-		iccValue = denom > T.zero ? finalSigmaS2 / denom : T.zero
-	case (.twoWayMixed, .absolute):
-		// ICC(3,1) absolute = sigma_s^2 / (sigma_s^2 + sigma_e^2)
-		let denom = finalSigmaS2 + finalSigmaE2
-		iccValue = denom > T.zero ? finalSigmaS2 / denom : T.zero
-	case (.twoWayMixed, .consistency):
-		// ICC(3,1) consistency = sigma_s^2 / (sigma_s^2 + sigma_e^2)
-		let denom = finalSigmaS2 + finalSigmaE2
-		iccValue = denom > T.zero ? finalSigmaS2 / denom : T.zero
-	}
+	let iccValue = iccFromVarianceComponents(
+		model: model,
+		agreement: agreement,
+		sigmaS2: finalSigmaS2,
+		sigmaR2: finalSigmaR2,
+		sigmaE2: finalSigmaE2,
+		raters: kT
+	)
 
 	return ICCMissingDataResult(
 		icc: iccValue,
