@@ -28,15 +28,40 @@ internal func absVal<T: Real>(_ x: T) -> T {
 /// is what the two conditions here are for, and the `maximum(_:.ulpOfOne)` is what keeps the
 /// relative branch finite when the old value is zero.
 ///
+/// ## Why the two thresholds are separate
+///
+/// They were one number until 2026-09-19, and that coupling was a latent defect rather than
+/// a simplification. A variance component approaching the zero boundary can never satisfy
+/// the relative branch — `absDiff / |old|` does not shrink as `old` goes to zero — so the
+/// absolute branch is the only thing that ever lets such a model converge. Driving it from
+/// `tolerance` meant that tightening the *relative* test to buy accuracy also tightened the
+/// absolute floor, and a fit jittering just above zero stopped converging: no less settled
+/// than before, only measured against a smaller ruler.
+///
+/// `fitGeneralLME` hit this the moment its tolerance moved from 1e-8 to 1e-9. A model with
+/// no group effect at all — the case where `tau^2` is genuinely zero — ran its full
+/// iteration budget and reported failure on data it had been fitting correctly.
+///
+/// The floor therefore stays at 1e-8, which is exactly the value it had when it was welded
+/// to `tolerance`. No model that converged before this change can stop converging because of
+/// it, and the relative test is now free to move on its own.
+///
 /// - Parameters:
 ///   - old: The previous iterate.
 ///   - new: The current iterate.
-///   - tolerance: The threshold, applied to both the absolute and the relative difference.
+///   - tolerance: The threshold on the **relative** difference.
+///   - absoluteFloor: The threshold on the **absolute** difference, below which a parameter
+///     counts as settled whatever its relative change. Defaults to 1e-8; raise it only with
+///     a measurement, since it is the last thing standing between a boundary case and a
+///     spurious non-convergence.
 /// - Returns: `true` when either criterion is met.
-internal func paramHasConverged<T: Real>(old: T, new: T, tolerance: T) -> Bool {
+internal func paramHasConverged<T: Real>(
+	old: T, new: T, tolerance: T,
+	absoluteFloor: T = T(1) / T(100_000_000)
+) -> Bool {
 	if new == T.zero && old == T.zero { return true }
 	let absDiff = absVal(new - old)
-	if absDiff < tolerance { return true }
+	if absDiff < absoluteFloor { return true }
 	let relDiff = absDiff / T.maximum(absVal(old), T.ulpOfOne)
 	return relDiff < tolerance
 }

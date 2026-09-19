@@ -36,7 +36,12 @@ import Numerics
 /// - Parameters:
 ///   - model: The random intercept model specification.
 ///   - maxIterations: Maximum iterations (default 100).
-///   - tolerance: Convergence tolerance (default 1e-8).
+///   - tolerance: Convergence tolerance (default 1e-9).
+///
+///     Must track ``fitGeneralLME(_:maxIterations:tolerance:)``, which this passes it
+///     straight to: a wrapper left on the old 1e-8 stops the shared loop an iteration
+///     earlier than calling the general fitter directly, and the two return different
+///     numbers for the same model. See that function for why the value is 1e-9.
 /// - Returns: A ``RandomInterceptResult`` with all estimates and diagnostics.
 /// - Throws: `BusinessMathError.insufficientData` if fewer than 2 groups
 ///   or total observations do not exceed the number of fixed-effects parameters.
@@ -44,7 +49,7 @@ import Numerics
 public func fitRandomIntercept<T: Real>(
 	_ model: RandomInterceptModel<T>,
 	maxIterations: Int = 100,
-	tolerance: T = T(1) / T(100_000_000)
+	tolerance: T = T(1) / T(1_000_000_000)
 ) throws -> RandomInterceptResult<T> where T: BinaryFloatingPoint {
 
 	let y = model.response

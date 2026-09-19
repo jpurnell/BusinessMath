@@ -38,7 +38,12 @@ import Numerics
 /// - Parameters:
 ///   - model: The random slope model specification.
 ///   - maxIterations: Maximum iterations (default 100).
-///   - tolerance: Convergence tolerance on the variance components (default 1e-8).
+///   - tolerance: Convergence tolerance on the variance components (default 1e-9).
+///
+///     Must track ``fitGeneralLME(_:maxIterations:tolerance:)``, which this passes it
+///     straight to: a wrapper left on the old 1e-8 stops the shared loop an iteration
+///     earlier than calling the general fitter directly, and the two return different
+///     numbers for the same model. See that function for why the value is 1e-9.
 /// - Returns: A ``RandomSlopeResult`` with fixed effects, the 2x2 covariance, BLUPs and fit
 ///   statistics.
 /// - Throws: ``BusinessMathError/mismatchedDimensions(message:expected:actual:)`` when the
@@ -50,7 +55,7 @@ import Numerics
 public func fitRandomSlope<T: Real>(
 	_ model: RandomSlopeModel<T>,
 	maxIterations: Int = 100,
-	tolerance: T = T(1) / T(100_000_000)
+	tolerance: T = T(1) / T(1_000_000_000)
 ) throws -> RandomSlopeResult<T> where T: BinaryFloatingPoint {
 
 	let y = model.response

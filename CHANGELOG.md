@@ -11,6 +11,100 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### 2026-09-19 — The AI-REML information matrix used a truncated projection
+
+##### Fixed
+
+- **`generalAIREMLUpdate` understated the Average Information matrix by up to 13.5%.**
+
+  The REML score and the information matrix both involve
+  `P = V^-1 - V^-1 X (X'V^-1 X)^-1 X'V^-1`, and `P` is **not** block diagonal by group: its
+  off-diagonal block is `-V_i^-1 X_i (X'V^-1 X)^-1 X_j'V_j^-1`, which is nonzero. Whether
+  that matters depends on what `P` is multiplied by:
+
+  | quantity | needs | per-group accumulation |
+  |---|---|---|
+  | `tr(P dV_k)` | diagonal blocks only — `dV_k` kills the rest under the trace | exact |
+  | `r' P dV_k P r` | the full `Pr`, then a block-diagonal sandwich | exact |
+  | `(dV_j P r)' P (dV_k P r)` | **the whole `P`** | **not exact** |
+
+  The source never formed the whole `P`. It built one `nig x nig` diagonal block per group,
+  which is right for the first two rows and wrong for the third, so the information matrix
+  came out as `SUM_i a_j,i' P_ii a_k,i` where the formula calls for `a_j' P a_k`.
+
+  This is the projection error the *score* had, fixed earlier, surviving in the one place
+  the cancellation that rescued the score does not reach: `Pr` is orthogonal to `X` by the
+  normal equations, so its global correction vanishes; `dV_k P r` is not, so this one does
+  not.
+
+  **Why nothing caught it.** The score is the gradient, and the gradient alone fixes where
+  `∂l/∂θ = 0`. The information matrix only sets the *step*, `δ = AI^-1 score` — and Newton
+  with a wrong Hessian still converges to the right optimum, just along a different path.
+  Every test this fitter had inspected the converged fit, including the statsmodels
+  comparison that agrees to 1e-5. A 13.5% error in the step is invisible to all of them.
+
+  Found by a new dense oracle that assembles the entire `N x N` projection and evaluates
+  both formulas directly, at variance parameters derived from the data rather than from a
+  fit. Measured against it:
+
+  | comparison | gap |
+  |---|---|
+  | score, source vs dense | 3.36e-06 |
+  | information, source vs **block-diagonal** `P` | 2.99e-06 |
+  | information, source vs **full** `P` | **1.35e-01** |
+
+  The first two are the dense-arithmetic noise floor; the third is 45,000 times larger, and
+  the second identifies exactly what the source was computing. After the fix the information
+  agrees at 2.99e-06 — the same floor the score sits on.
+
+- **`paramHasConverged` drove its absolute and relative thresholds from one number.**
+
+  A variance component approaching the zero boundary can never satisfy the relative branch,
+  since `absDiff / |old|` does not shrink as `old` goes to zero; the absolute branch is the
+  only thing that lets such a model converge at all. Tying it to `tolerance` meant tightening
+  the relative test also tightened the absolute floor, so a fit jittering just above zero
+  stopped converging — no less settled than before, only measured against a smaller ruler.
+
+  Exposed by the tolerance change below: a model with **no group effect at all** ran its full
+  100-iteration budget and reported failure on data it had been fitting correctly. The
+  absolute floor is now a separate, defaulted parameter, fixed at 1e-8 — exactly the value it
+  had when it was welded to `tolerance` — so no model that converged before can stop
+  converging, and the relative test is free to move on its own.
+
+##### Changed
+
+- **`fitGeneralLME`, `fitRandomIntercept` and `fitRandomSlope` default `tolerance` 1e-8 → 1e-9.**
+
+  `paramHasConverged` tests the change in the parameters, not the gradient. A correct
+  information matrix is larger than the truncated one it replaced, so `AI^-1 score` is
+  smaller and a step-size test trips sooner. At 1e-8 the hardest reference design stopped at
+  nine iterations with a remaining Newton step of 1.9e-05; one more iteration takes that to
+  2.2e-06 and its fixed effects from 1.3e-06 away from statsmodels to **6.0e-08**, better
+  than the 3.6e-07 that was previously the worst across all designs. The gradient then
+  plateaus near 1.3e-06, so tightening further buys nothing, and 1e-10 is past a cliff where
+  the near-degenerate design stops converging. The budget is 100 iterations; the designs use
+  nine to sixteen.
+
+  The three defaults must stay in step. The wrappers pass `tolerance` straight through, so
+  one left behind makes `fitRandomIntercept(model)` and `fitGeneralLME(model)` return
+  different numbers for the same data — which is how the mismatch was noticed.
+
+  Converged estimates move by around 1e-06 relative on the designs that gain an iteration.
+
+##### Internal
+
+- **`generalAIREMLUpdate`: cognitive complexity 121 → 19**, the highest-scoring function in
+  `Sources/` before this. Seven helpers extracted — `generalAIREMLCaches`,
+  `generalAIREMLProjectionCorrection`, `generalProjectedResidual`, `generalProjectionBlock`,
+  `generalDerivativeTimesProjected`, `generalProjectionTraces`,
+  `generalInformationContribution`, `generalAssembleInformation` — of which only two score
+  above the threshold at all (21 and 18). The split is along the seam the defect was on: what
+  a group can finish by itself, and what has to wait for every group.
+
+  Verified **bit-identical** on all six reference designs — every converged variance
+  component, fixed effect and standard error, compared as raw bit patterns rather than
+  within a tolerance. The two dead parameters `ni` and `N` were removed.
+
 #### 2026-09-19 — Kendall's tau-b
 
 ##### Added

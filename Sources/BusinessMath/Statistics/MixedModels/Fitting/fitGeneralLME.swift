@@ -244,7 +244,31 @@ internal func generalSlopeVarianceStart<T: Real>(
 /// - Parameters:
 ///   - model: The general LME model specification.
 ///   - maxIterations: Maximum EM/scoring iterations (default 100).
-///   - tolerance: Convergence tolerance (default 1e-8).
+///   - tolerance: Convergence tolerance (default 1e-9).
+///
+///     Raised from 1e-8 alongside the AI matrix's projection fix. `paramHasConverged`
+///     tests the **change in the parameters**, not the gradient, and a correct information
+///     matrix is larger than the truncated one it replaced, so `AI^-1 score` is smaller and
+///     a step-size test trips sooner. At 1e-8 the hardest reference design stopped at nine
+///     iterations with a remaining Newton step of 1.9e-05; one more iteration takes that to
+///     2.2e-06 and its fixed effects from 1.3e-06 away from statsmodels to 6.0e-08.
+///
+///     1e-9 rather than anything tighter, measured across the six reference designs:
+///
+///     | tolerance | near-degenerate design | hardest design |
+///     |---|---|---|
+///     | 1e-8  | 14 iterations, converged | 9 — stops early |
+///     | 5e-9  | 15 iterations, converged | 9 — stops early |
+///     | 1e-9  | 15 iterations, converged | 10 |
+///     | 5e-10 | 16 iterations, converged | 10 |
+///     | 1e-10 | **100 iterations, does not converge** | 10 |
+///
+///     `randomIntercept_smallVariance` has its tau^2 on the zero boundary, where a
+///     relative change test cannot be satisfied however long it runs: below 5e-10 the fit
+///     exhausts the iteration budget and reports failure on a model it had been fitting
+///     correctly. 1e-9 buys the extra iteration where it is needed and stays two steps
+///     clear of that cliff. Nothing gets closer to stationarity beyond this point either —
+///     the gradient plateaus near 1.3e-06.
 /// - Returns: A ``GeneralLMEResult`` with all estimates and diagnostics.
 /// - Throws: `BusinessMathError.mismatchedDimensions` if X.rows, Z.rows, y.count,
 ///   or grouping lengths do not match, or if Z.columns != randomEffectsPerGroup.
@@ -252,7 +276,7 @@ internal func generalSlopeVarianceStart<T: Real>(
 public func fitGeneralLME<T: Real>(
 	_ model: GeneralLMEModel<T>,
 	maxIterations: Int = 100,
-	tolerance: T = T(1) / T(100_000_000)
+	tolerance: T = T(1) / T(1_000_000_000)
 ) throws -> GeneralLMEResult<T> where T: BinaryFloatingPoint {
 
 	let y = model.response
@@ -375,8 +399,8 @@ public func fitGeneralLME<T: Real>(
 			// AI-REML update
 			let aiResult = try generalAIREMLUpdate(
 				resid: resid, xData: xData, zData: zData,
-				m: m, r: r, ni: ni, groupIdx: groupIdx,
-				gArr: gArr, sigmaE2: sigmaE2, N: N, p: p)
+				m: m, r: r, groupIdx: groupIdx,
+				gArr: gArr, sigmaE2: sigmaE2, p: p)
 
 			let nTheta = aiResult.score.count
 			// Solve AI * delta = score
@@ -749,7 +773,7 @@ private func generalEMUpdate<T: Real & Sendable>(
 		gArr: newG)
 }
 
-private struct GeneralAIREMLResult<T: Real & Sendable> {
+internal struct GeneralAIREMLResult<T: Real & Sendable> {
 	let score: [T]   // (1 + r*(r+1)/2) vector
 	let ai: [[T]]    // (1 + r*(r+1)/2) x (1 + r*(r+1)/2) matrix
 }
@@ -763,31 +787,26 @@ private struct GeneralGroupCache<T: Real & Sendable> {
 	let xiRows: [[T]]
 }
 
-/// AI-REML update for the general LME model.
+/// The per-group factorisations the AI-REML passes share, and `X'V^-1 X` alongside them.
 ///
-/// Variance parameters are ordered: theta = (sigma_e², G[0,0], G[0,1], ..., G[0,r-1], G[1,1], G[1,2], ..., G[r-1,r-1])
-/// i.e., sigma_e² first, then the upper triangle of G in row-major order.
-private func generalAIREMLUpdate<T: Real & Sendable>(
+/// - Parameters:
+///   - resid: The GLS residual `y - X beta`, by observation.
+///   - xData: The fixed-effects design, by observation.
+///   - zData: The random-effects design, by observation.
+///   - m: Group count.
+///   - r: Random effects per group.
+///   - p: Fixed-effect count.
+///   - groupIdx: Row indices per group.
+///   - gArr: The current random-effects covariance.
+///   - sigmaE2: The current residual variance.
+/// - Returns: One cache per group, and the accumulated `X'V^-1 X`.
+/// - Throws: From ``DenseMatrix/choleskyInverse()`` and ``DenseMatrix/choleskySolve(_:)``
+///   when a group's `V_g` is not positive definite.
+private func generalAIREMLCaches<T: Real & Sendable>(
 	resid: [T], xData: [[T]], zData: [[T]],
-	m: Int, r: Int, ni: [Int], groupIdx: [[Int]],
-	gArr: [[T]], sigmaE2: T,
-	N: Int, p: Int
-) throws -> GeneralAIREMLResult<T> where T: BinaryFloatingPoint {
-
-	// Number of variance parameters: 1 (sigma_e²) + r*(r+1)/2 (unique G elements)
-	let nTheta = 1 + r * (r + 1) / 2
-
-	// Build mapping from theta index to (i,j) in G
-	// theta[0] = sigma_e²
-	// theta[1..] = upper triangle of G: (0,0), (0,1), ..., (0,r-1), (1,1), (1,2), ...
-	var gParamMap = [(Int, Int)]()
-	for i in 0..<r {
-		for j in i..<r {
-			gParamMap.append((i, j))
-		}
-	}
-
-	// First pass: compute X'V^{-1}X and group caches
+	m: Int, r: Int, p: Int, groupIdx: [[Int]],
+	gArr: [[T]], sigmaE2: T
+) throws -> (caches: [GeneralGroupCache<T>], xtVinvX: [[T]]) where T: BinaryFloatingPoint {
 	var xtVinvX = Array(repeating: Array(repeating: T.zero, count: p), count: p)
 	var groupCaches = [GeneralGroupCache<T>]()
 
@@ -823,32 +842,33 @@ private func generalAIREMLUpdate<T: Real & Sendable>(
 			viInv: viInv, viInvR: viInvR, viInvXi: viInvXi,
 			zi: zi, ri: ri, xiRows: xiRows))
 	}
+	return (groupCaches, xtVinvX)
+}
 
-	// (X'V^{-1}X)^{-1}
-	let xtVinvXMat = try DenseMatrix(xtVinvX)
-	let xtVinvXInv = try xtVinvXMat.choleskyInverse()
-
-	// Score and AI accumulators
-	var score = Array(repeating: T.zero, count: nTheta)
-	var ai = Array(repeating: Array(repeating: T.zero, count: nTheta), count: nTheta)
-
-	// X'V^{-1}r, summed over EVERY group.
-	//
-	// The projection is P = V^{-1} - V^{-1}X(X'V^{-1}X)^{-1}X'V^{-1}, so
-	//
-	//     (Pr)_i = V_i^{-1}r_i - V_i^{-1}X_i (X'V^{-1}X)^{-1} · SUM_j X_j'V_j^{-1}r_j
-	//
-	// and that sum runs over all groups. This used to use only group i's own
-	// X_i'V_i^{-1}r_i, which is a different quantity: `r` here is the GLS residual
-	// y - Xbeta, so the true sum is zero by the normal equations and the correction
-	// vanishes — while a per-group term does not. Subtracting it shrank `pR`, which
-	// shrank r'P(dV)Pr, which made the score more negative and drove every variance
-	// component down. Measured against statsmodels REML the random-effects covariance
-	// came out 12-24% low, and the AI-REML phase moved *away* from the optimum the EM
-	// warm-up had already reached.
+/// The projection's correction term, `(X'V^-1 X)^-1 SUM_g X_g'V_g^-1 r_g`.
+///
+/// The sum runs over every group. Using group `i`'s own `X_i'V_i^-1 r_i` in its place is a
+/// different quantity: `r` is the GLS residual, so the true sum is zero by the normal
+/// equations and the correction vanishes, while a per-group term does not. Subtracting one
+/// shrank `pR`, shrank `r'P(dV)Pr`, made the score more negative and drove every variance
+/// component down — measured against statsmodels REML the random-effects covariance came
+/// out 12-24% low, and the AI-REML phase moved *away* from the optimum the EM warm-up had
+/// already reached.
+///
+/// - Parameters:
+///   - caches: The per-group factorisations.
+///   - groupIdx: Row indices per group.
+///   - m: Group count.
+///   - p: Fixed-effect count.
+///   - xtVinvXInv: `(X'V^-1 X)^-1`.
+/// - Returns: The `p`-vector the per-group projection subtracts.
+private func generalAIREMLProjectionCorrection<T: Real & Sendable>(
+	caches: [GeneralGroupCache<T>], groupIdx: [[Int]], m: Int, p: Int,
+	xtVinvXInv: DenseMatrix<T>
+) -> [T] where T: BinaryFloatingPoint {
 	var globalXtViInvR = Array(repeating: T.zero, count: p)
 	for g in 0..<m {
-		let cache = groupCaches[g]
+		let cache = caches[g]
 		for localIdx in 0..<groupIdx[g].count {
 			for j in 0..<p {
 				globalXtViInvR[j] += cache.xiRows[localIdx][j] * cache.viInvR[localIdx]
@@ -861,120 +881,336 @@ private func generalAIREMLUpdate<T: Real & Sendable>(
 			globalCorrection[j] += xtVinvXInv[j, k] * globalXtViInvR[k]
 		}
 	}
+	return globalCorrection
+}
 
-	for g in 0..<m {
-		let indices = groupIdx[g]
-		let nig = indices.count
-		let cache = groupCaches[g]
+/// `(P r)_i` for one group: `V_i^-1 r_i` less the group's share of the global correction.
+///
+/// - Parameters:
+///   - cache: The group's factorisations.
+///   - nig: The group's observation count.
+///   - p: Fixed-effect count.
+///   - globalCorrection: From ``generalAIREMLProjectionCorrection(caches:groupIdx:m:p:xtVinvXInv:)``.
+/// - Returns: The group's block of `P r`.
+private func generalProjectedResidual<T: Real & Sendable>(
+	cache: GeneralGroupCache<T>, nig: Int, p: Int, globalCorrection: [T]
+) -> [T] where T: BinaryFloatingPoint {
+	var viInvXCorr = Array(repeating: T.zero, count: nig)
+	for localIdx in 0..<nig {
+		for j in 0..<p {
+			viInvXCorr[localIdx] += cache.viInvXi[localIdx, j] * globalCorrection[j]
+		}
+	}
+	var pR = Array(repeating: T.zero, count: nig)
+	for localIdx in 0..<nig {
+		pR[localIdx] = cache.viInvR[localIdx] - viInvXCorr[localIdx]
+	}
+	return pR
+}
 
-		var viInvXCorr = Array(repeating: T.zero, count: nig)
-		for localIdx in 0..<nig {
+/// The diagonal block `P_ii` of the projection.
+///
+/// This is the whole of `P` that the traces need: every `dV_k` is block diagonal by group,
+/// so `tr(P dV_k)` sees only the diagonal blocks. It is **not** all the information matrix
+/// needs — see ``generalInformationContribution(cache:dvPr:nig:p:nTheta:)``.
+///
+/// - Parameters:
+///   - cache: The group's factorisations.
+///   - nig: The group's observation count.
+///   - p: Fixed-effect count.
+///   - xtVinvXInv: `(X'V^-1 X)^-1`.
+/// - Returns: The `nig x nig` block.
+private func generalProjectionBlock<T: Real & Sendable>(
+	cache: GeneralGroupCache<T>, nig: Int, p: Int, xtVinvXInv: DenseMatrix<T>
+) -> [[T]] where T: BinaryFloatingPoint {
+	var pMat = Array(repeating: Array(repeating: T.zero, count: nig), count: nig)
+	for row in 0..<nig {
+		for col in 0..<nig {
+			pMat[row][col] = cache.viInv[row, col]
 			for j in 0..<p {
-				viInvXCorr[localIdx] += cache.viInvXi[localIdx, j] * globalCorrection[j]
-			}
-		}
-
-		var pR = Array(repeating: T.zero, count: nig)
-		for localIdx in 0..<nig {
-			pR[localIdx] = cache.viInvR[localIdx] - viInvXCorr[localIdx]
-		}
-
-		// P_i matrix
-		var pMat = Array(repeating: Array(repeating: T.zero, count: nig), count: nig)
-		for row in 0..<nig {
-			for col in 0..<nig {
-				pMat[row][col] = cache.viInv[row, col]
-				for j in 0..<p {
-					for k in 0..<p {
-						pMat[row][col] -= cache.viInvXi[row, j] * xtVinvXInv[j, k] * cache.viInvXi[col, k]
-					}
+				for k in 0..<p {
+					pMat[row][col] -= cache.viInvXi[row, j] * xtVinvXInv[j, k] * cache.viInvXi[col, k]
 				}
-			}
-		}
-
-		// dV/dtheta derivatives and their products with P*r
-		// dvPr[k] = (dV/dtheta_k) * P * r for each parameter
-		var dvPr = Array(repeating: Array(repeating: T.zero, count: nig), count: nTheta)
-
-		// --- Parameter 0: sigma_e², dV/d(sigma_e²) = I ---
-		var trPdV0 = T.zero
-		for localIdx in 0..<nig { trPdV0 += pMat[localIdx][localIdx] }
-		var rPdVPr0 = T.zero
-		for localIdx in 0..<nig { rPdVPr0 += pR[localIdx] * pR[localIdx] }
-		let score0term1: T = T(-1) / T(2) * trPdV0
-		let score0term2: T = T(1) / T(2) * rPdVPr0
-		score[0] += score0term1 + score0term2
-		for localIdx in 0..<nig { dvPr[0][localIdx] = pR[localIdx] }
-
-		// --- G parameters: dV/dG[a,b] = Z[:,a] Z[:,b]' + Z[:,b] Z[:,a]' (for a != b)
-		//                    dV/dG[a,a] = Z[:,a] Z[:,a]'
-		for paramIdx in 0..<gParamMap.count {
-			let thetaIdx = paramIdx + 1
-			let (a, b) = gParamMap[paramIdx]
-
-			// tr(P * dV)
-			var trPdV = T.zero
-			for row in 0..<nig {
-				for col in 0..<nig {
-					if a == b {
-						trPdV += pMat[row][col] * cache.zi[col][a] * cache.zi[row][a]
-					} else {
-						trPdV += pMat[row][col] * (cache.zi[col][a] * cache.zi[row][b]
-							+ cache.zi[col][b] * cache.zi[row][a])
-					}
-				}
-			}
-
-			// dV * P * r
-			if a == b {
-				// dV/dG[a,a] * pR = z_a * (z_a' * pR)
-				var zaTpR = T.zero
-				for localIdx in 0..<nig { zaTpR += cache.zi[localIdx][a] * pR[localIdx] }
-				for localIdx in 0..<nig {
-					dvPr[thetaIdx][localIdx] = cache.zi[localIdx][a] * zaTpR
-				}
-			} else {
-				// dV/dG[a,b] = z_a z_b' + z_b z_a'
-				var zaTpR = T.zero
-				var zbTpR = T.zero
-				for localIdx in 0..<nig {
-					zaTpR += cache.zi[localIdx][a] * pR[localIdx]
-					zbTpR += cache.zi[localIdx][b] * pR[localIdx]
-				}
-				for localIdx in 0..<nig {
-					dvPr[thetaIdx][localIdx] = cache.zi[localIdx][a] * zbTpR + cache.zi[localIdx][b] * zaTpR
-				}
-			}
-
-			var rPdVPr = T.zero
-			for localIdx in 0..<nig { rPdVPr += pR[localIdx] * dvPr[thetaIdx][localIdx] }
-			let scoreTterm1: T = T(-1) / T(2) * trPdV
-			let scoreTterm2: T = T(1) / T(2) * rPdVPr
-			score[thetaIdx] += scoreTterm1 + scoreTterm2
-		}
-
-		// Average Information matrix
-		var pDvPr = Array(repeating: Array(repeating: T.zero, count: nig), count: nTheta)
-		for k in 0..<nTheta {
-			for row in 0..<nig {
-				for col in 0..<nig {
-					pDvPr[k][row] += pMat[row][col] * dvPr[k][col]
-				}
-			}
-		}
-
-		for j in 0..<nTheta {
-			for k in j..<nTheta {
-				var val = T.zero
-				for localIdx in 0..<nig {
-					val += dvPr[j][localIdx] * pDvPr[k][localIdx]
-				}
-				val = val / T(2)
-				ai[j][k] += val
-				if j != k { ai[k][j] += val }
 			}
 		}
 	}
+	return pMat
+}
+
+/// `(dV/dtheta_k) P r` for every variance parameter, within one group.
+///
+/// `dV/d(sigma_e^2)` is the identity, so its product is `P r` itself. The `G` derivatives
+/// are rank one or two in the group's `Z` columns, so each is formed from a scalar
+/// `z_a' P r` rather than by building the matrix.
+///
+/// - Parameters:
+///   - cache: The group's factorisations.
+///   - pR: The group's block of `P r`.
+///   - nig: The group's observation count.
+///   - nTheta: The variance-parameter count.
+///   - gParamMap: Theta index to `(i, j)` in `G`, offset by one for `sigma_e^2`.
+/// - Returns: One `nig`-vector per parameter.
+private func generalDerivativeTimesProjected<T: Real & Sendable>(
+	cache: GeneralGroupCache<T>, pR: [T], nig: Int, nTheta: Int, gParamMap: [(Int, Int)]
+) -> [[T]] where T: BinaryFloatingPoint {
+	var dvPr = Array(repeating: Array(repeating: T.zero, count: nig), count: nTheta)
+	for localIdx in 0..<nig { dvPr[0][localIdx] = pR[localIdx] }
+
+	for paramIdx in 0..<gParamMap.count {
+		let thetaIdx = paramIdx + 1
+		let (a, b) = gParamMap[paramIdx]
+		if a == b {
+			var zaTpR = T.zero
+			for localIdx in 0..<nig { zaTpR += cache.zi[localIdx][a] * pR[localIdx] }
+			for localIdx in 0..<nig {
+				dvPr[thetaIdx][localIdx] = cache.zi[localIdx][a] * zaTpR
+			}
+		} else {
+			var zaTpR = T.zero
+			var zbTpR = T.zero
+			for localIdx in 0..<nig {
+				zaTpR += cache.zi[localIdx][a] * pR[localIdx]
+				zbTpR += cache.zi[localIdx][b] * pR[localIdx]
+			}
+			for localIdx in 0..<nig {
+				dvPr[thetaIdx][localIdx] = cache.zi[localIdx][a] * zbTpR + cache.zi[localIdx][b] * zaTpR
+			}
+		}
+	}
+	return dvPr
+}
+
+/// `tr(P dV/dtheta_k)` for every variance parameter, within one group.
+///
+/// - Parameters:
+///   - pMat: The group's diagonal block of `P`.
+///   - cache: The group's factorisations.
+///   - nig: The group's observation count.
+///   - nTheta: The variance-parameter count.
+///   - gParamMap: Theta index to `(i, j)` in `G`, offset by one for `sigma_e^2`.
+/// - Returns: One trace per parameter.
+private func generalProjectionTraces<T: Real & Sendable>(
+	pMat: [[T]], cache: GeneralGroupCache<T>, nig: Int, nTheta: Int, gParamMap: [(Int, Int)]
+) -> [T] where T: BinaryFloatingPoint {
+	var traces = Array(repeating: T.zero, count: nTheta)
+	for localIdx in 0..<nig { traces[0] += pMat[localIdx][localIdx] }
+
+	for paramIdx in 0..<gParamMap.count {
+		let thetaIdx = paramIdx + 1
+		let (a, b) = gParamMap[paramIdx]
+		var trPdV = T.zero
+		for row in 0..<nig {
+			for col in 0..<nig {
+				if a == b {
+					trPdV += pMat[row][col] * cache.zi[col][a] * cache.zi[row][a]
+				} else {
+					trPdV += pMat[row][col] * (cache.zi[col][a] * cache.zi[row][b]
+						+ cache.zi[col][b] * cache.zi[row][a])
+				}
+			}
+		}
+		traces[thetaIdx] = trPdV
+	}
+	return traces
+}
+
+/// One group's two contributions to the Average Information matrix.
+///
+/// `AI[j][k] = 1/2 (dV_j P r)' P (dV_k P r)`. Unlike the trace and the score's quadratic
+/// form, this sandwiches a vector between two `P`s, so it needs the whole `P` and not only
+/// its diagonal blocks. Expanding `P = V^-1 - V^-1 X (X'V^-1 X)^-1 X'V^-1` splits it into a
+/// part that accumulates by group and a part that cannot:
+///
+///     a_j' P a_k = SUM_i a_j,i' V_i^-1 a_k,i
+///                  - (SUM_i X_i'V_i^-1 a_j,i)' (X'V^-1X)^-1 (SUM_l X_l'V_l^-1 a_k,l)
+///
+/// This returns both sums for one group; the second is finished once every group has been
+/// seen, by ``generalAssembleInformation(aiDirect:xtViInvDvPr:xtVinvXInv:nTheta:p:)``.
+/// Building it from group `i`'s own `X_i'V_i^-1 a_j,i` instead truncates `P` to its diagonal
+/// blocks; measured against a dense `N x N` projection that understated the information by
+/// up to 13.5% on the six reference designs, making every AI-REML step correspondingly too
+/// large. It is the projection error `pR` had, surviving in the one place the cancellation
+/// that rescues `pR` does not reach: `Pr` is orthogonal to `X` by the normal equations, so
+/// its global correction vanishes; `dV_k P r` is not, so this one does not.
+///
+/// - Parameters:
+///   - cache: The group's factorisations.
+///   - dvPr: `(dV/dtheta_k) P r` per parameter, for this group.
+///   - nig: The group's observation count.
+///   - p: Fixed-effect count.
+///   - nTheta: The variance-parameter count.
+/// - Returns: The group's `a_j' V_i^-1 a_k` block, and its `X_i'V_i^-1 a_k` rows.
+private func generalInformationContribution<T: Real & Sendable>(
+	cache: GeneralGroupCache<T>, dvPr: [[T]], nig: Int, p: Int, nTheta: Int
+) -> (direct: [[T]], projected: [[T]]) where T: BinaryFloatingPoint {
+	var viInvDvPr = Array(repeating: Array(repeating: T.zero, count: nig), count: nTheta)
+	for k in 0..<nTheta {
+		for row in 0..<nig {
+			var total = T.zero
+			for col in 0..<nig { total += cache.viInv[row, col] * dvPr[k][col] }
+			viInvDvPr[k][row] = total
+		}
+	}
+
+	var projected = Array(repeating: Array(repeating: T.zero, count: p), count: nTheta)
+	for k in 0..<nTheta {
+		for localIdx in 0..<nig {
+			let weight: T = viInvDvPr[k][localIdx]
+			for j in 0..<p {
+				projected[k][j] += cache.xiRows[localIdx][j] * weight
+			}
+		}
+	}
+
+	var direct = Array(repeating: Array(repeating: T.zero, count: nTheta), count: nTheta)
+	for j in 0..<nTheta {
+		for k in j..<nTheta {
+			var val = T.zero
+			for localIdx in 0..<nig {
+				val += dvPr[j][localIdx] * viInvDvPr[k][localIdx]
+			}
+			direct[j][k] = val
+			if j != k { direct[k][j] = val }
+		}
+	}
+	return (direct, projected)
+}
+
+/// The Average Information matrix, once every group has contributed.
+///
+/// - Parameters:
+///   - aiDirect: `SUM_i a_j,i' V_i^-1 a_k,i`, accumulated over groups.
+///   - xtViInvDvPr: `SUM_i X_i'V_i^-1 a_k,i`, accumulated over groups.
+///   - xtVinvXInv: `(X'V^-1 X)^-1`.
+///   - nTheta: The variance-parameter count.
+///   - p: Fixed-effect count.
+/// - Returns: The symmetric `nTheta x nTheta` information matrix.
+private func generalAssembleInformation<T: Real & Sendable>(
+	aiDirect: [[T]], xtViInvDvPr: [[T]], xtVinvXInv: DenseMatrix<T>, nTheta: Int, p: Int
+) -> [[T]] where T: BinaryFloatingPoint {
+	var ai = Array(repeating: Array(repeating: T.zero, count: nTheta), count: nTheta)
+	for j in 0..<nTheta {
+		for k in j..<nTheta {
+			var correction = T.zero
+			for a in 0..<p {
+				for b in 0..<p {
+					let left: T = xtViInvDvPr[j][a] * xtVinvXInv[a, b]
+					correction += left * xtViInvDvPr[k][b]
+				}
+			}
+			let combined: T = aiDirect[j][k] - correction
+			let value: T = combined / T(2)
+			ai[j][k] = value
+			if j != k { ai[k][j] = value }
+		}
+	}
+	return ai
+}
+
+/// AI-REML update for the general LME model.
+///
+/// Returns the REML score and the Average Information matrix at the supplied variance
+/// parameters, which the caller combines into a Newton-like step.
+///
+/// With `P = V^-1 - V^-1 X (X'V^-1 X)^-1 X'V^-1` the two quantities are
+///
+///     score[k] = -1/2 tr(P dV_k) + 1/2 r' P dV_k P r
+///     ai[j][k] =  1/2 (dV_j P r)' P (dV_k P r)
+///
+/// Variance parameters are ordered: theta = (sigma_e², G[0,0], G[0,1], ..., G[0,r-1], G[1,1], G[1,2], ..., G[r-1,r-1])
+/// i.e., sigma_e² first, then the upper triangle of G in row-major order.
+///
+/// `V` is block diagonal by group and every `dV_k` is too, so the trace and the score's
+/// quadratic form both decompose into a sum over groups. `P` itself does **not** decompose:
+/// its off-diagonal block is `-V_i^-1 X_i (X'V^-1 X)^-1 X_j'V_j^-1`, which is nonzero. Any
+/// quantity that sandwiches a vector between two `P`s therefore needs the whole matrix, not
+/// the diagonal blocks — which is why the information matrix is finished after the group
+/// loop and the score is not. See `GeneralAIREMLOracleTests` for the dense check of both.
+///
+/// - Parameters:
+///   - resid: The GLS residual `y - X beta`, by observation.
+///   - xData: The fixed-effects design, by observation.
+///   - zData: The random-effects design, by observation.
+///   - m: Group count.
+///   - r: Random effects per group.
+///   - groupIdx: Row indices per group.
+///   - gArr: The current random-effects covariance.
+///   - sigmaE2: The current residual variance.
+///   - p: Fixed-effect count.
+/// - Returns: The score vector and Average Information matrix, both of dimension
+///   `1 + r*(r+1)/2`.
+/// - Throws: From ``DenseMatrix/choleskyInverse()`` and ``DenseMatrix/choleskySolve(_:)``
+///   when a group's `V_g` or `X'V^-1 X` is not positive definite.
+internal func generalAIREMLUpdate<T: Real & Sendable>(
+	resid: [T], xData: [[T]], zData: [[T]],
+	m: Int, r: Int, groupIdx: [[Int]],
+	gArr: [[T]], sigmaE2: T, p: Int
+) throws -> GeneralAIREMLResult<T> where T: BinaryFloatingPoint {
+
+	let nTheta = 1 + r * (r + 1) / 2
+
+	// theta[0] = sigma_e²; theta[1...] = upper triangle of G, row-major.
+	var gParamMap = [(Int, Int)]()
+	for i in 0..<r {
+		for j in i..<r {
+			gParamMap.append((i, j))
+		}
+	}
+
+	let (groupCaches, xtVinvX) = try generalAIREMLCaches(
+		resid: resid, xData: xData, zData: zData,
+		m: m, r: r, p: p, groupIdx: groupIdx, gArr: gArr, sigmaE2: sigmaE2)
+
+	let xtVinvXMat = try DenseMatrix(xtVinvX)
+	let xtVinvXInv = try xtVinvXMat.choleskyInverse()
+
+	let globalCorrection = generalAIREMLProjectionCorrection(
+		caches: groupCaches, groupIdx: groupIdx, m: m, p: p, xtVinvXInv: xtVinvXInv)
+
+	var score = Array(repeating: T.zero, count: nTheta)
+	// The information's two halves: what each group contributes on its own, and the sums
+	// its cross-group term is built from. Both are finished after the loop.
+	var aiDirect = Array(repeating: Array(repeating: T.zero, count: nTheta), count: nTheta)
+	var xtViInvDvPr = Array(repeating: Array(repeating: T.zero, count: p), count: nTheta)
+
+	for g in 0..<m {
+		let nig = groupIdx[g].count
+		let cache = groupCaches[g]
+
+		let pR = generalProjectedResidual(
+			cache: cache, nig: nig, p: p, globalCorrection: globalCorrection)
+		let pMat = generalProjectionBlock(
+			cache: cache, nig: nig, p: p, xtVinvXInv: xtVinvXInv)
+		let dvPr = generalDerivativeTimesProjected(
+			cache: cache, pR: pR, nig: nig, nTheta: nTheta, gParamMap: gParamMap)
+		let traces = generalProjectionTraces(
+			pMat: pMat, cache: cache, nig: nig, nTheta: nTheta, gParamMap: gParamMap)
+
+		for k in 0..<nTheta {
+			var rPdVPr = T.zero
+			for localIdx in 0..<nig { rPdVPr += pR[localIdx] * dvPr[k][localIdx] }
+			let traceTerm: T = T(-1) / T(2) * traces[k]
+			let quadraticTerm: T = T(1) / T(2) * rPdVPr
+			score[k] += traceTerm + quadraticTerm
+		}
+
+		let contribution = generalInformationContribution(
+			cache: cache, dvPr: dvPr, nig: nig, p: p, nTheta: nTheta)
+		for j in 0..<nTheta {
+			for k in 0..<nTheta {
+				aiDirect[j][k] += contribution.direct[j][k]
+			}
+		}
+		for k in 0..<nTheta {
+			for j in 0..<p {
+				xtViInvDvPr[k][j] += contribution.projected[k][j]
+			}
+		}
+	}
+
+	let ai = generalAssembleInformation(
+		aiDirect: aiDirect, xtViInvDvPr: xtViInvDvPr,
+		xtVinvXInv: xtVinvXInv, nTheta: nTheta, p: p)
 
 	return GeneralAIREMLResult(score: score, ai: ai)
 }

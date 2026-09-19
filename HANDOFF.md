@@ -1,4 +1,4 @@
-# Handoff — 2026-09-19 (Tier 2: nine items closed, ten defects and one explanation)
+# Handoff — 2026-09-19 (Tier 2: ten items closed, twelve defects and one explanation)
 
 **Six items of Tier 2 closed, seven defects.** The bytecode optimizer,
 `RobustOptimizer`/`CuttingPlaneMaster` and `solveRelaxation` shipped as `e70829ac`; `solve`
@@ -19,9 +19,9 @@ is the state and the traps.
 
 | | |
 |---|---|
-| branch | `main`, local == remote |
+| branch | `main`, **4 commits ahead of `origin/main` and unpushed** |
 | tags | latest **`v3.0.0-alpha.7`** (2026-09-18, tagged by the peer session) |
-| tests | **7,898+ in 719+ suites**, exit 0, **1 known issue** (deliberate — see below) |
+| tests | **7,943 in 726 suites**, exit 0, **1 known issue** (deliberate — see below) |
 | gate | `--no-cache --check all` → 45 of 45 ran, **0 errors and 0 warnings outside `doc-run`** |
 | `doc-run` | **flaky under load, not a regression** — see §4 |
 | guidelines repo | `../../development-guidelines` clean at `a5f9292`, `v2.4.0` tagged and pushed |
@@ -48,18 +48,21 @@ independent oracle, not by reading it.** Across the whole sweep every defect was
 differencing against a second opinion and none by inspection, with a green 7,800-test suite
 endorsing each wrong answer throughout.
 
-Highest unexamined scores after this session:
+Highest unexamined scores, re-measured on this commit. The table this replaced was stale:
+it still listed `icc` at 131 and `bayesianICC` at 101 while §2 of the same file reported both
+fixed, because it was copied from the queue snapshot and never refreshed. **Re-measure rather
+than trusting it** — `quality-gate --no-cache --no-index-build --check complexity`.
 
 | Score | Function | Where |
 |---:|---|---|
-| 131 | `icc` | `Statistics/Descriptors/Agreement/iccMissingData.swift:80` |
-| 131 | `fitGeneralLME` | `Statistics/MixedModels/Fitting/fitGeneralLME.swift:28` — already fixed twice by oracle, so a third look is cheap |
-| 121 | `generalAIREMLUpdate` | same file, line 653 |
-| 101 | `bayesianICC` | `Statistics/Estimation/bayesianICC.swift:415` |
-| 95 | `extractVariableShift` | `IntegerProgramming/VariableShift.swift:207` — and the shift machinery just produced a defect one layer up |
-| 85 | `gStudy` | `Statistics/Reliability/gStudy.swift:133` |
+| **85** | `gStudy` | `Statistics/Reliability/gStudy.swift:133` — now the highest unexamined |
+| **79** | `bootstrap` | `Valuation/Curves/DiscountCurve.swift:254` |
+| **77** | `next` | `Time Series/Period.swift:1051` |
+| 68 | `buildBlock` | `BusinessMathDSL/ScenarioAnalysis.swift:292` |
+| 62 | `solveShape` | `Simulation/distributionMomentFit.swift:460` |
 
-Re-run the gate rather than trusting that table after any refactor.
+Examined, for contrast: `fitGeneralLME` 75, `icc` 73, `solve` 60, `gibbsICCPosterior` 58.
+`generalAIREMLUpdate` was 121 and is now 19.
 
 ## 2. What closed, and what it cost
 
@@ -75,6 +78,44 @@ Re-run the gate rather than trusting that table after any refactor.
 - **`solveRelaxation` 291 → 55**, stages extracted into `BranchAndBoundCutting.swift`.
 - **`RobustOptimizer` audited, clean.** The LP route was confirmed to fire by instrumentation
   (8 of 8 cases), not assumed — iteration count does *not* separate the two routes.
+
+### `generalAIREMLUpdate` — 121 → 19, one defect and one it exposed
+
+- **The Average Information matrix used a truncated projection, understating it by 13.5%.**
+  `P` is not block diagonal by group. Under a trace against a block-diagonal `dV_k` only its
+  diagonal blocks survive, so the score's per-group accumulation is exact — but
+  `AI[j][k] = 1/2 (dV_j P r)' P (dV_k P r)` sandwiches a vector between two `P`s and needs the
+  whole matrix. The source built one `nig x nig` block per group and never formed `P`.
+  It is the projection error the score had, in the one place the cancellation that rescued
+  the score does not reach: `Pr` is orthogonal to `X` by the normal equations, `dV_k P r` is
+  not.
+- **Nothing could have caught it from a converged fit.** The score fixes the optimum; the
+  information only sets the step, and Newton with a wrong Hessian still lands on the right
+  answer. The statsmodels comparison agrees to 1e-5 either way.
+- **New oracle**: `GeneralAIREMLOracleTests` assembles the entire `N x N` projection, with a
+  Gauss-Jordan inverse written in the test so it shares no path with the source's Cholesky,
+  and evaluates score and information directly — at variance parameters built from the sample
+  variance of `y`, never from a fit, and deliberately away from the optimum where the score is
+  zero by definition. Source vs dense: score 3.36e-06, information **0.135**. Source vs the
+  block-diagonal truncation: 2.99e-06 — which is what identified the mechanism rather than
+  inferring it. After the fix, 2.99e-06 against the full projection.
+- **`paramHasConverged` drove its absolute and relative thresholds from one number**, which
+  the tolerance change below exposed: a model with no group effect ran its full budget and
+  reported failure on data it had been fitting. A near-zero variance component can never pass
+  the relative branch, so the absolute branch is the only thing that converges it, and
+  tightening the relative test tightened that floor too. Now separate, floor fixed at 1e-8 —
+  the value it already had — so nothing that converged before can stop.
+- **Default `tolerance` 1e-8 → 1e-9** in `fitGeneralLME` *and both wrappers*. A correct
+  information matrix is larger, so steps are smaller, so a step-size stopping rule fires
+  sooner: the hardest design stopped one iteration early. One more iteration takes its
+  remaining Newton step from 1.9e-05 to 2.2e-06 and its fixed effects from 1.3e-06 off
+  statsmodels to 6.0e-08 — better than the 3.6e-07 that was previously the worst anywhere.
+  **1e-10 is past a cliff** where the near-degenerate design stops converging; the sweep is in
+  the DocC. The wrappers pass `tolerance` through, so a wrapper left on the old default makes
+  `fitRandomIntercept(model)` and `fitGeneralLME(model)` disagree — which is how it surfaced.
+- **Eight helpers extracted**, only two scoring above the threshold at all. **Bit-identical**
+  on all six designs — every variance component, fixed effect and standard error compared as
+  raw bit patterns, not within a tolerance. Dead parameters `ni` and `N` removed.
 
 ### `fitGeneralLME` — 131 → 75, and an open question closed
 
