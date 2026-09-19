@@ -249,22 +249,27 @@ struct BranchAndBoundCorrectnessTests {
                 minimize: true
             )
 
-            // The capability shipped as `enableVariableShifting`, and it works — but only
-            // for bounds it can *see*. Measured, all three cases:
+            // This test has tracked two defects, and both are now fixed. What it measured:
             //
             //   default solver, closure bound      -> 0   (wrong; optimum is -3)
             //   enableVariableShifting, closure    -> 0   (wrong)
             //   enableVariableShifting, structural -> -3  (correct)
             //
-            // `extractVariableShift` reads the constraint list looking for bounds. A
-            // `.linearInequality` states its coefficients, so the shift is detectable. An
-            // `.inequality` carrying an opaque closure states nothing, so nothing is
-            // detected, no shift is applied, and the simplex's implicit `x ≥ 0` truncates
-            // the answer to 0 — **silently**, which is the part that matters. Filed as L19.
+            // The middle row was L19: `extractVariableShift` inspected the constraint list,
+            // so a `.linearInequality` was readable and an `.inequality` carrying a closure
+            // was not. It now *evaluates* the closure instead, and the spelling stopped
+            // mattering.
+            //
+            // The first row was the **default**, and it is the one this assertion used to
+            // pin as expected behaviour. `enableVariableShifting` defaulted to `false`, so a
+            // caller who did not know to ask got the simplex's implicit `x ≥ 0` silently
+            // truncating the feasible region — 0 returned under `status: .optimal` where the
+            // answer is -3. A plausible number under a claim of proof is exactly what this
+            // package forbids, so the default is now `true` and this expects the answer.
 
-            // 1. The default. Documented behaviour, and the reason the flag exists.
-            #expect(result.integerSolution[0] == 0,
-                    "without shifting the simplex truncates at its implicit x >= 0, got \(result.integerSolution[0])")
+            // 1. The default, which is now the correct one.
+            #expect(result.integerSolution[0] == -3,
+                    "the optimum is -3 and the default solver must find it, got \(result.integerSolution[0])")
 
             let shifting = BranchAndBoundSolver<VectorN<Double>>(enableVariableShifting: true)
 

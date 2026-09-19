@@ -11,9 +11,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
-Nothing yet.
+Tier 2 of the quality programme, continued past `v3.0.0-alpha.7`.
+
+#### 2026-09-19 — a negatively-bounded model was answered at zero, and called optimal
+
+`BranchAndBoundSolver` delegates to a simplex method that assumes `x ≥ 0`, so a variable with a
+negative lower bound has to be translated first. `extractVariableShift` finds the translation —
+when it finds it at all, and when the caller has asked for it.
+
+##### Fixed
+
+- **`enableVariableShifting` now defaults to `true`.** It was `false`, and it is the only thing
+  between the implicit `x ≥ 0` and a model that says otherwise. Off, the feasible region is
+  silently truncated at zero:
+
+  | model | off | on | truth |
+  |---|---|---|---|
+  | `x ≥ -3`, minimise `x` | **0.0, status `.optimal`** | −3 | −3 |
+  | `x = -3`, minimise `x` | `.infeasible` | −3 | −3 |
+  | `-5 ≤ x ≤ -1`, minimise `x` | `.infeasible` | −5 | −5 |
+
+  The first row forced it: a plausible number returned under a claim of proven optimality. The
+  other two at least refuse. Turning it on cannot make a model worse — `extractVariableShift`
+  reports `needsShift == false` when nothing is negative, so a correct model sees no shift, no
+  changed coefficient and the same node count; only the wrong ones move. Applies to both
+  initialisers, `BranchAndBoundSolver.init` and the MINLP entry point.
+
+- **An equality was not treated as a bound.** Both `.linearEquality` and
+  `.linearInequality(sense: .equal)` were skipped, on the reasoning that an equality "pins a
+  variable rather than bounding it from below" — but pinning it at −3 bounds it below by −3. With
+  no shift the implicit `x ≥ 0` contradicts `x = -3` and a feasible program was reported
+  **infeasible**. `ConstraintSense.equal` is documented as one of `linearInequality`'s three
+  senses and fell through both branches of the sense test, which had no `default`.
+
+- **The shift depended on the order the constraints were written in.** The linear branches used
+  plain assignment, so the *last* constraint mentioning a variable decided its shift:
+  `[x ≥ -10, x ≥ -3]` gave −3 and the reverse gave −10. The closure branch already took a
+  *minimum*, so a variable bounded once in each style got an answer that depended on which style
+  was read last as well. All paths now take the **binding** bound — the greatest of them, which
+  is the tightest translation that still lands the variable on or above zero — so neither order
+  nor spelling changes the result. Same class as the `Set` iteration order fixed in
+  `BranchAndBoundSolver`: an answer varying with something that carries no information.
+
+##### Changed
+
+- `extractVariableShift` went from cognitive complexity **95 to 21**. The nested special cases for
+  coefficients of `+1` and `-1` were `rhs / 1` and `rhs / -1` written out; one
+  `singleVariableLowerBound(coefficients:rhs:sense:)` covers all three senses.
+- `BranchAndBoundCorrectnessTests.handlesNegativeLowerBounds` asserted `== 0` for the default
+  solver, pinning the defect as expected behaviour. Its own failure message said "without
+  shifting the simplex truncates at its implicit x >= 0". It now expects −3, and the comment
+  records both defects this test has tracked.
+
+##### Tests
+
+- **New: `VariableShiftExtractionTests`** — an equality as a bound in both spellings, order
+  independence, spelling independence, the default solver answering negatively-bounded models, a
+  non-negative model shown untouched by the new default, and the law the machinery exists for:
+  the shift lands every feasible point at or above zero and the round trip is exact.
 
 ---
+
 
 ### [3.0.0-alpha.7] - 2026-09-18
 

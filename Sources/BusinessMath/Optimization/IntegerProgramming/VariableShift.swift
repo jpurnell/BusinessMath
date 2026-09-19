@@ -208,10 +208,30 @@ public func extractVariableShift(
     from constraints: [MultivariateConstraint<VectorN<Double>>],
     dimension: Int
 ) throws -> VariableShift {
-    // Initialize all shifts to 0 (default: x ≥ 0)
-    var shifts = Array(repeating: 0.0, count: dimension)
+    // The greatest lower bound found for each variable, or nil where none was found.
+    //
+    // Greatest, not least, and not last. Every bound discovered is a genuine restriction, so
+    // the largest of them is the one that binds — and translating by the binding bound is the
+    // tightest shift that still lands the variable on or above zero.
+    //
+    // This used to be a plain assignment, so the *last* constraint mentioning a variable
+    // decided its shift: `[x >= -10, x >= -3]` gave -3 and the reverse gave -10. Neither
+    // breaks feasibility, but the shift feeds the LP's coefficients, so the tableau, the
+    // pivots, the vertex chosen among ties and the node count all depended on the order the
+    // caller happened to write the constraints in. The closure branch below already took a
+    // minimum, so a variable bounded once in each style got an answer that depended on which
+    // style was read last as well.
+    var lowerBounds = [Double?](repeating: nil, count: dimension)
 
-    // Scan constraints for lower bounds
+    func record(_ index: Int, _ bound: Double) {
+        guard index >= 0, index < dimension, bound.isFinite else { return }
+        if let existing = lowerBounds[index] {
+            lowerBounds[index] = Swift.max(existing, bound)
+        } else {
+            lowerBounds[index] = bound
+        }
+    }
+
     for constraint in constraints {
         switch constraint {
         case .linearInequality(let coeffs, let rhs, let sense):
@@ -220,70 +240,25 @@ public func extractVariableShift(
                     message: "Constraint has \(coeffs.count) coefficients, expected \(dimension)"
                 )
             }
-
-            // Look for constraints of form: x_i ≥ b (single variable lower bound)
-            // Check if this is a single-variable constraint
-            var nonZeroIndex: Int? = nil
-            var nonZeroCount = 0
-
-            for (i, coeff) in coeffs.enumerated() {
-                if abs(coeff) > 1e-10 {
-                    nonZeroCount += 1
-                    nonZeroIndex = i
-                }
+            if let bound = singleVariableLowerBound(coefficients: coeffs, rhs: rhs, sense: sense) {
+                record(bound.index, bound.value)
             }
 
-            // Single variable constraint
-            if nonZeroCount == 1, let i = nonZeroIndex {
-                let coeff = coeffs[i]
-
-                if sense == .greaterOrEqual {
-                    // coeff[i] * x_i ≥ rhs
-                    if abs(coeff - 1.0) < 1e-10 {
-                        // x_i ≥ rhs
-                        if rhs < 0 {
-                            // Negative lower bound - need to shift
-                            shifts[i] = rhs
-                        }
-                    } else if abs(coeff + 1.0) < 1e-10 {
-                        // -x_i ≥ rhs  →  x_i ≤ -rhs
-                        // This is an upper bound, not a lower bound
-                    } else {
-                        // General form: c*x_i ≥ rhs  →  x_i ≥ rhs/c (if c > 0)
-                        if coeff > 0 {
-                            let lowerBound = rhs / coeff
-                            if lowerBound < 0 {
-                                shifts[i] = lowerBound
-                            }
-                        }
-                    }
-                } else if sense == .lessOrEqual {
-                    // coeff[i] * x_i ≤ rhs
-                    if abs(coeff + 1.0) < 1e-10 {
-                        // -x_i ≤ rhs  →  x_i ≥ -rhs
-                        let lowerBound = -rhs
-                        if lowerBound < 0 {
-                            // Negative lower bound - need to shift
-                            shifts[i] = lowerBound
-                        }
-                    } else if abs(coeff - 1.0) < 1e-10 {
-                        // x_i ≤ rhs
-                        // This is an upper bound, not a lower bound
-                    } else {
-                        // General form: c*x_i ≤ rhs  →  x_i ≥ rhs/c (if c < 0)
-                        if coeff < 0 {
-                            let lowerBound = rhs / coeff
-                            if lowerBound < 0 {
-                                shifts[i] = lowerBound
-                            }
-                        }
-                    }
-                }
+        case .linearEquality(let coeffs, let rhs):
+            guard coeffs.count == dimension else {
+                throw OptimizationError.invalidInput(
+                    message: "Constraint has \(coeffs.count) coefficients, expected \(dimension)"
+                )
             }
-
-        case .linearEquality:
-            // Equality constraints don't provide bounds
-            continue
+            // An equality pinning a variable bounds it from below at the value it is pinned to.
+            // Both equality spellings used to be skipped, on the reasoning that an equality
+            // "pins a variable rather than bounding it from below" — but pinning it at -3
+            // bounds it below by -3, which is what the word means. With no shift the simplex's
+            // implicit `x >= 0` contradicts `x = -3`, and a perfectly feasible program was
+            // reported **infeasible**.
+            if let bound = singleVariableLowerBound(coefficients: coeffs, rhs: rhs, sense: .equal) {
+                record(bound.index, bound.value)
+            }
 
         case .inequality(let g, _):
             // A bound written as a closure is still a bound.
@@ -300,22 +275,74 @@ public func extractVariableShift(
             // `validateLinearModel` already uses recovers an affine function's
             // coefficients exactly: the constant from the origin, each coefficient from a
             // unit step, and affinity confirmed at points away from both.
-            if let bound = singleVariableLowerBound(of: g, dimension: dimension),
-               bound.value < 0 {
-                shifts[bound.index] = Swift.min(shifts[bound.index], bound.value)
+            if let bound = singleVariableLowerBound(of: g, dimension: dimension) {
+                record(bound.index, bound.value)
             }
 
         case .equality:
-            // An equality pins a variable rather than bounding it from below, and the
-            // `.linearEquality` case above declines it for the same reason.
+            // A closure equality is the one spelling still declined. Recovering a pin from it
+            // needs a probe that reads both signs of the coefficient rather than only the
+            // bounding one, and no caller in this package writes a variable pin that way —
+            // `.linearEquality` above is the spelling for it, and that one is now read.
             continue
         }
     }
 
-    // Check if any shifts are non-zero
-    let needsShift = shifts.contains { abs($0) > 1e-10 }
+    // Translate only what is actually negative. A binding bound at or above zero is already
+    // where the simplex wants it, and a *non-binding* negative bound alongside it is not a
+    // reason to move anything: `x >= 2` and `x >= -4` together mean `x >= 2`.
+    var shifts = Array(repeating: 0.0, count: dimension)
+    for index in 0..<dimension {
+        guard let bound = lowerBounds[index], bound < 0 else { continue }
+        shifts[index] = bound
+    }
 
+    let needsShift = shifts.contains { abs($0) > 1e-10 }
     return VariableShift(shifts: shifts, needsShift: needsShift)
+}
+
+/// Recovers `x_i >= b` from a single-variable linear row, when that is what it says.
+///
+/// One rule for all three senses, replacing the nested special cases for coefficients of `+1`
+/// and `-1` that used to sit inline — those were `rhs / 1` and `rhs / -1` written out.
+///
+/// ```
+/// c*x_i >= rhs   with c > 0   =>   x_i >= rhs/c     (ours)
+///                with c < 0   =>   x_i <= rhs/c     (an upper bound)
+/// c*x_i <= rhs   with c < 0   =>   x_i >= rhs/c     (ours)
+///                with c > 0   =>   x_i <= rhs/c     (an upper bound)
+/// c*x_i  = rhs   for any c    =>   x_i  = rhs/c     (both, so ours too)
+/// ```
+///
+/// - Parameters:
+///   - coefficients: The row's coefficients.
+///   - rhs: The row's right-hand side.
+///   - sense: Which way the row reads.
+/// - Returns: The variable index and its lower bound, or `nil` when the row mentions anything
+///   other than exactly one variable, or bounds it only from above.
+private func singleVariableLowerBound(
+    coefficients: [Double],
+    rhs: Double,
+    sense: ConstraintSense
+) -> (index: Int, value: Double)? {
+    var candidate: Int? = nil
+    for (index, coefficient) in coefficients.enumerated() where abs(coefficient) > 1e-10 {
+        if candidate != nil { return nil }   // more than one variable: not a bound on a variable
+        candidate = index
+    }
+    guard let index = candidate else { return nil }
+
+    let coefficient = coefficients[index]
+    let boundsFromBelow: Bool
+    switch sense {
+    case .greaterOrEqual: boundsFromBelow = coefficient > 0
+    case .lessOrEqual:    boundsFromBelow = coefficient < 0
+    case .equal:          boundsFromBelow = true
+    }
+    guard boundsFromBelow else { return nil }
+
+    let value = rhs / coefficient // fp-safety:disable — |coefficient| > 1e-10 per the scan above
+    return value.isFinite ? (index, value) : nil
 }
 
 

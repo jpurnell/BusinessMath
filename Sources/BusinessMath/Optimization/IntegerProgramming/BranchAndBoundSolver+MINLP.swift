@@ -95,7 +95,7 @@ extension BranchAndBoundSolver {
     ///   - lpTolerance: Tolerance for the bound comparisons in pruning (default: 1e-8)
     ///   - integralityTolerance: Tolerance for integrality—values within this of an integer are rounded (default: 1e-6)
     ///   - validateLinearity: Whether to validate that objectives/constraints are linear (default: false — see Important above)
-    ///   - enableVariableShifting: Automatically shift variables with negative bounds to satisfy x ≥ 0 (default: false)
+    ///   - enableVariableShifting: Automatically shift variables with negative bounds to satisfy x ≥ 0 (default: true)
     ///   - enableCuttingPlanes: Enable cutting planes (default: false — inert for NLP relaxations)
     ///   - maxCuttingRounds: Maximum cutting plane rounds per node (default: 5)
     ///   - cutTolerance: Minimum violation for a cut to be added (default: 1e-6)
@@ -135,7 +135,7 @@ extension BranchAndBoundSolver {
         lpTolerance: Double = 1e-8,
         integralityTolerance: Double = 1e-6,
         validateLinearity: Bool = false,
-        enableVariableShifting: Bool = false,
+        enableVariableShifting: Bool = true,
         enableCuttingPlanes: Bool = false,
         maxCuttingRounds: Int = 5,
         cutTolerance: Double = 1e-6,

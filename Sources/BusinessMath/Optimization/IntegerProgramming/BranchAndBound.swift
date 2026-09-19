@@ -55,6 +55,29 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
     ///
     /// When enabled, variables with negative lower bounds (e.g., x ≥ -3) are
     /// automatically shifted to satisfy SimplexSolver's x ≥ 0 requirement.
+    ///
+    /// ## Why this defaults to `true`
+    ///
+    /// It is the only thing standing between the simplex method's implicit `x ≥ 0` and a model
+    /// that says otherwise. Off, the feasible region is silently truncated at zero and the
+    /// solver answers a different question without reporting anything:
+    ///
+    /// | model | off | on | truth |
+    /// |---|---|---|---|
+    /// | `x ≥ -3`, minimise `x` | **0.0, status `.optimal`** | −3 | −3 |
+    /// | `x = -3`, minimise `x` | `.infeasible` | −3 | −3 |
+    /// | `-5 ≤ x ≤ -1`, minimise `x` | `.infeasible` | −5 | −5 |
+    ///
+    /// The first row is why the default changed: a plausible number under a claim of proven
+    /// optimality is the fail-silent result this package is not allowed to produce. The other
+    /// two at least refuse.
+    ///
+    /// Turning it on cannot make a model worse. ``extractVariableShift(from:dimension:)`` reports
+    /// `needsShift == false` when nothing has a negative lower bound, so a model that was already
+    /// correct sees no shift, no changed coefficient and the same search — the only models
+    /// affected are the ones that were being answered wrongly.
+    ///
+    /// Set it to `false` only to reproduce the old behaviour deliberately.
     public let enableVariableShifting: Bool
 
     /// Whether to enable cutting plane generation
@@ -195,7 +218,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
     ///   - lpTolerance: Tolerance for LP solver (default: 1e-8)
     ///   - integralityTolerance: Tolerance for integrality—values within this of an integer are rounded (default: 1e-6)
     ///   - validateLinearity: Whether to validate that objectives/constraints are linear (default: false)
-    ///   - enableVariableShifting: Automatically shift variables with negative bounds to satisfy x ≥ 0 (default: false)
+    ///   - enableVariableShifting: Automatically shift variables with negative bounds to satisfy x ≥ 0 (default: true)
     ///   - enableCuttingPlanes: Enable Gomory cuts and other cutting planes (default: false)
     ///   - maxCuttingRounds: Maximum cutting plane rounds per node (default: 5)
     ///   - cutTolerance: Minimum violation for a cut to be added (default: 1e-6)
@@ -227,7 +250,7 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
         lpTolerance: Double = 1e-8,
         integralityTolerance: Double = 1e-6,
         validateLinearity: Bool = false,
-        enableVariableShifting: Bool = false,
+        enableVariableShifting: Bool = true,
         enableCuttingPlanes: Bool = false,
         maxCuttingRounds: Int = 5,
         cutTolerance: Double = 1e-6,

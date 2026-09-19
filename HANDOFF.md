@@ -1,8 +1,16 @@
-# Handoff — 2026-09-18 (Tier 2: five items closed, four defects)
+# Handoff — 2026-09-19 (Tier 2: six items closed, seven defects)
 
-**Two sessions of Tier 2 in one day.** The three items named first — the bytecode optimizer,
-`RobustOptimizer`/`CuttingPlaneMaster`, and `solveRelaxation` — shipped as `e70829ac`. Then
-`solve` (160 → 60, two defects) and `MonteCarloExpressionModel.evaluate` (one defect).
+**Six items of Tier 2 closed, seven defects.** The bytecode optimizer,
+`RobustOptimizer`/`CuttingPlaneMaster` and `solveRelaxation` shipped as `e70829ac`; `solve`
+(160 → 60, two defects) and `MonteCarloExpressionModel.evaluate` as `d3359c3c`; both are inside
+**`v3.0.0-alpha.7`**, which a peer session tagged along with its density work. This commit —
+`extractVariableShift`, three defects including a **behaviour-breaking default change** — is the
+first thing above that tag.
+
+**A peer session is working in this repo concurrently.** It landed `chi2pdf`, a `density`
+requirement on `ContinuousDistribution` across 30-odd files, and the alpha.7 tag while this work
+was in flight. `git fetch` before assuming the remote is where you left it, and expect
+`CHANGELOG.md` to be the only file both sides touch.
 
 The work queue is **`project/plans/TIER2_COMPLEXITY_QUEUE.md`**. That file is the plan; this file
 is the state and the traps.
@@ -12,8 +20,8 @@ is the state and the traps.
 | | |
 |---|---|
 | branch | `main`, local == remote |
-| tags | latest **`v3.0.0-alpha.6`** (2026-09-15); **26 commits untagged above it** |
-| tests | **7,882 in 716 suites**, exit 0, **1 known issue** (deliberate — see below) |
+| tags | latest **`v3.0.0-alpha.7`** (2026-09-18, tagged by the peer session) |
+| tests | **7,898+ in 719+ suites**, exit 0, **1 known issue** (deliberate — see below) |
 | gate | `--no-cache --check all` → 45 of 45 ran, **0 errors and 0 warnings outside `doc-run`** |
 | `doc-run` | **flaky under load, not a regression** — see §4 |
 | guidelines repo | `../../development-guidelines` clean at `a5f9292`, `v2.4.0` tagged and pushed |
@@ -68,7 +76,20 @@ Re-run the gate rather than trusting that table after any refactor.
 - **`RobustOptimizer` audited, clean.** The LP route was confirmed to fire by instrumentation
   (8 of 8 cases), not assumed — iteration count does *not* separate the two routes.
 
-### Since that commit
+### `extractVariableShift` — 95 → 21, three defects (this commit)
+
+- **`enableVariableShifting` defaulted to `false`**, and it is the only thing between the
+  simplex's implicit `x ≥ 0` and a model that says otherwise. `x ≥ -3, minimise x` returned
+  **0.0 with status `.optimal`**; `x = -3` and `-5 ≤ x ≤ -1` returned `.infeasible`. Now defaults
+  to `true` on both initialisers. It cannot make a model worse — `needsShift` is false when
+  nothing is negative, so only the wrong models move.
+- **An equality was not treated as a bound.** Both equality spellings were skipped; pinning a
+  variable at −3 bounds it below by −3, and `ConstraintSense.equal` fell through a sense test
+  with no `default`.
+- **The shift depended on constraint order.** Plain assignment meant the last constraint won:
+  `[x ≥ -10, x ≥ -3]` gave −3, reversed gave −10. All paths now take the binding bound.
+
+### Earlier commits
 
 - **`solve`: 160 → 60, two defects.** Five separate result constructions, each answering "what do
   I report when nothing was found" on its own. Every no-incumbent exit reported
