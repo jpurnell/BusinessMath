@@ -88,36 +88,6 @@ private func sampledVariance<T: Real, G: RandomNumberGenerator>(
 
 // MARK: - Shared by both overloads
 
-/// The intraclass correlation implied by one draw of the variance components.
-///
-/// Which components sit in the denominator is the whole content of the model choice, so it
-/// is written once rather than at each sampler's collection step.
-///
-/// - `twoWayRandom` and `oneWayRandom` divide by the **total** variance: raters are a
-///   random sample from a population, so their variance is part of the noise a future
-///   measurement faces.
-/// - `twoWayMixed` leaves the rater variance out: the raters *are* the population, so their
-///   systematic differences are a fixed effect rather than a source of error.
-///
-/// - Returns: The ICC, or zero when the denominator is not positive — every component is a
-///   variance and cannot be negative, so that happens only when all of them are zero, and
-///   an undefined ratio there is reported as no agreement rather than as a NaN.
-private func iccFromComponents<T: Real>(
-    model: ICCModel,
-    sigmaS: T,
-    sigmaR: T,
-    sigmaE: T
-) -> T {
-    let denominator: T
-    switch model {
-    case .twoWayRandom, .oneWayRandom:
-        denominator = sigmaS + sigmaR + sigmaE
-    case .twoWayMixed:
-        denominator = sigmaS + sigmaE
-    }
-    return denominator > T.zero ? sigmaS / denominator : T.zero
-}
-
 /// Merges the per-chain draws into one posterior and summarises it.
 ///
 /// Both overloads — the complete-data sampler and the missing-data one — finished with the
@@ -195,7 +165,13 @@ private func summarisePosterior<T: Real>(
 /// The ICC is computed from the posterior samples of the variance components:
 /// - **ICC(2,1)** (twoWayRandom, absolute): `sigma_s^2 / (sigma_s^2 + sigma_r^2 + sigma_e^2)`
 /// - **ICC(3,1)** (twoWayMixed, consistency): `sigma_s^2 / (sigma_s^2 + sigma_e^2)`
-/// - **ICC(1,1)** (oneWayRandom): `sigma_s^2 / (sigma_s^2 + sigma_r^2 + sigma_e^2)`
+/// - **ICC(1,1)** (oneWayRandom): `(sigma_s^2 - sigma_r^2/k) / ((sigma_s^2 - sigma_r^2/k) +
+///   sigma_r^2 + sigma_e^2)` — *not* the two-way formula. A one-way design has no separable
+///   rater effect, so rater variation comes out of the subject term as well as sitting in the
+///   denominator. This file used to carry the two-way line here, so both models returned the
+///   same number. Both this sampler and the EM estimator now share one internal
+///   `iccFromVarianceComponents(model:agreement:sigmaS2:sigmaR2:sigmaE2:raters:)`, so there is a
+///   single place left where it can be got wrong.
 ///
 /// - Parameters:
 ///   - ratings: Matrix where `ratings[i][j]` is the rating of subject `i` by rater `j`.
@@ -376,7 +352,14 @@ public func bayesianICC<T: Real>(
                 chainSigmaE.append(sigmaE)
 
                 chainICC.append(
-                    iccFromComponents(model: model, sigmaS: sigmaS, sigmaR: sigmaR, sigmaE: sigmaE)
+                    iccFromVarianceComponents(
+                        model: model,
+                        agreement: .absolute,
+                        sigmaS2: sigmaS,
+                        sigmaR2: sigmaR,
+                        sigmaE2: sigmaE,
+                        raters: kT
+                    )
                 )
             }
         }
@@ -633,7 +616,14 @@ public func bayesianICC<T: Real>(
                 chainSigmaE.append(sigmaE)
 
                 chainICC.append(
-                    iccFromComponents(model: model, sigmaS: sigmaS, sigmaR: sigmaR, sigmaE: sigmaE)
+                    iccFromVarianceComponents(
+                        model: model,
+                        agreement: .absolute,
+                        sigmaS2: sigmaS,
+                        sigmaR2: sigmaR,
+                        sigmaE2: sigmaE,
+                        raters: kT
+                    )
                 )
             }
         }

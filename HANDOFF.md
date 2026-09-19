@@ -1,4 +1,4 @@
-# Handoff — 2026-09-19 (Tier 2: seven items closed, nine defects)
+# Handoff — 2026-09-19 (Tier 2: eight items closed, ten defects)
 
 **Six items of Tier 2 closed, seven defects.** The bytecode optimizer,
 `RobustOptimizer`/`CuttingPlaneMaster` and `solveRelaxation` shipped as `e70829ac`; `solve`
@@ -75,6 +75,22 @@ Re-run the gate rather than trusting that table after any refactor.
 - **`solveRelaxation` 291 → 55**, stages extracted into `BranchAndBoundCutting.swift`.
 - **`RobustOptimizer` audited, clean.** The LP route was confirmed to fire by instrumentation
   (8 of 8 cases), not assumed — iteration count does *not* separate the two routes.
+
+### `bayesianICC` — the same ICC(1,1) defect, third implementation
+
+- After finding it in the EM estimator the **class** was swept, not the instance: every site
+  turning variance components into an ICC. There were two, and `bayesianICC`'s private
+  `iccFromComponents` had `case .twoWayRandom, .oneWayRandom:` as well. Fixed by **deleting** the
+  duplicate — both samplers now call the shared `iccFromVarianceComponents`, so one place is left
+  to get wrong. Posterior mean for ICC(1,1) moves 0.2807 → 0.1881 against a classical 0.1657.
+- **Two of my own tests passed for the wrong reason and were rewritten.** A 0.2 tolerance passed
+  while the defect was live (gap 0.115); it is now 0.06, measured. And "the two overloads agree on
+  complete data" was testing a *delegation* — the optional overload hands a complete matrix
+  straight to the other one — so it now asserts bit-identical results and a separate test removes
+  a cell to reach the missing-data sweep.
+- **Complexity left at 101/54 deliberately.** Factoring the shared Gibbs sweep needs a closure in
+  the sampler's inner loop, and after the `evaluate` measurement that needs a release benchmark
+  to justify. Not missed — declined.
 
 ### `icc` (EM overload) — 131 → 73, two defects
 

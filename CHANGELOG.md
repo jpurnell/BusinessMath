@@ -13,6 +13,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Tier 2 of the quality programme, continued past `v3.0.0-alpha.7`.
 
+#### 2026-09-19 — the same ICC(1,1) defect, in a third implementation
+
+Having found `.oneWayRandom` carrying the two-way formula in the EM estimator, the class was
+swept rather than the instance fixed: every site in the package that turns variance components
+into an intraclass correlation. There were two, and the second had it as well.
+
+##### Fixed
+
+- **`bayesianICC`'s private `iccFromComponents` began `case .twoWayRandom, .oneWayRandom:`**,
+  lumping the one-way model in with the two-way absolute one, so both Gibbs samplers returned
+  the same number for ICC(1,1) and ICC(2,1). Same defect, different file, written independently.
+
+  Fixed by **deleting the duplicate** rather than correcting it: both samplers now call the
+  shared `iccFromVarianceComponents(...)` that the EM estimator uses, so there is one place left
+  where this can be got wrong. On the Shrout & Fleiss matrix the posterior mean for ICC(1,1)
+  moves from 0.2807 to 0.1881, against a classical 0.1657.
+
+- The function's documentation stated the two-way formula for ICC(1,1) and now states the
+  one-way one, with a pointer to the shared implementation.
+
+##### Tests
+
+- **New: `BayesianICCOracleTests`** — ICC(1,1) and ICC(2,1) differing whatever the prior or chain
+  length, the posterior mean landing near the published classical estimate with the classical
+  value inside the credible interval, R-hat confirming the chains mixed, and a seeded chain
+  reproducing bit-for-bit (this file's comments record a defect where a fixed budget of pre-drawn
+  uniforms ran out mid-draw and the chain silently continued on the global generator).
+
+- **Two of those tests were rewritten after they passed for the wrong reason**, and the reasons
+  are recorded in them:
+
+  - "the posterior mean is near the classical estimate" was written at a tolerance of 0.2 and
+    **passed while the defect was live** — 0.2807 against 0.1657 is a gap of 0.115. Measured with
+    the formula corrected, the three gaps are 0.022, 0.009 and 0.030, so the bound is now 0.06:
+    twice the worst case, and still failing on the bug it was written after.
+  - "the two overloads agree on complete data" was verifying a **delegation**, not an agreement.
+    `bayesianICC(_: [[T?]], ...)` computes `totalObs == n * k` and hands a complete matrix
+    straight to the other overload, so the assertion passed because it was the same call. It now
+    asserts bit-identical results — which is what actually checks the delegation fires — and a
+    separate test removes one cell to exercise the missing-data sweep, the path nothing else
+    reaches.
+
+##### Not changed
+
+- `bayesianICC` remains at cognitive complexity **101** (missing-data) and **54** (complete). The
+  two overloads share a six-step Gibbs sweep whose middle steps are structurally identical, and
+  factoring them needs a closure in the sampler's inner loop. After the `BytecodeInterpreter`
+  measurement — where a debug benchmark and a release benchmark disagreed on the *sign* — that is
+  a change requiring a release benchmark to justify, which is disproportionate to a complexity
+  score once the defect is fixed. Recorded so the next session does not assume it was missed.
+
+---
+
 #### 2026-09-19 — ICC(1,1) returned the ICC(2,1) figure
 
 There are two functions named `icc`: one takes `[[T]]` and computes the coefficient from ANOVA
