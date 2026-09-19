@@ -275,7 +275,14 @@ value is there, which only an inverse transform answers.
 
 `ContinuousDistribution` and `DiscreteDistribution` add `cdf` and `quantile`; `SamplingMethod`
 adds Latin hypercube, Sobol and Halton, with Sobol matching `scipy.stats.qmc` against a committed
-fixture. All fifteen existing distributions were retrofitted, and doing so found four numerical
+fixture.
+
+**`pdf(_:)` joined `ContinuousDistribution` in 3.0.0-alpha.7**, five releases later than it
+should have. The protocol asked for a CDF and a quantile and not for the density that defines
+the family, and the gap was found not by design review but by `chi2pdf` being caught computing
+a cumulative sum. All forty-six conformers now answer it, held to the CDF they already have by
+`ContinuousDensityTests`. See `project/plans/proposals/ADensityForEveryContinuousDistribution.md`
+for why there is deliberately **no default implementation**. All fifteen existing distributions were retrofitted, and doing so found four numerical
 defects — three distributions and the shipped `exponentialCDF` all lost their lower tail to
 `1 - exp(-y)`, which keeps no digits when `y` is small.
 
@@ -637,6 +644,8 @@ The CHANGELOG heading and the README's `from:` pin both moved to `2.6.0` in the 
       special-function inverses that eight-plus distributions need — Gamma, Erlang, Chi-squared,
       Beta, F, Pearson V, Pearson VI, Johnson
 - [x] `ContinuousDistribution` / `DiscreteDistribution`, with inverse-transform sampling supplied
+- [x] `pdf(_:)` on `ContinuousDistribution` — 3.0.0-alpha.7, and late: the protocol shipped
+      without the density for five releases, and a wrong `chi2pdf` survived that whole time
 - [x] Retrofit all fifteen existing distributions and verify them through one shared battery
 - [x] Latin hypercube, Sobol (Joe & Kuo, vendored), Halton, Owen scrambling, Vose alias table
 - [x] The `MonteCarloSimulation` seam, refusing rather than downgrading when an input has no
@@ -726,7 +735,13 @@ The earlier table was about *scope*; this one is about *what is being measured*.
 
 ---
 
-**Last Updated:** 2026-09-14 — reconciled against the test-review programme, which had run for
+**Last Updated:** 2026-09-18 — reconciled for 3.0.0-alpha.7. Recorded `pdf(_:)` joining
+`ContinuousDistribution` in the Phase 0 narrative and its checklist, both of which described a
+protocol of two requirements. The 2.6.0 status table below is left as written: it is a record of
+what was measured at that tag, not a live status line, and 3.0.0-alpha.7 measures 7,908 tests
+with the gate passing uncached.
+
+**Previously, 2026-09-14** — reconciled against the test-review programme, which had run for
 two days without appearing in Current Priorities at all. Added it as priority 1 with the four
 library defects it has found, and renumbered the rest. Corrected the gate line, which read
 "0 errors, 0 warnings across 44 of 45 checkers (2026-08-24)" and is now 0 errors and 10 warnings

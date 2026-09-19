@@ -11,7 +11,7 @@ Build DCF models, optimize portfolios, run Monte Carlo simulations, and value se
 
 ---
 
-## Pre-release: 3.0.0-alpha.5
+## Pre-release: 3.0.0-alpha.7
 
 **The breaking set, and only the breaking set.** Three items that have been waiting for a
 major since August, shipped together as a pre-release.
@@ -20,7 +20,7 @@ major since August, shipped together as a pre-release.
 `from: "2.7.0"` you stay on 2.18.0 and nothing changes. To try the alpha, ask for it by name:
 
 ```swift
-.package(url: "https://github.com/jpurnell/BusinessMath.git", exact: "3.0.0-alpha.5")
+.package(url: "https://github.com/jpurnell/BusinessMath.git", exact: "3.0.0-alpha.7")
 ```
 
 What breaks:
@@ -58,12 +58,26 @@ riskless portfolio's Sharpe ratio was reported as **0** rather than unbounded; a
 returned `nan` at a zero denominator by accident rather than by decision. Each is described in
 the CHANGELOG with the measurement that found it.
 
-**alpha.6 is written but not yet tagged.** It is breaking in one place — bonds now state the
-day-count convention they are quoted on, which moves prices by cents — and fixes two more
-defects that produced wrong answers: a negative lower bound written as a closure was silently
-truncated to zero, and `EOQModel` overflowed to a non-finite order quantity with no error. It
-also adds `ModifiedZScoreAnomalyDetector` and `IQRAnomalyDetector`, and a `seed:` on
+**alpha.6 shipped 2026-09-15.** It is breaking in one place — bonds now state the day-count
+convention they are quoted on, which moves prices by cents — and fixes two more defects that
+produced wrong answers: a negative lower bound written as a closure was silently truncated to
+zero, and `EOQModel` overflowed to a non-finite order quantity with no error. It also adds
+`ModifiedZScoreAnomalyDetector` and `IQRAnomalyDetector`, and a `seed:` on
 `runFinancialSimulation`.
+
+**alpha.7 adds one protocol requirement and fixes a density that was computing a CDF.**
+
+`ContinuousDistribution` now requires `pdf(_:)`, and all forty-six conformers implement it. It
+is **source-breaking for any type outside this package that conforms to the protocol**, which
+is the point: there is deliberately no default implementation, because a default that
+differentiated `cdf(_:)` numerically would let an unconverted type ship a silently approximate
+density.
+
+The prompt was `chi2pdf(x:dF:)`, which summed the density at 0.001, 0.002, … up to `x` and
+multiplied by the step — a Riemann sum of the integral, which is the *cumulative* function.
+`chi2pdf(x: 10, dF: 3)` answered 0.98144, the CDF at 10, where the density is 0.0085. It is
+deprecated and now delegates to `chiSquaredPDF(x:df:)`, so **it returns a different number
+from previous versions**, because the previous number was wrong.
 
 ### Latest stable: 2.18.0
 
@@ -217,9 +231,9 @@ before you upgrade rather than after:
 
 | | |
 |---|---|
-| tests | 7,800 in 701 suites, all passing under strict concurrency |
+| tests | 7,908 in 721 suites, all passing under strict concurrency |
 | build | 0 warnings, library and test target |
-| documentation coverage | 100% — 6,530 of 6,530 public APIs documented |
+| documentation coverage | 100% — 7,902 of 7,902 public APIs documented |
 | DocC catalogue | 73 articles, every code block compiled against the module |
 | toolchain | Swift 6.2 (`swift-tools-version: 6.2`) |
 
@@ -231,7 +245,7 @@ before you upgrade rather than after:
 
 **Type-Safe & Concurrent**: Full Swift 6 compliance with generics (`TimeSeries<T: Real & Sendable>`) and strict concurrency for thread safety. Model closures are `@Sendable`. As of 2.6.0 the vector and optimizer types require `Real & BinaryFloatingPoint` rather than `Real` alone — the conversion that constraint supplies used to be faked with a runtime-cast ladder that answered `0.0` when it failed.
 
-**Complete**: 73 comprehensive guides, 7,800 tests, and production implementations of valuation models, optimization algorithms, and risk analytics. **Every code block in the guides is compiled against the module** by the `doc-code` auditor (`quality-gate --check doc-code`), so an example that no longer matches the API fails the check rather than the reader.
+**Complete**: 73 comprehensive guides, 7,908 tests, and production implementations of valuation models, optimization algorithms, and risk analytics. **Every code block in the guides is compiled against the module** by the `doc-code` auditor (`quality-gate --check doc-code`), so an example that no longer matches the API fails the check rather than the reader.
 
 **Accurate**: Calendar-aware calculations (365.25 days/year), industry-standard formulas (ISDA CDS pricing, Black-Scholes), and — where a result is an approximation — a measured accuracy recorded in the doc comment rather than an assurance. `inverseNormalCDF` is 2 ulp over `1e-12 ≤ p ≤ 1 − 1e-12`; `normalCDF` holds ~1e-14 relative down to `x = −37`. Numbers that changed in 2.6.0 are tabulated in the CHANGELOG with the measurement that found them.
 
@@ -412,9 +426,9 @@ The package vends three products: **`BusinessMath`** (the library), **`BusinessM
 
 ### Documentation & Testing
 - 📚 **73 comprehensive guides** (~50,900 lines of DocC documentation), every code block compiled against the module
-- ✅ **100% documentation coverage** — 6,530 of 6,530 public APIs documented
-- ✅ **6,716 tests** across 592 test suites (100% pass rate, 0 known issues)
-- ✅ **Quality gate at 0 errors, 0 warnings** across 44 checkers, enforced by a pre-commit hook
+- ✅ **100% documentation coverage** — 7,902 of 7,902 public APIs documented
+- ✅ **7,908 tests** across 721 test suites (100% pass rate, 0 known issues)
+- ✅ **Quality gate at 0 errors, 0 warnings** across 40 of 45 checkers (5 not selected), enforced by a pre-commit hook
 - 📊 **Performance benchmarks** for typical use cases
 - 🎓 **Learning paths** for different roles
 

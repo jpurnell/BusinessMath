@@ -11,6 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+Nothing yet.
+
+---
+
+### [3.0.0-alpha.7] - 2026-09-18
+
+**A density is part of being continuous, and three batches of solver work.** The headline is a
+protocol requirement that should have existed from the first release; the rest is Tier 2 of the
+quality programme, where a high cognitive-complexity score is treated as a marker for code no
+one has an oracle for.
+
 #### 2026-09-18 — every continuous distribution now has a density
 
 `ContinuousDistribution` required `cdf(_:)` and `quantile(_:)` and nothing else. A continuous
