@@ -55,14 +55,45 @@ into an intraclass correlation. There were two, and the second had it as well.
     separate test removes one cell to exercise the missing-data sweep, the path nothing else
     reaches.
 
-##### Not changed
+##### Changed — one Gibbs sweep instead of two, and 17% faster with it
 
-- `bayesianICC` remains at cognitive complexity **101** (missing-data) and **54** (complete). The
-  two overloads share a six-step Gibbs sweep whose middle steps are structurally identical, and
-  factoring them needs a closure in the sampler's inner loop. After the `BytecodeInterpreter`
-  measurement — where a debug benchmark and a release benchmark disagreed on the *sign* — that is
-  a change requiring a release benchmark to justify, which is disproportionate to a complexity
-  score once the defect is fixed. Recorded so the next session does not assume it was missed.
+The two overloads carried the same six-step sweep twice, differing only in that the missing-data
+one wrapped every cell access in `if let`. That is the wrong place for the difference: the sweep
+runs `iterations × chains` times and the question "is this cell present" has the same answer on
+every one of them. Asking it **once, at setup**, removes it from the inner loop and leaves one
+implementation — `gibbsICCPosterior` over an `ObservedCells` value, in a new `GibbsICCSweep.swift`.
+
+Cognitive complexity **101 and 54 → 45 and 32**, with one overload dropping off the threshold
+list entirely. `bayesianICC.swift` goes from 653 lines to 385.
+
+Measured at `-O`, 40 subjects × 8 raters, 4000 iterations × 2 chains, best of five:
+
+| path | before | flat cell list | **grouped by subject** |
+|---|---|---|---|
+| complete | 0.6107s | 0.7732s (+27%) | **0.6013s** (−1.5%) |
+| missing | 0.7214s | 0.7689s (+6.6%) | **0.5974s (−17.2%)** |
+
+**The middle column is why the first attempt was not shipped.** Flattening the cells to parallel
+arrays made `s[cells.subject[c]]` an indexed load where the nested loop had `i` as an induction
+variable and hoisted `s[i]` out entirely — so the complete path, which had no `if let` to save in
+the first place, paid pure cost. Walking the cells subject-by-subject through a row-offset array
+restores the hoist and keeps the single implementation. Step 3 gains outright: the loop it
+replaced read a row-major matrix down its columns.
+
+##### Verified by bit-identity, which caught two changes a tolerance would not
+
+Every draw of every chain is identical to the code this replaces, across all three models and
+both overloads. Two attempts failed that check first:
+
+- **The complete-data overload initialises its variance components from a two-way ANOVA** —
+  `msError`, `(msSubjects − msError)/k`, `(msRaters − msError)/n` — while the missing-data one
+  splits total variance three ways because it cannot form those mean squares. Collapsing them to
+  one shared starting value changed every draw. The posterior *means* barely moved, so a
+  tolerance-based test would have passed it.
+- **`x - (mu + s_i)` is not `x - mu - s_i`.** Factoring the loop-invariant sum out of steps 3 and
+  6 looked free and changed the last bit of every residual, which the chain amplified into
+  entirely different draws. Hoisting the *load* of `s[i]` is free; rearranging the *arithmetic* is
+  not. Both are now comments where the temptation is.
 
 ---
 

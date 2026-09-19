@@ -88,9 +88,15 @@ Re-run the gate rather than trusting that table after any refactor.
   complete data" was testing a *delegation* — the optional overload hands a complete matrix
   straight to the other one — so it now asserts bit-identical results and a separate test removes
   a cell to reach the missing-data sweep.
-- **Complexity left at 101/54 deliberately.** Factoring the shared Gibbs sweep needs a closure in
-  the sampler's inner loop, and after the `evaluate` measurement that needs a release benchmark
-  to justify. Not missed — declined.
+- **One Gibbs sweep instead of two: complexity 101/54 → 45/32, and 17% faster.** The presence of
+  a cell is now asked once at setup rather than on every cell of every sweep. Measured at `-O`:
+  complete 0.6107 → 0.6013s, missing 0.7214 → **0.5974s**. A first attempt using a flat cell list
+  was **27% slower** on the complete path — `s[cells.subject[c]]` is a gather where the nested
+  loop hoisted `s[i]` — and was not shipped; grouping the cells by subject restores the hoist.
+- **Bit-identity is the verification, and it earned it.** Two attempts changed every draw while
+  leaving the posterior means almost untouched: collapsing the complete overload's ANOVA-based
+  initialisation into the missing overload's heuristic, and factoring `mu + s[i]` out of a
+  subtraction. A tolerance-based test would have passed both.
 
 ### `icc` (EM overload) — 131 → 73, two defects
 

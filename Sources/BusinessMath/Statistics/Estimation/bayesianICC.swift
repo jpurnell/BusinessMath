@@ -16,7 +16,7 @@ import Numerics
 /// needed an eleventh silently finished the draw on the *global* generator and the seed
 /// stopped meaning anything from that point on. Nothing reported it. Threading a
 /// generator removes the budget, and with it the failure.
-private struct GibbsRNG: RandomNumberGenerator {
+internal struct GibbsRNG: RandomNumberGenerator {
     private var deterministic: DeterministicRNG?
     private var system = SystemRandomNumberGenerator() // stochastic:exempt — the unseeded path; set `GibbsConfig.seed` for reproducibility
 
@@ -70,7 +70,7 @@ private struct GibbsRNG: RandomNumberGenerator {
 ///   - current: The value to retain if the draw fails.
 ///   - rng: The chain's generator, advanced by the draw.
 /// - Returns: The new draw, or `current` when the draw could not be made.
-private func sampledVariance<T: Real, G: RandomNumberGenerator>(
+internal func sampledVariance<T: Real, G: RandomNumberGenerator>(
     sumOfSquares: T,
     count: T,
     prior: VariancePrior<T>,
@@ -105,7 +105,7 @@ private func sampledVariance<T: Real, G: RandomNumberGenerator>(
 /// - Throws: ``BusinessMathError/calculationFailed(operation:reason:suggestions:)`` when no
 ///   draw survived thinning and burn-in, which is a configuration error rather than a
 ///   result.
-private func summarisePosterior<T: Real>(
+internal func summarisePosterior<T: Real>(
     allChainSigmaS: [[T]],
     allChainSigmaR: [[T]],
     allChainSigmaE: [[T]],
@@ -218,17 +218,16 @@ public func bayesianICC<T: Real>(
     let raterPrior = priors?.raters ?? .vague
     let errorPrior = priors?.error ?? .vague
 
-    // ANOVA initialization
+    // ANOVA initialization — the method-of-moments estimates, which start the chain near where
+    // it is going. Only available here: the missing-data overload cannot form these mean squares.
     let anova = try twoWayANOVA(ratings)
     let nT = T(n)
     let kT = T(k)
 
-    // Initial variance estimates from ANOVA (clamped to positive)
     let initSigmaE = max(anova.msError, T(1) / T(1000))
     let initSigmaS = max((anova.msSubjects - anova.msError) / kT, T(1) / T(1000))
     let initSigmaR = max((anova.msRaters - anova.msError) / nT, T(1) / T(1000))
 
-    // Grand mean
     var grandSum = T.zero
     for row in ratings {
         for value in row {
@@ -237,144 +236,19 @@ public func bayesianICC<T: Real>(
     }
     let grandMean = grandSum / (nT * kT)
 
-    // Run chains
-    let totalN = n * k
-    var allChainSigmaS: [[T]] = []
-    var allChainSigmaR: [[T]] = []
-    var allChainSigmaE: [[T]] = []
-    var allChainICC: [[T]] = []
-
-    for chain in 0..<config.chains {
-        // One stream per chain. Chains are offset by a large odd stride so that
-        // `chains: 4` explores four different sequences rather than four copies of one.
-        var rng = GibbsRNG(seed: config.seed.map { $0 &+ UInt64(chain) &* 999_983 })
-
-        // Initialize chain state
-        var mu = grandMean
-        var s = [T](repeating: T.zero, count: n)
-        var r = [T](repeating: T.zero, count: k)
-        var sigmaS = initSigmaS
-        var sigmaR = initSigmaR
-        var sigmaE = initSigmaE
-
-        // Disperse starting points for multiple chains
-        if chain > 0 {
-            sigmaS = initSigmaS * T(1 + chain)
-            sigmaR = initSigmaR * T(1 + chain)
-            sigmaE = initSigmaE * T(1 + chain)
-        }
-
-        var chainSigmaS: [T] = []
-        var chainSigmaR: [T] = []
-        var chainSigmaE: [T] = []
-        var chainICC: [T] = []
-
-        let tauSquared: T = T(1_000_000) // vague prior variance on mu
-
-        for iter in 0..<config.iterations {
-            // --- 1. Sample mu | rest ---
-            var residualSum = T.zero
-            for i in 0..<n {
-                for j in 0..<k {
-                    residualSum += ratings[i][j] - s[i] - r[j]
-                }
-            }
-            let totalNT = T(totalN)
-            let muPostVar = T(1) / (totalNT / sigmaE + T(1) / tauSquared)
-            let muPostMean = muPostVar * (residualSum / sigmaE + grandMean / tauSquared)
-
-            let (u1, u2) = rng.nextPair()
-            mu = distributionNormal(mean: muPostMean, variance: muPostVar, u1, u2)
-
-            // --- 2. Sample s_i | rest ---
-            for i in 0..<n {
-                var sumResid = T.zero
-                for j in 0..<k {
-                    sumResid += ratings[i][j] - mu - r[j]
-                }
-                let vPost = T(1) / (kT / sigmaE + T(1) / sigmaS)
-                let sPost = vPost * sumResid / sigmaE
-
-                let (u1, u2) = rng.nextPair()
-                s[i] = distributionNormal(mean: sPost, variance: vPost, u1, u2)
-            }
-
-            // --- 3. Sample r_j | rest ---
-            for j in 0..<k {
-                var sumResid = T.zero
-                for i in 0..<n {
-                    sumResid += ratings[i][j] - mu - s[i]
-                }
-                let vPost = T(1) / (nT / sigmaE + T(1) / sigmaR)
-                let rPost = vPost * sumResid / sigmaE
-
-                let (u1, u2) = rng.nextPair()
-                r[j] = distributionNormal(mean: rPost, variance: vPost, u1, u2)
-            }
-
-            // --- 4. Sample sigma_s^2 | s ---
-            var ssSub = T.zero
-            for i in 0..<n {
-                ssSub += s[i] * s[i]
-            }
-            sigmaS = sampledVariance(
-                sumOfSquares: ssSub, count: nT,
-                prior: subjectPrior, current: sigmaS, using: &rng
-            )
-
-            // --- 5. Sample sigma_r^2 | r ---
-            var ssRat = T.zero
-            for j in 0..<k {
-                ssRat += r[j] * r[j]
-            }
-            sigmaR = sampledVariance(
-                sumOfSquares: ssRat, count: kT,
-                prior: raterPrior, current: sigmaR, using: &rng
-            )
-
-            // --- 6. Sample sigma_e^2 | rest ---
-            var ssErr = T.zero
-            for i in 0..<n {
-                for j in 0..<k {
-                    let residual = ratings[i][j] - mu - s[i] - r[j]
-                    ssErr += residual * residual
-                }
-            }
-            sigmaE = sampledVariance(
-                sumOfSquares: ssErr, count: T(totalN),
-                prior: errorPrior, current: sigmaE, using: &rng
-            )
-
-            // --- Collect post-burn-in samples ---
-            if iter >= config.burnIn && (iter - config.burnIn) % config.thinning == 0 {
-                chainSigmaS.append(sigmaS)
-                chainSigmaR.append(sigmaR)
-                chainSigmaE.append(sigmaE)
-
-                chainICC.append(
-                    iccFromVarianceComponents(
-                        model: model,
-                        agreement: .absolute,
-                        sigmaS2: sigmaS,
-                        sigmaR2: sigmaR,
-                        sigmaE2: sigmaE,
-                        raters: kT
-                    )
-                )
-            }
-        }
-
-        allChainSigmaS.append(chainSigmaS)
-        allChainSigmaR.append(chainSigmaR)
-        allChainSigmaE.append(chainSigmaE)
-        allChainICC.append(chainICC)
-    }
-
-    return try summarisePosterior(
-        allChainSigmaS: allChainSigmaS,
-        allChainSigmaR: allChainSigmaR,
-        allChainSigmaE: allChainSigmaE,
-        allChainICC: allChainICC
+    return try gibbsICCPosterior(
+        cells: ObservedCells(ratings, subjects: n, raters: k),
+        subjects: n,
+        raters: k,
+        grandMean: grandMean,
+        initialSubjectVariance: initSigmaS,
+        initialRaterVariance: initSigmaR,
+        initialErrorVariance: initSigmaE,
+        model: model,
+        subjectPrior: subjectPrior,
+        raterPrior: raterPrior,
+        errorPrior: errorPrior,
+        config: config
     )
 }
 
@@ -467,7 +341,7 @@ public func bayesianICC<T: Real>(
     let raterPrior = priors?.raters ?? .vague
     let errorPrior = priors?.error ?? .vague
 
-    // Compute grand mean from observed data
+    // Grand mean and a starting scale, over the observed cells only.
     var grandSum = T.zero
     for row in ratings {
         for value in row {
@@ -478,7 +352,6 @@ public func bayesianICC<T: Real>(
     }
     let grandMean = grandSum / T(totalObs)
 
-    // Initial variance estimates (simple heuristic for missing data)
     var ssTotal = T.zero
     for row in ratings {
         for value in row {
@@ -489,155 +362,24 @@ public func bayesianICC<T: Real>(
         }
     }
     let totalVar = totalObs > 1 ? ssTotal / T(totalObs - 1) : T(1)
+    // A third of the total variance each, as a heuristic — the two-way mean squares the
+    // complete-data overload starts from cannot be formed when cells are absent.
     let initSigmaS = max(totalVar / T(3), T(1) / T(1000))
     let initSigmaR = max(totalVar / T(3), T(1) / T(1000))
     let initSigmaE = max(totalVar / T(3), T(1) / T(1000))
 
-    let nT = T(n)
-    let kT = T(k)
-
-    // Run chains
-    var allChainSigmaS: [[T]] = []
-    var allChainSigmaR: [[T]] = []
-    var allChainSigmaE: [[T]] = []
-    var allChainICC: [[T]] = []
-
-    for chain in 0..<config.chains {
-        // One stream per chain. Chains are offset by a large odd stride so that
-        // `chains: 4` explores four different sequences rather than four copies of one.
-        var rng = GibbsRNG(seed: config.seed.map { $0 &+ UInt64(chain) &* 999_983 })
-
-        var mu = grandMean
-        var s = [T](repeating: T.zero, count: n)
-        var r = [T](repeating: T.zero, count: k)
-        var sigmaS = initSigmaS * T(1 + chain)
-        var sigmaR = initSigmaR * T(1 + chain)
-        var sigmaE = initSigmaE * T(1 + chain)
-
-        var chainSigmaS: [T] = []
-        var chainSigmaR: [T] = []
-        var chainSigmaE: [T] = []
-        var chainICC: [T] = []
-
-        let tauSquared: T = T(1_000_000)
-
-        for iter in 0..<config.iterations {
-            // --- 1. Sample mu | rest (only observed cells) ---
-            var residualSum = T.zero
-            for i in 0..<n {
-                for j in 0..<k {
-                    if let xij = ratings[i][j] {
-                        residualSum += xij - s[i] - r[j]
-                    }
-                }
-            }
-            let totalObsT = T(totalObs)
-            let muPostVar = T(1) / (totalObsT / sigmaE + T(1) / tauSquared)
-            let muPostMean = muPostVar * (residualSum / sigmaE + grandMean / tauSquared)
-
-            let (u1, u2) = rng.nextPair()
-            mu = distributionNormal(mean: muPostMean, variance: muPostVar, u1, u2)
-
-            // --- 2. Sample s_i | rest ---
-            for i in 0..<n {
-                let ki = T(subjectObsCounts[i])
-                guard ki > T.zero else { continue }
-
-                var sumResid = T.zero
-                for j in 0..<k {
-                    if let xij = ratings[i][j] {
-                        sumResid += xij - mu - r[j]
-                    }
-                }
-                let vPost = T(1) / (ki / sigmaE + T(1) / sigmaS)
-                let sPost = vPost * sumResid / sigmaE
-
-                let (u1, u2) = rng.nextPair()
-                s[i] = distributionNormal(mean: sPost, variance: vPost, u1, u2)
-            }
-
-            // --- 3. Sample r_j | rest ---
-            for j in 0..<k {
-                let nj = T(raterObsCounts[j])
-                guard nj > T.zero else { continue }
-
-                var sumResid = T.zero
-                for i in 0..<n {
-                    if let xij = ratings[i][j] {
-                        sumResid += xij - mu - s[i]
-                    }
-                }
-                let vPost = T(1) / (nj / sigmaE + T(1) / sigmaR)
-                let rPost = vPost * sumResid / sigmaE
-
-                let (u1, u2) = rng.nextPair()
-                r[j] = distributionNormal(mean: rPost, variance: vPost, u1, u2)
-            }
-
-            // --- 4. Sample sigma_s^2 ---
-            var ssSub = T.zero
-            for i in 0..<n {
-                ssSub += s[i] * s[i]
-            }
-            sigmaS = sampledVariance(
-                sumOfSquares: ssSub, count: nT,
-                prior: subjectPrior, current: sigmaS, using: &rng
-            )
-
-            // --- 5. Sample sigma_r^2 ---
-            var ssRat = T.zero
-            for j in 0..<k {
-                ssRat += r[j] * r[j]
-            }
-            sigmaR = sampledVariance(
-                sumOfSquares: ssRat, count: kT,
-                prior: raterPrior, current: sigmaR, using: &rng
-            )
-
-            // --- 6. Sample sigma_e^2 ---
-            var ssErr = T.zero
-            for i in 0..<n {
-                for j in 0..<k {
-                    if let xij = ratings[i][j] {
-                        let residual = xij - mu - s[i] - r[j]
-                        ssErr += residual * residual
-                    }
-                }
-            }
-            sigmaE = sampledVariance(
-                sumOfSquares: ssErr, count: T(totalObs),
-                prior: errorPrior, current: sigmaE, using: &rng
-            )
-
-            // --- Collect post-burn-in samples ---
-            if iter >= config.burnIn && (iter - config.burnIn) % config.thinning == 0 {
-                chainSigmaS.append(sigmaS)
-                chainSigmaR.append(sigmaR)
-                chainSigmaE.append(sigmaE)
-
-                chainICC.append(
-                    iccFromVarianceComponents(
-                        model: model,
-                        agreement: .absolute,
-                        sigmaS2: sigmaS,
-                        sigmaR2: sigmaR,
-                        sigmaE2: sigmaE,
-                        raters: kT
-                    )
-                )
-            }
-        }
-
-        allChainSigmaS.append(chainSigmaS)
-        allChainSigmaR.append(chainSigmaR)
-        allChainSigmaE.append(chainSigmaE)
-        allChainICC.append(chainICC)
-    }
-
-    return try summarisePosterior(
-        allChainSigmaS: allChainSigmaS,
-        allChainSigmaR: allChainSigmaR,
-        allChainSigmaE: allChainSigmaE,
-        allChainICC: allChainICC
+    return try gibbsICCPosterior(
+        cells: ObservedCells(ratings, subjects: n, raters: k),
+        subjects: n,
+        raters: k,
+        grandMean: grandMean,
+        initialSubjectVariance: initSigmaS,
+        initialRaterVariance: initSigmaR,
+        initialErrorVariance: initSigmaE,
+        model: model,
+        subjectPrior: subjectPrior,
+        raterPrior: raterPrior,
+        errorPrior: errorPrior,
+        config: config
     )
 }
