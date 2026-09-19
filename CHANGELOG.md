@@ -11,6 +11,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### 2026-09-19 — Kendall's tau-b
+
+##### Added
+
+- **`kendallsTau(_:vs:)`** — rank correlation by counting concordant and discordant pairs,
+  in the **tau-b** form that corrects for ties.
+
+  Tau-*a* divides by every pair, so a variable with ties can never reach 1 however perfectly
+  the two agree: `[1,1,2,2]` against itself answers 0.333. Tau-*b* removes tied pairs from the
+  denominator **separately for each variable** and answers 1. The two sums are not
+  interchangeable and pairs tied in *both* belong to each, which is the part that is easy to
+  get wrong.
+
+  **`n log n`, not `n²`.** The definition is a double loop over pairs, and the caller this
+  was written for — a Monte Carlo run's trial values — routinely has ten thousand of them,
+  where a pairwise count is fifty million comparisons per statistic. Knight's method sorts by
+  `x` and counts **inversions** in `y` by merge sort, an inversion being exactly a discordant
+  pair. The tests check that fast form against the quadratic definition on deliberately
+  tie-heavy data, which is where the two would part company if the corrections were wrong.
+
+  Beside `spearmansRho(_:vs:)`, which is where it belongs: `kendallW` is already in this
+  package and is a **different statistic** — the coefficient of concordance among several
+  rankings, not the correlation between two variables.
+
+  Requested by SwiftExcelFunctions, where `PsiKendallTau` had been classified out of scope
+  precisely because this did not exist and a binding layer is the wrong place to put it.
+
+
 Tier 2 of the quality programme, continued past `v3.0.0-alpha.7`.
 
 #### 2026-09-19 — the same ICC(1,1) defect, in a third implementation
