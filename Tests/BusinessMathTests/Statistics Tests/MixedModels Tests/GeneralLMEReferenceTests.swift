@@ -45,10 +45,23 @@
 //    2.1e-05 — both are zero to any practical reading, but a *relative* comparison is
 //    meaningless there, so that case is compared absolutely.
 //  - **Standard errors differ by 0.1% to 2%**, more than the variance components they
-//    are built from. That is unexplained. It is most likely a convention difference in
-//    how the fixed-effect covariance is formed, but calling it that without evidence
-//    would be a guess, so the assertion is set at a bound that still catches a gross
-//    error and the gap is named here.
+//    are built from. **Explained on 2026-09-19, and it is not ours.** The formula is
+//    `(X'V^-1 X)^-1`, and an independent implementation of it — numpy, dense whole-matrix
+//    inversion rather than per-group Cholesky, fed *statsmodels' own* converged G and
+//    sigma^2 — reproduces **our** numbers, not statsmodels'. Per coefficient the
+//    independent computation lands within 1e-5 of ours and still differs from
+//    statsmodels by up to 1.2%.
+//
+//    So statsmodels' `bse_fe` is not `sqrt(diag((X'V^-1 X)^-1))` at its own reported
+//    estimates. Its values are consistently *larger* than ours for the slope coefficient
+//    in all six designs, and the gap is widest exactly where the likelihood is flattest
+//    (`smallVariance`, 1.9%) — the signature of a covariance that also carries the
+//    uncertainty in the variance parameters, which the expected-information form does
+//    not. That is a convention difference, named now with evidence rather than guessed at.
+//
+//    The statsmodels comparison therefore stays loose *on purpose*, and the tight
+//    assertion on this code lives in `standardErrorsAreTheGLSCovariance` below, which
+//    checks the formula by a different route than the one the source takes.
 //
 //  The 22 tests in `GeneralLMETests` all passed throughout, before and after. Every one
 //  is a self-consistency property, and a fit biased 24% low in its variance components
@@ -186,13 +199,14 @@ struct GeneralLMEReferenceTests {
 		#expect(compared >= 12, "only \(compared) coefficients compared")
 	}
 
+	/// Loose on purpose — see the note at the top of this file.
+	///
+	/// statsmodels' standard errors are not `sqrt(diag((X'V^-1 X)^-1))` at its own reported
+	/// estimates; an independent implementation of that formula reproduces ours rather than
+	/// theirs. This test therefore only rules out a gross error. The exact check on this code
+	/// is ``standardErrorsAreTheGLSCovariance()``.
 	@Test("Fixed-effect standard errors are close to statsmodels")
 	func standardErrorsMatchReference() throws {
-		// Deliberately looser than the estimates themselves, and the reason is recorded
-		// at the top of this file: the standard errors disagree by 0.1% to 2%, which is
-		// more than the variance components they are built from and is not explained.
-		// The bound below still catches a gross error while not asserting agreement that
-		// is not there.
 		let fixture = try Self.loadFixture()
 		var compared = 0
 
@@ -207,6 +221,103 @@ struct GeneralLMEReferenceTests {
 				#expect(Self.agrees(result.standardErrors[i], reference,
 									relative: 2.5e-2, absolute: 1e-9),
 						"\(entry.name) se[\(i)]: got \(result.standardErrors[i]), statsmodels \(reference)")
+				compared += 1
+			}
+		}
+		#expect(compared >= 12, "only \(compared) standard errors compared")
+	}
+
+	/// The standard errors are the GLS covariance, checked by a different route.
+	///
+	/// ## Why this is the assertion that bites
+	///
+	/// `generalFixedEffectsSE` forms `X'V^-1 X` by accumulating one **block per group** —
+	/// building each `V_i = Z_i G Z_i' + sigma^2 I` and Cholesky-solving against it — then
+	/// inverts the `p x p` result. That is the efficient way to do it and it exploits the
+	/// block-diagonal structure of `V`, which is exactly the assumption worth testing: if the
+	/// blocks were assembled wrongly, or a group were counted twice or not at all, the result
+	/// would still be a symmetric positive matrix of plausible size.
+	///
+	/// So this computes the same quantity the *inefficient* way: assemble the entire `N x N`
+	/// marginal covariance, solve against it as one dense system with Gaussian elimination
+	/// rather than Cholesky, and invert the `2 x 2` by the closed form. Nothing here shares a
+	/// code path with the source beyond `DenseMatrix.solve`, and the block structure is never
+	/// assumed — it is only *implied* by how `V` is filled in.
+	///
+	/// Confirmed in numpy before being written here: with identical arithmetic, dense and
+	/// block-wise agree to 3.6e-16. In Swift they agree to **8.2e-7** at worst across the six
+	/// designs, because a dense 48-to-160 row Gaussian solve is less well conditioned than a
+	/// stack of six-by-six Cholesky solves. The bound below is 1e-5 — twelve times the measured
+	/// worst case, and still two orders of magnitude tighter than the smallest structural error
+	/// it has to catch: dropping one group of eight moves `X'V^-1X` by about 12%.
+	@Test("The standard errors are the GLS covariance, computed a different way")
+	func standardErrorsAreTheGLSCovariance() throws {
+		let fixture = try Self.loadFixture()
+		var compared = 0
+
+		for entry in fixture.cases {
+			let result = try Self.fit(entry)
+			let n = entry.y.count
+			let p = entry.X[0].count
+			guard p == 2 else {
+				Issue.record("\(entry.name): this oracle inverts a 2x2 by hand, but p = \(p)")
+				continue
+			}
+
+			// The whole marginal covariance, V = Z G Z' (within groups) + sigma^2 I.
+			var v = [[Double]](repeating: [Double](repeating: 0, count: n), count: n)
+			var rowsOf: [Int: [Int]] = [:]
+			for (row, group) in entry.groups.enumerated() {
+				rowsOf[group, default: []].append(row)
+			}
+			let g = result.gMatrix
+			let r = entry.randomEffectsPerGroup
+			for rows in rowsOf.values {
+				for a in rows {
+					for b in rows {
+						var total = 0.0
+						for u in 0..<r {
+							for w in 0..<r {
+								total += entry.Z[a][u] * g[u, w] * entry.Z[b][w]
+							}
+						}
+						v[a][b] += total
+					}
+				}
+			}
+			for i in 0..<n { v[i][i] += result.varianceResidual }
+
+			// V^-1 X, one column at a time, by Gaussian elimination rather than Cholesky.
+			let vMatrix = try DenseMatrix(v)
+			var vInverseX = [[Double]](repeating: [Double](repeating: 0, count: p), count: n)
+            for column in 0..<p {
+				let rhs = (0..<n).map { entry.X[$0][column] }
+				let solved = try vMatrix.solve(rhs)
+				for row in 0..<n { vInverseX[row][column] = solved[row] }
+			}
+
+			// X' V^-1 X, then its inverse in closed form.
+			var a = 0.0, b = 0.0, c = 0.0, d = 0.0
+			for row in 0..<n {
+				a += entry.X[row][0] * vInverseX[row][0]
+				b += entry.X[row][0] * vInverseX[row][1]
+				c += entry.X[row][1] * vInverseX[row][0]
+				d += entry.X[row][1] * vInverseX[row][1]
+			}
+			let determinant = a * d - b * c
+			try #require(abs(determinant) > 1e-12,
+						 "\(entry.name): X'V^-1X is singular, so the oracle has nothing to say")
+			let expected = [ (d / determinant).squareRoot(), (a / determinant).squareRoot() ]
+
+			for i in 0..<p {
+				let ours = result.standardErrors[i]
+				let theirs = expected[i]
+				let scale = Swift.max(abs(theirs), 1e-12)
+				#expect(abs(ours - theirs) / scale < 1e-5,
+						"""
+						\(entry.name) se[\(i)]: the block-wise accumulation gives \(ours), \
+						the dense solve gives \(theirs)
+						""")
 				compared += 1
 			}
 		}

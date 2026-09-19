@@ -1,6 +1,230 @@
 import Foundation
 import Numerics
 
+/// The largest halved step along `delta` that keeps the variance parameters admissible.
+///
+/// AI-REML computes a Newton-like direction from the average information matrix, and nothing in
+/// that calculation knows the parameters are constrained. A full step can easily put the residual
+/// variance at or below zero, or make `G` indefinite — both of which are not merely inaccurate
+/// but *meaningless*, and would make the next iteration's Cholesky of `V_i` fail.
+///
+/// So the step is halved until the candidate is admissible, or twenty times, whichever comes
+/// first. Twenty halvings is a factor of `2^-20`; a direction still infeasible there is not going
+/// to become feasible, and the caller takes the tiny step and lets the convergence test stop it.
+///
+/// Note that the returned step is used even when no feasible candidate was found — this function
+/// reports how far it got, it does not decide whether to move. The caller clamps `sigmaE2` at
+/// `ulpOfOne` and repairs `G`'s diagonal afterwards, which is what makes that safe.
+///
+/// - Parameters:
+///   - gArr: The current random-effects covariance.
+///   - sigmaE2: The current residual variance.
+///   - delta: The AI-REML direction: `delta[0]` for `sigmaE2`, then the upper triangle of `G`
+///     in row-major order.
+///   - r: Random effects per group.
+/// - Returns: The step multiplier, `1` down to `2^-20`.
+internal func generalFeasibleStep<T: Real & Sendable>(
+	from gArr: [[T]], sigmaE2: T, delta: [T], r: Int
+) -> T where T: BinaryFloatingPoint {
+	var step = T(1)
+	for _ in 0..<20 {
+		let candE = sigmaE2 + step * delta[0]
+		var candG = gArr
+		var idx = 1
+		for i in 0..<r {
+			for j in i..<r {
+				candG[i][j] = gArr[i][j] + step * delta[idx]
+				candG[j][i] = candG[i][j]
+				idx += 1
+			}
+		}
+
+		let feasible = candE > T.ulpOfOne && generalIsPSD(candG, r: r)
+		if feasible { break }
+		step = step / T(2)
+	}
+	return step
+}
+
+/// The best linear unbiased predictors of the random effects, one vector per group.
+///
+/// `u_g = G Z_g' V_g^{-1} r_g`, where `r_g` are the **marginal** residuals — the response less
+/// the fixed-effect fit only. That is what makes these predictions rather than estimates: each
+/// group's deviation is shrunk toward zero by `G Z' V^{-1}`, and a group with few observations
+/// or a large residual variance is shrunk further. A group mean would not be.
+///
+/// Computed per group because `V` is block diagonal: `V_g^{-1}` is a `n_g x n_g` solve, not an
+/// `N x N` one.
+///
+/// - Parameters:
+///   - zData: The random-effects design, by observation.
+///   - marginalResiduals: `y - X beta`, by observation.
+///   - r: Random effects per group.
+///   - m: Group count.
+///   - groupIdx: Row indices per group.
+///   - gArr: The converged random-effects covariance.
+///   - sigmaE2: The converged residual variance.
+/// - Returns: One `r`-vector per group.
+/// - Throws: From ``DenseMatrix/choleskySolve(_:)`` when a group's `V_g` is not positive
+///   definite, which a positive `sigmaE2` and a PSD `G` together rule out.
+internal func generalBLUPs<T: Real & Sendable>(
+	zData: [[T]], marginalResiduals: [T],
+	r: Int, m: Int, groupIdx: [[Int]],
+	gArr: [[T]], sigmaE2: T
+) throws -> [[T]] where T: BinaryFloatingPoint {
+	var blups = Array(repeating: Array(repeating: T.zero, count: r), count: m)
+
+	for g in 0..<m {
+		let indices = groupIdx[g]
+		let nig = indices.count
+
+		var ri = Array(repeating: T.zero, count: nig)
+		var zi = Array(repeating: Array(repeating: T.zero, count: r), count: nig)
+		for (localIdx, obsIdx) in indices.enumerated() {
+			ri[localIdx] = marginalResiduals[obsIdx]
+			for k in 0..<r {
+				zi[localIdx][k] = zData[obsIdx][k]
+			}
+		}
+
+		let viData = try generalBuildVi(zi: zi, gArr: gArr, sigmaE2: sigmaE2, nig: nig, r: r)
+		let viMat = try DenseMatrix(viData)
+		let viInvR = try viMat.choleskySolve(ri)
+
+		// Z_g' V_g^{-1} r_g (r-vector)
+		var ztViInvR = Array(repeating: T.zero, count: r)
+		for j in 0..<nig {
+			for k in 0..<r {
+				ztViInvR[k] += zi[j][k] * viInvR[j]
+			}
+		}
+
+		// G * (Z_g' V_g^{-1} r_g)
+		for k in 0..<r {
+			var val = T.zero
+			for l in 0..<r {
+				val += gArr[k][l] * ztViInvR[l]
+			}
+			blups[g][k] = val
+		}
+	}
+
+	return blups
+}
+
+/// Refuses a model whose pieces do not describe the same problem.
+///
+/// Every way this fitter can decline a model, in one place. Separated from the estimator
+/// because a 380-line procedure that begins with six guards reads as though the guards are part
+/// of the arithmetic, and they are not — they are the contract, and the arithmetic below is
+/// entitled to assume it.
+///
+/// - Parameters:
+///   - model: The model to check.
+///   - N: Observation count, taken from the response.
+///   - p: Fixed-effect count.
+///   - r: Random effects per group.
+/// - Throws: `BusinessMathError.mismatchedDimensions` when the design matrices, grouping and
+///   response disagree on `N` or `r`; `BusinessMathError.insufficientData` with fewer than two
+///   groups, or when the fixed effects are not identified because `N <= p`.
+///
+/// - Note: The message strings are part of the contract — `GeneralLMETests` asserts them
+///   verbatim — so they are reproduced here exactly as they were written inline. Rewording one
+///   during this extraction broke four tests, which is the right outcome: an error message a
+///   caller can match on is an interface, not a comment.
+internal func validateGeneralLME<T: Real>(
+	_ model: GeneralLMEModel<T>, N: Int, p: Int, r: Int
+) throws where T: BinaryFloatingPoint {
+	guard model.fixedEffects.rows == N else {
+		throw BusinessMathError.mismatchedDimensions(
+			message: "X.rows must equal y.length",
+			expected: "\(N)", actual: "\(model.fixedEffects.rows)")
+	}
+	guard model.randomEffectsDesign.rows == N else {
+		throw BusinessMathError.mismatchedDimensions(
+			message: "Z.rows must equal y.length",
+			expected: "\(N)", actual: "\(model.randomEffectsDesign.rows)")
+	}
+	guard model.randomEffectsDesign.columns == r else {
+		throw BusinessMathError.mismatchedDimensions(
+			message: "Z.columns must equal randomEffectsPerGroup",
+			expected: "\(r)", actual: "\(model.randomEffectsDesign.columns)")
+	}
+	guard model.grouping.groups.count == N else {
+		throw BusinessMathError.mismatchedDimensions(
+			message: "GroupingFactor length must equal y.length",
+			expected: "\(N)", actual: "\(model.grouping.groups.count)")
+	}
+	guard model.grouping.groupCount >= 2 else {
+		throw BusinessMathError.insufficientData(
+			required: 2, actual: model.grouping.groupCount,
+			context: "General LME model requires at least 2 groups")
+	}
+	guard N > p else {
+		throw BusinessMathError.insufficientData(
+			required: p + 1, actual: N,
+			context: "Observations must exceed number of fixed-effects parameters")
+	}
+}
+
+/// A starting value for the variance of one random slope, from between-group regressions.
+///
+/// Fits the OLS residuals on covariate `k` **within each group**, then takes the sample variance
+/// of those per-group slopes. If the slope really does vary by group, that spread is what the
+/// random-effects covariance has to explain, so it is where the search should begin.
+///
+/// The estimate is a starting value and nothing more — EM and then AI-REML move off it — so what
+/// matters is that it is finite and positive. A group with one observation supports no slope and
+/// is skipped; a group whose covariate does not vary makes the normal equation singular and
+/// contributes a zero rather than an infinity; and a spread that comes out at zero falls back to
+/// `0.1` rather than starting the search on a boundary it cannot leave.
+///
+/// - Parameters:
+///   - zData: The random-effects design, by observation.
+///   - residuals: OLS residuals, which is what the group slopes are fitted to.
+///   - groupIdx: Row indices per group.
+///   - column: Which random effect to estimate, `1 ..< r` — the intercept is handled separately
+///     from the ANOVA decomposition.
+///   - m: Group count.
+/// - Returns: The between-group variance of the slope, or `0.1` where it is not positive.
+internal func generalSlopeVarianceStart<T: Real>(
+	zData: [[T]], residuals: [T], groupIdx: [[Int]], column k: Int, m: Int
+) -> T where T: BinaryFloatingPoint {
+	var groupCoeffs = Array(repeating: T.zero, count: m)
+	var coeffGrandMean = T.zero
+	for g in 0..<m {
+		let indices = groupIdx[g]
+		let nig = T(indices.count)
+		guard nig > T(1) else { continue }
+		var sumZ = T.zero
+		var sumR = T.zero
+		var sumZR = T.zero
+		var sumZZ = T.zero
+		for idx in indices {
+			let z = zData[idx][k]
+			let res = residuals[idx]
+			sumZ += z
+			sumR += res
+			sumZR += z * res
+			sumZZ += z * z
+		}
+		let denom = nig * sumZZ - sumZ * sumZ
+		if absVal(denom) > T.ulpOfOne {
+			groupCoeffs[g] = (nig * sumZR - sumZ * sumR) / denom
+		}
+		coeffGrandMean += groupCoeffs[g]
+	}
+	coeffGrandMean /= T(m)
+
+	var coeffVar = T.zero
+	for g in 0..<m {
+		let diff = groupCoeffs[g] - coeffGrandMean
+		coeffVar += diff * diff
+	}
+	if m > 1 { coeffVar /= T(m - 1) }
+	return coeffVar > T.ulpOfOne ? coeffVar : T(1) / T(10)
+}
+
 /// Fit a general linear mixed-effects model via REML.
 ///
 /// Estimates fixed effects (β) and the random-effects covariance matrix G
@@ -37,37 +261,8 @@ public func fitGeneralLME<T: Real>(
 	let p = model.fixedEffects.columns
 	let r = model.randomEffectsPerGroup
 
-	// --- Validation ---
-	guard model.fixedEffects.rows == N else {
-		throw BusinessMathError.mismatchedDimensions(
-			message: "X.rows must equal y.length",
-			expected: "\(N)", actual: "\(model.fixedEffects.rows)")
-	}
-	guard model.randomEffectsDesign.rows == N else {
-		throw BusinessMathError.mismatchedDimensions(
-			message: "Z.rows must equal y.length",
-			expected: "\(N)", actual: "\(model.randomEffectsDesign.rows)")
-	}
-	guard model.randomEffectsDesign.columns == r else {
-		throw BusinessMathError.mismatchedDimensions(
-			message: "Z.columns must equal randomEffectsPerGroup",
-			expected: "\(r)", actual: "\(model.randomEffectsDesign.columns)")
-	}
-	guard grouping.groups.count == N else {
-		throw BusinessMathError.mismatchedDimensions(
-			message: "GroupingFactor length must equal y.length",
-			expected: "\(N)", actual: "\(grouping.groups.count)")
-	}
-	guard grouping.groupCount >= 2 else {
-		throw BusinessMathError.insufficientData(
-			required: 2, actual: grouping.groupCount,
-			context: "General LME model requires at least 2 groups")
-	}
-	guard N > p else {
-		throw BusinessMathError.insufficientData(
-			required: p + 1, actual: N,
-			context: "Observations must exceed number of fixed-effects parameters")
-	}
+	try validateGeneralLME(model, N: N, p: p, r: r)
+
 
 	// Extract X and Z as 2D arrays for fast inner-loop access
 	var xData = Array(repeating: Array(repeating: T.zero, count: p), count: N)
@@ -107,40 +302,11 @@ public func fitGeneralLME<T: Real>(
 	let g00Init = msBetween > sigmaE2 ? (msBetween - sigmaE2) / nBar : T(1) / T(10)
 	gArr[0][0] = T.maximum(g00Init, T(1) / T(10))
 
-	// For higher random effects, estimate from between-group regressions
+	// For higher random effects, estimate from between-group regressions.
 	for k in 1..<r {
-		var groupCoeffs = Array(repeating: T.zero, count: m)
-		var coeffGrandMean = T.zero
-		for g in 0..<m {
-			let indices = groupIdx[g]
-			let nig = T(indices.count)
-			guard nig > T(1) else { continue }
-			var sumZ = T.zero
-			var sumR = T.zero
-			var sumZR = T.zero
-			var sumZZ = T.zero
-			for idx in indices {
-				let z = zData[idx][k]
-				let res = residOLS[idx]
-				sumZ += z
-				sumR += res
-				sumZR += z * res
-				sumZZ += z * z
-			}
-			let denom = nig * sumZZ - sumZ * sumZ
-			if absVal(denom) > T.ulpOfOne {
-				groupCoeffs[g] = (nig * sumZR - sumZ * sumR) / denom
-			}
-			coeffGrandMean += groupCoeffs[g]
-		}
-		coeffGrandMean /= T(m)
-		var coeffVar = T.zero
-		for g in 0..<m {
-			let diff = groupCoeffs[g] - coeffGrandMean
-			coeffVar += diff * diff
-		}
-		if m > 1 { coeffVar /= T(m - 1) }
-		gArr[k][k] = coeffVar > T.ulpOfOne ? coeffVar : T(1) / T(10)
+		gArr[k][k] = generalSlopeVarianceStart(
+			zData: zData, residuals: residOLS, groupIdx: groupIdx, column: k, m: m
+		)
 	}
 
 	// --- EM warm-up + AI-REML ---
@@ -226,24 +392,8 @@ public func fitGeneralLME<T: Real>(
 				}
 			}
 
-			// Step-halving for feasibility
-			var step = T(1)
-			for _ in 0..<20 {
-				let candE = sigmaE2 + step * delta[0]
-				var candG = gArr
-				var idx = 1
-				for i in 0..<r {
-					for j in i..<r {
-						candG[i][j] = gArr[i][j] + step * delta[idx]
-						candG[j][i] = candG[i][j]
-						idx += 1
-					}
-				}
-
-				let feasible = candE > T.ulpOfOne && generalIsPSD(candG, r: r)
-				if feasible { break }
-				step = step / T(2)
-			}
+			let step = generalFeasibleStep(
+				from: gArr, sigmaE2: sigmaE2, delta: delta, r: r)
 
 			let newSigmaE2 = T.maximum(sigmaE2 + step * delta[0], T.ulpOfOne)
 			var newG = gArr
@@ -298,43 +448,10 @@ public func fitGeneralLME<T: Real>(
 		marginalResid[i] = y[i] - fitted
 	}
 
-	// BLUPs: u_hat_g = G Z_g' V_g^{-1} r_g for each group g
-	var blups = Array(repeating: Array(repeating: T.zero, count: r), count: m)
-
-	for g in 0..<m {
-		let indices = groupIdx[g]
-		let nig = indices.count
-
-		var ri = Array(repeating: T.zero, count: nig)
-		var zi = Array(repeating: Array(repeating: T.zero, count: r), count: nig)
-		for (localIdx, obsIdx) in indices.enumerated() {
-			ri[localIdx] = marginalResid[obsIdx]
-			for k in 0..<r {
-				zi[localIdx][k] = zData[obsIdx][k]
-			}
-		}
-
-		let viData = try generalBuildVi(zi: zi, gArr: gArr, sigmaE2: sigmaE2, nig: nig, r: r)
-		let viMat = try DenseMatrix(viData)
-		let viInvR = try viMat.choleskySolve(ri)
-
-		// Z_g' V_g^{-1} r_g (r-vector)
-		var ztViInvR = Array(repeating: T.zero, count: r)
-		for j in 0..<nig {
-			for k in 0..<r {
-				ztViInvR[k] += zi[j][k] * viInvR[j]
-			}
-		}
-
-		// G * (Z_g' V_g^{-1} r_g)
-		for k in 0..<r {
-			var val = T.zero
-			for l in 0..<r {
-				val += gArr[k][l] * ztViInvR[l]
-			}
-			blups[g][k] = val
-		}
-	}
+	let blups = try generalBLUPs(
+		zData: zData, marginalResiduals: marginalResid,
+		r: r, m: m, groupIdx: groupIdx,
+		gArr: gArr, sigmaE2: sigmaE2)
 
 	// Conditional residuals and fitted values
 	var conditionalResid = Array(repeating: T.zero, count: N)

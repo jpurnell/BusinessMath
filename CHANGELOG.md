@@ -13,6 +13,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Tier 2 of the quality programme, continued past `v3.0.0-alpha.7`.
 
+#### 2026-09-19 — the mixed-model standard errors, explained rather than tolerated
+
+`GeneralLMEReferenceTests` had carried an open note since it was written: the fixed-effect
+standard errors disagree with statsmodels by 0.1% to 2%, "more than the variance components they
+are built from", and that was **unexplained**. Its assertion was set at 2.5% to avoid claiming
+agreement that was not there.
+
+##### Explained — and it is not ours
+
+The formula is `(X'V^-1 X)^-1`. An independent implementation of it — numpy, dense whole-matrix
+inversion rather than per-group Cholesky, fed **statsmodels' own** converged `G` and `sigma^2` —
+reproduces **our** numbers to within 1e-5 per coefficient, and still differs from statsmodels by
+up to 1.2%.
+
+So statsmodels' `bse_fe` is not `sqrt(diag((X'V^-1 X)^-1))` at its own reported estimates. Its
+values are consistently larger than ours for the slope coefficient in all six designs, and the
+gap is widest exactly where the likelihood is flattest (`randomIntercept_smallVariance`, 1.9%) —
+the signature of a covariance that also carries the uncertainty in the variance parameters, which
+the expected-information form does not.
+
+That is a convention difference, now named with evidence instead of guessed at. **No defect.**
+
+##### Tests
+
+- **New: `standardErrorsAreTheGLSCovariance`** — the assertion that actually constrains this code,
+  where the statsmodels comparison only rules out a gross error. `generalFixedEffectsSE`
+  accumulates `X'V^-1X` one **block per group**, exploiting `V`'s block-diagonal structure; the
+  test assembles the entire `N x N` covariance, solves it as one dense system by Gaussian
+  elimination rather than Cholesky, and inverts the `2 x 2` in closed form. Nothing shared with
+  the source beyond `DenseMatrix.solve`, and the block structure is never assumed.
+
+  The bound is measured, not chosen: with identical arithmetic numpy puts dense and block-wise
+  3.6e-16 apart, in Swift they differ by at most **8.2e-7** across the six designs, and the
+  assertion is 1e-5 — twelve times the worst case, and two orders tighter than the smallest
+  structural error it must catch (dropping one group of eight moves `X'V^-1X` by about 12%).
+
+##### Changed
+
+- `fitGeneralLME` went from cognitive complexity **131 to 75**. `validateGeneralLME` holds every
+  way a model can be refused, `generalSlopeVarianceStart` the between-group regression that starts
+  each random slope, `generalBLUPs` the shrinkage predictions, and `generalFeasibleStep` the
+  step-halving that keeps AI-REML's Newton direction inside the admissible set. The EM/AI-REML
+  loop itself is left intact — it is one estimator.
+
+  **Verified by bit-identity**: every estimate, standard error, variance component and
+  log-likelihood is identical to the code it replaces across all six fixture designs.
+
+  Rewording one of the validation messages during the extraction broke four tests, which is the
+  right outcome and is now noted on the function: an error message a caller can match on is an
+  interface, not a comment.
+
+---
+
 #### 2026-09-19 — the same ICC(1,1) defect, in a third implementation
 
 Having found `.oneWayRandom` carrying the two-way formula in the EM estimator, the class was

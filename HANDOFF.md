@@ -1,4 +1,4 @@
-# Handoff — 2026-09-19 (Tier 2: eight items closed, ten defects)
+# Handoff — 2026-09-19 (Tier 2: nine items closed, ten defects and one explanation)
 
 **Six items of Tier 2 closed, seven defects.** The bytecode optimizer,
 `RobustOptimizer`/`CuttingPlaneMaster` and `solveRelaxation` shipped as `e70829ac`; `solve`
@@ -75,6 +75,20 @@ Re-run the gate rather than trusting that table after any refactor.
 - **`solveRelaxation` 291 → 55**, stages extracted into `BranchAndBoundCutting.swift`.
 - **`RobustOptimizer` audited, clean.** The LP route was confirmed to fire by instrumentation
   (8 of 8 cases), not assumed — iteration count does *not* separate the two routes.
+
+### `fitGeneralLME` — 131 → 75, and an open question closed
+
+- **The standard-error gap against statsmodels is explained and is not ours.** An independent
+  numpy implementation of `(X'V^-1 X)^-1`, fed statsmodels' *own* components, reproduces our
+  numbers and still differs from statsmodels by up to 1.2%. statsmodels' SEs are consistently
+  larger and the gap widens where the likelihood flattens — a covariance that also carries
+  variance-parameter uncertainty. The file's "unexplained" note is now an explanation.
+- **New oracle**: `standardErrorsAreTheGLSCovariance` computes the same quantity by assembling the
+  whole `N x N` covariance and solving it densely, where the source accumulates block per group.
+  Bound measured at 1e-5 against a worst observed 8.2e-7.
+- Extracted `validateGeneralLME`, `generalSlopeVarianceStart`, `generalBLUPs`,
+  `generalFeasibleStep`. **Bit-identical** on all six fixture designs.
+- `generalAIREMLUpdate` is still **121** — the next target.
 
 ### `bayesianICC` — the same ICC(1,1) defect, third implementation
 
