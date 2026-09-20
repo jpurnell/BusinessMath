@@ -163,19 +163,64 @@ struct GStudyTwoFacetOracleTests {
 	) -> Design {
 		// Deterministic, index-derived values. No RNG: the expected answers must be a
 		// function of the source file, not of a seed.
-		let rawA = (0..<nP).map { Double(($0 * 7) % 11) - 5 }
-		let rawB = (0..<nR).map { Double(($0 * 5) % 9) - 4 }
-		let rawC = (0..<nI).map { Double(($0 * 3) % 7) - 3 }
-		let a = centred(rawA).map { $0 * scaleA }
-		let b = centred(rawB).map { $0 * scaleB }
-		let c = centred(rawC).map { $0 * scaleC }
+		// Every binding below is annotated, and every one separates the integer arithmetic
+		// from the `Double` conversion. That is not style. CI runs Swift 6.2.1 and this file
+		// first shipped with the nested form —
+		//
+		//     let rawAB = (0..<nP).map { p in (0..<nR).map { r in Double((p * 3 + r * 5) % 7) - 3 } }
+		//
+		// — which builds instantly on the local 6.4 and fails on CI with "unable to
+		// type-check this expression in reasonable time". An untyped `let` whose right-hand
+		// side mixes a `Double(...)` conversion with nested arithmetic, inside nested `map`
+		// closures with nothing to anchor the element type, is the exact shape that fails.
+		// Pinning the result type is what collapses the solver's search; the shorter lines
+		// are a side effect.
+		let rawA: [Double] = (0..<nP).map { index in
+			let raw: Int = (index * 7) % 11
+			return Double(raw) - 5
+		}
+		let rawB: [Double] = (0..<nR).map { index in
+			let raw: Int = (index * 5) % 9
+			return Double(raw) - 4
+		}
+		let rawC: [Double] = (0..<nI).map { index in
+			let raw: Int = (index * 3) % 7
+			return Double(raw) - 3
+		}
+		let a: [Double] = centred(rawA).map { $0 * scaleA }
+		let b: [Double] = centred(rawB).map { $0 * scaleB }
+		let c: [Double] = centred(rawC).map { $0 * scaleC }
 
-		let rawAB = (0..<nP).map { p in (0..<nR).map { r in Double((p * 3 + r * 5) % 7) - 3 } }
-		let rawAC = (0..<nP).map { p in (0..<nI).map { i in Double((p * 5 + i * 2) % 9) - 4 } }
-		let rawBC = (0..<nR).map { r in (0..<nI).map { i in Double((r * 2 + i * 7) % 5) - 2 } }
-		let ab = doubleCentred(rawAB).map { $0.map { v in v * scaleAB } }
-		let ac = doubleCentred(rawAC).map { $0.map { v in v * scaleAC } }
-		let bc = doubleCentred(rawBC).map { $0.map { v in v * scaleBC } }
+		var rawAB: [[Double]] = []
+		for p in 0..<nP {
+			var row: [Double] = []
+			for r in 0..<nR {
+				let raw: Int = (p * 3 + r * 5) % 7
+				row.append(Double(raw) - 3)
+			}
+			rawAB.append(row)
+		}
+		var rawAC: [[Double]] = []
+		for p in 0..<nP {
+			var row: [Double] = []
+			for i in 0..<nI {
+				let raw: Int = (p * 5 + i * 2) % 9
+				row.append(Double(raw) - 4)
+			}
+			rawAC.append(row)
+		}
+		var rawBC: [[Double]] = []
+		for r in 0..<nR {
+			var row: [Double] = []
+			for i in 0..<nI {
+				let raw: Int = (r * 2 + i * 7) % 5
+				row.append(Double(raw) - 2)
+			}
+			rawBC.append(row)
+		}
+		let ab: [[Double]] = doubleCentred(rawAB).map { row in row.map { $0 * scaleAB } }
+		let ac: [[Double]] = doubleCentred(rawAC).map { row in row.map { $0 * scaleAC } }
+		let bc: [[Double]] = doubleCentred(rawBC).map { row in row.map { $0 * scaleBC } }
 
 		// A product, because a sum is not a three-way interaction. The first version of
 		// this used `(p * 11 + r * 13 + i * 17) % 13`, where 13 is congruent to zero mod 13
@@ -184,10 +229,23 @@ struct GStudyTwoFacetOracleTests {
 		// the EMS inversion was never exercised with a real `MS_e`. Three tests passed
 		// against it. `oracleDesignsExerciseEveryTerm` below is the guard that keeps this
 		// from coming back.
-		let rawE = (0..<nP).map { p in (0..<nR).map { r in (0..<nI).map { i in
-			Double(((p + 1) * (r + 2) * (i + 3)) % 11) - 5
-		} } }
-		let e = tripleCentred(rawE).map { $0.map { $0.map { v in v * scaleE } } }
+		var rawE: [[[Double]]] = []
+		for p in 0..<nP {
+			var plane: [[Double]] = []
+			for r in 0..<nR {
+				var row: [Double] = []
+				for i in 0..<nI {
+					let product: Int = (p + 1) * (r + 2) * (i + 3)
+					let raw: Int = product % 11
+					row.append(Double(raw) - 5)
+				}
+				plane.append(row)
+			}
+			rawE.append(plane)
+		}
+		let e: [[[Double]]] = tripleCentred(rawE).map { plane in
+			plane.map { row in row.map { $0 * scaleE } }
+		}
 
 		let mu = 10.0
 		var data = [[[Double]]]()

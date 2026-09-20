@@ -203,7 +203,12 @@ struct DiscountCurveBootstrapOracleTests {
 			// would corrupt most visibly.
 			let firstYear = try #require(wanted[1], "\(name): no constructed DF at year 1")
 			let got = curve.discountFactor(at: 1.0)
-			#expect(abs(got - firstYear) / firstYear < Self.bound,
+			// Bound out of the `#expect`: the macro expands its condition into generic
+			// closures with far less to anchor on than the source line suggests, and three
+			// operators in there is the shape that has cost this package CI runs before.
+			let gap: Double = abs(got - firstYear)
+			let relative: Double = gap / firstYear
+			#expect(relative < Self.bound,
 					"\(name) year 1: DF \(got), constructed \(firstYear)")
 			#expect(got < 1.0, "\(name): DF(1) = \(got) is not a discount factor")
 		}

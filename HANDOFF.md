@@ -25,7 +25,7 @@ is the state and the traps.
 | gate | `--no-cache --check all` → 45 of 45 ran, **0 errors and 0 warnings outside `doc-run`** |
 | `doc-run` | **flaky under load, not a regression** — see §4 |
 | guidelines repo | `../../development-guidelines` clean at `a5f9292`, `v2.4.0` tagged and pushed |
-| CI | not verified since the Tier 2 sweep began; every commit since is source-touching |
+| CI | **was red for five consecutive pushes and nobody looked** — see below |
 
 **The known issue is gone, and the invariant has flipped.** `SaaSModel` used to answer a churn
 rate above 1 with a negative customer count; the `withKnownIssue` standing in for the missing
@@ -88,6 +88,34 @@ value is decomposition and coverage.
 - **`solveRelaxation` 291 → 55**, stages extracted into `BranchAndBoundCutting.swift`.
 - **`RobustOptimizer` audited, clean.** The LP route was confirmed to fire by instrumentation
   (8 of 8 cases), not assumed — iteration count does *not* separate the two routes.
+
+### CI was red for five pushes, and the reason it stayed red is the process, not the bug
+
+`test(g-study)` turned CI red and the four pushes after it inherited that red. The commit
+before it was green, so the origin was never in doubt — **nobody ran `gh run list`.** This
+file's own state table said "CI: not verified since the Tier 2 sweep began", and
+`CLAUDE.md` says *"After pushing, watch the run. `gh run view <id> --json jobs` — do not
+assume."* Five pushes went out against that instruction, each one reporting a green local
+suite and a green local gate, neither of which is evidence about CI.
+
+**The bug itself is the documented one.** Swift 6.2.1 on CI, 6.4 locally: nested `map`
+closures whose element type has nothing to anchor it, mixing a `Double(...)` conversion with
+nested integer arithmetic —
+
+    let rawAB = (0..<nP).map { p in (0..<nR).map { r in Double((p * 3 + r * 5) % 7) - 3 } }
+
+— builds instantly on 6.4 and fails on 6.2.1 with *"unable to type-check this expression in
+reasonable time"*. Reported 200 times across every file in the module; the four real
+locations came out of `grep -A 2 "unable to type-check" | grep -oE "Tests/.*\.swift:[0-9]+"`,
+exactly as `CLAUDE.md` describes. All four were in `GStudyTwoFacetOracleTests`.
+
+Rewritten as annotated `for` loops with the integer arithmetic bound to a typed `let` before
+conversion. Two `#expect` conditions elsewhere were hardened at the same time, on the
+principle that a second red run costs twenty minutes and a bound intermediate costs nothing.
+
+**The rule this leaves:** a green local `swift test` and a green 45/45 gate say nothing about
+CI. Only a CI run settles a type-check timeout — so push, then watch, before starting the
+next thing.
 
 ### The suppression sweep — 9 down to 1, and a silently wrong Monte Carlo
 

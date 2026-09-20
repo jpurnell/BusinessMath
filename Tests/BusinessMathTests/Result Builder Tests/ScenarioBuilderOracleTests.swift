@@ -117,7 +117,8 @@ struct ScenarioBuilderOracleTests {
 				}
 			}
 		}
-		#expect(analysis.scenarios.count == growth.count * margin.count * churn.count,
+		let wanted: Int = growth.count * margin.count * churn.count
+		#expect(analysis.scenarios.count == wanted,
 				"got \(analysis.scenarios.count), expected \(expected.count)")
 
 		var seen = Set<String>()
