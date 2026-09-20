@@ -231,6 +231,98 @@ public struct DiscountCurve: Sendable {
 
     // MARK: - Bootstrap
 
+    /// Where a gap year sits between the segment's two anchors, as a fraction.
+    ///
+    /// - Parameters:
+    ///   - year: The gap year.
+    ///   - lastKnownYear: The previous quoted tenor, or 0 for time zero.
+    ///   - target: The quoted tenor being solved.
+    /// - Returns: 0 at the left anchor, 1 at the right.
+    private static func gapFraction(_ year: Int, from lastKnownYear: Int, to target: Int) -> Double {
+        let span = target - lastKnownYear
+        guard span > 0 else { return 0 }
+        return Double(year - lastKnownYear) / Double(span) // fp-safety:disable — guarded above
+    }
+
+    /// A gap year's discount factor on the log-linear line between the two anchors.
+    ///
+    /// Written out three times before this: once in the Newton residual, once in its
+    /// derivative, and once when the solved gaps were finally stored. Three copies of one
+    /// interpolation is three chances for them to drift apart, and the residual and its
+    /// derivative disagreeing is the kind of defect that shows up only as slow convergence.
+    ///
+    /// - Parameters:
+    ///   - lnDFLast: `ln DF` at the left anchor; zero at time zero.
+    ///   - terminal: The discount factor at the tenor being solved.
+    ///   - frac: Where the gap year sits between them.
+    /// - Returns: The interpolated discount factor.
+    private static func gapDiscountFactor(lnDFLast: Double, terminal: Double, frac: Double) -> Double {
+        let lnTerminal = log(max(terminal, 1e-300))
+        let lnDFG = lnDFLast * (1.0 - frac) + lnTerminal * frac
+        return exp(lnDFG)
+    }
+
+    /// The annuity of the years already solved, from 1 up to and including `lastKnownYear`.
+    ///
+    /// - Parameters:
+    ///   - dfMap: Discount factors solved so far.
+    ///   - lastKnownYear: The previous quoted tenor; 0 before anything is solved.
+    /// - Returns: The sum of the settled discount factors, or zero when none are.
+    private static func annuityOfSettledYears(_ dfMap: [Int: Double], through lastKnownYear: Int) -> Double {
+        guard lastKnownYear >= 1 else { return 0 }
+        var sum = 0.0
+        for y in 1...lastKnownYear {
+            if let df = dfMap[y] { sum += df }
+        }
+        return sum
+    }
+
+    /// Solves the par condition at one quoted tenor for its discount factor.
+    ///
+    /// The gap years between the anchors are not free: each is log-linear in the unknown,
+    /// so the annuity is a function of it and the par equation
+    ///
+    ///     coupon * (settled + gaps(DF) + DF) + DF = 1
+    ///
+    /// is nonlinear. Newton on `DF` converges in a handful of steps from the par rate read
+    /// as a flat zero rate.
+    ///
+    /// - Parameters:
+    ///   - coupon: The par rate at this tenor.
+    ///   - year: The tenor being solved.
+    ///   - lastKnownYear: The previous quoted tenor, or 0 for time zero.
+    ///   - lnDFLast: `ln DF` at the left anchor.
+    ///   - sumKnown: The annuity of the already-settled years.
+    /// - Returns: The discount factor at `year`, kept strictly positive.
+    private static func solveTerminalDiscountFactor(
+        coupon: Double, year: Int, lastKnownYear: Int,
+        lnDFLast: Double, sumKnown: Double
+    ) -> Double {
+        var dfYear = exp(-coupon * Double(year))
+
+        for _ in 0..<50 {
+            var sumAll = sumKnown
+            var dSumAll = 1.0  // the derivative of the DF(year) term itself
+            for g in (lastKnownYear + 1)..<year {
+                let frac = gapFraction(g, from: lastKnownYear, to: year)
+                let dfG = gapDiscountFactor(lnDFLast: lnDFLast, terminal: dfYear, frac: frac)
+                sumAll += dfG
+                dSumAll += dfG * frac / max(dfYear, 1e-300)
+            }
+            sumAll += dfYear
+
+            let fVal = coupon * sumAll + dfYear - 1.0
+            let dfVal = coupon * dSumAll + 1.0
+            guard abs(dfVal) > 1e-300 else { break }
+
+            let step = fVal / dfVal
+            dfYear -= step
+            dfYear = max(dfYear, 1e-10)
+            if abs(step) < 1e-15 { break }
+        }
+        return dfYear
+    }
+
     /// Bootstraps a discount curve from par swap rates.
     ///
     /// Assumes annual fixed-leg payments and iterative bootstrapping.
@@ -271,162 +363,38 @@ public struct DiscountCurve: Sendable {
         // Map from integer year -> DF
         var dfMap: [Int: Double] = [:]
 
-        // Build par rate lookup for quick access
-        var parRateLookup: [Int: Double] = [:]
-        for entry in sorted {
-            let year = Int(entry.tenor)
-            parRateLookup[year] = entry.rate
-        }
+        // A first pass used to run here: it walked every integer year, bootstrapped the
+        // quoted ones and interpolated the rest, and then threw the whole map away with a
+        // `dfMap.removeAll()` before the real solve began. Its own trailing comment
+        // explained why — years interpolated before their upper bracket existed were
+        // anchored on the wrong neighbour — but the code was left in place, computing a
+        // complete curve that nothing ever read. Nothing between it and the `removeAll`
+        // touched `dfMap`, so deleting it is bit-identical; only the wasted work goes.
 
-        for year in 1...maxTenor {
-            if let c = parRateLookup[year] {
-                // We have a par rate at this tenor -- bootstrap DF
-                var sumPrior = 0.0
-                for y in 1..<year {
-                    sumPrior += dfMap[y] ?? 1.0
-                }
-                let denominator = 1.0 + c
-                guard abs(denominator) > 1e-15 else { continue }
-                dfMap[year] = (1.0 - c * sumPrior) / denominator
-            } else {
-                // No par rate at this tenor -- interpolate from the curve so far.
-                // Find the nearest bootstrapped tenors that bracket this year.
-                let knownTenors = dfMap.keys.sorted()
-                guard !knownTenors.isEmpty else { continue }
-
-                // Find lower and upper bracket
-                let lowerKeys = knownTenors.filter { $0 < year }
-                let upperKeys = knownTenors.filter { $0 > year }
-
-                if let lo = lowerKeys.last, let hi = upperKeys.first {
-                    // Log-linear interpolation between lo and hi
-                    let dfLo = dfMap[lo] ?? 1.0
-                    let dfHi = dfMap[hi] ?? 1.0
-                    guard dfLo > 0, dfHi > 0 else { continue }
-                    let frac = Double(year - lo) / Double(hi - lo) // fp-safety:disable — lo < year < hi guarantees hi - lo > 0
-                    let lnDF = log(dfLo) * (1.0 - frac) + log(dfHi) * frac
-                    dfMap[year] = exp(lnDF)
-                } else if let lo = lowerKeys.last {
-                    // Extrapolate from last known DF using its zero rate
-                    let dfLo = dfMap[lo] ?? 1.0
-                    guard dfLo > 0, lo > 0 else { continue }
-                    let r = -log(dfLo) / Double(lo)
-                    dfMap[year] = exp(-r * Double(year))
-                }
-            }
-        }
-
-        // Now we have dfMap filled. But some intermediate years may have been
-        // interpolated using a *future* par-rate anchor. We need a second pass
-        // for tenors that were interpolated before their upper bracket was set.
-        // Re-bootstrap properly: process par rates in order, filling gaps as we go.
-        dfMap.removeAll()
 
         var prevParYear = 0
 
         for entry in sorted {
             let year = Int(entry.tenor)
-            let c = entry.rate
+            let coupon = entry.rate
 
-            // Fill any gap years between prevParYear+1 and year-1 by interpolation
-            // We need an upper DF to interpolate, but we don't have it yet.
-            // Instead, solve for DF(year) first assuming we'll fill gaps after,
-            // then fill gaps using log-linear between prevParYear and year.
-
-            // Step 1: Temporarily compute DF(year) assuming gaps are log-linearly filled
-            // We'll iterate: guess DF(year), fill gaps, re-solve.
-
-            // For the first pass, estimate DF(year) using only known DFs
-            // and log-linear interpolation for gaps.
-
-            // Actually, the cleaner approach: solve the par equation directly.
-            // c * [DF(1) + ... + DF(year)] + DF(year) = 1
-            // Let S_known = sum of DF(i) for i in 1..year-1 where i is in dfMap
-            // Let S_gap = sum of DF(i) for gap years
-            // DF(year) = (1 - c*(S_known + S_gap)) / (1 + c)
-            //
-            // For gap years between lastKnown and year, use log-linear:
-            //   DF(i) = DF(lastKnown)^((year-i)/(year-lastKnown)) * DF(year)^((i-lastKnown)/(year-lastKnown))
-            //
-            // This makes S_gap a function of DF(year), so we can solve algebraically.
-
-            let lastKnownYear = prevParYear  // 0 means DF(0)=1
+            // The left anchor for this segment: the previous quoted tenor, or time zero,
+            // where the discount factor is 1 and so `ln DF` is 0. That second case is the
+            // one that applies when nothing is quoted at year 1.
+            let lastKnownYear = prevParYear
             let lastKnownDF: Double = lastKnownYear > 0 ? (dfMap[lastKnownYear] ?? 1.0) : 1.0
             guard lastKnownDF > 0 else { continue }
-            let lnDFLast = lastKnownYear > 0 ? log(lastKnownDF) : 0.0
+            let lnDFLast: Double = lastKnownYear > 0 ? log(lastKnownDF) : 0.0
 
-            // Sum of known DFs from years 1 to lastKnownYear
-            var sumKnown = 0.0
-            for y in 1...max(1, lastKnownYear) {
-                if let df = dfMap[y] {
-                    sumKnown += df
-                }
-            }
+            let sumKnown = annuityOfSettledYears(dfMap, through: lastKnownYear)
 
-            // Gap years: lastKnownYear+1 to year-1
-            // For each gap year g, DF(g) = exp(lnDFLast*(1-frac_g) + lnDFYear*frac_g)
-            //   where frac_g = (g - lastKnownYear) / (year - lastKnownYear)
-            // Let span = year - lastKnownYear
-            let span = year - lastKnownYear
-            // lnDF(g) = lnDFLast + frac_g * (lnDFYear - lnDFLast)
-            // DF(g) = exp(lnDFLast) * exp(frac_g * (lnDFYear - lnDFLast))
-            //       = DFLast * (DFYear/DFLast)^frac_g
-            //
-            // S_gap = sum_{g=lastKnown+1}^{year-1} DFLast * (DFYear/DFLast)^(frac_g)
-            //
-            // Let x = DFYear / DFLast (unknown), then:
-            // S_gap = DFLast * sum_{g} x^(frac_g)
-            // and DF(year) = DFLast * x^1 = DFLast * x
-            //
-            // Par equation: c * (sumKnown + S_gap + DFYear) + DFYear = 1
-            //   c * (sumKnown + DFLast * sum(x^frac_g) + DFLast*x) + DFLast*x = 1
-            //
-            // This is nonlinear in x. Use Newton's method to solve.
+            let dfYear = solveTerminalDiscountFactor(
+                coupon: coupon, year: year, lastKnownYear: lastKnownYear,
+                lnDFLast: lnDFLast, sumKnown: sumKnown)
 
-            // For simplicity and robustness, use a direct iterative approach:
-            // Start with an initial guess for DF(year)
-            let rGuess: Double = c  // par rate as initial zero rate guess
-            var dfYear = exp(-rGuess * Double(year))
-
-            for _ in 0..<50 {  // Newton iterations
-                // Fill gap DFs
-                var sumAll = sumKnown
-                for g in (lastKnownYear + 1)..<year {
-                    let frac = Double(g - lastKnownYear) / Double(span) // fp-safety:disable — span >= 2 (loop requires year > lastKnownYear + 1)
-                    let lnDFG = lnDFLast * (1.0 - frac) + log(max(dfYear, 1e-300)) * frac
-                    sumAll += exp(lnDFG)
-                }
-                sumAll += dfYear  // Add DF(year) itself
-
-                // Par equation: c * sumAll + dfYear = 1
-                // f(dfYear) = c * sumAll + dfYear - 1 = 0
-                let fVal = c * sumAll + dfYear - 1.0
-
-                // Derivative: d(fVal)/d(dfYear)
-                // d(sumAll)/d(dfYear) = sum of d(DF(g))/d(dfYear) + 1
-                var dSumAll = 1.0  // from the dfYear term
-                for g in (lastKnownYear + 1)..<year {
-                    let frac = Double(g - lastKnownYear) / Double(span) // fp-safety:disable — span >= 2 (loop requires year > lastKnownYear + 1)
-                    let lnDFG = lnDFLast * (1.0 - frac) + log(max(dfYear, 1e-300)) * frac
-                    let dfG = exp(lnDFG)
-                    // d(dfG)/d(dfYear) = dfG * frac / dfYear
-                    dSumAll += dfG * frac / max(dfYear, 1e-300)
-                }
-                let dfVal = c * dSumAll + 1.0
-
-                guard abs(dfVal) > 1e-300 else { break }
-                let step = fVal / dfVal
-                dfYear -= step
-                dfYear = max(dfYear, 1e-10)  // Keep positive
-
-                if abs(step) < 1e-15 { break }
-            }
-
-            // Store gap DFs
             for g in (lastKnownYear + 1)..<year {
-                let frac = Double(g - lastKnownYear) / Double(span) // fp-safety:disable — span >= 2 (loop requires year > lastKnownYear + 1)
-                let lnDFG = lnDFLast * (1.0 - frac) + log(max(dfYear, 1e-300)) * frac
-                dfMap[g] = exp(lnDFG)
+                let frac = gapFraction(g, from: lastKnownYear, to: year)
+                dfMap[g] = gapDiscountFactor(lnDFLast: lnDFLast, terminal: dfYear, frac: frac)
             }
             dfMap[year] = dfYear
             prevParYear = year

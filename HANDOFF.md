@@ -21,7 +21,7 @@ is the state and the traps.
 |---|---|
 | branch | `main`, pushed through the gStudy commit |
 | tags | latest **`v3.0.0-alpha.7`** (2026-09-18, tagged by the peer session) |
-| tests | **7,950 in 727 suites**, exit 0, **zero known issues** |
+| tests | **7,955 in 728 suites**, exit 0, **zero known issues** |
 | gate | `--no-cache --check all` → 45 of 45 ran, **0 errors and 0 warnings outside `doc-run`** |
 | `doc-run` | **flaky under load, not a regression** — see §4 |
 | guidelines repo | `../../development-guidelines` clean at `a5f9292`, `v2.4.0` tagged and pushed |
@@ -57,14 +57,15 @@ than trusting it** — `quality-gate --no-cache --no-index-build --check complex
 
 | Score | Function | Where |
 |---:|---|---|
-| **79** | `bootstrap` | `Valuation/Curves/DiscountCurve.swift:254` — now the highest unexamined |
-| **77** | `next` | `Time Series/Period.swift:1051` |
-| 68 | `buildBlock` | `BusinessMathDSL/ScenarioAnalysis.swift:292` |
+| **77** | `next` | `Time Series/Period.swift:1051` — now the highest unexamined |
+| **68** | `buildBlock` | `BusinessMathDSL/ScenarioAnalysis.swift:292` |
 | 62 | `solveShape` | `Simulation/distributionMomentFit.swift:460` |
 | 60 | `solve` | `Optimization/IntegerProgramming/BranchAndBound.swift:338` |
+| 59 | `linearRobustCounterpart` | `AdvancedOptimization/RobustOptimizer.swift:651` |
 
 Examined, for contrast: `fitGeneralLME` 75, `icc` 73, `gibbsICCPosterior` 58.
-`generalAIREMLUpdate` was 121 and is now 19; `gStudy` was 85 and is now below the threshold.
+`generalAIREMLUpdate` was 121 and is now 19; `gStudy` was 85 and `bootstrap` 79, both now
+below the threshold.
 
 ## 2. What closed, and what it cost
 
@@ -80,6 +81,26 @@ Examined, for contrast: `fitGeneralLME` 75, `icc` 73, `gibbsICCPosterior` 58.
 - **`solveRelaxation` 291 → 55**, stages extracted into `BranchAndBoundCutting.swift`.
 - **`RobustOptimizer` audited, clean.** The LP route was confirmed to fire by instrumentation
   (8 of 8 cases), not assumed — iteration count does *not* separate the two routes.
+
+### `DiscountCurve.bootstrap` — 79 → below threshold, no defect, and fifty dead lines
+
+- **A whole first pass was computed and discarded.** Fifty lines walked every integer year,
+  bootstrapped the quoted tenors and interpolated the rest, and then `dfMap.removeAll()`
+  cleared the map before the real solve began. Its own trailing comment explained why that
+  pass was unsound; the code was left in anyway. Nothing between the loop and the `removeAll`
+  read `dfMap`, so deleting it is **bit-identical** — 79 → 34 from the deletion alone.
+- **The gap interpolation was written out three times** — Newton residual, its derivative,
+  and the final store. A residual disagreeing with its own derivative shows up only as slow
+  convergence, which nothing measures. One helper now serves all three.
+- **No defect in the algorithm.** An exact oracle chooses the curve first, derives par rates
+  in closed form (`c_N = (1 - DF(N)) / SUM DF(i)`, the exact inverse of the par condition)
+  and requires the bootstrap to give the curve back, at the nodes and in the gaps. Worst
+  relative gap 1.58e-16, about one ulp. Three mutations caught with 48, 39 and 82 failures.
+- **The existing repricing test is genuinely good** — it goes through `discountFactor(at:)`,
+  so the interpolation is exercised, and gap DFs enter the annuity. What it could not do is
+  check an *answer* rather than a residual, and every case it runs starts at tenor 1. Three
+  new ladders quote nothing until year 2, 5 and 10 — the branch that anchors on `DF(0) = 1`
+  and fills a gap below the first quoted tenor, which nothing reached before.
 
 ### `gStudy` two-facet — 85 → below threshold, and **no defect**
 

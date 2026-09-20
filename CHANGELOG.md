@@ -11,6 +11,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### 2026-09-19 — The curve bootstrap computed a whole curve and threw it away
+
+##### Fixed
+
+- **`DiscountCurve.bootstrap` ran a complete first pass whose result was discarded.**
+
+  Fifty lines walked every integer year, bootstrapped the quoted tenors and interpolated the
+  rest — and then `dfMap.removeAll()` cleared the map before the real solve began. Its own
+  trailing comment explained why the first pass was unsound ("some intermediate years may
+  have been interpolated using a *future* par-rate anchor"), but the code was left in place
+  rather than deleted, so every call paid for a curve nothing ever read.
+
+  Nothing between the loop and the `removeAll` touched `dfMap`, so removing it is
+  **bit-identical** on every shape tested. Only the wasted work goes. Complexity 79 → 34
+  from the deletion alone.
+
+##### Tests
+
+- **An exact oracle for the bootstrap.** The existing `DiscountCurveTests` reprices — for
+  each input par rate it checks `c · Σ DF(i) + DF(N) − 1` is zero, through
+  `discountFactor(at:)` rather than the raw map, so the interpolation is exercised. That is
+  a real assertion, not the weak kind. But it checks a **residual** — the very equation the
+  solver drives to zero — rather than an independently known answer, and every case it runs
+  starts at tenor 1.
+
+  The new oracle chooses the curve first. Par rates are derived from it in closed form,
+  `c_N = (1 − DF(N)) / Σ DF(i)`, which is the exact inverse of the par condition, and the
+  bootstrap has to give the curve back — at the node years *and in the gaps*. The
+  constructed curve is piecewise constant in the forward rate, which is exactly the model
+  the bootstrap interpolates with, so recovery is exact rather than approximate. Measured
+  worst relative gap across seven ladders and every integer year: **1.58e-16**, about one
+  ulp.
+
+  **Three ladders quote nothing until year 2, 5 and 10.** That is the branch with no
+  previous node, where the algorithm must anchor on `DF(0) = 1` and fill a gap below the
+  first quoted tenor — reached by nothing in the suite before. All recover exactly.
+
+  **No defect found.** Three deliberate mutations — the time-zero anchor moved off 1, the
+  gap interpolation fraction inverted, and the terminal factor dropped from the annuity —
+  are caught with 48, 39 and 82 failures, before and after the refactor.
+
+##### Internal
+
+- **`bootstrap`: cognitive complexity 79 → below the threshold**, leaving nothing in
+  `DiscountCurve.swift` above it. Extracted `gapFraction`, `gapDiscountFactor`,
+  `annuityOfSettledYears` and `solveTerminalDiscountFactor`.
+
+  The gap-interpolation expression was written out **three times** — once in the Newton
+  residual, once in its derivative, and once when the solved gaps were finally stored.
+  Three copies of one interpolation is three chances to drift apart, and a residual
+  disagreeing with its own derivative shows up only as slow convergence, which nothing was
+  measuring. One helper now serves all three.
+
+  Verified **bit-identical** across eight par-rate sets including the empty and
+  single-tenor cases.
+
 #### 2026-09-19 — The two-facet G-study, opened and found clean
 
 ##### Tests
