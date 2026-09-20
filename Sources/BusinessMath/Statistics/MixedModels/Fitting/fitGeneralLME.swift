@@ -669,13 +669,44 @@ private func generalGLSEstimate<T: Real & Sendable>(
 	return GeneralGLSResult(beta: beta, remlLogLik: logLik)
 }
 
-private struct GeneralEMResult<T: Real & Sendable> {
+internal struct GeneralEMResult<T: Real & Sendable> {
 	let sigmaE2: T
 	let gArr: [[T]]
 }
 
-/// EM update for variance components in the general LME model.
-private func generalEMUpdate<T: Real & Sendable>(
+/// EM update for the variance components of the general LME model.
+///
+/// One M-step of the EM algorithm, which is what the fitter uses to warm up before AI-REML
+/// takes over. With `V_i = Z_i G Z_i' + sigma_e^2 I` and the BLUP
+/// `u_i = G Z_i' V_i^-1 r_i`, the conditional second moments are
+///
+///     E[u_i u_i' | y] = u_i u_i' + (G - G Z_i'V_i^-1 Z_i G)
+///     E[e_i' e_i | y] = ||r_i - Z_i u_i||^2 + sigma_e^2 (n_i - sigma_e^2 tr(V_i^-1))
+///
+/// and the update is their averages: `G` over the `m` groups, `sigma_e^2` over all `N`
+/// observations. The second term of each is the conditional *variance* — the part that
+/// distinguishes an EM step from simply plugging the BLUPs in, and the part a naive
+/// implementation drops.
+///
+/// Every quantity here is block diagonal by group, so accumulating per group is exact —
+/// unlike ``generalAIREMLUpdate(resid:xData:zData:m:r:groupIdx:gArr:sigmaE2:p:)``, whose
+/// information matrix needs the whole projection. See `GeneralAIREMLOracleTests` for the
+/// dense check of both.
+///
+/// - Parameters:
+///   - resid: The GLS residual `y - X beta`, by observation.
+///   - zData: The random-effects design, by observation.
+///   - m: Group count.
+///   - r: Random effects per group.
+///   - ni: Observation count per group.
+///   - groupIdx: Row indices per group.
+///   - gArr: The current random-effects covariance.
+///   - sigmaE2: The current residual variance.
+///   - N: Total observations.
+/// - Returns: The updated residual variance and random-effects covariance.
+/// - Throws: From ``DenseMatrix/choleskyInverse()`` and ``DenseMatrix/choleskySolve(_:)``
+///   when a group's `V_g` is not positive definite.
+internal func generalEMUpdate<T: Real & Sendable>(
 	resid: [T], zData: [[T]], m: Int, r: Int,
 	ni: [Int], groupIdx: [[Int]],
 	gArr: [[T]], sigmaE2: T, N: Int
@@ -700,62 +731,22 @@ private func generalEMUpdate<T: Real & Sendable>(
 		let viInv = try viMat.choleskyInverse()
 		let viInvR = try viMat.choleskySolve(ri)
 
-		// Z_i' V_i^{-1} r_i (r-vector)
-		var ztViInvR = Array(repeating: T.zero, count: r)
-		for j in 0..<nig {
-			for k in 0..<r {
-				ztViInvR[k] += zi[j][k] * viInvR[j]
-			}
-		}
-
-		// u_hat = G Z_i' V_i^{-1} r_i
-		var uHat = Array(repeating: T.zero, count: r)
-		for k in 0..<r {
-			for l in 0..<r {
-				uHat[k] += gArr[k][l] * ztViInvR[l]
-			}
-		}
-
-		// Z_i' V_i^{-1} Z_i (r x r)
-		var ztViInvZ = Array(repeating: Array(repeating: T.zero, count: r), count: r)
-		for row in 0..<nig {
-			for col in 0..<nig {
-				let viInvRC = viInv[row, col]
-				for a in 0..<r {
-					for b in 0..<r {
-						ztViInvZ[a][b] += zi[row][a] * viInvRC * zi[col][b]
-					}
-				}
-			}
-		}
-
-		// G Z' V^{-1} Z G (r x r)
-		var gZVZG = Array(repeating: Array(repeating: T.zero, count: r), count: r)
-		for a in 0..<r {
-			for b in 0..<r {
-				for c in 0..<r {
-					for d in 0..<r {
-						gZVZG[a][b] += gArr[a][c] * ztViInvZ[c][d] * gArr[d][b]
-					}
-				}
-			}
-		}
+		let uHat = generalGroupBLUP(zi: zi, viInvR: viInvR, gArr: gArr, nig: nig, r: r)
+		let ztViInvZ = generalZtViInvZ(zi: zi, viInv: viInv, nig: nig, r: r)
+		let gZVZG = generalSandwich(gArr, ztViInvZ, r: r)
 
 		// E[u u'|y] = u_hat u_hat' + (G - G Z' V^{-1} Z G)
+		//
+		// Written in this order rather than as `uHat outer product + posterior` because the
+		// original association is left to right and regrouping it moves the last bit.
 		for a in 0..<r {
 			for b in 0..<r {
 				sumG[a][b] += uHat[a] * uHat[b] + gArr[a][b] - gZVZG[a][b]
 			}
 		}
 
-		// Residual variance contribution
-		var ssResid = T.zero
-		for (_, obsIdx) in indices.enumerated() {
-			var zuHat = T.zero
-			for k in 0..<r { zuHat += zData[obsIdx][k] * uHat[k] }
-			let eHat = resid[obsIdx] - zuHat
-			ssResid += eHat * eHat
-		}
+		let ssResid = generalGroupResidualSumOfSquares(
+			zData: zData, resid: resid, indices: indices, uHat: uHat, r: r)
 		var trViInv = T.zero
 		for j in 0..<nig { trViInv += viInv[j, j] }
 		sumResidVar += ssResid + sigmaE2 * (T(nig) - sigmaE2 * trViInv)
@@ -771,6 +762,104 @@ private func generalEMUpdate<T: Real & Sendable>(
 	return GeneralEMResult(
 		sigmaE2: sumResidVar / T(N),
 		gArr: newG)
+}
+
+/// One group's BLUP, `u = G Z_i' V_i^-1 r_i`.
+///
+/// - Parameters:
+///   - zi: The group's random-effects design rows.
+///   - viInvR: `V_i^-1 r_i`, already solved.
+///   - gArr: The current random-effects covariance.
+///   - nig: The group's observation count.
+///   - r: Random effects per group.
+/// - Returns: The `r`-vector of predicted random effects.
+private func generalGroupBLUP<T: Real & Sendable>(
+	zi: [[T]], viInvR: [T], gArr: [[T]], nig: Int, r: Int
+) -> [T] where T: BinaryFloatingPoint {
+	var ztViInvR = Array(repeating: T.zero, count: r)
+	for j in 0..<nig {
+		for k in 0..<r {
+			ztViInvR[k] += zi[j][k] * viInvR[j]
+		}
+	}
+
+	var uHat = Array(repeating: T.zero, count: r)
+	for k in 0..<r {
+		for l in 0..<r {
+			uHat[k] += gArr[k][l] * ztViInvR[l]
+		}
+	}
+	return uHat
+}
+
+/// `Z_i' V_i^-1 Z_i`, the information one group carries about the random effects.
+///
+/// - Parameters:
+///   - zi: The group's random-effects design rows.
+///   - viInv: The group's inverted marginal covariance.
+///   - nig: The group's observation count.
+///   - r: Random effects per group.
+/// - Returns: The `r x r` result.
+private func generalZtViInvZ<T: Real & Sendable>(
+	zi: [[T]], viInv: DenseMatrix<T>, nig: Int, r: Int
+) -> [[T]] where T: BinaryFloatingPoint {
+	var out = Array(repeating: Array(repeating: T.zero, count: r), count: r)
+	for row in 0..<nig {
+		for col in 0..<nig {
+			let viInvRC = viInv[row, col]
+			for a in 0..<r {
+				for b in 0..<r {
+					out[a][b] += zi[row][a] * viInvRC * zi[col][b]
+				}
+			}
+		}
+	}
+	return out
+}
+
+/// `G M G` for a symmetric `r x r` middle.
+///
+/// - Parameters:
+///   - gArr: The outer matrix.
+///   - middle: The matrix between the two copies of it.
+///   - r: The dimension.
+/// - Returns: The `r x r` product.
+private func generalSandwich<T: Real & Sendable>(
+	_ gArr: [[T]], _ middle: [[T]], r: Int
+) -> [[T]] where T: BinaryFloatingPoint {
+	var out = Array(repeating: Array(repeating: T.zero, count: r), count: r)
+	for a in 0..<r {
+		for b in 0..<r {
+			for c in 0..<r {
+				for d in 0..<r {
+					out[a][b] += gArr[a][c] * middle[c][d] * gArr[d][b]
+				}
+			}
+		}
+	}
+	return out
+}
+
+/// `||r_i - Z_i u_i||^2` for one group.
+///
+/// - Parameters:
+///   - zData: The random-effects design, by observation.
+///   - resid: The GLS residual, by observation.
+///   - indices: The group's row indices.
+///   - uHat: The group's BLUP.
+///   - r: Random effects per group.
+/// - Returns: The sum of squared conditional residuals.
+private func generalGroupResidualSumOfSquares<T: Real & Sendable>(
+	zData: [[T]], resid: [T], indices: [Int], uHat: [T], r: Int
+) -> T where T: BinaryFloatingPoint {
+	var ssResid = T.zero
+	for (_, obsIdx) in indices.enumerated() {
+		var zuHat = T.zero
+		for k in 0..<r { zuHat += zData[obsIdx][k] * uHat[k] }
+		let eHat = resid[obsIdx] - zuHat
+		ssResid += eHat * eHat
+	}
+	return ssResid
 }
 
 internal struct GeneralAIREMLResult<T: Real & Sendable> {

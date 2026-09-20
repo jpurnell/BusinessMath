@@ -658,6 +658,76 @@ public struct RobustOptimizer<V: VectorSpace> where V.Scalar == Double {
 		let dimension = initialSolution.toArray().count
 		guard dimension > 0, !uncertaintyPoints.isEmpty else { return nil }
 
+		guard let scenarios = linearisedScenarios(
+			objective: objective, uncertaintyPoints: uncertaintyPoints,
+			dimension: dimension, at: initialSolution) else { return nil }
+
+		guard let linearConstraints = linearisedConstraints(
+			constraints, dimension: dimension, at: initialSolution) else { return nil }
+
+		let layout = Self.columnLayout(
+			dimension: dimension,
+			nonNegative: Self.provablyNonNegative(in: linearConstraints, dimension: dimension))
+
+		let rows = Self.simplexRows(
+			scenarios: scenarios, constraints: linearConstraints,
+			layout: layout, dimension: dimension, minimize: minimize)
+
+		var objectiveCoefficients = [Double](repeating: 0, count: layout.variableCount)
+		objectiveCoefficients[layout.positiveEpigraph] = 1
+		objectiveCoefficients[layout.negativeEpigraph] = -1
+
+		// The rows above are built from finite-difference coefficients, which carry
+		// roughly the differencing step's worth of error — far coarser than the
+		// solver's default 1e-10. Left at that default, Phase I cannot drive the
+		// artificial variables of an equality row below a residual the input noise
+		// alone accounts for, and a plainly feasible program is reported infeasible.
+		// The solver is told how good the data actually is.
+		let solver = SimplexSolver(tolerance: Self.linearisationTolerance)
+		let solved = minimize
+			? try solver.minimize(objective: objectiveCoefficients, subjectTo: rows)
+			: try solver.maximize(objective: objectiveCoefficients, subjectTo: rows)
+
+		// An unbounded or infeasible linear program is a statement about the model,
+		// not about this shortcut, but the general solver reports those differently
+		// and its answer is the one the caller's tests are written against.
+		guard solved.status == .optimal,
+			  solved.solution.count >= layout.variableCount else { return nil }
+
+		var components: [Double] = []
+		components.reserveCapacity(dimension)
+		for i in 0..<dimension {
+			let positivePart = solved.solution[layout.positiveColumn[i]]
+			let negativePart = layout.negativeColumn[i].map { solved.solution[$0] } ?? 0
+			components.append(positivePart - negativePart)
+		}
+
+		// Check the answer against the constraints it was supposed to satisfy before
+		// handing it back. `.optimal` is the solver's claim, not a proof — a degenerate
+		// program has been observed to return that status on a point breaching its own
+		// equality row by 3.7e-3 — and a robust allocation that quietly misses its
+		// budget is the fail-silent result this library is not allowed to produce.
+		// Falling through costs the general solver's time; returning it costs the
+		// caller's trust.
+		let feasibilityLimit = Swift.max(tolerance, Self.linearisationTolerance)
+		guard Self.satisfies(linearConstraints, at: components, within: feasibilityLimit) else {
+			return nil
+		}
+
+		guard let solution = V.fromArray(components) else { return nil }
+		return (solution, solved.iterations)
+	}
+
+	/// The objective, linearised once per sampled realization.
+	///
+	/// - Returns: One `(coefficients, constant)` per point, or `nil` as soon as any of them
+	///   fails to linearise — which routes the whole model to the general solver.
+	private func linearisedScenarios(
+		objective: @escaping @Sendable (V, [Double]) -> Double,
+		uncertaintyPoints: [[Double]],
+		dimension: Int,
+		at initialSolution: V
+	) -> [(coefficients: [Double], constant: Double)]? {
 		var scenarios: [(coefficients: [Double], constant: Double)] = []
 		scenarios.reserveCapacity(uncertaintyPoints.count)
 		for omega in uncertaintyPoints {
@@ -668,7 +738,17 @@ public struct RobustOptimizer<V: VectorSpace> where V.Scalar == Double {
 			guard model.coefficients.count == dimension else { return nil }
 			scenarios.append(model)
 		}
+		return scenarios
+	}
 
+	/// The caller's constraints, linearised.
+	///
+	/// - Returns: One row per constraint, or `nil` as soon as any fails to linearise.
+	private func linearisedConstraints(
+		_ constraints: [MultivariateConstraint<V>],
+		dimension: Int,
+		at initialSolution: V
+	) -> [(coefficients: [Double], constant: Double, isEquality: Bool)]? {
 		var linearConstraints: [(coefficients: [Double], constant: Double, isEquality: Bool)] = []
 		linearConstraints.reserveCapacity(constraints.count)
 		for constraint in constraints {
@@ -679,18 +759,24 @@ public struct RobustOptimizer<V: VectorSpace> where V.Scalar == Double {
 			guard model.coefficients.count == dimension else { return nil }
 			linearConstraints.append((model.coefficients, model.constant, constraint.isEquality))
 		}
+		return linearConstraints
+	}
 
-		// Which decision variables does the caller's own model already pin at or above
-		// zero? A linearised row reading `−xᵢ ≤ 0` proves it, and such a variable needs
-		// no ± split, because non-negativity is what the simplex method assumes of every
-		// column to begin with.
-		//
-		// Splitting one anyway is not merely wasteful. Every value of `xᵢ` then has
-		// infinitely many `(xᵢ⁺, xᵢ⁻)` representations, and the program becomes
-		// degenerate in exactly the way that makes the method wander: a 54-row instance
-		// took 141 iterations and stopped on a point violating its own equality row by
-		// 3.7e-3, while reporting `.optimal`. The same model with only the epigraph
-		// variable split solves in single-digit iterations.
+	/// Which decision variables the caller's own model already pins at or above zero.
+	///
+	/// A linearised row reading `−xᵢ ≤ 0` proves it, and such a variable needs no ± split,
+	/// because non-negativity is what the simplex method assumes of every column to begin
+	/// with.
+	///
+	/// Splitting one anyway is not merely wasteful. Every value of `xᵢ` then has infinitely
+	/// many `(xᵢ⁺, xᵢ⁻)` representations, and the program becomes degenerate in exactly the
+	/// way that makes the method wander: a 54-row instance took 141 iterations and stopped on
+	/// a point violating its own equality row by 3.7e-3, while reporting `.optimal`. The same
+	/// model with only the epigraph variable split solves in single-digit iterations.
+	private static func provablyNonNegative(
+		in linearConstraints: [(coefficients: [Double], constant: Double, isEquality: Bool)],
+		dimension: Int
+	) -> [Bool] {
 		var isProvablyNonNegative = [Bool](repeating: false, count: dimension)
 		for constraint in linearConstraints where !constraint.isEquality {
 			guard constraint.constant <= Self.linearisationTolerance else { continue }
@@ -709,23 +795,19 @@ public struct RobustOptimizer<V: VectorSpace> where V.Scalar == Double {
 				isProvablyNonNegative[index] = true
 			}
 		}
+		return isProvablyNonNegative
+	}
 
-		// Column layout: one column for a variable known non-negative, two for a free
-		// one, then the epigraph variable, which is always free.
-		var positiveColumn = [Int](repeating: 0, count: dimension)
-		var negativeColumn = [Int?](repeating: nil, count: dimension)
-		var columnCount = 0
-		for i in 0..<dimension {
-			positiveColumn[i] = columnCount
-			columnCount += 1
-			if !isProvablyNonNegative[i] {
-				negativeColumn[i] = columnCount
-				columnCount += 1
-			}
-		}
-		let positiveEpigraph = columnCount
-		let negativeEpigraph = columnCount + 1
-		let variableCount = columnCount + 2
+	/// How each decision variable is represented in the simplex tableau.
+	///
+	/// One column for a variable already known non-negative, two for a free one, then the
+	/// epigraph variable, which is always free.
+	private struct ColumnLayout {
+		let positiveColumn: [Int]
+		let negativeColumn: [Int?]
+		let positiveEpigraph: Int
+		let negativeEpigraph: Int
+		let variableCount: Int
 
 		/// Places `coefficient · xᵢ` into `row`, honouring how `xᵢ` is represented.
 		func place(_ coefficient: Double, forVariable i: Int, into row: inout [Double]) {
@@ -734,80 +816,79 @@ public struct RobustOptimizer<V: VectorSpace> where V.Scalar == Double {
 				row[negative] = -coefficient
 			}
 		}
+	}
 
+	private static func columnLayout(dimension: Int, nonNegative: [Bool]) -> ColumnLayout {
+		var positiveColumn = [Int](repeating: 0, count: dimension)
+		var negativeColumn = [Int?](repeating: nil, count: dimension)
+		var columnCount = 0
+		for i in 0..<dimension {
+			positiveColumn[i] = columnCount
+			columnCount += 1
+			if !nonNegative[i] {
+				negativeColumn[i] = columnCount
+				columnCount += 1
+			}
+		}
+		return ColumnLayout(
+			positiveColumn: positiveColumn,
+			negativeColumn: negativeColumn,
+			positiveEpigraph: columnCount,
+			negativeEpigraph: columnCount + 1,
+			variableCount: columnCount + 2)
+	}
+
+	/// The tableau rows: one epigraph row per sampled realization, then the caller's own.
+	private static func simplexRows(
+		scenarios: [(coefficients: [Double], constant: Double)],
+		constraints: [(coefficients: [Double], constant: Double, isEquality: Bool)],
+		layout: ColumnLayout,
+		dimension: Int,
+		minimize: Bool
+	) -> [SimplexConstraint] {
 		var rows: [SimplexConstraint] = []
-		rows.reserveCapacity(scenarios.count + linearConstraints.count)
+		rows.reserveCapacity(scenarios.count + constraints.count)
 
 		// Minimising: f(x, ωₖ) − t ≤ 0. Maximising: t − f(x, ωₖ) ≤ 0.
 		for scenario in scenarios {
-			var row = [Double](repeating: 0, count: variableCount)
+			var row = [Double](repeating: 0, count: layout.variableCount)
 			for i in 0..<dimension {
 				let coefficient = minimize ? scenario.coefficients[i] : -scenario.coefficients[i]
-				place(coefficient, forVariable: i, into: &row)
+				layout.place(coefficient, forVariable: i, into: &row)
 			}
-			row[positiveEpigraph] = minimize ? -1 : 1
-			row[negativeEpigraph] = minimize ? 1 : -1
+			row[layout.positiveEpigraph] = minimize ? -1 : 1
+			row[layout.negativeEpigraph] = minimize ? 1 : -1
 			let rhs = minimize ? -scenario.constant : scenario.constant
 			rows.append(SimplexConstraint(coefficients: row, relation: .lessOrEqual, rhs: rhs))
 		}
 
 		// The caller writes constraints as g(x) ≤ 0 or h(x) = 0, so the linearised
 		// constant moves to the right-hand side with its sign flipped.
-		for constraint in linearConstraints {
-			var row = [Double](repeating: 0, count: variableCount)
+		for constraint in constraints {
+			var row = [Double](repeating: 0, count: layout.variableCount)
 			for i in 0..<dimension {
-				place(constraint.coefficients[i], forVariable: i, into: &row)
+				layout.place(constraint.coefficients[i], forVariable: i, into: &row)
 			}
 			let relation: ConstraintRelation = constraint.isEquality ? .equal : .lessOrEqual
 			rows.append(SimplexConstraint(coefficients: row, relation: relation, rhs: -constraint.constant))
 		}
+		return rows
+	}
 
-		var objectiveCoefficients = [Double](repeating: 0, count: variableCount)
-		objectiveCoefficients[positiveEpigraph] = 1
-		objectiveCoefficients[negativeEpigraph] = -1
-
-		// The rows above are built from finite-difference coefficients, which carry
-		// roughly the differencing step's worth of error — far coarser than the
-		// solver's default 1e-10. Left at that default, Phase I cannot drive the
-		// artificial variables of an equality row below a residual the input noise
-		// alone accounts for, and a plainly feasible program is reported infeasible.
-		// The solver is told how good the data actually is.
-		let solver = SimplexSolver(tolerance: Self.linearisationTolerance)
-		let solved = minimize
-			? try solver.minimize(objective: objectiveCoefficients, subjectTo: rows)
-			: try solver.maximize(objective: objectiveCoefficients, subjectTo: rows)
-
-		// An unbounded or infeasible linear program is a statement about the model,
-		// not about this shortcut, but the general solver reports those differently
-		// and its answer is the one the caller's tests are written against.
-		guard solved.status == .optimal, solved.solution.count >= variableCount else { return nil }
-
-		var components: [Double] = []
-		components.reserveCapacity(dimension)
-		for i in 0..<dimension {
-			let positivePart = solved.solution[positiveColumn[i]]
-			let negativePart = negativeColumn[i].map { solved.solution[$0] } ?? 0
-			components.append(positivePart - negativePart)
-		}
-
-		// Check the answer against the constraints it was supposed to satisfy before
-		// handing it back. `.optimal` is the solver's claim, not a proof — a degenerate
-		// program has been observed to return that status on a point breaching its own
-		// equality row by 3.7e-3 — and a robust allocation that quietly misses its
-		// budget is the fail-silent result this library is not allowed to produce.
-		// Falling through costs the general solver's time; returning it costs the
-		// caller's trust.
-		let feasibilityLimit = Swift.max(tolerance, Self.linearisationTolerance)
-		for constraint in linearConstraints {
+	/// Whether `components` actually satisfies the rows the program was built from.
+	private static func satisfies(
+		_ constraints: [(coefficients: [Double], constant: Double, isEquality: Bool)],
+		at components: [Double],
+		within limit: Double
+	) -> Bool {
+		for constraint in constraints {
 			let residual = zip(constraint.coefficients, components).reduce(constraint.constant) {
 				$0 + $1.0 * $1.1
 			}
 			let breach = constraint.isEquality ? abs(residual) : residual
-			guard breach <= feasibilityLimit else { return nil }
+			guard breach <= limit else { return false }
 		}
-
-		guard let solution = V.fromArray(components) else { return nil }
-		return (solution, solved.iterations)
+		return true
 	}
 
 	// MARK: - Worst case over the sampled realizations

@@ -491,6 +491,178 @@ struct GeneralAIREMLOracleTests {
 		#expect(worst < Self.bound, "worst relative gap in the information matrix was \(worst)")
 	}
 
+	// MARK: - The EM step
+
+	/// One EM M-step, recomputed densely.
+	private struct DenseEM {
+		let sigmaE2: Double
+		let gArr: [[Double]]
+	}
+
+	/// The EM update from the textbook formulas, with a dense `V_i^-1` per group.
+	///
+	/// The source accumulates per group using `choleskySolve`/`choleskyInverse`, which is
+	/// exact here — unlike the information matrix, every quantity in an EM step really is
+	/// block diagonal. So what this checks is not the decomposition but the *formulas*, and
+	/// in particular the two conditional-variance terms that separate an EM step from
+	/// plugging the BLUPs in and calling it a day:
+	///
+	///     E[u u' | y] = u u' + (G - G Z'V^-1 Z G)
+	///     E[e' e | y] = ||r - Z u||^2 + sigma^2 (n_i - sigma^2 tr(V^-1))
+	///
+	/// Drop either trailing term and the fit still converges, still produces a symmetric
+	/// positive `G`, and lands somewhere biased — which is the shape of defect this file was
+	/// written for. The inverse is the Gauss-Jordan one above, so nothing here shares a path
+	/// with the source.
+	private static func denseEMUpdate(
+		resid: [Double], z: [[Double]], groupIdx: [[Int]],
+		r: Int, gArr: [[Double]], sigmaE2: Double, n: Int
+	) throws -> DenseEM {
+		var sumG = [[Double]](repeating: [Double](repeating: 0, count: r), count: r)
+		var sumResidVar = 0.0
+
+		for rows in groupIdx {
+			let nig = rows.count
+
+			// V_i = Z_i G Z_i' + sigma^2 I, built here rather than asked for.
+			var vi = [[Double]](repeating: [Double](repeating: 0, count: nig), count: nig)
+			for (a, rowA) in rows.enumerated() {
+				for (b, rowB) in rows.enumerated() {
+					var total = 0.0
+					for u in 0..<r {
+						for w in 0..<r {
+							total += z[rowA][u] * gArr[u][w] * z[rowB][w]
+						}
+					}
+					vi[a][b] = total
+				}
+			}
+			for a in 0..<nig { vi[a][a] += sigmaE2 }
+			let viInv = try inverted(vi)
+
+			// Z_i' V_i^-1 r_i
+			var ztViInvR = [Double](repeating: 0, count: r)
+			for k in 0..<r {
+				var total = 0.0
+				for a in 0..<nig {
+					var inner = 0.0
+					for b in 0..<nig { inner += viInv[a][b] * resid[rows[b]] }
+					total += z[rows[a]][k] * inner
+				}
+				ztViInvR[k] = total
+			}
+
+			// u = G Z_i' V_i^-1 r_i
+			var uHat = [Double](repeating: 0, count: r)
+			for k in 0..<r {
+				var total = 0.0
+				for l in 0..<r { total += gArr[k][l] * ztViInvR[l] }
+				uHat[k] = total
+			}
+
+			// Z_i' V_i^-1 Z_i, then G (that) G
+			var ztViInvZ = [[Double]](repeating: [Double](repeating: 0, count: r), count: r)
+			for a in 0..<r {
+				for b in 0..<r {
+					var total = 0.0
+					for row in 0..<nig {
+						for col in 0..<nig {
+							total += z[rows[row]][a] * viInv[row][col] * z[rows[col]][b]
+						}
+					}
+					ztViInvZ[a][b] = total
+				}
+			}
+			var gZVZG = [[Double]](repeating: [Double](repeating: 0, count: r), count: r)
+			for a in 0..<r {
+				for b in 0..<r {
+					var total = 0.0
+					for c in 0..<r {
+						for d in 0..<r {
+							total += gArr[a][c] * ztViInvZ[c][d] * gArr[d][b]
+						}
+					}
+					gZVZG[a][b] = total
+				}
+			}
+
+			for a in 0..<r {
+				for b in 0..<r {
+					let conditionalVariance: Double = gArr[a][b] - gZVZG[a][b]
+					sumG[a][b] += uHat[a] * uHat[b] + conditionalVariance
+				}
+			}
+
+			var ssResid = 0.0
+			for row in rows {
+				var zu = 0.0
+				for k in 0..<r { zu += z[row][k] * uHat[k] }
+				let e: Double = resid[row] - zu
+				ssResid += e * e
+			}
+			var trace = 0.0
+			for a in 0..<nig { trace += viInv[a][a] }
+			let conditional: Double = sigmaE2 * (Double(nig) - sigmaE2 * trace)
+			sumResidVar += ssResid + conditional
+		}
+
+		var newG = [[Double]](repeating: [Double](repeating: 0, count: r), count: r)
+		for a in 0..<r {
+			for b in 0..<r { newG[a][b] = sumG[a][b] / Double(groupIdx.count) }
+		}
+		return DenseEM(sigmaE2: sumResidVar / Double(n), gArr: newG)
+	}
+
+	@Test("The EM step matches the textbook formulas, computed densely")
+	func emStepMatchesDenseFormulas() throws {
+		let fixture = try Self.loadFixture()
+		var worst = 0.0
+		var compared = 0
+
+		for entry in fixture.cases {
+			let grouping = try GroupingFactor(entry.groups)
+			let r = entry.randomEffectsPerGroup
+
+			for point in Self.points {
+				let (gArr, sigmaE2) = Self.parameters(at: point, y: entry.y, r: r)
+				let oracle = try Self.dense(
+					x: entry.X, z: entry.Z, y: entry.y,
+					groupIdx: grouping.groupIndices, r: r, gArr: gArr, sigmaE2: sigmaE2)
+
+				let subject = try generalEMUpdate(
+					resid: oracle.resid, zData: entry.Z,
+					m: grouping.groupCount, r: r, ni: grouping.groupSizes,
+					groupIdx: grouping.groupIndices,
+					gArr: gArr, sigmaE2: sigmaE2, N: entry.y.count)
+
+				let want = try Self.denseEMUpdate(
+					resid: oracle.resid, z: entry.Z, groupIdx: grouping.groupIndices,
+					r: r, gArr: gArr, sigmaE2: sigmaE2, n: entry.y.count)
+
+				let sigmaGap = abs(subject.sigmaE2 - want.sigmaE2) / Swift.max(abs(want.sigmaE2), 1e-300)
+				if sigmaGap > worst { worst = sigmaGap }
+				#expect(sigmaGap < Self.bound,
+						"\(entry.name) point \(point.label): sigma^2 \(subject.sigmaE2), dense \(want.sigmaE2)")
+				compared += 1
+
+				for a in 0..<r {
+					for b in 0..<r {
+						let got = subject.gArr[a][b]
+						let expected = want.gArr[a][b]
+						let scale = Self.largest(want.gArr.flatMap { $0 })
+						let gap = abs(got - expected) / Swift.max(abs(expected), scale)
+						if gap > worst { worst = gap }
+						#expect(gap < Self.bound,
+								"\(entry.name) point \(point.label) G[\(a)][\(b)]: \(got), dense \(expected)")
+						compared += 1
+					}
+				}
+			}
+		}
+		#expect(compared >= 30, "only \(compared) EM quantities compared")
+		#expect(worst < Self.bound, "worst relative gap in the EM step was \(worst)")
+	}
+
 	/// The converged fit is a stationary point of the REML likelihood.
 	///
 	/// The score IS the gradient, so this asks the only question that decides whether a

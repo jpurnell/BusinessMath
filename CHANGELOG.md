@@ -11,6 +11,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### 2026-09-20 — The EM step, and the robust LP shortcut
+
+##### Tests
+
+- **An oracle for `generalEMUpdate`.** The EM M-step had no check of its own — the file's
+  oracle covered the *AI-REML* update and the converged fit, so a wrong EM warm-up would
+  show only as the fitter taking a different path to the same optimum.
+
+  The new test recomputes one M-step densely from the textbook formulas, using the
+  Gauss-Jordan inverse already in that file rather than a second copy. What it is really
+  checking is the two **conditional-variance** terms:
+
+      E[u u' | y] = u u' + (G - G Z'V^-1 Z G)
+      E[e' e | y] = ||r - Z u||^2 + sigma^2 (n_i - sigma^2 tr(V^-1))
+
+  Drop either trailing term and the fitter still converges, still produces a symmetric
+  positive `G`, and lands somewhere biased. Three mutations confirm the oracle bites:
+  dropping the first term (25 failures), dropping the second (13), and averaging `G` over
+  `N` instead of `m` (25). **No defect found.**
+
+- **`linearRobustCounterpart` needed no new oracle, and did not get one.**
+  `RobustCounterpartOracleTests` already carries a closed-form crossing point, a
+  three-scenario problem confirmed by exhaustion, an attainment property across four models,
+  and — the one that matters here — *"The linear shortcut and the general solver agree on the
+  same model"*, which forces each route with a linear and a barely-curved objective and
+  compares them. Adding another would have been motion, not coverage.
+
+##### Internal
+
+- **`generalEMUpdate`: 59 → 16.** `generalGroupBLUP`, `generalZtViInvZ`, `generalSandwich`
+  and `generalGroupResidualSumOfSquares` extracted. The accumulation is left spelled out as
+  `uHat[a] * uHat[b] + gArr[a][b] - gZVZG[a][b]` rather than folded into a "posterior
+  covariance" helper, because that expression associates left to right and regrouping it
+  moves the last bit.
+
+- **`linearRobustCounterpart`: 59 → below the threshold**, split along the phases it already
+  had in comments: linearise the scenarios, linearise the constraints, find the variables the
+  model already pins non-negative, lay out the columns, build the rows, re-check
+  feasibility. The `place(_:forVariable:into:)` closure became a method on the column layout
+  it was capturing.
+
+  Both verified **bit-identical** — 18 EM steps and converged fits, 10 robust solves
+  including both senses of every model.
+
 #### 2026-09-20 — `solveShape` tries thirty-five starts, and was checked at eight points
 
 ##### Tests
