@@ -21,7 +21,7 @@ is the state and the traps.
 |---|---|
 | branch | `main`, pushed through the gStudy commit |
 | tags | latest **`v3.0.0-alpha.7`** (2026-09-18, tagged by the peer session) |
-| tests | **7,970 in 730 suites**, exit 0, **zero known issues** |
+| tests | **7,974 in 731 suites**, exit 0, **zero known issues** |
 | gate | `--no-cache --check all` → 45 of 45 ran, **0 errors and 0 warnings outside `doc-run`** |
 | `doc-run` | **flaky under load, not a regression** — see §4 |
 | guidelines repo | `../../development-guidelines` clean at `a5f9292`, `v2.4.0` tagged and pushed |
@@ -88,6 +88,29 @@ value is decomposition and coverage.
 - **`solveRelaxation` 291 → 55**, stages extracted into `BranchAndBoundCutting.swift`.
 - **`RobustOptimizer` audited, clean.** The LP route was confirmed to fire by instrumentation
   (8 of 8 cases), not assumed — iteration count does *not* separate the two routes.
+
+### The suppression sweep — 9 down to 1, and a silently wrong Monte Carlo
+
+Following the bare-suppression trail through the rest of `BusinessMathDSL` found a second
+defect, worse than the crash because nothing failed.
+
+- **`Distribution.triangular` sampled from outside its own support.** Its suppression named
+  the requirement *"triangular requires max > min"*, and nothing required it — `.triangular`
+  is a plain enum case with no validating constructor. Over 20,000 draws, the transposed
+  spelling `(0.30, 0.20, 0.10)` put **every** sample outside [0.10, 0.30] and ranged to 0.400;
+  a mode outside the range put 17,578 of 20,000 outside. No NaN, no crash, just numbers.
+  Now a precondition, with an exit test that checks stderr actually names the requirement.
+- **`DCFModel` was the other one.** `waccRate` is now validated where it is read, and both
+  divisions guarded where they are used.
+- **9 suppressions to 1.** The survivor is `/ 2`, a literal constant. Most were removed by
+  `Swift.max(divisor, 1)`, which puts the fact where the compiler and a reader can see it
+  rather than asserting it in a comment — and which deleted two special-case branches, since
+  one step falls out correctly on its own.
+- **The lesson is sharper than "bare suppressions are suspect".** A justification makes a
+  suppression *reviewable*, not *correct*: two of the justified ones here were false, and the
+  file itself already records a third — *"u1 from random in [0,1)"* given as the reason a
+  `log` was safe, which is the interval containing the pole. The only annotation that cannot
+  lie is the one that is not needed.
 
 ### `buildBlock` — 68 → below threshold, and a crash found by a missing justification
 

@@ -11,6 +11,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### 2026-09-20 — The triangular sampler drew from outside its own support
+
+##### Fixed
+
+- **`Distribution.triangular(min:mode:max:)` returned numbers the distribution cannot
+  produce.**
+
+  The `fp-safety:disable` on its division named the missing requirement — *"triangular
+  requires max > min"* — as the reason the line was safe, and **nothing anywhere required
+  it**. `.triangular` is a plain enum case with no validating constructor, so any three
+  numbers reach the sampler.
+
+  Nothing failed, which is what made it worth finding. No NaN, no crash: the sampler went on
+  returning ordinary-looking numbers, from outside the interval its own parameters describe,
+  straight into a Monte Carlo. Measured over 20,000 draws:
+
+  | parameters | support | observed | outside |
+  |---|---|---|---|
+  | `(0.15, 0.21, 0.30)` sound | [0.15, 0.30] | [0.150, 0.300] | 0 |
+  | `(0.20, 0.20, 0.20)` degenerate | [0.20, 0.20] | [0.20, 0.20] | 0 |
+  | `(0.10, 0.90, 0.20)` mode outside | [0.10, 0.20] | [0.101, 0.383] | **17,578** |
+  | `(0.30, 0.20, 0.10)` transposed | [0.10, 0.30] | [4.6e-06, 0.400] | **20,000** |
+
+  Now a precondition that names the requirement, and a degenerate triangle is stated as a
+  point mass rather than arrived at through `0 / 0` — the old code reached the right answer
+  there only because `u < .nan` is false and the other branch subtracts `sqrt(0)`.
+
+  The comment two cases above it in the same file already records this package being bitten
+  by exactly this shape: a suppression whose stated reason was false, on the Box-Muller pole,
+  where *"u1 from random in [0,1)"* was given as the reason a `log` was safe — and that is
+  the interval containing the pole.
+
+- **`DCFModel` divided by a discount factor nothing kept positive.** `pow(1 + waccRate,
+  years)` is zero at exactly −100% WACC and alternates in sign below it, which discounts a
+  later cash flow to a *larger* number than an earlier one. `waccRate` was unvalidated, and
+  the claim that the factor is "always > 0" was written in a suppression on one of the two
+  divisions and omitted entirely from the other. The rate is now checked where it is read,
+  and both divisors are guarded where they are used.
+
+##### Internal
+
+- **`fp-safety:disable` in `BusinessMathDSL`: 9 → 1.**
+
+  | | before | after |
+  |---|---|---|
+  | suppressions | 9 | 1 |
+  | with no justification at all | 2 | 0 |
+
+  The one that remains is `(values[count/2 - 1] + values[count/2]) / 2` — a literal
+  constant, which no guard can improve.
+
+  Most went the same way: **`Swift.max(divisor, 1)`** puts the fact where the compiler and a
+  reader can both see it, instead of asserting it in a comment. In the two step-size cases it
+  also deleted the special-case branch, because one step falls out correctly on its own —
+  the only index used is 0, and `0 * stepSize` is zero whatever the step size is.
+
+  A justification makes a suppression reviewable, not correct. Two of the justified ones in
+  this module were false. The only annotation that cannot lie is the one that is not needed.
+
 #### 2026-09-20 — A single-step sensitivity crashed the process
 
 ##### Fixed

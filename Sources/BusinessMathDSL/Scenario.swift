@@ -201,12 +201,14 @@ public struct Vary {
             return
         }
 
-        if steps == 1 {
-            self.values = [min]
-        } else {
-            let stepSize = (max - min) / Double(steps - 1) // fp-safety:disable — steps >= 2 from guard above
-            self.values = (0..<steps).map { min + Double($0) * stepSize }
-        }
+        // `Swift.max(_:, 1)` rather than a special case for one step, and rather than an
+        // `fp-safety:disable`: it makes the divisor visibly at least 1, so the safety is in
+        // the code instead of in a comment asserting the code is safe. At one step the only
+        // index used is 0, so `0 * stepSize` is zero whatever the step size is and the single
+        // value is `min` — the same answer the special case gave.
+        let divisor = Double(Swift.max(steps - 1, 1))
+        let stepSize = (max - min) / divisor
+        self.values = (0..<steps).map { min + Double($0) * stepSize }
     }
 
     /// Vary parameter across specific values
@@ -408,12 +410,36 @@ public enum Distribution {
             return Double.random(in: min...max, using: &generator)
 
         case .triangular(let min, let mode, let max):
+            // "triangular requires max > min" was written here as the reason an
+            // `fp-safety:disable` was safe, and nothing required it. `.triangular` is a plain
+            // enum case with no validating constructor, so any three numbers reach this line.
+            //
+            // The consequence was not a crash or a NaN, which is what made it worth finding:
+            // the sampler went on returning ordinary-looking numbers from outside the
+            // interval its own parameters describe. Measured over 20,000 draws —
+            // `(min: 0.30, mode: 0.20, max: 0.10)`, the transposed spelling, put **every**
+            // sample outside [0.10, 0.30] and ranged up to 0.400; a mode outside the range,
+            // `(0.10, 0.90, 0.20)`, put 17,578 of 20,000 outside [0.10, 0.20] and reached
+            // 0.383. Those feed a Monte Carlo without a mark on them.
+            //
+            // The comment two cases up already records this package being bitten by exactly
+            // this: a suppression whose stated reason was false, on the Box-Muller pole.
+            precondition(min <= mode && mode <= max,
+                         "Triangular distribution requires min <= mode <= max; got "
+                         + "min \(min), mode \(mode), max \(max)")
+
+            let span = max - min
+            // A degenerate triangle is a point mass, and saying so is better than arriving at
+            // it through `0 / 0`: the old code produced a NaN here and reached the right
+            // answer only because `u < .nan` is false and the other branch subtracts zero.
+            guard span > 0 else { return min }
+
             let u = openUnitUniform(Double.self, using: &generator)
-            let fc = (mode - min) / (max - min) // fp-safety:disable — triangular requires max > min
+            let fc = (mode - min) / span
             if u < fc {
-                return min + sqrt(u * (max - min) * (mode - min))
+                return min + sqrt(u * span * (mode - min))
             } else {
-                return max - sqrt((1 - u) * (max - min) * (max - mode))
+                return max - sqrt((1 - u) * span * (max - mode))
             }
         }
     }

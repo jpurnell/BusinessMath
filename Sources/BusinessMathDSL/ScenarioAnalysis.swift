@@ -243,17 +243,24 @@ public struct ScenarioAnalysis {
         }
 
         let count = values.count
+        // The `guard !values.isEmpty` above already makes this at least 1, but the checker
+        // cannot connect `isEmpty` to `count`, and an annotation saying "trust me" is the
+        // thing that hid a process crash one file over. `Swift.max(_:, 1)` puts the same
+        // fact where both the compiler and a reader can see it, and changes nothing: the
+        // only value it could alter is the one the guard has already returned on.
+        let divisor = Double(Swift.max(count, 1))
+
         let sum = values.reduce(0, +)
-        let mean = sum / Double(count) // fp-safety:disable — guard !values.isEmpty above
+        let mean = sum / divisor
 
         let median: Double
         if count % 2 == 0 {
-            median = (values[count/2 - 1] + values[count/2]) / 2 // fp-safety:disable — literal constant
+            median = (values[count/2 - 1] + values[count/2]) / 2 // fp-safety:disable — literal constant, never zero
         } else {
             median = values[count/2]
         }
 
-        let variance = values.reduce(0) { $0 + pow($1 - mean, 2) } / Double(count) // fp-safety:disable — guard !values.isEmpty above
+        let variance = values.reduce(0) { $0 + pow($1 - mean, 2) } / divisor
         let stdDev = sqrt(variance)
 
         return Statistics(
@@ -416,14 +423,19 @@ public struct ScenarioAnalysisBuilder {
         guard sensitivity.steps > 0 else { return [] }
 
         let lower = sensitivity.range.lowerBound
-        let multipliers: [Double]
-        if sensitivity.steps == 1 {
-            multipliers = [lower]
-        } else {
-            let span = sensitivity.range.upperBound - lower
-            let stepSize = span / Double(sensitivity.steps - 1) // fp-safety:disable — steps >= 2 from the guard above
-            multipliers = (0..<sensitivity.steps).map { lower + Double($0) * stepSize }
-        }
+        let span = sensitivity.range.upperBound - lower
+
+        // `max(_:, 1)` rather than a special case for one step, and rather than an
+        // `fp-safety:disable`. It makes the divisor **visibly** at least 1, which is both
+        // what the checker needs to see and what the arithmetic needs to be true — so the
+        // safety is in the code rather than in a comment asserting the code is safe.
+        //
+        // One step needs no branch of its own: the only index used is 0, and `0 * stepSize`
+        // is zero whatever the step size turns out to be, so the single multiplier is the
+        // range's lower bound. That is the same answer `Vary` gives when asked for one step.
+        let divisor = Double(Swift.max(sensitivity.steps - 1, 1))
+        let stepSize = span / divisor
+        let multipliers = (0..<sensitivity.steps).map { lower + Double($0) * stepSize }
 
         let baseValue = base[sensitivity.parameterName] ?? 0
         return multipliers.map { multiplier in

@@ -129,6 +129,18 @@ public struct DCFModel {
 
         let waccRate = wacc.rate
 
+        // A discount rate at or below -100% is not a rate this model can price against:
+        // `1 + waccRate` is then zero or negative, so the discount factor is either zero —
+        // which every present value below divides by — or, with an integer exponent,
+        // alternating in sign, which discounts a later cash flow to a *larger* number than an
+        // earlier one. Neither is a valuation.
+        //
+        // A precondition rather than a thrown error because this function cannot throw and
+        // already traps two lines up for a model with no WACC at all. The caller here is a
+        // programmer holding a stack trace, not data arriving from outside.
+        precondition(waccRate > -1,
+                     "DCF requires a WACC above -100%; got \(waccRate)")
+
         // Get free cash flows
         let fcfs: [Double]
         let years: Int
@@ -156,7 +168,17 @@ public struct DCFModel {
         for (index, fcf) in fcfs.enumerated() {
             let year = index + 1
             let discountFactor = pow(1.0 + waccRate, Double(year))
-            pvOfFCF += fcf / discountFactor // fp-safety:disable — discountFactor = pow(1+wacc, year), always > 0
+            // Unreachable given the precondition on `waccRate`, and written as a trap rather
+            // than a `continue` on purpose: silently skipping a year would still return a
+            // valuation, just a smaller one, which is the plausible-but-wrong answer this
+            // package refuses. It also keeps the divisor's safety visible in the code rather
+            // than asserted in a comment.
+            guard discountFactor > 0 else {
+                preconditionFailure(
+                    "DCF discount factor is \(discountFactor) at a WACC of \(waccRate) "
+                    + "in year \(year), which cannot discount anything")
+            }
+            pvOfFCF += fcf / discountFactor
         }
 
         // Calculate terminal value
@@ -176,7 +198,12 @@ public struct DCFModel {
 
         // Discount terminal value to present
         let terminalYearDiscountFactor = pow(1.0 + waccRate, Double(years))
-        let pvOfTerminalValue = tv / terminalYearDiscountFactor // fp-safety:disable
+        guard terminalYearDiscountFactor > 0 else {
+            preconditionFailure(
+                "DCF terminal discount factor is \(terminalYearDiscountFactor) at a WACC of "
+                + "\(waccRate) over \(years) years, which cannot discount anything")
+        }
+        let pvOfTerminalValue = tv / terminalYearDiscountFactor
 
         // Enterprise Value = PV(FCF) + PV(TV)
         let enterpriseValue = pvOfFCF + pvOfTerminalValue
