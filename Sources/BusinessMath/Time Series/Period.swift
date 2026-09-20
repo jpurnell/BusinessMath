@@ -1033,6 +1033,119 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 
 	// MARK: - Period Advancement
 
+	// MARK: - Stepping support
+
+	/// Advances this period's anchor by one unit and rebuilds a period of the same type.
+	///
+	/// Every rung of the ladder used to spell this out for itself: the same
+	/// `guard let nextDate = calendar.date(byAdding:value:to:) else { return self }`,
+	/// nine times, with only the unit and the count differing. Nine copies of one guard is
+	/// what made ``next()`` the third-highest-complexity function in the package, and it is
+	/// the shape that hides a rung quietly returning `self` when it should have stepped.
+	///
+	/// - Parameters:
+	///   - component: The calendar unit to add.
+	///   - value: How many of them.
+	///   - rebuild: Builds the period of the right type from the advanced anchor.
+	/// - Returns: The rebuilt period, or `self` when the calendar cannot represent the
+	///   advanced date — the same fallback each rung had on its own.
+	private func stepped(
+		by component: Calendar.Component,
+		value: Int,
+		rebuild: (Date, Calendar) -> Period
+	) -> Period {
+		let calendar = cachedCalendar
+		guard let nextDate = calendar.date(byAdding: component, value: value, to: date) else {
+			return self
+		}
+		return rebuild(nextDate, calendar)
+	}
+
+	/// The millisecond period containing `date`.
+	private static func millisecondAnchored(_ date: Date, in calendar: Calendar) -> Period {
+		let components = calendar.dateComponents(
+			[.year, .month, .day, .hour, .minute, .second, .nanosecond], from: date)
+		return Period.millisecond(
+			year: components.year ?? 0,
+			month: components.month ?? 1,
+			day: components.day ?? 1,
+			hour: components.hour ?? 0,
+			minute: components.minute ?? 0,
+			second: components.second ?? 0,
+			millisecond: (components.nanosecond ?? 0) / 1_000_000
+		)
+	}
+
+	/// The second period containing `date`.
+	private static func secondAnchored(_ date: Date, in calendar: Calendar) -> Period {
+		let components = calendar.dateComponents(
+			[.year, .month, .day, .hour, .minute, .second], from: date)
+		return Period.second(
+			year: components.year ?? 0,
+			month: components.month ?? 1,
+			day: components.day ?? 1,
+			hour: components.hour ?? 0,
+			minute: components.minute ?? 0,
+			second: components.second ?? 0
+		)
+	}
+
+	/// The minute period containing `date`.
+	private static func minuteAnchored(_ date: Date, in calendar: Calendar) -> Period {
+		let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: date)
+		return Period.minute(
+			year: components.year ?? 0,
+			month: components.month ?? 1,
+			day: components.day ?? 1,
+			hour: components.hour ?? 0,
+			minute: components.minute ?? 0
+		)
+	}
+
+	/// The hourly period containing `date`.
+	private static func hourAnchored(_ date: Date, in calendar: Calendar) -> Period {
+		let components = calendar.dateComponents([.year, .month, .day, .hour], from: date)
+		return Period.hour(
+			year: components.year ?? 0,
+			month: components.month ?? 1,
+			day: components.day ?? 1,
+			hour: components.hour ?? 0
+		)
+	}
+
+	/// The monthly period containing `date`.
+	private static func monthAnchored(_ date: Date, in calendar: Calendar) -> Period {
+		let components = calendar.dateComponents([.year, .month], from: date)
+		return Period.month(year: components.year ?? 0, month: components.month ?? 1)
+	}
+
+	/// The quarterly period containing `date`.
+	///
+	/// The quarter is recovered from the month rather than carried, so the result is the
+	/// quarter the advanced anchor actually falls in. Since a quarterly period is always
+	/// re-anchored to a quarter-start month, this map is only ever asked about months 1, 4,
+	/// 7 and 10.
+	private static func quarterAnchored(_ date: Date, in calendar: Calendar) -> Period {
+		let components = calendar.dateComponents([.year, .month], from: date)
+		let month = components.month ?? 1
+		let quarter = ((month - 1) / 3) + 1
+		return Period.quarter(year: components.year ?? 0, quarter: quarter)
+	}
+
+	/// The semiannual period containing `date`.
+	private static func semiannualAnchored(_ date: Date, in calendar: Calendar) -> Period {
+		let components = calendar.dateComponents([.year, .month], from: date)
+		let month = components.month ?? 1
+		let half = ((month - 1) / 6) + 1
+		return Period.semiannual(year: components.year ?? 0, half: half)
+	}
+
+	/// The annual period containing `date`.
+	private static func yearAnchored(_ date: Date, in calendar: Calendar) -> Period {
+		let components = calendar.dateComponents([.year], from: date)
+		return Period.year(components.year ?? 0)
+	}
+
 	/// Returns the next period of the same type.
 	///
 	/// This method advances the period by one unit:
@@ -1049,101 +1162,25 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 	/// let q2 = q1.next()  // Period.quarter(year: 2025, quarter: 2)
 	/// ```
 	public func next() -> Period {
-		let calendar = cachedCalendar
-
 		switch type {
 		case .millisecond:
-			guard let nextDate = calendar.date(byAdding: .nanosecond, value: 1_000_000, to: date) else {
-				return self
-			}
-			let components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second, .nanosecond], from: nextDate)
-			return Period.millisecond(
-				year: components.year ?? 0,
-				month: components.month ?? 1,
-				day: components.day ?? 1,
-				hour: components.hour ?? 0,
-				minute: components.minute ?? 0,
-				second: components.second ?? 0,
-				millisecond: (components.nanosecond ?? 0) / 1_000_000
-			)
-
+			return stepped(by: .nanosecond, value: 1_000_000, rebuild: Period.millisecondAnchored)
 		case .second:
-			guard let nextDate = calendar.date(byAdding: .second, value: 1, to: date) else {
-				return self
-			}
-			let components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: nextDate)
-			return Period.second(
-				year: components.year ?? 0,
-				month: components.month ?? 1,
-				day: components.day ?? 1,
-				hour: components.hour ?? 0,
-				minute: components.minute ?? 0,
-				second: components.second ?? 0
-			)
-
+			return stepped(by: .second, value: 1, rebuild: Period.secondAnchored)
 		case .minute:
-			guard let nextDate = calendar.date(byAdding: .minute, value: 1, to: date) else {
-				return self
-			}
-			let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: nextDate)
-			return Period.minute(
-				year: components.year ?? 0,
-				month: components.month ?? 1,
-				day: components.day ?? 1,
-				hour: components.hour ?? 0,
-				minute: components.minute ?? 0
-			)
-
+			return stepped(by: .minute, value: 1, rebuild: Period.minuteAnchored)
 		case .hourly:
-			guard let nextDate = calendar.date(byAdding: .hour, value: 1, to: date) else {
-				return self
-			}
-			let components = calendar.dateComponents([.year, .month, .day, .hour], from: nextDate)
-			return Period.hour(
-				year: components.year ?? 0,
-				month: components.month ?? 1,
-				day: components.day ?? 1,
-				hour: components.hour ?? 0
-			)
-
+			return stepped(by: .hour, value: 1, rebuild: Period.hourAnchored)
 		case .daily:
-			guard let nextDate = calendar.date(byAdding: .day, value: 1, to: date) else {
-				return self
-			}
-			return Period.day(nextDate)
-
+			return stepped(by: .day, value: 1) { date, _ in Period.day(date) }
 		case .monthly:
-			guard let nextDate = calendar.date(byAdding: .month, value: 1, to: date) else {
-				return self
-			}
-			let components = calendar.dateComponents([.year, .month], from: nextDate)
-			return Period.month(year: components.year ?? 0, month: components.month ?? 1)
-
+			return stepped(by: .month, value: 1, rebuild: Period.monthAnchored)
 		case .quarterly:
-			guard let nextDate = calendar.date(byAdding: .month, value: 3, to: date) else {
-				return self
-			}
-			let components = calendar.dateComponents([.year, .month], from: nextDate)
-			let month = components.month ?? 1
-			let quarter = ((month - 1) / 3) + 1
-			return Period.quarter(year: components.year ?? 0, quarter: quarter)
-
+			return stepped(by: .month, value: 3, rebuild: Period.quarterAnchored)
 		case .semiannual:
-			guard let nextDate = calendar.date(byAdding: .month, value: 6, to: date) else {
-				return self
-			}
-			let components = calendar.dateComponents([.year, .month], from: nextDate)
-			let month = components.month ?? 1
-			let half = ((month - 1) / 6) + 1
-			return Period.semiannual(year: components.year ?? 0, half: half)
-
+			return stepped(by: .month, value: 6, rebuild: Period.semiannualAnchored)
 		case .annual:
-			guard let nextDate = calendar.date(byAdding: .year, value: 1, to: date) else {
-				return self
-			}
-			let components = calendar.dateComponents([.year], from: nextDate)
-			return Period.year(components.year ?? 0)
-
+			return stepped(by: .year, value: 1, rebuild: Period.yearAnchored)
 		case .custom:
 			preconditionFailure(Period.notSteppableMessage("next()", alternative: "nextIfSteppable()"))
 		}

@@ -21,7 +21,7 @@ is the state and the traps.
 |---|---|
 | branch | `main`, pushed through the gStudy commit |
 | tags | latest **`v3.0.0-alpha.7`** (2026-09-18, tagged by the peer session) |
-| tests | **7,955 in 728 suites**, exit 0, **zero known issues** |
+| tests | **7,963 in 729 suites**, exit 0, **zero known issues** |
 | gate | `--no-cache --check all` → 45 of 45 ran, **0 errors and 0 warnings outside `doc-run`** |
 | `doc-run` | **flaky under load, not a regression** — see §4 |
 | guidelines repo | `../../development-guidelines` clean at `a5f9292`, `v2.4.0` tagged and pushed |
@@ -57,15 +57,15 @@ than trusting it** — `quality-gate --no-cache --no-index-build --check complex
 
 | Score | Function | Where |
 |---:|---|---|
-| **77** | `next` | `Time Series/Period.swift:1051` — now the highest unexamined |
-| **68** | `buildBlock` | `BusinessMathDSL/ScenarioAnalysis.swift:292` |
+| **68** | `buildBlock` | `BusinessMathDSL/ScenarioAnalysis.swift:292` — now the highest unexamined |
 | 62 | `solveShape` | `Simulation/distributionMomentFit.swift:460` |
 | 60 | `solve` | `Optimization/IntegerProgramming/BranchAndBound.swift:338` |
 | 59 | `linearRobustCounterpart` | `AdvancedOptimization/RobustOptimizer.swift:651` |
+| 59 | `generalEMUpdate` | `Statistics/MixedModels/Fitting/fitGeneralLME.swift:654` |
 
 Examined, for contrast: `fitGeneralLME` 75, `icc` 73, `gibbsICCPosterior` 58.
-`generalAIREMLUpdate` was 121 and is now 19; `gStudy` was 85 and `bootstrap` 79, both now
-below the threshold.
+`generalAIREMLUpdate` was 121 and is now 19; `gStudy` 85, `bootstrap` 79 and `Period.next`
+77 are all now below the threshold.
 
 ## 2. What closed, and what it cost
 
@@ -81,6 +81,31 @@ below the threshold.
 - **`solveRelaxation` 291 → 55**, stages extracted into `BranchAndBoundCutting.swift`.
 - **`RobustOptimizer` audited, clean.** The LP route was confirmed to fire by instrumentation
   (8 of 8 cases), not assumed — iteration count does *not* separate the two routes.
+
+### `Period.next()` — 77 → below threshold, no defect, and a lesson about mutations
+
+- **Nine copies of one guard.** Every rung spelled out the same
+  `guard let nextDate = calendar.date(byAdding:value:to:) else { return self }`. That is what
+  put the function third from the top, and it is the shape that hides a rung quietly
+  returning `self` instead of stepping. One `stepped(by:value:rebuild:)` carries it now and
+  `next()` is a flat ten-case dispatch.
+- **Eight of ten rungs had no direct assertion anywhere.** Only semiannual was tested, plus
+  `nextIfSteppable()` returning nil for custom. Millisecond, second, minute, hourly, daily,
+  monthly, quarterly and annual were untouched — and those hold December into January, Q4
+  into Q1, and February in a leap year.
+- **The oracle does calendar arithmetic without a calendar.** Julian day numbers by the
+  standard integer algorithm, stepping by integer millisecond addition. `next()` is built on
+  `Calendar.date(byAdding:)` and reads back through `dateComponents`, so an oracle using the
+  same API could only catch a wrong unit or count. Includes **2100, which is not a leap
+  year** — the hundred-year rule, reached by nothing in the package before.
+- **Four mutations passed and all four were behaviourally equivalent.** A quarterly period
+  re-anchors to a quarter-start month every step, so the month-to-quarter map is only ever
+  asked about 1, 4, 7 and 10, exactly where the correct and off-by-one forms agree; a
+  four-month step lands on 5, 8, 11, 2, whose quarters are the same sequence. Those
+  expressions carry neither risk nor the possibility of proof. **A mutation that does not
+  change behaviour is not evidence about a test** — `theComparisonDiscriminates` now supplies
+  that evidence directly.
+- Identical across eleven seeds and six steps each: start date, type and label unchanged.
 
 ### `DiscountCurve.bootstrap` — 79 → below threshold, no defect, and fifty dead lines
 

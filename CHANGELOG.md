@@ -11,6 +11,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### 2026-09-20 — `Period.next()` stepped ten rungs and was tested on one
+
+##### Tests
+
+- **An oracle for `Period.next()`.** Searching the suite for `next()` finds three call
+  sites: two semiannual assertions, which are the right pair for that rung, and one equality
+  inside a trend-model test that any self-consistent stepping would satisfy. `millisecond`,
+  `second`, `minute`, `hourly`, `daily`, `monthly`, `quarterly` and `annual` had **no direct
+  assertion at all**, and those hold the interesting boundaries: December into January, Q4
+  into Q1, the last millisecond of a day, February in a leap year.
+
+  The expected values do not come from `Calendar`. `next()` is written with
+  `Calendar.date(byAdding:value:to:)` and reads the result back through `dateComponents`, so
+  an oracle built the same way would share the arithmetic it is meant to check and could
+  only catch a wrong unit or a wrong count. This one converts civil dates to **Julian day
+  numbers** with the standard integer algorithm and steps by integer millisecond addition,
+  touching no date API at all.
+
+  Boundaries chosen deliberately, including the one nothing in the package reached before:
+  **2100 is not a leap year** by the hundred-year rule, where `year % 4 == 0` gets it wrong.
+  Also 2000, which *is*, by the four-hundred-year rule.
+
+  **No defect found.** Every rung steps exactly as the integer calendar says.
+
+- **Four mutations passed, and all four were behaviourally equivalent — which is itself
+  worth recording.** A quarterly `Period` re-anchors to a quarter-start month on every step,
+  so the month-to-quarter map is only ever evaluated at months 1, 4, 7 and 10, exactly where
+  `((m - 1) / 3) + 1` and the off-by-one `(m / 3) + 1` agree. Stepping four months instead of
+  three lands on 5, 8, 11 and 2, whose quarters are the same sequence as 4, 7, 10 and 1. The
+  semiannual half map is unfalsifiable for the same reason, and a millisecond step of
+  1,000,001 nanoseconds is below the resolution of the type.
+
+  Those expressions therefore carry neither risk nor the possibility of proof. Since that
+  left the oracle unvalidated, `theComparisonDiscriminates` now asserts directly that the
+  comparison separates a correct step from a doubled one — the class of error a real mutation
+  would introduce.
+
+##### Internal
+
+- **`Period.next()`: cognitive complexity 77 → below the threshold.** Every rung spelled out
+  the same `guard let nextDate = calendar.date(byAdding:value:to:) else { return self }` —
+  **nine copies of one guard**, which is what put the function third from the top of the
+  package. One `stepped(by:value:rebuild:)` now carries the guard and the fallback, and
+  `next()` is a flat ten-case dispatch. Eight small `…Anchored` builders hold the
+  component-reading each type needs.
+
+  This is the shape that hides a rung quietly returning `self` instead of stepping, because
+  the fallback is written out once per case and never read twice.
+
+  Verified identical across eleven seeds and six steps each: every stepped period's start
+  date, type and label unchanged.
+
 #### 2026-09-19 — The curve bootstrap computed a whole curve and threw it away
 
 ##### Fixed
