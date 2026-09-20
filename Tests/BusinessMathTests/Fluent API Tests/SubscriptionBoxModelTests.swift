@@ -18,9 +18,9 @@ import RealModule
 
     // MARK: - Basic Setup Tests
 
-    @Test("SubscriptionBoxModel_BasicSetup") func LSubscriptionBoxModel_BasicSetup() {
+    @Test("SubscriptionBoxModel_BasicSetup") func LSubscriptionBoxModel_BasicSetup() throws {
         // Given: A basic subscription box model
-        let model = SubscriptionBoxModel(
+        let model = try SubscriptionBoxModel(
             initialSubscribers: 1_000,
             monthlyBoxPrice: 49.99,
             costOfGoodsPerBox: 20,
@@ -42,9 +42,9 @@ import RealModule
 
     // MARK: - Subscriber Growth Tests
 
-    @Test("SubscriptionBoxModel_SubscriberCount_FirstMonth") func LSubscriptionBoxModel_SubscriberCount_FirstMonth() {
+    @Test("SubscriptionBoxModel_SubscriberCount_FirstMonth") func LSubscriptionBoxModel_SubscriberCount_FirstMonth() throws {
         // Given: A subscription box model
-        let model = SubscriptionBoxModel(
+        let model = try SubscriptionBoxModel(
             initialSubscribers: 1_000,
             monthlyBoxPrice: 49.99,
             costOfGoodsPerBox: 20,
@@ -62,9 +62,9 @@ import RealModule
         #expect(abs(subscribers - 1_070) < 1.0)
     }
 
-    @Test("SubscriptionBoxModel_SubscriberGrowth_12Months") func LSubscriptionBoxModel_SubscriberGrowth_12Months() {
+    @Test("SubscriptionBoxModel_SubscriberGrowth_12Months") func LSubscriptionBoxModel_SubscriberGrowth_12Months() throws {
         // Given: A subscription box model with net positive growth
-        let model = SubscriptionBoxModel(
+        let model = try SubscriptionBoxModel(
             initialSubscribers: 1_000,
             monthlyBoxPrice: 49.99,
             costOfGoodsPerBox: 20,
@@ -85,9 +85,9 @@ import RealModule
 
     // MARK: - Revenue Tests
 
-    @Test("SubscriptionBoxModel_MonthlyRevenue") func LSubscriptionBoxModel_MonthlyRevenue() {
+    @Test("SubscriptionBoxModel_MonthlyRevenue") func LSubscriptionBoxModel_MonthlyRevenue() throws {
         // Given: A subscription box model
-        let model = SubscriptionBoxModel(
+        let model = try SubscriptionBoxModel(
             initialSubscribers: 1_000,
             monthlyBoxPrice: 49.99,
             costOfGoodsPerBox: 20,
@@ -107,9 +107,9 @@ import RealModule
 
     // MARK: - Cost Tests
 
-    @Test("SubscriptionBoxModel_FulfillmentCostPerBox") func LSubscriptionBoxModel_FulfillmentCostPerBox() {
+    @Test("SubscriptionBoxModel_FulfillmentCostPerBox") func LSubscriptionBoxModel_FulfillmentCostPerBox() throws {
         // Given: A subscription box model
-        let model = SubscriptionBoxModel(
+        let model = try SubscriptionBoxModel(
             initialSubscribers: 1_000,
             monthlyBoxPrice: 49.99,
             costOfGoodsPerBox: 20,
@@ -127,9 +127,9 @@ import RealModule
         #expect(abs(cost - 25) < 0.1)
     }
 
-    @Test("SubscriptionBoxModel_TotalMonthlyCosts") func LSubscriptionBoxModel_TotalMonthlyCosts() {
+    @Test("SubscriptionBoxModel_TotalMonthlyCosts") func LSubscriptionBoxModel_TotalMonthlyCosts() throws {
         // Given: A subscription box model
-        let model = SubscriptionBoxModel(
+        let model = try SubscriptionBoxModel(
             initialSubscribers: 1_000,
             monthlyBoxPrice: 49.99,
             costOfGoodsPerBox: 20,
@@ -149,9 +149,9 @@ import RealModule
 
     // MARK: - Gross Margin Tests
 
-    @Test("SubscriptionBoxModel_GrossMarginPerBox") func LSubscriptionBoxModel_GrossMarginPerBox() {
+    @Test("SubscriptionBoxModel_GrossMarginPerBox") func LSubscriptionBoxModel_GrossMarginPerBox() throws {
         // Given: A subscription box model
-        let model = SubscriptionBoxModel(
+        let model = try SubscriptionBoxModel(
             initialSubscribers: 1_000,
             monthlyBoxPrice: 49.99,
             costOfGoodsPerBox: 20,
@@ -169,9 +169,9 @@ import RealModule
         #expect(abs(margin - 24.99) < 0.01)
     }
 
-    @Test("SubscriptionBoxModel_GrossMarginPercentage") func LSubscriptionBoxModel_GrossMarginPercentage() {
+    @Test("SubscriptionBoxModel_GrossMarginPercentage") func LSubscriptionBoxModel_GrossMarginPercentage() throws {
         // Given: A subscription box model
-        let model = SubscriptionBoxModel(
+        let model = try SubscriptionBoxModel(
             initialSubscribers: 1_000,
             monthlyBoxPrice: 49.99,
             costOfGoodsPerBox: 20,
@@ -193,7 +193,7 @@ import RealModule
 
     @Test("SubscriptionBoxModel_CustomerLifetimeValue") func LSubscriptionBoxModel_CustomerLifetimeValue() throws {
         // Given: A subscription box model
-        let model = SubscriptionBoxModel(
+        let model = try SubscriptionBoxModel(
             initialSubscribers: 1_000,
             monthlyBoxPrice: 49.99,
             costOfGoodsPerBox: 20,
@@ -215,7 +215,7 @@ import RealModule
 
     @Test("SubscriptionBoxModel_LTVtoCAC") func LSubscriptionBoxModel_LTVtoCAC() throws {
         // Given: A subscription box model
-        let model = SubscriptionBoxModel(
+        let model = try SubscriptionBoxModel(
             initialSubscribers: 1_000,
             monthlyBoxPrice: 49.99,
             costOfGoodsPerBox: 20,
@@ -235,7 +235,7 @@ import RealModule
 
     @Test("SubscriptionBoxModel_CACPaybackMonths") func LSubscriptionBoxModel_CACPaybackMonths() throws {
         // Given: A subscription box model
-        let model = SubscriptionBoxModel(
+        let model = try SubscriptionBoxModel(
             initialSubscribers: 1_000,
             monthlyBoxPrice: 49.99,
             costOfGoodsPerBox: 20,
@@ -255,9 +255,9 @@ import RealModule
 
     // MARK: - Profit Tests
 
-    @Test("SubscriptionBoxModel_MonthlyProfit") func LSubscriptionBoxModel_MonthlyProfit() {
+    @Test("SubscriptionBoxModel_MonthlyProfit") func LSubscriptionBoxModel_MonthlyProfit() throws {
         // Given: A subscription box model
-        let model = SubscriptionBoxModel(
+        let model = try SubscriptionBoxModel(
             initialSubscribers: 1_000,
             monthlyBoxPrice: 49.99,
             costOfGoodsPerBox: 20,
@@ -277,9 +277,9 @@ import RealModule
 
     // MARK: - Projection Tests
 
-    @Test("SubscriptionBoxModel_Projection12Months") func LSubscriptionBoxModel_Projection12Months() {
+    @Test("SubscriptionBoxModel_Projection12Months") func LSubscriptionBoxModel_Projection12Months() throws {
         // Given: A subscription box model
-        let model = SubscriptionBoxModel(
+        let model = try SubscriptionBoxModel(
             initialSubscribers: 1_000,
             monthlyBoxPrice: 49.99,
             costOfGoodsPerBox: 20,
@@ -302,7 +302,7 @@ import RealModule
 
     @Test("SubscriptionBoxModel_RetentionRate") func LSubscriptionBoxModel_RetentionRate() throws {
         // Given: A subscription box model
-        let model = SubscriptionBoxModel(
+        let model = try SubscriptionBoxModel(
             initialSubscribers: 1_000,
             monthlyBoxPrice: 49.99,
             costOfGoodsPerBox: 20,

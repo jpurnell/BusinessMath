@@ -21,16 +21,18 @@ is the state and the traps.
 |---|---|
 | branch | `main`, **4 commits ahead of `origin/main` and unpushed** |
 | tags | latest **`v3.0.0-alpha.7`** (2026-09-18, tagged by the peer session) |
-| tests | **7,943 in 726 suites**, exit 0, **1 known issue** (deliberate — see below) |
+| tests | **7,944 in 726 suites**, exit 0, **zero known issues** |
 | gate | `--no-cache --check all` → 45 of 45 ran, **0 errors and 0 warnings outside `doc-run`** |
 | `doc-run` | **flaky under load, not a regression** — see §4 |
 | guidelines repo | `../../development-guidelines` clean at `a5f9292`, `v2.4.0` tagged and pushed |
 | CI | not verified since the Tier 2 sweep began; every commit since is source-touching |
 
-**The one known issue is deliberate and unchanged.** `SaaSModel` does not validate `churnRate`;
-a rate above 1 drives the customer count negative. Rejecting it is source-breaking on two public
-initialisers, so the requirement is a `withKnownIssue` that starts failing the day validation
-lands. **A run reporting exactly one known issue is the steady state; two is a regression.**
+**The known issue is gone, and the invariant has flipped.** `SaaSModel` used to answer a churn
+rate above 1 with a negative customer count; the `withKnownIssue` standing in for the missing
+validation is now a real test. **A run reporting any known issue at all is a regression.**
+
+Its doc claimed the fix was breaking on *two* public initialisers. `SaaSModel` has exactly one,
+and the `var` half of the claim was the real obstacle — see §2.
 
 **The gate's warning count is 0.** The ten standing `[test-quality]` warnings were cleared at
 `5de783ca` and the last at `2af9e0ff`. **Any warning at all is now yours.**
@@ -78,6 +80,27 @@ Examined, for contrast: `fitGeneralLME` 75, `icc` 73, `solve` 60, `gibbsICCPoste
 - **`solveRelaxation` 291 → 55**, stages extracted into `BranchAndBoundCutting.swift`.
 - **`RobustOptimizer` audited, clean.** The LP route was confirmed to fire by instrumentation
   (8 of 8 cases), not assumed — iteration count does *not* separate the two routes.
+
+### The churn rate that produced negative customers — the package's last known issue
+
+- **Three models answered an impossible churn rate instead of refusing it.** `SaaSModel` at
+  `churnRate: 1.2` returned **−20** customers for month 1. `SubscriptionBoxModel` and
+  `MarketplaceModel` share the recurrence and shared the defect.
+- **The contract already existed in three places and only the projections ignored it.**
+  `StandardTemplates.createSaaSModel` threw for exactly this input, `retentionRate` guarded and
+  returned `nil`, and `calculateCustomerCount` returned the number. The range had been written
+  out four times across two files and the copies had diverged; it is now one function,
+  `validatedRate(_:named:)`.
+- **Checked in different places for one reason: mutability.** `SaaSModel.churnRate` is a `var`,
+  so no initialiser can be the boundary — checked at the point of use, with a test that mutates
+  a sound model into an unsound one. The other two hold theirs in a `let`, so construction *is*
+  the boundary and **no method signature on those two types changed**.
+- **Deliberately untouched:** the deprecated unit-economics methods. `calculateLTV` and its four
+  siblings are already `@available(*, deprecated)` and each names a replacement that handles bad
+  churn correctly. Adding `throws` to a deprecated method breaks callers for nothing.
+- **Two assertions changed meaning, not shape**, and say so in their own docs: they used to build
+  a box with an impossible rate and record what it answered. That box cannot be built now, so
+  they assert the refusal at construction instead.
 
 ### `generalAIREMLUpdate` — 121 → 19, one defect and one it exposed
 

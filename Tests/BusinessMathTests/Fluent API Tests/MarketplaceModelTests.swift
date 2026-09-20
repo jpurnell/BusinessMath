@@ -18,9 +18,9 @@ import RealModule
 
     // MARK: - Basic Setup Tests
 
-    @Test("MarketplaceModel_BasicSetup") func LMarketplaceModel_BasicSetup() {
+    @Test("MarketplaceModel_BasicSetup") func LMarketplaceModel_BasicSetup() throws {
         // Given: A basic marketplace model
-        let model = MarketplaceModel(
+        let model = try MarketplaceModel(
             initialBuyers: 10_000,
             initialSellers: 500,
             monthlyTransactionsPerBuyer: 2,
@@ -42,9 +42,9 @@ import RealModule
 
     // MARK: - GMV Tests
 
-    @Test("MarketplaceModel_GMVCalculation") func LMarketplaceModel_GMVCalculation() {
+    @Test("MarketplaceModel_GMVCalculation") func LMarketplaceModel_GMVCalculation() throws {
         // Given: A marketplace model
-        let model = MarketplaceModel(
+        let model = try MarketplaceModel(
             initialBuyers: 10_000,
             initialSellers: 500,
             monthlyTransactionsPerBuyer: 2,
@@ -68,9 +68,9 @@ import RealModule
 
     // MARK: - Revenue Tests
 
-    @Test("MarketplaceModel_RevenueCalculation") func LMarketplaceModel_RevenueCalculation() {
+    @Test("MarketplaceModel_RevenueCalculation") func LMarketplaceModel_RevenueCalculation() throws {
         // Given: A marketplace model with 15% take rate
-        let model = MarketplaceModel(
+        let model = try MarketplaceModel(
             initialBuyers: 10_000,
             initialSellers: 500,
             monthlyTransactionsPerBuyer: 2,
@@ -92,9 +92,9 @@ import RealModule
 
     // MARK: - User Growth Tests
 
-    @Test("MarketplaceModel_BuyerGrowth") func LMarketplaceModel_BuyerGrowth() {
+    @Test("MarketplaceModel_BuyerGrowth") func LMarketplaceModel_BuyerGrowth() throws {
         // Given: A marketplace model
-        let model = MarketplaceModel(
+        let model = try MarketplaceModel(
             initialBuyers: 10_000,
             initialSellers: 500,
             monthlyTransactionsPerBuyer: 2,
@@ -114,9 +114,9 @@ import RealModule
         #expect(abs(buyers - 10_500) < 1.0)
     }
 
-    @Test("MarketplaceModel_SellerGrowth") func LMarketplaceModel_SellerGrowth() {
+    @Test("MarketplaceModel_SellerGrowth") func LMarketplaceModel_SellerGrowth() throws {
         // Given: A marketplace model
-        let model = MarketplaceModel(
+        let model = try MarketplaceModel(
             initialBuyers: 10_000,
             initialSellers: 500,
             monthlyTransactionsPerBuyer: 2,
@@ -138,9 +138,9 @@ import RealModule
 
     // MARK: - Liquidity Tests
 
-    @Test("MarketplaceModel_Liquidity") func LMarketplaceModel_Liquidity() {
+    @Test("MarketplaceModel_Liquidity") func LMarketplaceModel_Liquidity() throws {
         // Given: A marketplace model
-        let model = MarketplaceModel(
+        let model = try MarketplaceModel(
             initialBuyers: 10_000,
             initialSellers: 500,
             monthlyTransactionsPerBuyer: 2,
@@ -162,9 +162,9 @@ import RealModule
 
     // MARK: - Transaction Metrics Tests
 
-    @Test("MarketplaceModel_TotalTransactions") func LMarketplaceModel_TotalTransactions() {
+    @Test("MarketplaceModel_TotalTransactions") func LMarketplaceModel_TotalTransactions() throws {
         // Given: A marketplace model
-        let model = MarketplaceModel(
+        let model = try MarketplaceModel(
             initialBuyers: 10_000,
             initialSellers: 500,
             monthlyTransactionsPerBuyer: 2,
@@ -184,9 +184,9 @@ import RealModule
         #expect(abs(transactions - 21_000) < 1.0)
     }
 
-    @Test("MarketplaceModel_TransactionsPerSeller") func LMarketplaceModel_TransactionsPerSeller() {
+    @Test("MarketplaceModel_TransactionsPerSeller") func LMarketplaceModel_TransactionsPerSeller() throws {
         // Given: A marketplace model
-        let model = MarketplaceModel(
+        let model = try MarketplaceModel(
             initialBuyers: 10_000,
             initialSellers: 500,
             monthlyTransactionsPerBuyer: 2,
@@ -208,9 +208,9 @@ import RealModule
 
     // MARK: - Seller Economics Tests
 
-    @Test("MarketplaceModel_AverageSellerRevenue") func LMarketplaceModel_AverageSellerRevenue() {
+    @Test("MarketplaceModel_AverageSellerRevenue") func LMarketplaceModel_AverageSellerRevenue() throws {
         // Given: A marketplace model
-        let model = MarketplaceModel(
+        let model = try MarketplaceModel(
             initialBuyers: 10_000,
             initialSellers: 500,
             monthlyTransactionsPerBuyer: 2,
@@ -232,9 +232,9 @@ import RealModule
 
     // MARK: - Network Effects Tests
 
-    @Test("MarketplaceModel_BuyerSellerRatio") func LMarketplaceModel_BuyerSellerRatio() {
+    @Test("MarketplaceModel_BuyerSellerRatio") func LMarketplaceModel_BuyerSellerRatio() throws {
         // Given: A marketplace with healthy buyer-to-seller ratio
-        let model = MarketplaceModel(
+        let model = try MarketplaceModel(
             initialBuyers: 10_000,
             initialSellers: 500,
             monthlyTransactionsPerBuyer: 2,
@@ -256,9 +256,9 @@ import RealModule
 
     // MARK: - Projection Tests
 
-    @Test("MarketplaceModel_Projection12Months") func LMarketplaceModel_Projection12Months() {
+    @Test("MarketplaceModel_Projection12Months") func LMarketplaceModel_Projection12Months() throws {
         // Given: A marketplace model
-        let model = MarketplaceModel(
+        let model = try MarketplaceModel(
             initialBuyers: 10_000,
             initialSellers: 500,
             monthlyTransactionsPerBuyer: 2,
@@ -287,9 +287,9 @@ import RealModule
 
     // MARK: - Take Rate Sensitivity Tests
 
-    @Test("MarketplaceModel_TakeRateImpactOnRevenue") func LMarketplaceModel_TakeRateImpactOnRevenue() {
+    @Test("MarketplaceModel_TakeRateImpactOnRevenue") func LMarketplaceModel_TakeRateImpactOnRevenue() throws {
         // Given: Two models with different take rates
-        let lowTakeRate = MarketplaceModel(
+        let lowTakeRate = try MarketplaceModel(
             initialBuyers: 10_000,
             initialSellers: 500,
             monthlyTransactionsPerBuyer: 2,
@@ -301,7 +301,7 @@ import RealModule
             sellerChurnRate: 0.03
         )
 
-        let highTakeRate = MarketplaceModel(
+        let highTakeRate = try MarketplaceModel(
             initialBuyers: 10_000,
             initialSellers: 500,
             monthlyTransactionsPerBuyer: 2,
@@ -380,8 +380,8 @@ import RealModule
     /// `+infinity`, so a marketplace with no sellers at all would read as the
     /// healthiest one on the books.
     @Test("Per-seller figures with no sellers report nothing, not infinity")
-    func perSellerFiguresWithNoSellersAreFinite() {
-        let model = MarketplaceModel(
+    func perSellerFiguresWithNoSellersAreFinite() throws {
+        let model = try MarketplaceModel(
             initialBuyers: 10_000,
             initialSellers: 0,
             monthlyTransactionsPerBuyer: 2,

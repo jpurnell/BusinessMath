@@ -88,8 +88,8 @@ struct ManufacturingModelAdditionalTests {
 struct MarketplaceModelAdditionalTests {
 
 	@Test
-	func monthToMonthRecurrenceHolds() {
-		let m = MarketplaceModel(
+	func monthToMonthRecurrenceHolds() throws {
+		let m = try MarketplaceModel(
 			initialBuyers: 10_000,
 			initialSellers: 500,
 			monthlyTransactionsPerBuyer: 2,
@@ -109,8 +109,8 @@ struct MarketplaceModelAdditionalTests {
 	}
 
 	@Test
-	func internalIdentitiesConsistentInMonth1() {
-		let m = MarketplaceModel(
+	func internalIdentitiesConsistentInMonth1() throws {
+		let m = try MarketplaceModel(
 			initialBuyers: 10_000,
 			initialSellers: 500,
 			monthlyTransactionsPerBuyer: 2,
@@ -179,7 +179,7 @@ struct RetailModelAdditionalTests {
 struct SaaSModelAdditionalTests {
 
 	@Test
-	func priceIncreaseAdjustsARPUAtBoundary() {
+	func priceIncreaseAdjustsARPUAtBoundary() throws {
 		let s = SaaSModel(
 			initialMRR: 10_000,
 			churnRate: 0.05,
@@ -191,8 +191,8 @@ struct SaaSModelAdditionalTests {
 		)
 
 		// Compute customers for month 12 (we only need relative ARPU change)
-		let mrr11 = s.calculateMRR(forMonth: 11)
-		let mrr12 = s.calculateMRR(forMonth: 12)
+		let mrr11 = try s.calculateMRR(forMonth: 11)
+		let mrr12 = try s.calculateMRR(forMonth: 12)
 		#expect(mrr12 > mrr11, "MRR should increase at price change boundary, holding other drivers constant")
 	}
 
@@ -218,8 +218,8 @@ struct SaaSModelAdditionalTests {
 struct SubscriptionBoxModelAdditionalTests {
 
 	@Test
-	func revenueIdentityHoldsInMonth1() {
-		let sb = SubscriptionBoxModel(
+	func revenueIdentityHoldsInMonth1() throws {
+		let sb = try SubscriptionBoxModel(
 			initialSubscribers: 1_000,
 			monthlyBoxPrice: 49.99,
 			costOfGoodsPerBox: 20,
@@ -235,7 +235,7 @@ struct SubscriptionBoxModelAdditionalTests {
 
 	@Test
 	func ltvIgnoresCACAndUsesGrossMarginPerBox() throws {
-		let sb = SubscriptionBoxModel(
+		let sb = try SubscriptionBoxModel(
 			initialSubscribers: 1_000,
 			monthlyBoxPrice: 49.99,
 			costOfGoodsPerBox: 20,
@@ -253,24 +253,28 @@ struct SubscriptionBoxModelAdditionalTests {
 @Suite("Out-of-range model inputs")
 struct OutOfRangeInputTests {
 
-	/// A churn rate above 1 drives the customer count negative, and nothing stops it.
+	/// A churn rate above 1 is refused rather than answered.
 	///
-	/// Two disabled stubs stood here, both asserting that the initializers throw a
+	/// Two disabled stubs stood here first, both asserting that the initializers throw a
 	/// test-local `ValidationError` on nonsense input. They could never have passed:
-	/// `SaaSModel.init` and `ManufacturingModel.init` are not `throws`, and the library
-	/// has no error to throw — so the closures were non-throwing and the expectation was
-	/// unsatisfiable by construction. Adding validation is a source-breaking change to two
-	/// public initializers, and `churnRate` is a `var` besides, so a throwing `init` alone
-	/// would not close the hole. That decision belongs to 3.0.0.
+	/// `SaaSModel.init` is not `throws` and the library had no error to throw, so the
+	/// closures were non-throwing and the expectation was unsatisfiable by construction.
+	/// They were replaced by a `withKnownIssue` stating the requirement as an executable
+	/// one — that month 1 must not end with a negative headcount — which failed, as it
+	/// should have, for as long as nothing validated the rate.
 	///
-	/// What can be done now is state the requirement as an executable one. Churn above
-	/// 100% means the model loses more customers than it has: month 1 of a 100-customer
-	/// base at 1.2 churn with no acquisition is −20 customers. A negative headcount is the
-	/// plausible-but-wrong result this package's rules name directly, so the assertion is
-	/// written the way it should read, and marked as the known failure it currently is.
-	/// When validation lands, this stops being a known issue and starts being a test.
-	@Test("A churn rate above 100% produces a negative customer count")
-	func churnAboveOneGoesNegative() {
+	/// It now passes, and this records what changed. Churn above 100% means the model loses
+	/// more customers than it has: a 100-customer base at 1.2 churn with no acquisition
+	/// returned **−20** customers, arithmetic that is correct at every individual step and
+	/// cannot have come from counting anybody. `calculateCustomerCount` checks the rate
+	/// before it runs the recurrence, and throws.
+	///
+	/// Checked at the point of use rather than in the initializer because `churnRate` is a
+	/// `var`: a validating initializer is satisfied by a model that is assigned an
+	/// impossible rate a line later. `SubscriptionBoxModel` and `MarketplaceModel` hold
+	/// theirs in a `let`, so those validate at construction instead.
+	@Test("A churn rate above 100% is refused, not answered with a negative count")
+	func churnAboveOneIsRefused() throws {
 		let model = SaaSModel(
 			initialMRR: 10_000,
 			churnRate: 1.2,
@@ -278,16 +282,33 @@ struct OutOfRangeInputTests {
 			averageRevenuePerUser: 100
 		)
 
-		// 10,000 / 100 = 100 customers to start.
-		let monthOne: Double = model.calculateCustomerCount(forMonth: 1)
-
-		withKnownIssue("churnRate is unvalidated; rejecting it is a 3.0.0 API change") {
-			#expect(monthOne >= 0, "month 1 ended with \(monthOne) customers")
+		#expect(throws: BusinessMathError.self) {
+			_ = try model.calculateCustomerCount(forMonth: 1)
 		}
+	}
 
-		// And the value it does return, pinned, so the arithmetic above is not a guess:
-		// 100 − (100 × 1.2) + 0 = −20, exactly representable.
-		#expect(monthOne.isEqual(to: -20.0), "month 1 gave \(monthOne), not -20")
+	/// The `var` is the reason the check is where it is.
+	///
+	/// A model built with a sound churn rate answers; assigning an impossible one to the
+	/// same instance makes it stop answering. A validating initializer alone would have let
+	/// this through, which is why the guard sits on the recurrence.
+	@Test("Mutating a sound model into an unsound one is caught too")
+	func mutationIntoAnImpossibleRateIsCaught() throws {
+		var model = SaaSModel(
+			initialMRR: 10_000,
+			churnRate: 0.2,
+			newCustomersPerMonth: 0,
+			averageRevenuePerUser: 100
+		)
+
+		// 100 customers, 20% churn, no acquisition: 100 − 20 = 80.
+		let sound: Double = try model.calculateCustomerCount(forMonth: 1)
+		#expect(sound.isEqual(to: 80.0), "month 1 gave \(sound), not 80")
+
+		model.churnRate = 1.2
+		#expect(throws: BusinessMathError.self) {
+			_ = try model.calculateCustomerCount(forMonth: 1)
+		}
 	}
 
 	/// Zero production capacity, which the division guards do handle.

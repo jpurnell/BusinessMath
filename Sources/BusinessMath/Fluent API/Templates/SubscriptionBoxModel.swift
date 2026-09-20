@@ -20,7 +20,7 @@ import Numerics
 ///
 /// Example:
 /// ```swift
-/// let model = SubscriptionBoxModel(
+/// let model = try SubscriptionBoxModel(
 ///     initialSubscribers: 1_000,
 ///     monthlyBoxPrice: 49.99,
 ///     costOfGoodsPerBox: 20,
@@ -68,6 +68,11 @@ public struct SubscriptionBoxModel: Sendable {
 	///   - monthlyChurnRate: Monthly churn rate (percentage of subscribers lost)
 	///   - newSubscribersPerMonth: Number of new subscribers acquired per month
 	///   - customerAcquisitionCost: Customer acquisition cost
+    /// - Throws: ``BusinessMathError/invalidInput(message:value:expectedRange:)`` when
+    ///   `monthlyChurnRate` is not a rate. Checked here and not at every use because the
+    ///   property is a `let`: once a model exists its churn rate cannot become impossible,
+    ///   so the constructor is the whole boundary. `SaaSModel` guards at each use instead,
+    ///   for the one reason that its `churnRate` is a `var`.
     public init(
         initialSubscribers: Double,
         monthlyBoxPrice: Double,
@@ -76,12 +81,12 @@ public struct SubscriptionBoxModel: Sendable {
         monthlyChurnRate: Double,
         newSubscribersPerMonth: Double,
         customerAcquisitionCost: Double
-    ) {
+    ) throws {
         self.initialSubscribers = initialSubscribers
         self.monthlyBoxPrice = monthlyBoxPrice
         self.costOfGoodsPerBox = costOfGoodsPerBox
         self.shippingCostPerBox = shippingCostPerBox
-        self.monthlyChurnRate = monthlyChurnRate
+        self.monthlyChurnRate = try validatedRate(monthlyChurnRate, named: "monthlyChurnRate")
         self.newSubscribersPerMonth = newSubscribersPerMonth
         self.customerAcquisitionCost = customerAcquisitionCost
     }
@@ -203,7 +208,7 @@ public struct SubscriptionBoxModel: Sendable {
     /// Customer lifetime value, delegated to `Marketing/Value/`.
     ///
     /// ```swift
-    /// let model = SubscriptionBoxModel(initialSubscribers: 1_000, monthlyBoxPrice: 40,
+    /// let model = try SubscriptionBoxModel(initialSubscribers: 1_000, monthlyBoxPrice: 40,
     ///                                  costOfGoodsPerBox: 15, shippingCostPerBox: 5,
     ///                                  monthlyChurnRate: 0.08,
     ///                                  newSubscribersPerMonth: 100,

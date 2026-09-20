@@ -36,7 +36,7 @@ import RealModule
 
     // MARK: - MRR Calculation Tests
 
-    @Test("SaaSModel_MRRCalculation_FirstMonth") func LSaaSModel_MRRCalculation_FirstMonth() {
+    @Test("SaaSModel_MRRCalculation_FirstMonth") func LSaaSModel_MRRCalculation_FirstMonth() throws {
         // Given: A SaaS model with 100 customers at $100/month
         let model = SaaSModel(
             initialMRR: 10_000,
@@ -46,7 +46,7 @@ import RealModule
         )
 
         // When: Calculating MRR for the first month
-        let mrr = model.calculateMRR(forMonth: 1)
+        let mrr = try model.calculateMRR(forMonth: 1)
 
         // Then: MRR should include initial customers + new customers - churned customers
         // Initial: 100 customers, New: 100, Churned: 100 * 0.05 = 5
@@ -64,7 +64,7 @@ import RealModule
         )
 
         // When: Calculating MRR over 12 months
-        let mrrSeries = model.projectMRR(months: 12)
+        let mrrSeries = try model.projectMRR(months: 12)
 
         // Then: MRR should grow each month (assuming net positive growth)
         #expect(mrrSeries.count == 12)
@@ -75,7 +75,7 @@ import RealModule
 
     // MARK: - ARR Calculation Tests
 
-    @Test("SaaSModel_ARRCalculation") func LSaaSModel_ARRCalculation() {
+    @Test("SaaSModel_ARRCalculation") func LSaaSModel_ARRCalculation() throws {
         // Given: A SaaS model with known MRR
         let model = SaaSModel(
             initialMRR: 10_000,
@@ -85,7 +85,7 @@ import RealModule
         )
 
         // When: Calculating ARR
-        let arr = model.calculateARR()
+        let arr = try model.calculateARR()
 
         // Then: ARR should be MRR * 12
         // With growth, this will be higher than initial MRR * 12
@@ -94,7 +94,7 @@ import RealModule
 
     // MARK: - Churn Impact Tests
 
-    @Test("SaaSModel_ChurnImpact_HighChurn") func LSaaSModel_ChurnImpact_HighChurn() {
+    @Test("SaaSModel_ChurnImpact_HighChurn") func LSaaSModel_ChurnImpact_HighChurn() throws {
         // Given: Two models with different churn rates
         let lowChurnModel = SaaSModel(
             initialMRR: 10_000,
@@ -111,8 +111,8 @@ import RealModule
         )
 
         // When: Projecting 12 months
-        let lowChurnMRR = lowChurnModel.projectMRR(months: 12)
-        let highChurnMRR = highChurnModel.projectMRR(months: 12)
+        let lowChurnMRR = try lowChurnModel.projectMRR(months: 12)
+        let highChurnMRR = try highChurnModel.projectMRR(months: 12)
 
         // Then: Low churn should result in higher final MRR
         let lowChurnFinal = lowChurnMRR.valuesArray.last ?? 0
@@ -120,7 +120,7 @@ import RealModule
         #expect(lowChurnFinal > highChurnFinal)
     }
 
-    @Test("SaaSModel_ChurnImpact_ZeroChurn") func LSaaSModel_ChurnImpact_ZeroChurn() {
+    @Test("SaaSModel_ChurnImpact_ZeroChurn") func LSaaSModel_ChurnImpact_ZeroChurn() throws {
         // Given: A model with zero churn
         let model = SaaSModel(
             initialMRR: 10_000,
@@ -130,7 +130,7 @@ import RealModule
         )
 
         // When: Calculating MRR for month 1
-        let mrr = model.calculateMRR(forMonth: 1)
+        let mrr = try model.calculateMRR(forMonth: 1)
 
         // Then: All initial customers should remain + new customers
         // (100 + 100) * $100 = $20,000
@@ -139,7 +139,7 @@ import RealModule
 
     // MARK: - Customer Growth Tests
 
-    @Test("SaaSModel_CustomerGrowth") func LSaaSModel_CustomerGrowth() {
+    @Test("SaaSModel_CustomerGrowth") func LSaaSModel_CustomerGrowth() throws {
         // Given: A model with consistent new customer acquisition
         let model = SaaSModel(
             initialMRR: 10_000,
@@ -149,7 +149,7 @@ import RealModule
         )
 
         // When: Calculating customer count over time
-        let customerCounts = model.projectCustomerCount(months: 6)
+        let customerCounts = try model.projectCustomerCount(months: 6)
 
         // Then: Customer count should grow (net positive with these parameters)
         #expect(customerCounts.count == 6)
@@ -238,7 +238,7 @@ import RealModule
 
     // MARK: - Projection Tests
 
-    @Test("SaaSModel_Projection36Months") func LSaaSModel_Projection36Months() {
+    @Test("SaaSModel_Projection36Months") func LSaaSModel_Projection36Months() throws {
         // Given: A SaaS model
         let model = SaaSModel(
             initialMRR: 10_000,
@@ -248,7 +248,7 @@ import RealModule
         )
 
         // When: Projecting 36 months
-        let projection = model.project(months: 36)
+        let projection = try model.project(months: 36)
 
         // Then: Should return projections for all 36 months
         #expect(projection.mrr.count == 36)
@@ -262,7 +262,7 @@ import RealModule
 
     // MARK: - Price Increase Tests
 
-    @Test("SaaSModel_PriceIncrease") func LSaaSModel_PriceIncrease() {
+    @Test("SaaSModel_PriceIncrease") func LSaaSModel_PriceIncrease() throws {
         // Given: A model with a price increase in year 2
         let model = SaaSModel(
             initialMRR: 10_000,
@@ -275,8 +275,8 @@ import RealModule
         )
 
         // When: Calculating MRR before and after price increase
-        let mrrBeforeIncrease = model.calculateMRR(forMonth: 11)
-        let mrrAfterIncrease = model.calculateMRR(forMonth: 13)
+        let mrrBeforeIncrease = try model.calculateMRR(forMonth: 11)
+        let mrrAfterIncrease = try model.calculateMRR(forMonth: 13)
 
         // Then: MRR after increase should be higher (accounting for price increase effect)
         #expect(mrrAfterIncrease > mrrBeforeIncrease)
@@ -284,7 +284,7 @@ import RealModule
 
     // MARK: - Negative Growth Scenario Tests
 
-    @Test("SaaSModel_NegativeGrowth_HighChurnLowAcquisition") func LSaaSModel_NegativeGrowth_HighChurnLowAcquisition() {
+    @Test("SaaSModel_NegativeGrowth_HighChurnLowAcquisition") func LSaaSModel_NegativeGrowth_HighChurnLowAcquisition() throws {
         // Given: A model with high churn and low acquisition
         let model = SaaSModel(
             initialMRR: 10_000,
@@ -294,7 +294,7 @@ import RealModule
         )
 
         // When: Projecting 12 months
-        let projection = model.projectMRR(months: 12)
+        let projection = try model.projectMRR(months: 12)
 
         // Then: MRR should decline over time
         let initialMRR = projection.valuesArray.first ?? 0

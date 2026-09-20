@@ -21,7 +21,7 @@ import Numerics
 ///
 /// Example:
 /// ```swift
-/// let model = MarketplaceModel(
+/// let model = try MarketplaceModel(
 ///     initialBuyers: 10_000,
 ///     initialSellers: 500,
 ///     monthlyTransactionsPerBuyer: 2,
@@ -126,7 +126,7 @@ public struct MarketplaceModel: Sendable {
         newSellersPerMonth: Double,
         buyerChurnRate: Double,
         sellerChurnRate: Double
-    ) {
+    ) throws {
         self.initialBuyers = initialBuyers
         self.initialSellers = initialSellers
         self.monthlyTransactionsPerBuyer = monthlyTransactionsPerBuyer
@@ -134,8 +134,8 @@ public struct MarketplaceModel: Sendable {
         self.takeRate = takeRate
         self.newBuyersPerMonth = newBuyersPerMonth
         self.newSellersPerMonth = newSellersPerMonth
-        self.buyerChurnRate = buyerChurnRate
-        self.sellerChurnRate = sellerChurnRate
+        self.buyerChurnRate = try validatedRate(buyerChurnRate, named: "buyerChurnRate")
+        self.sellerChurnRate = try validatedRate(sellerChurnRate, named: "sellerChurnRate")
 
         // Snapshot properties not used in this initializer
         self.numberOfBuyers = nil

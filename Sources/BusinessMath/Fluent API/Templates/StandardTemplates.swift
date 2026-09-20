@@ -764,7 +764,7 @@ public struct MarketplaceTemplate: TemplateProtocol {
     public func create(parameters: [String: Any]) throws -> Any {
         try validate(parameters: parameters)
 
-        return MarketplaceModel(
+        return try MarketplaceModel(
             initialBuyers: try extractDouble(from: parameters, key: "initialBuyers"),
             initialSellers: try extractDouble(from: parameters, key: "initialSellers"),
             monthlyTransactionsPerBuyer: try extractDouble(from: parameters, key: "monthlyTransactionsPerBuyer"),
@@ -919,7 +919,7 @@ public struct SubscriptionBoxTemplate: TemplateProtocol {
     public func create(parameters: [String: Any]) throws -> Any {
         try validate(parameters: parameters)
 
-        return SubscriptionBoxModel(
+        return try SubscriptionBoxModel(
             initialSubscribers: try extractDouble(from: parameters, key: "initialSubscribers"),
             monthlyBoxPrice: try extractDouble(from: parameters, key: "monthlyBoxPrice"),
             costOfGoodsPerBox: try extractDouble(from: parameters, key: "costOfGoodsPerBox"),

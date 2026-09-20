@@ -54,8 +54,8 @@ struct TemplateDelegationTests {
 	}
 
 	static func box(price: Double = 40, cogs: Double = 15, shipping: Double = 5,
-					churn: Double = 0.08, cac: Double = 60) -> SubscriptionBoxModel {
-		SubscriptionBoxModel(initialSubscribers: 1_000, monthlyBoxPrice: price,
+					churn: Double = 0.08, cac: Double = 60) throws -> SubscriptionBoxModel {
+		try SubscriptionBoxModel(initialSubscribers: 1_000, monthlyBoxPrice: price,
 							 costOfGoodsPerBox: cogs, shippingCostPerBox: shipping,
 							 monthlyChurnRate: churn, newSubscribersPerMonth: 100,
 							 customerAcquisitionCost: cac)
@@ -109,14 +109,32 @@ struct TemplateDelegationTests {
 		#expect(Swift.abs(boxed.paybackPeriods - 3) < 1e-9, "60/20 = \(boxed.paybackPeriods)")
 	}
 
+	/// The two out-of-range cases moved from `retentionRate` to the initializer.
+	///
+	/// They used to build a box at churn 1.2 and −0.1 and assert that `retentionRate`
+	/// answered `nil`. Neither box can be built now, so the refusal happens a step earlier
+	/// and is asserted there. `SaaSModel` keeps its `nil` answers because its `churnRate` is
+	/// a `var` and can become impossible after construction, so the property still has to
+	/// cope with a rate the initializer never saw.
 	@Test("Retention rate refuses a churn rate that is not a rate")
 	func retentionRate() throws {
 		let healthy = try #require(Self.box().retentionRate)
 		#expect(Swift.abs(healthy - 0.92) < 1e-12, "\(healthy)")
-		#expect(Self.box(churn: 1.2).retentionRate == nil, "churn above one is not a rate")
-		#expect(Self.box(churn: -0.1).retentionRate == nil)
+
+		#expect(throws: BusinessMathError.self, "churn above one is not a rate") {
+			_ = try Self.box(churn: 1.2)
+		}
+		#expect(throws: BusinessMathError.self, "a negative churn is not a rate either") {
+			_ = try Self.box(churn: -0.1)
+		}
+
 		let saasRetention = try #require(Self.saas().retentionRate)
 		#expect(Swift.abs(saasRetention - 0.95) < 1e-12, "\(saasRetention)")
+
+		// SaaSModel's is a `var`, so the property must still refuse what the model holds.
+		var mutated = Self.saas()
+		mutated.churnRate = 1.2
+		#expect(mutated.retentionRate == nil, "churn above one is not a rate")
 	}
 
 	// MARK: - The five refusals
@@ -145,20 +163,35 @@ struct TemplateDelegationTests {
 	@Test("A box sold at a loss has no payback period at all")
 	func lossMakingBoxHasNoPayback() throws {
 		// 20 − 15 − 8 = −3 per box.
-		let losing = Self.box(price: 20, cogs: 15, shipping: 8)
+		let losing = try Self.box(price: 20, cogs: 15, shipping: 8)
 		let value = try losing.lifetimeValue()
 		#expect(value.value < 0, "a loss-making box has negative lifetime value: \(value.value)")
 		#expect(Swift.abs(value.value - (-37.5)) < 1e-9, "\(value.value)")
 		#expect(try losing.acquisitionMetrics() == nil, "there is no payback to report")
 	}
 
+	/// Both templates still refuse it — but they now refuse it at different moments, and
+	/// the difference is the mutability of the property.
+	///
+	/// `SubscriptionBoxModel.monthlyChurnRate` is a `let`, so its initializer is the whole
+	/// boundary and rejects −0.2 before a lifetime value is ever asked for: the error is
+	/// ``BusinessMathError/invalidInput(message:value:expectedRange:)``, from construction.
+	/// `SaaSModel.churnRate` is a `var`, so no initializer can be the boundary — the model
+	/// builds, and `lifetimeValue()` refuses it on the way through with
+	/// ``CLVError/invalidRetention``.
+	///
+	/// Asserting the same error for both would mean weakening one of them to the other's
+	/// shape, which would stop recording where each refusal actually happens.
 	@Test("A churn rate outside zero and one is refused by both templates")
-	func impossibleChurnIsRefused() {
+	func impossibleChurnIsRefused() throws {
+		// A `var` churn rate survives construction and is caught in the calculation.
 		#expect(throws: CLVError.invalidRetention) {
 			_ = try Self.saas(churn: 1.4).lifetimeValue()
 		}
-		#expect(throws: CLVError.invalidRetention) {
-			_ = try Self.box(churn: -0.2).lifetimeValue()
+
+		// A `let` churn rate never gets that far.
+		#expect(throws: BusinessMathError.self) {
+			_ = try Self.box(churn: -0.2)
 		}
 	}
 }
@@ -196,9 +229,8 @@ struct LegacyTemplateEconomics {
 	// Box, the edges.
 	let boxLTVAtZeroChurn: Double
 	let boxPaybackAtALoss: Double
-	let boxRetentionAboveOne: Double
 
-	init() {
+	init() throws {
 		let saas = TemplateDelegationTests.saas(margin: 0.80)
 		saasLTV = saas.calculateLTV()
 		saasPayback = saas.calculateCACPayback()
@@ -210,15 +242,14 @@ struct LegacyTemplateEconomics {
 		saasRatioWithoutCost = withoutCost.calculateLTVtoCAC()
 		saasRatioAtZeroCost = TemplateDelegationTests.saas(cac: 0).calculateLTVtoCAC()
 
-		let box = TemplateDelegationTests.box()
+		let box = try TemplateDelegationTests.box()
 		boxLTV = box.calculateCustomerLifetimeValue()
 		boxRatio = box.calculateLTVtoCAC()
 		boxPayback = box.calculateCACPaybackMonths()
 
-		boxLTVAtZeroChurn = TemplateDelegationTests.box(churn: 0).calculateCustomerLifetimeValue()
-		boxPaybackAtALoss = TemplateDelegationTests.box(price: 20, cogs: 15, shipping: 8)
+		boxLTVAtZeroChurn = try TemplateDelegationTests.box(churn: 0).calculateCustomerLifetimeValue()
+		boxPaybackAtALoss = try TemplateDelegationTests.box(price: 20, cogs: 15, shipping: 8)
 			.calculateCACPaybackMonths()
-		boxRetentionAboveOne = TemplateDelegationTests.box(churn: 1.2).calculateRetentionRate()
 	}
 }
 
@@ -226,11 +257,19 @@ struct LegacyTemplateEconomics {
 struct LegacyTemplateEconomicsTests {
 
 	/// The one place the deprecated surface is touched.
-	static let legacy = LegacyTemplateEconomics()
+	///
+	/// A `get throws` rather than a `static let`: `SubscriptionBoxModel.init` now rejects a
+	/// churn rate outside `[0, 1]`, so building this fixture can fail, and a stored property
+	/// has nowhere to put that failure but a `try!`. Every value it captures uses a sound
+	/// churn rate — the one case that did not, a box at 1.2, is no longer constructible and
+	/// is asserted as a rejection instead.
+	static var legacy: LegacyTemplateEconomics {
+		get throws { try LegacyTemplateEconomics() }
+	}
 
 	@Test("Delegation preserves every number the old methods returned for sound input")
 	func delegationIsBehaviourPreserving() throws {
-		let legacy = Self.legacy
+		let legacy = try Self.legacy
 
 		let saas = TemplateDelegationTests.saas(margin: 0.80)
 		let saasValue = try saas.lifetimeValue().value
@@ -240,7 +279,7 @@ struct LegacyTemplateEconomicsTests {
 		#expect(Swift.abs(legacy.saasRatio - saasMetrics.ratio) < 1e-9,
 				"\(legacy.saasRatio) against \(saasMetrics.ratio)")
 
-		let box = TemplateDelegationTests.box()
+		let box = try TemplateDelegationTests.box()
 		let boxValue = try box.lifetimeValue().value
 		#expect(Swift.abs(legacy.boxLTV - boxValue) < 1e-9,
 				"\(legacy.boxLTV) against \(boxValue)")
@@ -256,7 +295,7 @@ struct LegacyTemplateEconomicsTests {
 
 	@Test("The one method whose answer changes, and why it had to")
 	func paybackWasComputedOnRevenue() throws {
-		let legacy = Self.legacy
+		let legacy = try Self.legacy
 		// $500 of cost against $100 of *revenue*.
 		#expect(Swift.abs(legacy.saasPayback - 5) < 1e-9, "\(legacy.saasPayback)")
 		// $500 against $80 of contribution margin, which is what the cost comes out of.
@@ -267,33 +306,56 @@ struct LegacyTemplateEconomicsTests {
 	}
 
 	@Test("Zero churn returned zero, which is the opposite of divergence")
-	func zeroChurnReturnedZero() {
-		#expect(Self.legacy.saasLTVAtZeroChurn == 0)
-		#expect(Self.legacy.boxLTVAtZeroChurn == 0)
+	func zeroChurnReturnedZero() throws {
+		let legacy = try Self.legacy
+		#expect(legacy.saasLTVAtZeroChurn == 0)
+		#expect(legacy.boxLTVAtZeroChurn == 0)
 	}
 
 	@Test("A missing acquisition cost returned the best possible payback")
-	func missingCostReturnedZeroMonths() {
-		#expect(Self.legacy.saasPaybackWithoutCost == 0, "zero months is the best score there is")
-		#expect(Self.legacy.saasRatioWithoutCost == 0)
+	func missingCostReturnedZeroMonths() throws {
+		let legacy = try Self.legacy
+		#expect(legacy.saasPaybackWithoutCost == 0, "zero months is the best score there is")
+		#expect(legacy.saasRatioWithoutCost == 0)
 	}
 
 	@Test("A zero acquisition cost divided by zero until this branch guarded it")
-	func zeroCostNoLongerReturnsInfinity() {
+	func zeroCostNoLongerReturnsInfinity() throws {
 		// Shipped behaviour was `calculateLTV() / 0`, which is +infinity — a ratio that
 		// clears every "healthy is above three" check ever written against it. The guard
 		// added on this branch makes it match the documented missing-cost answer instead.
-		#expect(Self.legacy.saasRatioAtZeroCost == 0)
-		#expect(!Self.legacy.saasRatioAtZeroCost.isInfinite)
+		let legacy = try Self.legacy
+		#expect(legacy.saasRatioAtZeroCost == 0)
+		#expect(!legacy.saasRatioAtZeroCost.isInfinite)
 	}
 
 	@Test("A loss-making box reported instant payback")
-	func lossMakingBoxPaidBackInstantly() {
-		#expect(Self.legacy.boxPaybackAtALoss == 0, "it never pays back at all")
+	func lossMakingBoxPaidBackInstantly() throws {
+		let legacy = try Self.legacy
+		#expect(legacy.boxPaybackAtALoss == 0, "it never pays back at all")
 	}
 
-	@Test("Retention could go negative")
-	func retentionCouldGoNegative() {
-		#expect(Swift.abs(Self.legacy.boxRetentionAboveOne - (-0.2)) < 1e-12)
+	/// This was "Retention could go negative", and it asserted that
+	/// `calculateRetentionRate()` answered −0.2 for a churn of 1.2.
+	///
+	/// It cannot be written that way any more, and that *is* the change: the model can no
+	/// longer be built. `SubscriptionBoxModel.init` rejects a churn rate outside `[0, 1]`,
+	/// so the deprecated method never gets the chance to answer. The requirement the old
+	/// test encoded — that churn above 1 must not yield a plausible retention — is now
+	/// enforced a step earlier, and this asserts it there instead of recording the number
+	/// that used to come out.
+	@Test("A box whose churn exceeds 1 cannot be built at all")
+	func churnAboveOneIsRejectedAtConstruction() {
+		#expect(throws: BusinessMathError.self) {
+			_ = try SubscriptionBoxModel(
+				initialSubscribers: 1_000,
+				monthlyBoxPrice: 40,
+				costOfGoodsPerBox: 15,
+				shippingCostPerBox: 5,
+				monthlyChurnRate: 1.2,
+				newSubscribersPerMonth: 100,
+				customerAcquisitionCost: 60
+			)
+		}
 	}
 }

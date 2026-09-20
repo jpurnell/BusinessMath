@@ -27,9 +27,9 @@ import Numerics
 ///     averageRevenuePerUser: 100
 /// )
 ///
-/// let projection = model.project(months: 36)
-/// let ltv = model.calculateLTV()
-/// let ltvToCAC = model.calculateLTVtoCAC()
+/// let projection = try model.project(months: 36)
+/// let ltv = try model.lifetimeValue().value
+/// let economics = try model.acquisitionMetrics()
 /// ```
 public struct SaaSModel: Sendable {
     // MARK: - Properties
@@ -98,8 +98,8 @@ public struct SaaSModel: Sendable {
     ///
     /// - Parameter month: The month to calculate (1-indexed)
     /// - Returns: MRR for the specified month
-    public func calculateMRR(forMonth month: Int) -> Double {
-        let customerCount = calculateCustomerCount(forMonth: month)
+    public func calculateMRR(forMonth month: Int) throws -> Double {
+        let customerCount = try calculateCustomerCount(forMonth: month)
         let pricePerCustomer = calculatePricePerCustomer(atMonth: month)
         return customerCount * pricePerCustomer
     }
@@ -108,14 +108,14 @@ public struct SaaSModel: Sendable {
     ///
     /// - Parameter months: Number of months to project
     /// - Returns: Time series of MRR values
-    public func projectMRR(months: Int) -> TimeSeries<Double> {
+    public func projectMRR(months: Int) throws -> TimeSeries<Double> {
         let baseYear = 2025
         let periods = (1...months).map { monthIndex -> Period in
             let year = baseYear + (monthIndex - 1) / 12
             let month = ((monthIndex - 1) % 12) + 1
             return Period.month(year: year, month: month)
         }
-        let values = (1...months).map { calculateMRR(forMonth: $0) }
+        let values = try (1...months).map { try calculateMRR(forMonth: $0) }
         return TimeSeries(periods: periods, values: values)
     }
 
@@ -127,9 +127,9 @@ public struct SaaSModel: Sendable {
     /// If projecting less than 12 months, uses the final month's MRR.
     ///
     /// - Returns: Annual Recurring Revenue
-    public func calculateARR() -> Double {
+    public func calculateARR() throws -> Double {
         let finalMonth = 12
-        return calculateMRR(forMonth: finalMonth) * 12
+        return try calculateMRR(forMonth: finalMonth) * 12
     }
 
     // MARK: - Customer Calculations
@@ -138,12 +138,19 @@ public struct SaaSModel: Sendable {
     ///
     /// - Parameter month: The month to calculate (1-indexed)
     /// - Returns: Number of customers at the end of the month
-    public func calculateCustomerCount(forMonth month: Int) -> Double {
+    public func calculateCustomerCount(forMonth month: Int) throws -> Double {
+        // Checked here rather than at construction because `churnRate` is a `var`: a
+        // validating initialiser would be satisfied by a model that is assigned an
+        // impossible rate a line later. `retentionRate` has always guarded the same range
+        // before answering; this recurrence did not, and returned -20 customers for a churn
+        // of 1.2 — arithmetic that is correct at every individual step and cannot have come
+        // from counting anybody.
+        let rate = try validatedRate(churnRate, named: "churnRate")
         var customers = initialCustomerCount
 
         for _ in 1...month {
             // Calculate churned customers
-            let churnedCustomers = customers * churnRate
+            let churnedCustomers = customers * rate
 
             // Net change in customers
             customers = customers - churnedCustomers + newCustomersPerMonth
@@ -156,14 +163,14 @@ public struct SaaSModel: Sendable {
     ///
     /// - Parameter months: Number of months to project
     /// - Returns: Time series of customer counts
-    public func projectCustomerCount(months: Int) -> TimeSeries<Double> {
+    public func projectCustomerCount(months: Int) throws -> TimeSeries<Double> {
         let baseYear = 2025
         let periods = (1...months).map { monthIndex -> Period in
             let year = baseYear + (monthIndex - 1) / 12
             let month = ((monthIndex - 1) % 12) + 1
             return Period.month(year: year, month: month)
         }
-        let values = (1...months).map { calculateCustomerCount(forMonth: $0) }
+        let values = try (1...months).map { try calculateCustomerCount(forMonth: $0) }
         return TimeSeries(periods: periods, values: values)
     }
 
@@ -328,9 +335,9 @@ public struct SaaSModel: Sendable {
     ///   - startMonth: The starting month (1-indexed)
     ///   - endMonth: The ending month (1-indexed)
     /// - Returns: Growth rate as a decimal (e.g., 0.15 for 15% growth)
-    public func calculateGrowthRate(from startMonth: Int, to endMonth: Int) -> Double {
-        let startMRR = calculateMRR(forMonth: startMonth)
-        let endMRR = calculateMRR(forMonth: endMonth)
+    public func calculateGrowthRate(from startMonth: Int, to endMonth: Int) throws -> Double {
+        let startMRR = try calculateMRR(forMonth: startMonth)
+        let endMRR = try calculateMRR(forMonth: endMonth)
 
         guard startMRR > 0 else { return 0 }
         return (endMRR - startMRR) / startMRR
@@ -342,13 +349,13 @@ public struct SaaSModel: Sendable {
     ///
     /// - Parameter months: Number of months to project
     /// - Returns: Tuple containing time series for MRR, revenue, and customers
-    public func project(months: Int) -> (
+    public func project(months: Int) throws -> (
         mrr: TimeSeries<Double>,
         revenue: TimeSeries<Double>,
         customers: TimeSeries<Double>
     ) {
-        let mrrSeries = projectMRR(months: months)
-        let customerSeries = projectCustomerCount(months: months)
+        let mrrSeries = try projectMRR(months: months)
+        let customerSeries = try projectCustomerCount(months: months)
 
         // Revenue is the same as MRR for a subscription business
         let revenueSeries = mrrSeries

@@ -11,6 +11,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### 2026-09-19 — A churn rate above 100% is refused rather than answered
+
+##### Fixed
+
+- **The template models returned negative customer counts for an impossible churn rate.**
+
+  `SaaSModel.calculateCustomerCount(forMonth:)` ran `n − n·churn + new` with no check on
+  `churn`. A hundred customers at `churnRate: 1.2` with no acquisition returned **−20** for
+  month 1 — a negative headcount, arrived at by arithmetic that is correct at every
+  individual step. `SubscriptionBoxModel.calculateSubscribers` and `MarketplaceModel`'s buyer
+  and seller counts had the same shape, because they are the same recurrence.
+
+  The range is not new, and that is what made this worth fixing rather than debating. Three
+  places in the package already knew it:
+
+  | site | behaviour at `churnRate = 1.2`, before |
+  |---|---|
+  | `StandardTemplates.createSaaSModel` | **throws** `invalidInput`, "must be between 0.0 and 1.0" |
+  | `SaaSModel.retentionRate` | **guards**, returns `nil` |
+  | `SaaSModel.calculateCustomerCount` | **returns −20** |
+
+  So a model the template constructor would have refused could be built directly and asked
+  to project, and it answered. The check now lives in one place, `validatedRate(_:named:)`,
+  because the same range had already been written out four times across two files and the
+  copies had diverged: two guarded and returned `nil`, one threw, and the projections did
+  neither.
+
+  **Where each model is checked, and why they differ.** `SaaSModel.churnRate` is a `var`, so
+  no initializer can be the boundary — a validating `init` is satisfied by a model assigned
+  an impossible rate a line later. It is therefore checked at the point of use, and a test
+  pins exactly that: a sound model that is mutated into an unsound one stops answering.
+  `SubscriptionBoxModel.monthlyChurnRate` and `MarketplaceModel`'s two rates are `let`, so
+  construction *is* the whole boundary and they validate there — no method signature on
+  those two types changes at all.
+
+  This clears the package's only `withKnownIssue`. **A run now reports zero known issues;
+  one is a regression.**
+
+##### Changed — source-breaking
+
+- **`SubscriptionBoxModel.init` and `MarketplaceModel.init` (the projecting one) now `throw`.**
+  The snapshot initializer is unchanged; it sets both churn rates to zero itself.
+
+- **`SaaSModel`: `calculateCustomerCount`, `calculateMRR`, `calculateARR`,
+  `calculateGrowthRate`, `projectMRR`, `projectCustomerCount` and `project` now `throw`.**
+  The propagation is the honest consequence of guarding at the point of use: if the customer
+  count cannot be computed, neither can revenue derived from it.
+
+  The deprecated unit-economics methods are deliberately untouched. `calculateLTV`,
+  `calculateLTVtoCAC`, `calculateCACPayback`, `calculateCustomerLifetimeValue` and
+  `calculateRetentionRate` are already `@available(*, deprecated)` and each names a
+  replacement that handles an impossible churn rate correctly — `lifetimeValue()` throws,
+  `acquisitionMetrics()` returns `nil`, the `retentionRate` property guards. Adding `throws`
+  to a deprecated method would break callers for no benefit.
+
+##### Tests
+
+- Two assertions changed meaning rather than shape, and are recorded as such instead of being
+  quietly adjusted. Both used to build a `SubscriptionBoxModel` with a churn rate outside
+  `[0, 1]` and assert what the model then answered — a retention of −0.2, a `nil`. Neither
+  box can be built now, so both assert the refusal at construction. The `SaaSModel`
+  equivalents keep their old shape, because a `var` churn rate really can still reach the
+  property.
+
 #### 2026-09-19 — The AI-REML information matrix used a truncated projection
 
 ##### Fixed
