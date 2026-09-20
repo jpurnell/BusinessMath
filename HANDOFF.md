@@ -19,9 +19,9 @@ is the state and the traps.
 
 | | |
 |---|---|
-| branch | `main`, **4 commits ahead of `origin/main` and unpushed** |
+| branch | `main`, pushed through the gStudy commit |
 | tags | latest **`v3.0.0-alpha.7`** (2026-09-18, tagged by the peer session) |
-| tests | **7,944 in 726 suites**, exit 0, **zero known issues** |
+| tests | **7,950 in 727 suites**, exit 0, **zero known issues** |
 | gate | `--no-cache --check all` → 45 of 45 ran, **0 errors and 0 warnings outside `doc-run`** |
 | `doc-run` | **flaky under load, not a regression** — see §4 |
 | guidelines repo | `../../development-guidelines` clean at `a5f9292`, `v2.4.0` tagged and pushed |
@@ -57,14 +57,14 @@ than trusting it** — `quality-gate --no-cache --no-index-build --check complex
 
 | Score | Function | Where |
 |---:|---|---|
-| **85** | `gStudy` | `Statistics/Reliability/gStudy.swift:133` — now the highest unexamined |
-| **79** | `bootstrap` | `Valuation/Curves/DiscountCurve.swift:254` |
+| **79** | `bootstrap` | `Valuation/Curves/DiscountCurve.swift:254` — now the highest unexamined |
 | **77** | `next` | `Time Series/Period.swift:1051` |
 | 68 | `buildBlock` | `BusinessMathDSL/ScenarioAnalysis.swift:292` |
 | 62 | `solveShape` | `Simulation/distributionMomentFit.swift:460` |
+| 60 | `solve` | `Optimization/IntegerProgramming/BranchAndBound.swift:338` |
 
-Examined, for contrast: `fitGeneralLME` 75, `icc` 73, `solve` 60, `gibbsICCPosterior` 58.
-`generalAIREMLUpdate` was 121 and is now 19.
+Examined, for contrast: `fitGeneralLME` 75, `icc` 73, `gibbsICCPosterior` 58.
+`generalAIREMLUpdate` was 121 and is now 19; `gStudy` was 85 and is now below the threshold.
 
 ## 2. What closed, and what it cost
 
@@ -80,6 +80,33 @@ Examined, for contrast: `fitGeneralLME` 75, `icc` 73, `solve` 60, `gibbsICCPoste
 - **`solveRelaxation` 291 → 55**, stages extracted into `BranchAndBoundCutting.swift`.
 - **`RobustOptimizer` audited, clean.** The LP route was confirmed to fire by instrumentation
   (8 of 8 cases), not assumed — iteration count does *not* separate the two routes.
+
+### `gStudy` two-facet — 85 → below threshold, and **no defect**
+
+- **A clean sweep, and worth recording as one.** Degrees of freedom, mean squares and all
+  seven variance components agree with an exact oracle. Two deliberate mutations — a swapped
+  `sigma_pr` divisor, and dropping `+ MS_e` from `sigma_p` — are both caught, before and
+  after the refactor.
+- **The oracle builds the data rather than reading it.** Seven mutually orthogonal effects
+  (main effects centred, two-way double-centred, residual triple-centred) whose sums of
+  squares are known in closed form from the effect arrays. No sampling noise, no second
+  implementation to be wrong the same way. Mean squares are checked separately from the
+  components, so a failure names the stage.
+- **5 x 4 x 3 on purpose.** Every divisor in the EMS inversion is a different product of the
+  three dimensions; the existing tests use 3x2x2 and 4x2x3, where several coincide and a
+  swapped divisor is invisible. A guard test asserts the six divisors stay distinct.
+- **The oracle's own first fixture was broken and its guard caught it.** The residual array
+  used `% 13` against a coefficient of 13, so the `r` term cancelled and the three-way
+  contrast was identically zero — `MS_e` was ~1e-16 everywhere and three of the new tests
+  passed against it. The truncation test failed and named it. `oracleDesignsExerciseEveryTerm`
+  now asserts every constructed term contributes.
+- **What the old tests asserted could not fail**: seven components exist, every variance
+  `>= 0` (the function truncates negatives, so this is a tautology), `totalVariance` equals
+  the sum it is computed from, percentages sum to the total they are shares of. The test
+  called "Known three-way data with verifiable variance components" works four means out by
+  hand in comments and asserts none of them.
+- Eight helpers extracted, nothing above 18. The percentage block was duplicated across both
+  overloads and is now one function. **Bit-identical** across both overloads and five designs.
 
 ### The churn rate that produced negative customers — the package's last known issue
 

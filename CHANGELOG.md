@@ -11,6 +11,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### 2026-09-19 — The two-facet G-study, opened and found clean
+
+##### Tests
+
+- **An exact oracle for `gStudy(_:facetLabels:)`, which had none.**
+
+  `gStudy.json` and `GStudyReferenceTests` pin the **one-facet** overload against
+  statsmodels. The two-facet overload — seven components from a fully crossed `p × r × i`
+  design, and the higher-complexity half of the file — was checked only by assertions that
+  cannot fail:
+
+  | existing assertion | why nothing can break it |
+  |---|---|
+  | seven components exist | structural |
+  | every variance `>= 0` | the function truncates negatives to zero, so this is a tautology |
+  | `totalVariance == sum(components)` | `totalVariance` *is* computed as that sum |
+  | percentages sum to 100 | they are computed as shares of that same total |
+  | uniform data gives zeros | true of almost any decomposition |
+
+  The test named "Known three-way data with verifiable variance components" works the grand
+  mean, person means, rater means and item means out by hand in its comments and then
+  asserts none of them.
+
+  The new oracle does not compute anything from the data. It **builds** the data from seven
+  mutually orthogonal effects — main effects centred, two-way terms double-centred, the
+  residual triple-centred — whose sums of squares are known in closed form from the effect
+  arrays alone. There is no sampling noise and no second implementation to be wrong in the
+  same way: the answer is fixed by the inputs. Mean squares and degrees of freedom are
+  checked separately from the variance components, so a failure says whether the ANOVA or
+  the EMS algebra is at fault.
+
+  **The dimensions are 5 × 4 × 3 on purpose.** The EMS inversion divides each component by a
+  different product — `σ²_p` by `n_r n_i`, `σ²_pr` by `n_i`, `σ²_ri` by `n_p`, and so on.
+  Every existing two-facet test uses 3×2×2 or 4×2×3, where several of those products
+  coincide and a swapped divisor is invisible. A guard test asserts the six divisors stay
+  distinct, so a later "simplification" of the fixtures cannot silently blind the rest.
+
+  **No defect found.** Degrees of freedom, mean squares and all seven variance components
+  agree with the constructed answer to 1e-9, against a measured worst case of 1.2e-13. Two
+  deliberate mutations — a swapped `σ²_pr` divisor, and dropping the `+ MS_e` term from
+  `σ²_p` — are both caught, before and after the refactor below.
+
+- **The oracle's own first fixture was broken, and its guard caught it.** The residual array
+  was `(p·11 + r·13 + i·17) % 13`, where 13 is congruent to zero mod 13: the `r` term
+  vanished, leaving a function of `p` and `i` alone whose three-way contrast is identically
+  zero. Every design carried a residual of ~1e-16 and the EMS inversion was never exercised
+  with a real `MS_e` — and three of the new tests passed anyway. The truncation test, which
+  asserts the clamp is actually reached with a known negative behind it, was what failed.
+  `oracleDesignsExerciseEveryTerm` now asserts every constructed term contributes.
+
+##### Internal
+
+- **`gStudy(_:facetLabels:)`: cognitive complexity 85 → below the threshold**, the
+  highest-scoring function in `Sources/` after the AI-REML work. Split along the stages of
+  the decomposition — `gStudyValidateThreeWay`, `gStudyGrandMean`, `gStudyOneWayMeans`,
+  `gStudyTwoWayMeans`, `gStudyThreeWayMeans`, `gStudyThreeWaySums`,
+  `gStudyThreeWayMeanSquares`, `gStudyThreeWayComponents` — with nothing above 18.
+
+- **The percentage block was written out twice**, once per overload, with the same
+  `total > 0` guard and the same fallback to zeros. Both overloads now call one
+  `gStudyPercentages`. This package has already paid for that kind of duplication with an
+  ICC formula in three files and a churn range in four places.
+
+  Verified **bit-identical** across both overloads and five designs — every variance, mean
+  square, percentage and degree of freedom compared as raw bit patterns, not within a
+  tolerance.
+
 #### 2026-09-19 — A churn rate above 100% is refused rather than answered
 
 ##### Fixed
