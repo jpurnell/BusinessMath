@@ -30,6 +30,25 @@ struct MultipleLinearRegressionTests {
 
     // MARK: - 1️⃣ Golden Path Tests
 
+    /// A design with no predictors is refused, rather than answered with a NaN.
+    ///
+    /// `X` of `[[], [], [], []]` passed every guard this function had: the rows are
+    /// consistent, `n >= p + 1` holds trivially at `p = 0`, and `y` varies. It then reached
+    /// `(TSS - RSS) / Double(p)` and returned a result whose `fStatistic` was **NaN** —
+    /// carrying an `fStatisticPValue` of **1.0**, because the F-CDF refused the NaN and the
+    /// `?? 0.0` fallback turned that refusal into "not significant".
+    ///
+    /// A statistic that is not a number, wearing a confident p-value, is worse than an
+    /// error: nothing downstream can tell it apart from a real answer.
+    @Test("A design with no predictors is refused, not answered with a NaN F-statistic")
+    func zeroPredictorsAreRefused() throws {
+        let X: [[Double]] = [[], [], [], []]
+        let y: [Double] = [1.0, 2.0, 3.0, 5.0]
+        #expect(throws: RegressionError.self) {
+            _ = try multipleLinearRegression(X: X, y: y)
+        }
+    }
+
     @Test("Simple linear regression: y = 2x + 1")
     func simpleLinearRegression() throws {
         // Generate data: y = 2x + 1 (no noise for exact verification)

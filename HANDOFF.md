@@ -21,7 +21,7 @@ is the state and the traps.
 |---|---|
 | branch | `main`, pushed through the gStudy commit |
 | tags | latest **`v3.0.0-alpha.7`** (2026-09-18, tagged by the peer session) |
-| tests | **7,979 in 732 suites**, exit 0, **zero known issues** |
+| tests | **7,985 in 733 suites**, exit 0, **zero known issues** |
 | gate | `--no-cache --check all` → 45 of 45 ran, **0 errors and 0 warnings outside `doc-run`** |
 | `doc-run` | **flaky under load, not a regression** — see §4 |
 | guidelines repo | `../../development-guidelines` clean at `a5f9292`, `v2.4.0` tagged and pushed |
@@ -57,12 +57,13 @@ than trusting it** — `quality-gate --no-cache --no-index-build --check complex
 
 | Score | Function | Where |
 |---:|---|---|
-| **57** | `detect` | `Forecasting/AnomalyDetection.swift:155` — now the highest unexamined |
-| **55** | `multiWayANOVA` | `Statistics/ANOVA/multiWayANOVA.swift:50` |
-| **55** | `multipleLinearRegression` | `Statistics/Regression/MultipleLinearRegression.swift:232` |
-| **55** | `louvainCommunities` | `Network/Community/Community.swift:105` |
-| 45 | `standardisedMoments` | `Simulation/distributionMomentFit.swift` — the other half of the file just opened |
+| **56** | `multipleLinearRegression` | `Statistics/Regression/MultipleLinearRegression.swift:232` — **defect fixed, decomposition still owed** |
+| **55** | `louvainCommunities` | `Network/Community/Community.swift:105` — the last unexamined one over 50 |
+| 45 | `standardisedMoments` | `Simulation/distributionMomentFit.swift` |
 | 42 | `dualRobustCounterpart` | `AdvancedOptimization/RobustOptimizer.swift` |
+
+Done in this pass: `generalEMUpdate` 59 → 16, `linearRobustCounterpart` 59 → below, `detect`
+57 → below, `multiWayANOVA` 55 → below.
 
 `solve` (60, BranchAndBound) was examined in an earlier round — two defects — so the highest
 genuinely unexamined score in `Sources/` is now **59**.

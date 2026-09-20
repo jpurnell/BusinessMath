@@ -83,52 +83,7 @@ public func multiWayANOVA<T: Real>(
     // We represent marginal means as flat arrays keyed by subset, with row-major ordering
     // based on the sorted facet indices within the subset.
 
-    // Step 1: Compute marginal sums, then divide by count of averaged elements.
-    let allSubsets = allSubsetsIncludingEmpty(of: facetNames)
-
-    // For each subset, store a flat array of marginal means.
-    // The ordering within each flat array uses the natural facet order (by index in facetNames).
-    var marginalMeans: [Set<String>: [T]] = [:]
-
-    let totalCount = data.values.count
-
-    for subset in allSubsets {
-        // Determine the facet indices in this subset, in natural order
-        let subsetIndices = (0..<f).filter { subset.contains(facetNames[$0]) }
-        let subsetDims = subsetIndices.map { dimensions[$0] }
-        let tableSize = subsetDims.isEmpty ? 1 : subsetDims.reduce(1, *)
-
-        // Number of elements averaged over = totalCount / tableSize
-        let avgCount = totalCount / tableSize
-
-        guard avgCount > 0 else { continue }
-
-        // Accumulate sums
-        var sums = [T](repeating: T.zero, count: tableSize)
-
-        // Iterate over all observations
-        let strides = computeStrides(dimensions)
-
-        for flatIdx in 0..<totalCount {
-            // Determine the multi-index for this flat index
-            let multiIdx = flatToMultiIndex(flatIdx, dimensions: dimensions, strides: strides)
-
-            // Compute the flat index within the marginal table
-            var marginalFlat = 0
-            var marginalStride = 1
-            for si in stride(from: subsetIndices.count - 1, through: 0, by: -1) {
-                let facetIdx = subsetIndices[si]
-                marginalFlat += multiIdx[facetIdx] * marginalStride
-                marginalStride *= subsetDims[si]
-            }
-
-            sums[marginalFlat] += data.values[flatIdx]
-        }
-
-        // Divide by count to get means
-        let divisor = T(avgCount)
-        marginalMeans[subset] = sums.map { $0 / divisor }
-    }
+    let marginalMeans = marginalMeanTables(data, facetNames: facetNames, dimensions: dimensions)
 
     // Step 2: Compute SS for each effect via inclusion-exclusion.
     var ssDict: [Set<String>: T] = [:]
@@ -138,64 +93,11 @@ public func multiWayANOVA<T: Real>(
     for effect in effects {
         let effectIndices = (0..<f).filter { effect.contains(facetNames[$0]) }
         let effectDims = effectIndices.map { dimensions[$0] }
-        let effectTableSize = effectDims.reduce(1, *)
 
-        // Complement facets: those NOT in effect
-        let complementIndices = (0..<f).filter { !effect.contains(facetNames[$0]) }
-        let nComplement: T
-        if complementIndices.isEmpty {
-            nComplement = T(1)
-        } else {
-            nComplement = T(complementIndices.map { dimensions[$0] }.reduce(1, *))
-        }
-
-        // All subsets of effect (including empty set)
-        let effectFacets = effectIndices.map { facetNames[$0] }
-        let subsetsOfEffect = allSubsetsIncludingEmpty(of: effectFacets)
-
-        // For each level combination of effect, compute adjusted mean
-        var ssEffect = T.zero
-
-        for levelFlat in 0..<effectTableSize {
-            // Determine the multi-index within effect dimensions
-            let levelMulti = flatToMultiIndex(levelFlat, dimensions: effectDims,
-                                              strides: computeStrides(effectDims))
-
-            // Compute adjusted mean via inclusion-exclusion
-            var adjustedMean = T.zero
-
-            for subsetOfEffect in subsetsOfEffect {
-                let sign: T = (effect.count - subsetOfEffect.count) % 2 == 0 ? T(1) : T(-1)
-
-                // Look up the marginal mean for this subset at the restricted indices
-                guard let means = marginalMeans[subsetOfEffect] else { continue }
-
-                if subsetOfEffect.isEmpty {
-                    // Grand mean is a single value
-                    adjustedMean += sign * means[0]
-                } else {
-                    // Compute flat index within marginalMeans[subsetOfEffect]
-                    let subsetIndicesInOrder = (0..<f).filter { subsetOfEffect.contains(facetNames[$0]) }
-                    let subsetDims = subsetIndicesInOrder.map { dimensions[$0] }
-
-                    var marginalFlat = 0
-                    var marginalStride = 1
-                    for si in stride(from: subsetIndicesInOrder.count - 1, through: 0, by: -1) {
-                        let facetIdx = subsetIndicesInOrder[si]
-                        // Find this facet's level from the effect level combination
-                        guard let posInEffect = effectIndices.firstIndex(of: facetIdx) else { continue }
-                        marginalFlat += levelMulti[posInEffect] * marginalStride
-                        marginalStride *= subsetDims[si]
-                    }
-
-                    adjustedMean += sign * means[marginalFlat]
-                }
-            }
-
-            ssEffect += adjustedMean * adjustedMean
-        }
-
-        ssEffect = nComplement * ssEffect
+        let ssEffect = effectSumOfSquares(
+            effect, facetNames: facetNames, dimensions: dimensions,
+            effectIndices: effectIndices, effectDims: effectDims,
+            marginalMeans: marginalMeans)
 
         // df(E) = product of (n_f - 1) for f in E
         let df = effectDims.map { $0 - 1 }.reduce(1, *)
@@ -218,6 +120,133 @@ public func multiWayANOVA<T: Real>(
         degreesOfFreedom: dfDict,
         meanSquares: msDict
     )
+}
+
+/// The marginal mean table for every subset of the facets, including the empty one.
+///
+/// A table for subset `S` is indexed by the levels of the facets in `S` and averages over
+/// every facet not in `S`; the empty subset gives the grand mean as a single value. Stored
+/// flat, row-major over the subset's facets in their natural order.
+///
+/// - Parameters:
+///   - data: The crossed design.
+///   - facetNames: Labels for each facet, in the design's own order.
+///   - dimensions: Levels per facet, in the same order.
+/// - Returns: One flat table per subset.
+private func marginalMeanTables<T: Real>(
+    _ data: CrossedDesignData<T>, facetNames: [String], dimensions: [Int]
+) -> [Set<String>: [T]] {
+    let f = facetNames.count
+    let allSubsets = allSubsetsIncludingEmpty(of: facetNames)
+    var marginalMeans: [Set<String>: [T]] = [:]
+    let totalCount = data.values.count
+    let strides = computeStrides(dimensions)
+
+    for subset in allSubsets {
+        // Determine the facet indices in this subset, in natural order
+        let subsetIndices = (0..<f).filter { subset.contains(facetNames[$0]) }
+        let subsetDims = subsetIndices.map { dimensions[$0] }
+        let tableSize = subsetDims.isEmpty ? 1 : subsetDims.reduce(1, *)
+
+        // Number of elements averaged over = totalCount / tableSize
+        let avgCount = totalCount / tableSize
+        guard avgCount > 0 else { continue }
+
+        var sums = [T](repeating: T.zero, count: tableSize)
+
+        for flatIdx in 0..<totalCount {
+            let multiIdx = flatToMultiIndex(flatIdx, dimensions: dimensions, strides: strides)
+
+            // Compute the flat index within the marginal table
+            var marginalFlat = 0
+            var marginalStride = 1
+            for si in stride(from: subsetIndices.count - 1, through: 0, by: -1) {
+                let facetIdx = subsetIndices[si]
+                marginalFlat += multiIdx[facetIdx] * marginalStride
+                marginalStride *= subsetDims[si]
+            }
+
+            sums[marginalFlat] += data.values[flatIdx]
+        }
+
+        let divisor = T(avgCount)
+        marginalMeans[subset] = sums.map { $0 / divisor }
+    }
+    return marginalMeans
+}
+
+/// One effect's sum of squares, by inclusion-exclusion over its own subsets.
+///
+///     adjustedMean(E, levels) = SUM over subsets S of E, including the empty one:
+///         (-1)^(|E| - |S|) * marginalMean[S][levels restricted to S]
+///     SS(E) = nComplement(E) * SUM over level combinations: adjustedMean^2
+///
+/// The alternating sign is what removes the lower-order effects already accounted for
+/// elsewhere, and `nComplement` — the product of the dimensions *not* in `E` — is how many
+/// observations each adjusted cell stands for. Taking that product from the wrong side is
+/// the error a design with two equal dimensions cannot detect, which is why
+/// `MultiWayANOVAOracleTests` uses three distinct ones.
+///
+/// - Returns: The effect's sum of squares.
+private func effectSumOfSquares<T: Real>(
+    _ effect: Set<String>,
+    facetNames: [String],
+    dimensions: [Int],
+    effectIndices: [Int],
+    effectDims: [Int],
+    marginalMeans: [Set<String>: [T]]
+) -> T {
+    let f = facetNames.count
+    let effectTableSize = effectDims.reduce(1, *)
+
+    // Complement facets: those NOT in effect
+    let complementIndices = (0..<f).filter { !effect.contains(facetNames[$0]) }
+    let nComplement: T
+    if complementIndices.isEmpty {
+        nComplement = T(1)
+    } else {
+        nComplement = T(complementIndices.map { dimensions[$0] }.reduce(1, *))
+    }
+
+    let subsetsOfEffect = allSubsetsIncludingEmpty(of: Array(effect))
+    var ssEffect = T.zero
+
+    for cellFlat in 0..<effectTableSize {
+        // The level of each facet in the effect, for this cell.
+        var effectLevels = [Int](repeating: 0, count: effectIndices.count)
+        var remainder = cellFlat
+        for si in stride(from: effectIndices.count - 1, through: 0, by: -1) {
+            effectLevels[si] = remainder % effectDims[si]
+            remainder /= effectDims[si]
+        }
+
+        var adjustedMean = T.zero
+        for subsetOfEffect in subsetsOfEffect {
+            guard let means = marginalMeans[subsetOfEffect] else { continue }
+            let sign: T = (effect.count - subsetOfEffect.count) % 2 == 0 ? T(1) : T(-1)
+
+            let subsetIndices = (0..<f).filter { subsetOfEffect.contains(facetNames[$0]) }
+            if subsetIndices.isEmpty {
+                adjustedMean += sign * means[0]
+                continue
+            }
+
+            let subsetDims = subsetIndices.map { dimensions[$0] }
+            var marginalFlat = 0
+            var marginalStride = 1
+            for si in stride(from: subsetIndices.count - 1, through: 0, by: -1) {
+                let facetIdx = subsetIndices[si]
+                guard let positionInEffect = effectIndices.firstIndex(of: facetIdx) else { continue }
+                marginalFlat += effectLevels[positionInEffect] * marginalStride
+                marginalStride *= subsetDims[si]
+            }
+            adjustedMean += sign * means[marginalFlat]
+        }
+
+        ssEffect += adjustedMean * adjustedMean
+    }
+
+    return nComplement * ssEffect
 }
 
 // MARK: - Multi-Way ANOVA Helpers

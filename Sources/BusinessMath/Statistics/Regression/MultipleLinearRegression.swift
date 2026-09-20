@@ -254,13 +254,29 @@ public func multipleLinearRegression(
         throw RegressionError.invalidPredictorMatrix(message: "X must be rectangular (all rows same length)")
     }
 
+    // An intercept-only "regression" has no predictor to regress on, and the F-statistic
+    // it produced said so in the worst available way: `(TSS - RSS) / Double(p)` with `p`
+    // zero came back **NaN**, paired with an `fStatisticPValue` of 1.0 — because the F-CDF
+    // refused the NaN and the `?? 0.0` fallback turned that refusal into "not significant".
+    // A statistic that is not a number, wearing a confident p-value, is the
+    // plausible-but-wrong result this package is not allowed to return.
+    guard p >= 1 else {
+        throw RegressionError.insufficientData(
+            message: "at least one predictor is required; X has rows with no columns")
+    }
+
     guard n >= p + 1 else {
         throw RegressionError.insufficientData(message: "Need at least \(p + 1) observations for \(p) predictors (have \(n))")
     }
 
     // Check for variance in y
-    let yMean = y.reduce(0.0, +) / Double(n) // fp-safety:disable
-    let yVariance = y.map { pow($0 - yMean, 2) }.reduce(0.0, +) / Double(n) // fp-safety:disable
+    // `Swift.max(_:, 1)` rather than a bare suppression: `n` is at least 1 from the
+    // emptiness guard above, and this puts that where the compiler and a reader can both
+    // see it. Of the seven suppressions this function carried, every one was written with
+    // no reason after it — the shape that hid a process crash elsewhere in this package.
+    let sampleCount = Double(Swift.max(n, 1))
+    let yMean = y.reduce(0.0, +) / sampleCount
+    let yVariance = y.map { pow($0 - yMean, 2) }.reduce(0.0, +) / sampleCount
     guard yVariance > 1e-15 else {
         throw RegressionError.noVariance(message: "y has no variance (all values approximately equal)")
     }
@@ -325,7 +341,9 @@ public func multipleLinearRegression(
     if degreesOfFreedom == 0 {
         adjustedRSquared = rSquared
     } else {
-        adjustedRSquared = 1.0 - ((1.0 - rSquared) * Double(n - 1) / Double(degreesOfFreedom)) // fp-safety:disable
+        let residualDF = Double(degreesOfFreedom)
+        let ratio = Double(n - 1) / residualDF // fp-safety:disable — the `degreesOfFreedom == 0` branch above is the guard
+        adjustedRSquared = 1.0 - ((1.0 - rSquared) * ratio)
     }
 
     // MARK: - Compute Standard Errors
@@ -340,7 +358,8 @@ public func multipleLinearRegression(
     let fStatisticPValue: Double
 
     if degreesOfFreedom > 0 {
-        residualVariance = RSS / Double(degreesOfFreedom) // fp-safety:disable
+        let residualDivisor = Double(Swift.max(degreesOfFreedom, 1))
+        residualVariance = RSS / residualDivisor
         residualStandardError = sqrt(residualVariance)
 
         // Compute (XᵀX)⁻¹
@@ -372,8 +391,13 @@ public func multipleLinearRegression(
             return ConfidenceInterval(lower: coef - margin, upper: coef + margin)
         }
 
-        let MSR = (TSS - RSS) / Double(p) // fp-safety:disable
-        let MSE = RSS / Double(degreesOfFreedom) // fp-safety:disable
+        // `p` is at least 1 from the guard at the top of this function, and
+        // `degreesOfFreedom` at least 1 wherever this branch runs; both are written so the
+        // checker can see it rather than asserted in a comment.
+        let predictorDivisor = Double(Swift.max(p, 1))
+        let errorDivisor = Double(Swift.max(degreesOfFreedom, 1))
+        let MSR = (TSS - RSS) / predictorDivisor
+        let MSE = RSS / errorDivisor
         fStatistic = MSR / MSE
 
         // silent: fallback to p=1.0 (non-significant) if F-CDF computation fails
@@ -419,7 +443,9 @@ public func multipleLinearRegression(
                 if abs(oneMinusR2) < 1e-15 {
                     vif[j] = .infinity
                 } else {
-                    vif[j] = 1.0 / oneMinusR2 // fp-safety:disable
+                    // The `abs(oneMinusR2) < 1e-15` branch above is the guard; this
+                    // spelling lets the checker see it too.
+                    vif[j] = 1.0 / oneMinusR2 // fp-safety:disable — the `abs(oneMinusR2) < 1e-15` branch above is the guard
                 }
             } catch { // logging: auxiliary regression failure means VIF is undefined — set to infinity
                 vif[j] = .infinity

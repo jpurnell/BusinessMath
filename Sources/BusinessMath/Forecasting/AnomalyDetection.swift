@@ -153,94 +153,107 @@ public struct ZScoreAnomalyDetector<T: Real & Sendable & Codable> {
 		/// - Returns: An array of detected anomalies.
 
 	public func detect(in data: TimeSeries<T>, threshold: T) -> [Anomaly<T>] {
-			guard data.count >= windowSize else { return [] }
+		guard data.count >= windowSize else { return [] }
 
-			var anomalies: [Anomaly<T>] = []
-			let values = data.valuesArray
+		var anomalies: [Anomaly<T>] = []
+		let values = data.valuesArray
 
-			// Track indices of previously flagged anomalies to exclude from the baseline window
-			var flaggedIndices = Set<Int>()
+		// Points already flagged are dropped from every later baseline. Without that, a
+		// spike enters the window of the point after it, inflates the standard deviation,
+		// and hides its neighbour: on a flat baseline followed by three consecutive spikes,
+		// the second scores z = 2.00 and the third z = 1.22 against a contaminated window,
+		// where excluding the earlier ones puts both above 120. `consecutiveSpikesAreAllCaught`
+		// is that arithmetic, computed both ways.
+		var flaggedIndices = Set<Int>()
 
-			for i in windowSize..<values.count {
-					let start = i - windowSize
+		for i in windowSize..<values.count {
+			let start = i - windowSize
+			guard let baseline = Self.baselineStatistics(
+				values: values, from: start, to: i, excluding: flaggedIndices) else { continue }
 
-					// Compute mean over the window excluding prior anomalies
-					var sum: T = .zero
-					var n: Int = 0
-					for j in start..<i {
-							if flaggedIndices.contains(j) { continue }
-							sum += values[j]
-							n += 1
-					}
-					if n == 0 { continue } // no usable baseline
-					let countT = T(n)
-					let mean = sum / countT
+			let value = values[i]
+			guard let zScore = Self.deviationScore(
+				value: value, mean: baseline.mean, stddev: baseline.stddev) else { continue }
+			guard let severity = Self.severity(for: zScore, threshold: threshold) else { continue }
 
-					// Compute variance over the same filtered window
-					var sumSq: T = .zero
-					for j in start..<i {
-							if flaggedIndices.contains(j) { continue }
-							let d = values[j] - mean
-							sumSq += d * d
-					}
-					let variance = sumSq / countT
-					let stddev = T.sqrt(variance)
+			anomalies.append(Anomaly(
+				period: data.periods[i],
+				value: value,
+				expectedValue: baseline.mean,
+				deviationScore: zScore,
+				severity: severity
+			))
+			flaggedIndices.insert(i) // exclude this point from future baselines
+		}
 
-					let value = values[i]
+		return anomalies
+	}
 
-					var zScore: T = .zero
-					var severity: AnomalySeverity? = nil
+	/// The mean and standard deviation of one window, with flagged points left out.
+	///
+	/// - Parameters:
+	///   - values: The whole series.
+	///   - start: First index of the window.
+	///   - end: One past the last index of the window.
+	///   - excluded: Indices already flagged as anomalies.
+	/// - Returns: The baseline's mean and population standard deviation, or `nil` when every
+	///   point in the window has been flagged and there is nothing left to compare against.
+	private static func baselineStatistics(
+		values: [T], from start: Int, to end: Int, excluding excluded: Set<Int>
+	) -> (mean: T, stddev: T)? {
+		var sum: T = .zero
+		var n: Int = 0
+		for j in start..<end {
+			if excluded.contains(j) { continue }
+			sum += values[j]
+			n += 1
+		}
+		if n == 0 { return nil } // no usable baseline
+		let countT = T(n)
+		let mean = sum / countT
 
-					let three: T = 3
-					let four: T = 4
+		var sumSq: T = .zero
+		for j in start..<end {
+			if excluded.contains(j) { continue }
+			let d = values[j] - mean
+			sumSq += d * d
+		}
+		let variance = sumSq / countT
+		return (mean: mean, stddev: T.sqrt(variance))
+	}
 
-					if stddev == .zero {
-							// Flat baseline: use a finite fallback scale so that z-scores are comparable and monotonic
-							if value != mean {
-									let diff = abs(value - mean)
-									let rel: T = T(1) / T(100)   // 1% of the baseline level
-									let absEps: T = 1   // at least 1 unit to avoid exploding z near zero mean
-									let fallbackScale = max(abs(mean) * rel, absEps)
-									zScore = diff / fallbackScale
+	/// How far `value` sits from the baseline, in standard deviations.
+	///
+	/// A flat baseline has no standard deviation to divide by, and a window can be flat for
+	/// an ordinary reason — a level that genuinely did not move. Rather than report an
+	/// infinite score or none at all, the scale falls back to one percent of the baseline
+	/// level, floored at one unit so a level near zero does not send the score to infinity by
+	/// a different route.
+	///
+	/// - Returns: The score, or `nil` when the baseline is flat *and* the point sits exactly
+	///   on it — where there is no deviation to score rather than an unmeasurable one.
+	private static func deviationScore(value: T, mean: T, stddev: T) -> T? {
+		let diff = abs(value - mean)
+		guard stddev == .zero else { return diff / stddev }
+		guard value != mean else { return nil }
 
-									if zScore > threshold {
-											if zScore > four {
-													severity = .severe
-											} else if zScore > three {
-													severity = .moderate
-											} else {
-													severity = .mild
-											}
-									}
-							}
-					} else {
-							let diff = abs(value - mean)
-							zScore = diff / stddev
+		let rel: T = T(1) / T(100)   // 1% of the baseline level
+		let absEps: T = 1   // at least 1 unit to avoid exploding z near zero mean
+		let fallbackScale = max(abs(mean) * rel, absEps)
+		return diff / fallbackScale
+	}
 
-							if zScore > threshold {
-									if zScore > four {
-											severity = .severe
-									} else if zScore > three {
-											severity = .moderate
-									} else {
-											severity = .mild
-									}
-							}
-					}
-
-					if let sev = severity {
-							anomalies.append(Anomaly(
-									period: data.periods[i],
-									value: value,
-									expectedValue: mean,
-									deviationScore: zScore,
-									severity: sev
-							))
-							flaggedIndices.insert(i) // exclude this point from future baselines
-					}
-			}
-
-			return anomalies
+	/// The severity band a score falls in, or `nil` when it does not clear the threshold.
+	///
+	/// Written once rather than once per branch: the flat-baseline path and the ordinary one
+	/// classified their scores with two identical copies of this ladder.
+	private static func severity(for zScore: T, threshold: T) -> AnomalySeverity? {
+		guard zScore > threshold else { return nil }
+		let three: T = 3
+		let four: T = 4
+		if zScore > four { return .severe }
+		if zScore > three { return .moderate }
+		return .mild
 	}
 }
 

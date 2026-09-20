@@ -47,6 +47,57 @@ struct RobustAnomalyDetectionTests {
 		}
 	}
 
+	/// "Runs of consecutive spikes are caught too" — asserted, rather than claimed.
+	///
+	/// That sentence has been in this file's header since it was written, and nothing tested
+	/// it. It is also the whole reason `detect` carries a `flaggedIndices` set: without it a
+	/// spike enters the baseline of the point after it, inflates the standard deviation, and
+	/// hides its neighbour.
+	///
+	/// The series below is a flat baseline of five points around 100 followed by three
+	/// consecutive 200s, with `windowSize` 5. The arithmetic either way:
+	///
+	/// | point | baseline with exclusion | z | baseline without | z |
+	/// |---|---|---|---|---|
+	/// | i = 5 | 0…4 | 133.36 | 0…4 | 133.36 |
+	/// | i = 6 | 1…4 | 120.30 | 1…5 | **2.00** |
+	/// | i = 7 | 2…4 | 122.47 | 2…6 | **1.22** |
+	///
+	/// So the exclusion is the difference between finding three anomalies and finding one.
+	/// The contaminated figures are recomputed here rather than quoted, so this test shows
+	/// *why* the set is load-bearing instead of only that the code currently passes.
+	@Test("A run of consecutive spikes is caught, because flagged points leave the baseline")
+	func consecutiveSpikesAreAllCaught() {
+		let values: [Double] = [100, 101, 99, 100, 101, 200, 200, 200]
+		let data = series(values)
+		let detector = ZScoreAnomalyDetector<Double>(windowSize: 5)
+		let found = detector.detect(in: data, threshold: 3.0)
+
+		#expect(found.count == 3, "found \(found.count) of the three spikes")
+		for anomaly in found {
+			#expect(anomaly.value.isEqual(to: 200.0), "flagged \(anomaly.value)")
+		}
+
+		// And what the same points would score if the earlier spikes stayed in the baseline.
+		for target in [6, 7] {
+			let baseline = Array(values[(target - 5)..<target])
+			let mean: Double = baseline.reduce(0, +) / Double(baseline.count)
+			var sumSquares = 0.0
+			for value in baseline {
+				let deviation: Double = value - mean
+				sumSquares += deviation * deviation
+			}
+			let sd: Double = (sumSquares / Double(baseline.count)).squareRoot()
+			let contaminated: Double = (values[target] - mean) / sd
+			#expect(contaminated < 3.0,
+					"""
+					index \(target) would score \(contaminated) against a contaminated \
+					baseline, which is above the threshold — the exclusion is no longer \
+					what catches it, and this test no longer shows anything
+					""")
+		}
+	}
+
 	/// The blind spot that is real, stated as the difference one unexaminable point makes.
 	@Test("A spike inside the first window hides a later anomaly entirely")
 	func leadingSpikeMasksALaterAnomaly() {

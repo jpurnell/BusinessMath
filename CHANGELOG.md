@@ -11,6 +11,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### 2026-09-20 — A regression with no predictors returned a NaN wearing a p-value
+
+##### Fixed
+
+- **`multipleLinearRegression` accepted a design with zero predictors and answered with a
+  NaN.** `X` of `[[], [], [], []]` passes every guard the function had: the rows are
+  consistent, `n >= p + 1` holds trivially at `p = 0`, and `y` varies. It then reached
+  `(TSS - RSS) / Double(p)` and returned a result whose `fStatistic` was **NaN**, carrying
+  an `fStatisticPValue` of **1.0** — because the F-CDF refused the NaN and a `?? 0.0`
+  fallback turned that refusal into "not significant".
+
+  A statistic that is not a number, wearing a confident p-value, is worse than an error:
+  nothing downstream can tell it from a real answer. Now refused with
+  `RegressionError.insufficientData`.
+
+  Found by the bare-suppression grep. The function carried **seven** `fp-safety:disable`
+  comments and **not one** of them said why it was safe.
+
+##### Internal
+
+- **`fp-safety:disable` in `MultipleLinearRegression.swift`: 7 bare → 2 justified.** Five
+  went away entirely by binding the divisor to a named `let` first, which is the shape the
+  checker can actually see:
+
+  ```swift
+  let errorDivisor = Double(Swift.max(degreesOfFreedom, 1))
+  let MSE = RSS / errorDivisor
+  ```
+
+  The two that remain are where a real `if`/`else` guard exists but the checker cannot trace
+  it — the `degreesOfFreedom == 0` branch and the `abs(oneMinusR2) < 1e-15` branch. Both now
+  name the guard they depend on. That is the honest end state: a suppression is acceptable
+  when the safety is real and the checker is the thing that cannot see it, and never
+  acceptable when nobody has said why.
+
+- **An oracle for the three-facet `multiWayANOVA`.** Its eight existing tests check that the
+  seven `SS` sum to `SS_total`, that the `df` sum to `N - 1`, and that `MS = SS / df` —
+  every one of which survives an `SS` split wrongly *between* effects. A term credited to
+  `A` that belongs to `A × B` leaves the total untouched.
+
+  The new oracle builds data from seven mutually orthogonal effects whose sums of squares
+  are known in closed form, at 4 × 3 × 2 so that all six multipliers — `n_b n_c`, `n_a n_c`,
+  `n_a n_b`, `n_c`, `n_b`, `n_a` — are distinct. **No defect found.** Two mutations caught:
+  the complement multiplier taken from the effect's own facets (7 failures) and the
+  inclusion-exclusion sign dropped (8).
+
+  A third mutation — inverting the sign — passed, and was equivalent rather than missed:
+  `adjustedMean` is used only as `adjustedMean * adjustedMean`, so negating it all cancels
+  under the square. Third equivalent mutation this session.
+
+- **The construction is shared, not copied.** `OrthogonalEffects` in `TestSupport` now holds
+  the centring helpers that `GStudyTwoFacetOracleTests` and `MultiWayANOVAOracleTests` both
+  need. Its guard caught a degenerate fixture immediately: `(i * 5 + k * 2) % 9` produced
+  **no A×C interaction at all**, because with two levels of C the increment never crosses 9
+  and every row's column difference was the same constant.
+
+- **`consecutiveSpikesAreAllCaught`** pins a sentence that had been in
+  `RobustAnomalyDetectionTests`' header, unasserted, since it was written: *"Runs of
+  consecutive spikes are caught too."* That claim is the entire reason `detect` keeps a
+  `flaggedIndices` set. On a flat baseline followed by three spikes, excluding the flagged
+  points scores the second and third at 120.30 and 122.47; leaving them in scores them at
+  **2.00** and **1.22**, both below the threshold. The exclusion is the difference between
+  finding three anomalies and finding one, and the test computes it both ways.
+
+- **Complexity: `detect` 57 → below the threshold**, `multiWayANOVA` 55 → below it. `detect`
+  had the severity ladder written out twice, once per branch; it is one function now.
+
 #### 2026-09-20 — The EM step, and the robust LP shortcut
 
 ##### Tests
