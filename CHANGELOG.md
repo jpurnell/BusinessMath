@@ -11,6 +11,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### 2026-09-20 — A single-step sensitivity crashed the process
+
+##### Fixed
+
+- **`Sensitivity(on:range:steps: 1)` brought the process down.**
+
+  ```
+  Fatal error: Double value cannot be converted to Int because it is either infinite or NaN
+  ```
+
+  `steps - 1` is zero, so the step size was infinite, `Double(0) * .infinity` gave a **NaN**
+  multiplier, and the scenario's own name formatted it with `Int(multiplier * 100)` — a
+  trapping conversion. A degenerate range such as `1.0...1.0` reached the same trap by way of
+  `0.0 / 0.0`. One step is not a degenerate request; it is "evaluate this parameter at a
+  single point".
+
+  **`Vary` has the identical division and has always guarded it**, and its
+  `fp-safety:disable` carries the justification that earns it — *"steps >= 2 from guard
+  above"*. There is even a test for `Vary(…, steps: 1)` returning the `from` value. The
+  annotation was copied to the sensitivity path **without the guard behind it**, so the
+  checker had been told to be quiet about the one division that could not survive its input.
+
+  Of the nine `fp-safety:disable` suppressions in `BusinessMathDSL`, seven state why they are
+  safe. **The two bare ones are this crash and `DCFModel.swift:179`** — a sharp enough
+  heuristic to be worth writing down: a suppression with no justification after it is where
+  the guard is missing.
+
+  A single step now takes the range's lower bound, which is what `Vary` returns for the same
+  question. Zero or fewer steps contribute nothing, exactly as before.
+
+- **A scenario's name can no longer crash a program.** `Int(_:)` on a `Double` traps on a
+  non-finite value and on anything outside `Int`'s range, and that conversion was reached
+  while building a *label*. `percentLabel(_:)` falls back to the plain description rather
+  than trapping.
+
+##### Tests
+
+- The crash had no test because nothing ever asked the sensitivity path for one step —
+  `ScenarioAnalysisBuilderTests` covers `Vary(steps: 1)`, which is a different component.
+  Seven new assertions cover the single step, the degenerate range, step counts 1 through 11
+  all finite and finitely named, and non-positive steps contributing nothing.
+
+- **The cartesian product is now pinned.** Stacked `Vary` components multiply rather than
+  concatenate — `n` variations of `k` values give `k^n` scenarios — which is the builder's
+  most surprising behaviour. The expected set is enumerated directly in the test, a different
+  algorithm from the builder's accumulate-as-you-go fold. Also pinned: the first variation
+  *seeds* the set rather than multiplying an empty one, and a tornado chart varies one
+  parameter at a time rather than crossing them (six scenarios, not nine).
+
+##### Internal
+
+- **`buildBlock`: cognitive complexity 68 → below the threshold.** Each component's
+  contribution moved into its own function — `varied(_:by:base:)`, `sensitivityScenarios`,
+  `tornadoScenarios`, `monteCarloScenarios` — leaving `buildBlock` a flat dispatch that
+  accumulates. Verified identical on seven declaration shapes, comparing every parameter as a
+  raw bit pattern; the only behaviour that changed is the input that used to crash.
+
 #### 2026-09-20 — `Period.next()` stepped ten rungs and was tested on one
 
 ##### Tests

@@ -21,7 +21,7 @@ is the state and the traps.
 |---|---|
 | branch | `main`, pushed through the gStudy commit |
 | tags | latest **`v3.0.0-alpha.7`** (2026-09-18, tagged by the peer session) |
-| tests | **7,963 in 729 suites**, exit 0, **zero known issues** |
+| tests | **7,970 in 730 suites**, exit 0, **zero known issues** |
 | gate | `--no-cache --check all` → 45 of 45 ran, **0 errors and 0 warnings outside `doc-run`** |
 | `doc-run` | **flaky under load, not a regression** — see §4 |
 | guidelines repo | `../../development-guidelines` clean at `a5f9292`, `v2.4.0` tagged and pushed |
@@ -57,15 +57,22 @@ than trusting it** — `quality-gate --no-cache --no-index-build --check complex
 
 | Score | Function | Where |
 |---:|---|---|
-| **68** | `buildBlock` | `BusinessMathDSL/ScenarioAnalysis.swift:292` — now the highest unexamined |
-| 62 | `solveShape` | `Simulation/distributionMomentFit.swift:460` |
+| **62** | `solveShape` | `Simulation/distributionMomentFit.swift:460` — now the highest unexamined |
 | 60 | `solve` | `Optimization/IntegerProgramming/BranchAndBound.swift:338` |
 | 59 | `linearRobustCounterpart` | `AdvancedOptimization/RobustOptimizer.swift:651` |
 | 59 | `generalEMUpdate` | `Statistics/MixedModels/Fitting/fitGeneralLME.swift:654` |
+| 57 | `detect` | `Forecasting/AnomalyDetection.swift:155` |
 
 Examined, for contrast: `fitGeneralLME` 75, `icc` 73, `gibbsICCPosterior` 58.
-`generalAIREMLUpdate` was 121 and is now 19; `gStudy` 85, `bootstrap` 79 and `Period.next`
-77 are all now below the threshold.
+`generalAIREMLUpdate` was 121 and is now 19; `gStudy` 85, `bootstrap` 79, `Period.next` 77
+and `buildBlock` 68 are all now below the threshold.
+
+**Nothing in `Sources/` scores above 75 any more, and the 100+ band is empty.** Measured
+defect yield over the whole programme: **7 of 8 functions scoring >= 95 held a correctness
+defect; 0 of 4 below 95 did** — though `buildBlock` at 68 held a *crash*, so the band below 95
+is not empty of value, only of the tangled-arithmetic defects the high band was full of. Treat
+15 as the gate's note level and ~90 as the "open this with an oracle" line; below that, the
+value is decomposition and coverage.
 
 ## 2. What closed, and what it cost
 
@@ -81,6 +88,30 @@ Examined, for contrast: `fitGeneralLME` 75, `icc` 73, `gibbsICCPosterior` 58.
 - **`solveRelaxation` 291 → 55**, stages extracted into `BranchAndBoundCutting.swift`.
 - **`RobustOptimizer` audited, clean.** The LP route was confirmed to fire by instrumentation
   (8 of 8 cases), not assumed — iteration count does *not* separate the two routes.
+
+### `buildBlock` — 68 → below threshold, and a crash found by a missing justification
+
+- **`Sensitivity(on:range:steps: 1)` crashed the process.** `steps - 1` is zero, the step size
+  came out infinite, `Double(0) * .infinity` gave a NaN multiplier, and the scenario's *name*
+  formatted it with `Int(multiplier * 100)` — a trapping conversion. A degenerate range like
+  `1.0...1.0` reached the same trap through `0.0 / 0.0`.
+- **The marker was a bare suppression.** `Vary` has the identical division, has always
+  guarded it, and its `fp-safety:disable` carries the justification that earns it — *"steps >=
+  2 from guard above"*. The annotation was copied to the sensitivity path without the guard.
+  Of the nine suppressions in `BusinessMathDSL`, seven say why they are safe; **the two bare
+  ones are this crash and `DCFModel.swift:179`**. A suppression with nothing written after it
+  is where the guard is missing — cheap to grep for, and it found this.
+- **`DCFModel.swift:179` is the other one, and is left open deliberately.**
+  `tv / pow(1 + waccRate, years)` is a division by zero at exactly −100% WACC, and nothing
+  validates `waccRate` — line 159 above it makes the claim "always > 0" that this depends on.
+  Far-fetched input, and deciding what a −100% cost of capital *should* do is a design
+  question rather than a fix. Flagged, not patched.
+- A scenario's name can no longer trap: `percentLabel(_:)` falls back to a plain description.
+- **The cartesian product is now pinned** — stacked `Vary` multiplies (`k^n`), the first
+  variation seeds rather than multiplying an empty set, and a tornado varies one parameter at
+  a time (six scenarios, not nine). Expected sets enumerated directly, not folded.
+- Four component cases extracted. Identical on seven declaration shapes by raw bit pattern;
+  the only behaviour that changed is the input that used to crash.
 
 ### `Period.next()` — 77 → below threshold, no defect, and a lesson about mutations
 

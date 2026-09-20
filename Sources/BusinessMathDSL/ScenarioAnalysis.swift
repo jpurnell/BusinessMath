@@ -293,7 +293,6 @@ public struct ScenarioAnalysisBuilder {
         var scenarios: [Scenario] = []
         var baseScenario: [String: Double]? = nil
 
-        // Process components
         for component in components {
             switch component {
             case .scenario(let scenario):
@@ -303,97 +302,191 @@ public struct ScenarioAnalysisBuilder {
                 baseScenario = base.parameters
 
             case .vary(let vary):
-                // Apply variation to base scenario
                 guard let base = baseScenario else {
                     preconditionFailure("Vary requires a BaseScenario")
                 }
-
-                // If no existing scenarios, create them from this variation
-                if scenarios.isEmpty {
-                    for value in vary.values {
-                        var params = base
-                        params[vary.parameterName] = value
-                        scenarios.append(Scenario(
-                            name: "\(vary.parameterName)=\(value)",
-                            parameters: params
-                        ))
-                    }
-                } else {
-                    // Apply variation to existing scenarios (cartesian product)
-                    var newScenarios: [Scenario] = []
-                    for scenario in scenarios {
-                        for value in vary.values {
-                            var params = scenario.parameters
-                            params[vary.parameterName] = value
-                            newScenarios.append(Scenario(
-                                name: "\(scenario.name),\(vary.parameterName)=\(value)",
-                                parameters: params
-                            ))
-                        }
-                    }
-                    scenarios = newScenarios
-                }
+                scenarios = varied(scenarios, by: vary, base: base)
 
             case .sensitivity(let sensitivity):
                 guard let base = baseScenario else {
                     preconditionFailure("Sensitivity requires a BaseScenario")
                 }
-
-                let baseValue = base[sensitivity.parameterName] ?? 0
-                let stepSize = (sensitivity.range.upperBound - sensitivity.range.lowerBound) / Double(sensitivity.steps - 1) // fp-safety:disable
-
-                for i in 0..<sensitivity.steps {
-                    let multiplier = sensitivity.range.lowerBound + Double(i) * stepSize
-                    var params = base
-                    params[sensitivity.parameterName] = baseValue * multiplier
-
-                    scenarios.append(Scenario(
-                        name: "\(sensitivity.parameterName) @ \(Int(multiplier * 100))%",
-                        parameters: params
-                    ))
-                }
+                scenarios.append(contentsOf: sensitivityScenarios(sensitivity, base: base))
 
             case .tornadoChart(let tornado):
                 guard let base = baseScenario else {
                     preconditionFailure("TornadoChart requires a BaseScenario")
                 }
-
-                for vary in tornado.variations {
-                    let baseValue = base[vary.parameterName] ?? 0
-
-                    for (index, multiplier) in vary.values.enumerated() {
-                        var params = base
-                        params[vary.parameterName] = baseValue * multiplier
-
-                        let label = index == 0 ? "low" : (index == 1 ? "base" : "high")
-                        scenarios.append(Scenario(
-                            name: "\(vary.parameterName) (\(label))",
-                            parameters: params
-                        ))
-                    }
-                }
+                scenarios.append(contentsOf: tornadoScenarios(tornado, base: base))
 
             case .monteCarlo(let monteCarlo):
                 guard let base = baseScenario else {
                     preconditionFailure("MonteCarlo requires a BaseScenario")
                 }
-
-                for trial in 0..<monteCarlo.trials {
-                    var params = base
-
-                    for randomParam in monteCarlo.randomParameters {
-                        params[randomParam.name] = randomParam.distribution.sample()
-                    }
-
-                    scenarios.append(Scenario(
-                        name: "Trial \(trial + 1)",
-                        parameters: params
-                    ))
-                }
+                scenarios.append(contentsOf: monteCarloScenarios(monteCarlo, base: base))
             }
         }
 
         return ScenarioAnalysis(scenarios: scenarios)
+    }
+
+    // MARK: - One component's contribution
+
+    /// Applies a variation, either seeding the scenario set or crossing with it.
+    ///
+    /// With nothing accumulated yet the variation *is* the scenario set, one per value. With
+    /// scenarios already present it is a cartesian product, so `n` variations of `k` values
+    /// each give `k^n` scenarios — the growth a caller should expect from stacking `Vary`.
+    ///
+    /// - Parameters:
+    ///   - scenarios: What has accumulated so far.
+    ///   - vary: The variation to apply.
+    ///   - base: The base scenario's parameters.
+    /// - Returns: The new scenario set.
+    private static func varied(
+        _ scenarios: [Scenario], by vary: Vary, base: [String: Double]
+    ) -> [Scenario] {
+        guard !scenarios.isEmpty else {
+            return vary.values.map { value in
+                var params = base
+                params[vary.parameterName] = value
+                return Scenario(name: "\(vary.parameterName)=\(value)", parameters: params)
+            }
+        }
+
+        var product: [Scenario] = []
+        for scenario in scenarios {
+            for value in vary.values {
+                var params = scenario.parameters
+                params[vary.parameterName] = value
+                product.append(Scenario(
+                    name: "\(scenario.name),\(vary.parameterName)=\(value)",
+                    parameters: params
+                ))
+            }
+        }
+        return product
+    }
+
+    /// A percentage label that cannot trap.
+    ///
+    /// `Int(_:)` on a `Double` is a trapping conversion: it crashes on a non-finite value and
+    /// on anything outside `Int`'s range. A scenario's *name* is the last place that should be
+    /// able to bring a process down, and before the guard in
+    /// ``sensitivityScenarios(_:base:)`` this is exactly where it did.
+    ///
+    /// - Parameter multiplier: The multiplier being labelled.
+    /// - Returns: The multiplier as a whole percentage, or its plain description when that
+    ///   conversion is not safe.
+    private static func percentLabel(_ multiplier: Double) -> String {
+        let percent = multiplier * 100
+        guard percent.isFinite, percent.magnitude < 1e15 else { return "\(percent)" }
+        return "\(Int(percent))"
+    }
+
+    /// The scenarios a sensitivity sweep contributes.
+    ///
+    /// ## The guard on `steps`
+    ///
+    /// One step is not a degenerate request — it is "evaluate this parameter at a single
+    /// point" — but it makes `steps - 1` zero. Without the guard the division gave an
+    /// infinite step size, `Double(0) * .infinity` gave a **NaN** multiplier, and the
+    /// scenario's own name formatted it with `Int(multiplier * 100)`, a trapping conversion.
+    /// `Sensitivity(on:range:steps: 1)` therefore **crashed the process** rather than
+    /// returning anything at all, and a degenerate range like `1.0...1.0` did the same by
+    /// way of `0.0 / 0.0`.
+    ///
+    /// ``Vary`` has the identical division and has always had this guard. Its
+    /// `fp-safety:disable` even carries the justification that earns it — *"steps >= 2 from
+    /// guard above"*. The annotation was copied to the sensitivity path without the guard
+    /// behind it, so the checker had been told to be quiet about the one division that could
+    /// not survive its input. Of the nine suppressions in this module, that one and one other
+    /// were the only two with no justification written after them.
+    ///
+    /// A single step takes the range's lower bound, which is what `Vary` returns when asked
+    /// the same question. `steps` of zero or less contributes nothing, as it always has.
+    ///
+    /// - Parameters:
+    ///   - sensitivity: The sweep to expand.
+    ///   - base: The base scenario's parameters.
+    /// - Returns: One scenario per step.
+    private static func sensitivityScenarios(
+        _ sensitivity: Sensitivity, base: [String: Double]
+    ) -> [Scenario] {
+        guard sensitivity.steps > 0 else { return [] }
+
+        let lower = sensitivity.range.lowerBound
+        let multipliers: [Double]
+        if sensitivity.steps == 1 {
+            multipliers = [lower]
+        } else {
+            let span = sensitivity.range.upperBound - lower
+            let stepSize = span / Double(sensitivity.steps - 1) // fp-safety:disable — steps >= 2 from the guard above
+            multipliers = (0..<sensitivity.steps).map { lower + Double($0) * stepSize }
+        }
+
+        let baseValue = base[sensitivity.parameterName] ?? 0
+        return multipliers.map { multiplier in
+            var params = base
+            params[sensitivity.parameterName] = baseValue * multiplier
+            return Scenario(
+                name: "\(sensitivity.parameterName) @ \(percentLabel(multiplier))%",
+                parameters: params
+            )
+        }
+    }
+
+    /// The scenarios a tornado chart contributes: every variation against the base, one at a
+    /// time rather than crossed.
+    ///
+    /// The labels are positional — the first value is "low", the second "base", and anything
+    /// after that "high" — so a variation carrying more than three values produces repeated
+    /// names. That is the shape a tornado chart is built from, and the three-value form is
+    /// what every caller in the package uses.
+    ///
+    /// - Parameters:
+    ///   - tornado: The chart's variations.
+    ///   - base: The base scenario's parameters.
+    /// - Returns: One scenario per variation value.
+    private static func tornadoScenarios(
+        _ tornado: TornadoChart, base: [String: Double]
+    ) -> [Scenario] {
+        var out: [Scenario] = []
+        for vary in tornado.variations {
+            let baseValue = base[vary.parameterName] ?? 0
+            for (index, multiplier) in vary.values.enumerated() {
+                var params = base
+                params[vary.parameterName] = baseValue * multiplier
+                let label = index == 0 ? "low" : (index == 1 ? "base" : "high")
+                out.append(Scenario(
+                    name: "\(vary.parameterName) (\(label))",
+                    parameters: params
+                ))
+            }
+        }
+        return out
+    }
+
+    /// The scenarios a Monte Carlo component contributes.
+    ///
+    /// Each trial draws every random parameter afresh, so this is the one component whose
+    /// output is not a function of its input: two builds of the same declaration give
+    /// different numbers. Nothing here seeds the draw.
+    ///
+    /// - Parameters:
+    ///   - monteCarlo: The trial count and the parameters to randomise.
+    ///   - base: The base scenario's parameters.
+    /// - Returns: One scenario per trial.
+    private static func monteCarloScenarios(
+        _ monteCarlo: MonteCarlo, base: [String: Double]
+    ) -> [Scenario] {
+        (0..<monteCarlo.trials).map { trial in
+            var params = base
+            for randomParam in monteCarlo.randomParameters {
+                params[randomParam.name] = randomParam.distribution.sample()
+            }
+            return Scenario(name: "Trial \(trial + 1)", parameters: params)
+        }
     }
 
     /// Converts a `Scenario` to a scenario analysis component.
