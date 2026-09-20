@@ -21,11 +21,11 @@ is the state and the traps.
 |---|---|
 | branch | `main`, pushed through the gStudy commit |
 | tags | latest **`v3.0.0-alpha.7`** (2026-09-18, tagged by the peer session) |
-| tests | **7,974 in 731 suites**, exit 0, **zero known issues** |
+| tests | **7,978 in 732 suites**, exit 0, **zero known issues** |
 | gate | `--no-cache --check all` → 45 of 45 ran, **0 errors and 0 warnings outside `doc-run`** |
 | `doc-run` | **flaky under load, not a regression** — see §4 |
 | guidelines repo | `../../development-guidelines` clean at `a5f9292`, `v2.4.0` tagged and pushed |
-| CI | **was red for five consecutive pushes and nobody looked** — see below |
+| CI | **green on `3cbf3ccd`** after five red pushes nobody looked at — see below |
 
 **The known issue is gone, and the invariant has flipped.** `SaaSModel` used to answer a churn
 rate above 1 with a negative customer count; the `withKnownIssue` standing in for the missing
@@ -57,11 +57,14 @@ than trusting it** — `quality-gate --no-cache --no-index-build --check complex
 
 | Score | Function | Where |
 |---:|---|---|
-| **62** | `solveShape` | `Simulation/distributionMomentFit.swift:460` — now the highest unexamined |
-| 60 | `solve` | `Optimization/IntegerProgramming/BranchAndBound.swift:338` |
-| 59 | `linearRobustCounterpart` | `AdvancedOptimization/RobustOptimizer.swift:651` |
-| 59 | `generalEMUpdate` | `Statistics/MixedModels/Fitting/fitGeneralLME.swift:654` |
+| **59** | `linearRobustCounterpart` | `AdvancedOptimization/RobustOptimizer.swift:651` — now the highest unexamined |
+| **59** | `generalEMUpdate` | `Statistics/MixedModels/Fitting/fitGeneralLME.swift:678` |
 | 57 | `detect` | `Forecasting/AnomalyDetection.swift:155` |
+| 55 | `louvainCommunities` | `Network/Community/Community.swift:105` |
+| 45 | `standardisedMoments` | `Simulation/distributionMomentFit.swift` — the other half of the file just opened |
+
+`solve` (60, BranchAndBound) was examined in an earlier round — two defects — so the highest
+genuinely unexamined score in `Sources/` is now **59**.
 
 Examined, for contrast: `fitGeneralLME` 75, `icc` 73, `gibbsICCPosterior` 58.
 `generalAIREMLUpdate` was 121 and is now 19; `gStudy` 85, `bootstrap` 79, `Period.next` 77
@@ -88,6 +91,27 @@ value is decomposition and coverage.
 - **`solveRelaxation` 291 → 55**, stages extracted into `BranchAndBoundCutting.swift`.
 - **`RobustOptimizer` audited, clean.** The LP route was confirmed to fire by instrumentation
   (8 of 8 cases), not assumed — iteration count does *not* separate the two routes.
+
+### `solveShape` — 62 → below threshold, no defect, and a region the fixtures could not reach
+
+- **Eight points cannot test a thirty-five-start strategy.** `MomentFitTests` is good
+  coverage — it computes the fitted moments by its own quadrature, so it checks an answer
+  rather than the solver's residual — but it carries eight hand-written moment sets topping
+  out at `|skewness|` 1.2 and kurtosis 6. The solver's own comment says it tries seven
+  `gamma` starts crossed with five `delta` starts because *"a fixed start fails on perfectly
+  ordinary moment sets"*. That is a claim about a region.
+- **The sweep generates targets backwards.** It picks `(gamma, delta)` on a grid, asks
+  `standardisedMoments` what moments that member has, and requires `solveShape` to find its
+  way back — so every target is attainable by construction and a failure is the solver
+  missing a solution that certainly exists. 47 positions, no convergence failures, worst
+  round-trip 6.27e-11.
+- **The lognormal branch had no oracle at all.** It is a bisection, not the Newton solve.
+  Now checked against `beta1 = (omega + 2)^2 (omega - 1)` and `delta = 1 / sqrt(ln omega)`,
+  both written out in the test rather than taken from the source.
+- Five helpers extracted; **bit-identical** across all 54 solves.
+- I claimed measured tolerances in the doc comment before measuring them, and the real
+  numbers were 10-50x tighter. Corrected. Stating a measurement you have not taken is worse
+  than stating none.
 
 ### CI was red for five pushes, and the reason it stayed red is the process, not the bug
 

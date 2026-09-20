@@ -11,6 +11,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### 2026-09-20 — `solveShape` tries thirty-five starts, and was checked at eight points
+
+##### Tests
+
+- **A sweep for `DistributionMomentFit.solveShape`.**
+
+  `MomentFitTests` is not weak coverage — it computes the fitted distribution's moments by
+  its own Simpson quadrature and compares those against what was asked for, so it checks an
+  answer rather than the solver's own residual. What it cannot do is cover a *region*. It
+  carries **eight** hand-written moment sets, the largest being `|skewness|` 1.2 and
+  kurtosis 6.
+
+  The solver those eight exercise tries **thirty-five starting positions** — seven `gamma`
+  crossed with five `delta` — and its own comment says why: *"the residual surface is smooth
+  but not globally convex, and a fixed start fails on perfectly ordinary moment sets."* That
+  is a claim about a region: somewhere in those thirty-five is a basin for every moment set a
+  caller can reach. Eight points cannot test it, and no number of hand-written points can,
+  because the sets that would break it are the ones nobody thinks to type.
+
+  The sweep generates its targets **backwards**: it picks `(gamma, delta)` on a grid, asks
+  `standardisedMoments` what moments that member *has*, and requires `solveShape` to find its
+  way back. Every target is attainable by construction, so a failure is the solver failing to
+  find a solution that certainly exists — never a caller asking for the impossible.
+
+  47 grid positions across the unbounded and bounded members, reaching `|skewness|` and
+  kurtosis well outside the eight fixtures, with a guard test asserting the grids stay wider
+  than them. **No convergence failures.** Measured worst round-trip:
+
+  | member | skewness | kurtosis |
+  |---|---|---|
+  | unbounded | 1.66e-12 | 1.30e-11 |
+  | bounded | 4.67e-11 | 6.27e-11 |
+
+- **The lognormal branch is checked against its closed form.** It is a bisection, not the
+  Newton solve, and shared no oracle with anything. `beta1 = (omega + 2)^2 (omega - 1)` and
+  `delta = 1 / sqrt(ln omega)` are written out in the test rather than taken from the source,
+  so that branch now has a check that shares no code with it.
+
+##### Internal
+
+- **`solveShape`: cognitive complexity 62 → below the threshold.** Split into
+  `lognormalShape`, `shapeResidual`, `newtonShapeSolve`, `newtonDirection` and `dampedStep`,
+  leaving `solveShape` as the family dispatch and the multi-start loop. Verified
+  **bit-identical** across all 54 solves in the sweep plus the lognormal and normal members.
+
+  Nothing in `distributionMomentFit.swift` is above the threshold now except
+  `standardisedMoments`, which was already 45 and is untouched.
+
 #### 2026-09-20 — The triangular sampler drew from outside its own support
 
 ##### Fixed
