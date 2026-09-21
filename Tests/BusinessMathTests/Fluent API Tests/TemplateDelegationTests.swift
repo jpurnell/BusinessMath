@@ -198,78 +198,73 @@ struct TemplateDelegationTests {
 
 // MARK: - The deprecated surface, read once
 
-/// Every answer the seven deprecated template methods give, gathered in one value.
+/// Every answer the seven deprecated template methods gave, recorded as literals.
 ///
-/// This type is itself deprecated, which is what lets it call them without a warning of
-/// its own — Swift does not diagnose a deprecated symbol used inside another deprecated
-/// declaration. Swift Testing refuses `@Suite` and `@Test` on deprecated declarations, so
-/// the tests below cannot take the same route; they touch this type exactly once instead,
-/// which is why the whole legacy surface costs one warning rather than ten.
+/// ## Why these are literals and not calls
 ///
-/// Delete this in the same commit that deletes the methods it reads.
-@available(*, deprecated, message: "Reads the deprecated template unit-economics methods.")
+/// This type used to compute them, and was itself marked deprecated so that Swift would not
+/// diagnose the seven calls inside it. That works for the type; it does not work for the
+/// tests. Swift Testing **hard-errors** on `@available` applied to `@Suite` or `@Test`:
+///
+///     error: Attribute 'Test' cannot be applied to this function because it has been
+///     marked '@available(*, deprecated, …)' (from macro 'Test')
+///
+/// — verified 2026-09-21 by trying it. So every route that keeps a live call leaves at least
+/// one non-deprecated declaration naming a deprecated one, and Swift warns on that by design.
+/// Touching the type exactly once brought the cost down to two warnings, which is where it
+/// sat; it does not reach zero, and zero is the standing bar.
+///
+/// ## What is given up, and what is not
+///
+/// These values were captured from the deprecated implementation on 2026-09-21, against the
+/// fixtures in ``TemplateDelegationTests`` — 80% margin on $100 ARPU with 5% churn and $500
+/// CAC for SaaS, $20 margin per box with 8% churn and $60 CAC for the box. The assertions
+/// below are unchanged: they still require the delegated methods to produce exactly these
+/// numbers.
+///
+/// What is no longer detected is a change in the **old** implementation. That is an
+/// acceptable trade only because the old implementation is deprecated and frozen, and this
+/// file already carried the instruction to delete it. The capture is the last thing it is
+/// asked for.
+///
+/// Delete this in the same commit that deletes the methods it recorded.
 struct LegacyTemplateEconomics {
 
 	// SaaS, well posed: 80% margin on $100 ARPU, 5% churn, $500 CAC.
-	let saasLTV: Double
-	let saasPayback: Double
-	let saasRatio: Double
+	let saasLTV: Double = 1600.0
+	let saasPayback: Double = 5.0
+	let saasRatio: Double = 3.2
 
-	// SaaS, the edges.
-	let saasLTVAtZeroChurn: Double
-	let saasPaybackWithoutCost: Double
-	let saasRatioWithoutCost: Double
-	let saasRatioAtZeroCost: Double
+	// SaaS, the edges. Zero churn gives an infinite lifetime, which the old methods reported
+	// as zero rather than as infinity; the missing-cost cases did the same.
+	let saasLTVAtZeroChurn: Double = 0.0
+	let saasPaybackWithoutCost: Double = 0.0
+	let saasRatioWithoutCost: Double = 0.0
+	let saasRatioAtZeroCost: Double = 0.0
 
 	// Box, well posed: $20 margin per box, 8% churn, $60 CAC.
-	let boxLTV: Double
-	let boxRatio: Double
-	let boxPayback: Double
+	let boxLTV: Double = 250.0
+	let boxRatio: Double = 4.166666666666667
+	let boxPayback: Double = 3.0
 
 	// Box, the edges.
-	let boxLTVAtZeroChurn: Double
-	let boxPaybackAtALoss: Double
-
-	init() throws {
-		let saas = TemplateDelegationTests.saas(margin: 0.80)
-		saasLTV = saas.calculateLTV()
-		saasPayback = saas.calculateCACPayback()
-		saasRatio = saas.calculateLTVtoCAC()
-
-		saasLTVAtZeroChurn = TemplateDelegationTests.saas(churn: 0).calculateLTV()
-		let withoutCost = TemplateDelegationTests.saas(cac: nil)
-		saasPaybackWithoutCost = withoutCost.calculateCACPayback()
-		saasRatioWithoutCost = withoutCost.calculateLTVtoCAC()
-		saasRatioAtZeroCost = TemplateDelegationTests.saas(cac: 0).calculateLTVtoCAC()
-
-		let box = try TemplateDelegationTests.box()
-		boxLTV = box.calculateCustomerLifetimeValue()
-		boxRatio = box.calculateLTVtoCAC()
-		boxPayback = box.calculateCACPaybackMonths()
-
-		boxLTVAtZeroChurn = try TemplateDelegationTests.box(churn: 0).calculateCustomerLifetimeValue()
-		boxPaybackAtALoss = try TemplateDelegationTests.box(price: 20, cogs: 15, shipping: 8)
-			.calculateCACPaybackMonths()
-	}
+	let boxLTVAtZeroChurn: Double = 0.0
+	let boxPaybackAtALoss: Double = 0.0
 }
 
 @Suite("Template unit economics, as they were")
 struct LegacyTemplateEconomicsTests {
 
-	/// The one place the deprecated surface is touched.
+	/// The recorded answers of the surface these tests exist to replace.
 	///
-	/// A `get throws` rather than a `static let`: `SubscriptionBoxModel.init` now rejects a
-	/// churn rate outside `[0, 1]`, so building this fixture can fail, and a stored property
-	/// has nowhere to put that failure but a `try!`. Every value it captures uses a sound
-	/// churn rate — the one case that did not, a box at 1.2, is no longer constructible and
-	/// is asserted as a rejection instead.
-	static var legacy: LegacyTemplateEconomics {
-		get throws { try LegacyTemplateEconomics() }
-	}
+	/// This was a `get throws` while it built `SubscriptionBoxModel` instances, whose
+	/// initialiser rejects a churn rate outside `[0, 1]`. Nothing is constructed any more, so
+	/// there is nothing to fail.
+	static let legacy = LegacyTemplateEconomics()
 
 	@Test("Delegation preserves every number the old methods returned for sound input")
 	func delegationIsBehaviourPreserving() throws {
-		let legacy = try Self.legacy
+		let legacy = Self.legacy
 
 		let saas = TemplateDelegationTests.saas(margin: 0.80)
 		let saasValue = try saas.lifetimeValue().value
@@ -295,7 +290,7 @@ struct LegacyTemplateEconomicsTests {
 
 	@Test("The one method whose answer changes, and why it had to")
 	func paybackWasComputedOnRevenue() throws {
-		let legacy = try Self.legacy
+		let legacy = Self.legacy
 		// $500 of cost against $100 of *revenue*.
 		#expect(Swift.abs(legacy.saasPayback - 5) < 1e-9, "\(legacy.saasPayback)")
 		// $500 against $80 of contribution margin, which is what the cost comes out of.
@@ -307,14 +302,14 @@ struct LegacyTemplateEconomicsTests {
 
 	@Test("Zero churn returned zero, which is the opposite of divergence")
 	func zeroChurnReturnedZero() throws {
-		let legacy = try Self.legacy
+		let legacy = Self.legacy
 		#expect(legacy.saasLTVAtZeroChurn == 0)
 		#expect(legacy.boxLTVAtZeroChurn == 0)
 	}
 
 	@Test("A missing acquisition cost returned the best possible payback")
 	func missingCostReturnedZeroMonths() throws {
-		let legacy = try Self.legacy
+		let legacy = Self.legacy
 		#expect(legacy.saasPaybackWithoutCost == 0, "zero months is the best score there is")
 		#expect(legacy.saasRatioWithoutCost == 0)
 	}
@@ -324,14 +319,14 @@ struct LegacyTemplateEconomicsTests {
 		// Shipped behaviour was `calculateLTV() / 0`, which is +infinity — a ratio that
 		// clears every "healthy is above three" check ever written against it. The guard
 		// added on this branch makes it match the documented missing-cost answer instead.
-		let legacy = try Self.legacy
+		let legacy = Self.legacy
 		#expect(legacy.saasRatioAtZeroCost == 0)
 		#expect(!legacy.saasRatioAtZeroCost.isInfinite)
 	}
 
 	@Test("A loss-making box reported instant payback")
 	func lossMakingBoxPaidBackInstantly() throws {
-		let legacy = try Self.legacy
+		let legacy = Self.legacy
 		#expect(legacy.boxPaybackAtALoss == 0, "it never pays back at all")
 	}
 

@@ -7,9 +7,34 @@
 
 /// A uniform draw on the **open** interval `(0, 1)`, owned by this library.
 ///
-/// This is the single place BusinessMath turns raw generator output into a uniform, and every
-/// seeded sampler in the package goes through it. It exists because
-/// `Double.random(in: 0...1, using:)` is wrong for the job in two distinct ways.
+/// This is where BusinessMath turns raw generator output into a uniform, and every sampler in
+/// `Simulation/` goes through it. It exists because `Double.random(in: 0...1, using:)` is
+/// wrong for the job in two distinct ways.
+///
+/// ## What does not go through it
+///
+/// Six sites in `Optimization/Heuristic/` normalise their own draws instead, and the
+/// difference is not cosmetic — they land on **closed or half-open** intervals where this
+/// function is open at both ends:
+///
+/// | site | mapping | interval |
+/// |---|---|---|
+/// | `GeneticAlgorithm` ×4, `DifferentialEvolution` | `Double(rng.next()) / Double(UInt64.max)` | `[0, 1]` |
+/// | `SimulatedAnnealing` ×3 | `Double(w >> 32) / Double(1 << 32)` | `[0, 1)` |
+///
+/// Four of those feed comparisons against a rate, where an endpoint is harmless. Two are the
+/// `u1`/`u2` of a Box-Muller pair, and a `u1` of exactly zero is **already handled**:
+/// ``boxMullerSeed(_:_:)`` routes its seed through `openedUnitSeed(seed:)`, which remaps
+/// zero to one, and documents that it does. Measured rather than assumed —
+/// `boxMullerSeed(0.0, 0.5)` returns `(-0.0, 0.0)`, not an infinity — so the endpoint is a
+/// designed outcome there and not a pole left open.
+///
+/// The reason to record the six at all is **reproducibility, not safety**. This function is
+/// the version-controlled step between seed and variate; a sampler that normalises its own
+/// draws is reproducible only as far as its own expression is stable, and routing it through
+/// here later would change the stream it produces. That makes it part of the determinism work
+/// in `v3.0.0_SCOPE.md` §1 rather than a drive-by tidy, and it is the reason the sentence
+/// above says "every sampler in `Simulation/`" instead of "every sampler".
 ///
 /// ## The interval is closed
 ///

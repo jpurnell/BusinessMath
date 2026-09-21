@@ -237,7 +237,6 @@ struct CutValidityTests {
         // Integer optimum of `max x + y` over 2x+3y<=11, 4x+y<=10 is 4, at (1, 3) and (2, 2).
         let total = result.integerSolution[0] + result.integerSolution[1]
         #expect(total == 4, "integer optimum should be 4, got \(total) at \(result.integerSolution)")
-        let sol = result.integerSolution
     }
 
     @Test("Non-violating cuts are not added")
@@ -534,11 +533,9 @@ struct CutValidityTests {
             enableCuttingPlanes: false
         )
 
-        let objective: @Sendable (VectorN<Double>) -> Double = { v in
-            let arr = v.toArray()
-            return arr[0] + arr[1] + arr[2]
-        }
-
+        // A local three-term objective was drafted here and never wired up; both solves below
+        // use `Self.objective2`, and the specification is two-dimensional, so the third term
+        // could not have been indexed anyway.
         let constraints = Self.cutRich
 
         let resultWithCuts = try solverWithCuts.solve(

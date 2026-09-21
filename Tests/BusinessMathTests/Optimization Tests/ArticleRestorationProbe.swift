@@ -14,13 +14,31 @@
 //  useful signal from a restoration probe is "not restorable" in reasonable time, not
 //  an hour of occupied CI.
 //
+//  ## Why the limit is three minutes rather than one
+//
+//  On 2026-09-21 `5.7 raw dollars` exceeded a 60-second limit on the ubuntu-24.04 runner and
+//  failed CI. The same test takes **0.03 seconds locally**, the re-run of the same commit
+//  passed, and it is the only time this suite has failed in the visible run history — the six
+//  other failures that week were generic type-check timeouts on unrelated commits.
+//
+//  A 2000x gap is not a slow test. `.timeLimit` measures wall clock, and a test on a shared
+//  four-core runner is timed against whatever else is running: this package has been here
+//  before, in the producer-lifecycle bug released in 2.5.1, which was root-caused on a hung
+//  CI process, was never reproducible locally, and needed constrained cores to appear. A
+//  producer loop that does not yield can monopolise the cooperative pool and starve
+//  everything measured against a clock.
+//
+//  So the limit is insurance rather than a measurement. Three minutes is still two orders of
+//  magnitude below the runtimes this suite exists to detect — 5.14 once took 116 minutes — so
+//  nothing it is meant to catch can hide inside the extra two minutes.
+//
 
 import Foundation
 import Testing
 import Numerics
 @testable import BusinessMath
 
-@Suite("Article Restoration Probe", .serialized, .timeLimit(.minutes(1)))
+@Suite("Article Restoration Probe", .serialized, .timeLimit(.minutes(3)))
 struct ArticleRestorationProbe {
 
 	static func time<T>(_ label: String, _ body: () throws -> T) rethrows -> T {
