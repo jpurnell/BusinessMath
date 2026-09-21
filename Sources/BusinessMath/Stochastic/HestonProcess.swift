@@ -308,7 +308,7 @@ public struct HestonProcess: Sendable {
             integral += integrand * dphi
         }
 
-        let result = 0.5 + integral / Double.pi // fp-safety:disable
+        let result = 0.5 + integral / Double.pi // fp-safety:disable — divisor is Double.pi
         return min(max(result, 0.0), 1.0)
     }
 

@@ -200,7 +200,7 @@ internal final class MetalBuffers {
     /// Total GPU memory allocated (formatted string).
     var memoryDescription: String { // LIVE: diagnostic output for GPU memory monitoring
         let bytes = totalMemoryAllocated
-        let mb = Double(bytes) / (1024 * 1024) // fp-safety:disable
+        let mb = Double(bytes) / 1_048_576.0  // 1024 * 1024
         return "\(mb.number(2)) MB"
     }
 }

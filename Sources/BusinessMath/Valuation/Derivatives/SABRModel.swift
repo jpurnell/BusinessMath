@@ -98,7 +98,7 @@ public struct SABRParameters: Sendable {
         let denominator = fkBetaHalf * (1.0 + a1 + a2)
 
         // Correction terms
-        let term1 = oneBeta * oneBeta / 24.0 * alpha * alpha // fp-safety:disable
+        let term1 = oneBeta * oneBeta / 24.0 * alpha * alpha // fp-safety:disable — divisor is the literal 24
             / Double.pow(fk, oneBeta) // fp-safety:disable — fk = f*k, both positive (ATM-checked above)
         let term2 = 0.25 * rho * beta * nu * alpha / fkBetaHalf // fp-safety:disable — fkBetaHalf = pow(fk, (1-β)/2) > 0
         let term3 = (2.0 - 3.0 * rho * rho) / 24.0 * nu * nu

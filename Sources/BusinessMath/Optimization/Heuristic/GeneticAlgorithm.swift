@@ -567,7 +567,7 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
             var offspring: Individual<V>
 
             // Crossover
-            let crossoverRand = Double(rng.next()) / Double(UInt64.max) // fp-safety:disable
+            let crossoverRand = Double(rng.next()) / Double(UInt64.max) // fp-safety:disable — divisor is UInt64.max
             if crossoverRand < config.crossoverRate {
                 offspring = crossover(parent1, parent2)
             } else {
@@ -575,7 +575,7 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
             }
 
             // Mutation
-            let mutationRand = Double(rng.next()) / Double(UInt64.max) // fp-safety:disable
+            let mutationRand = Double(rng.next()) / Double(UInt64.max) // fp-safety:disable — divisor is UInt64.max
             if mutationRand < config.mutationRate {
                 offspring = mutate(offspring, strength: mutationStrength)
             }
@@ -807,7 +807,7 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
 
         for i in 0..<genes1.count {
             // Uniform crossover: 50/50 chance for each gene
-            let crossoverChoice = Double(rng.next()) / Double(UInt64.max) // fp-safety:disable
+            let crossoverChoice = Double(rng.next()) / Double(UInt64.max) // fp-safety:disable — divisor is UInt64.max
             if crossoverChoice < 0.5 {
                 childGenes.append(genes1[i])
             } else {
@@ -827,7 +827,7 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
         var genes = individual.genes.toArray()
 
         for i in 0..<genes.count {
-            let mutationCheck = Double(rng.next()) / Double(UInt64.max) // fp-safety:disable
+            let mutationCheck = Double(rng.next()) / Double(UInt64.max) // fp-safety:disable — divisor is UInt64.max
             if mutationCheck < config.mutationRate {
                 let (lower, upper) = searchSpace[i]
                 let range = upper - lower
@@ -850,7 +850,7 @@ public struct GeneticAlgorithm<V: VectorSpace>: MultivariateOptimizer where V.Sc
 
                 // Convert mutation strength from Double to V.Scalar
                 let strengthInt = Int(strength * 1_000_000)
-                let mutationStrengthScalar = V.Scalar(strengthInt) / V.Scalar(1_000_000) // fp-safety:disable
+                let mutationStrengthScalar = V.Scalar(strengthInt) / V.Scalar(1_000_000)
                 let mutation = gaussian * mutationStrengthScalar * range
                 let newValue = genes[i] + mutation
 

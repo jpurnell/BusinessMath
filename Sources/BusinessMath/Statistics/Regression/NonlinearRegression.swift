@@ -242,9 +242,9 @@ public struct ReciprocalRegressionSimulator<T: Real & Sendable & Codable> where 
 
 			// Generate y from Normal(mu, sigma)
 			let y: T
-			if T.self == Double.self { // fp-safety:disable
+			if T.self == Double.self {
 				y = T(distributionNormal(mean: Double(mu), stdDev: Double(parameters.sigma), u1, u2))
-			} else if T.self == Float.self { // fp-safety:disable
+			} else if T.self == Float.self {
 				y = T(Float(distributionNormal(mean: Double(mu), stdDev: Double(parameters.sigma), u1, u2)))
 			} else {
 				// Fallback for other Real types

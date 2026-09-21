@@ -143,7 +143,7 @@ public struct CPUMatrixBackend: MatrixBackend {
                 throw MatrixError.singularMatrix
             }
 
-            x[i] = sum / R[i][i] // fp-safety:disable
+            x[i] = sum / R[i][i] // fp-safety:disable — the line above throws singularMatrix when abs(R[i][i]) < 1e-10
         }
 
         return x

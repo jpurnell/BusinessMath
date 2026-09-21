@@ -228,7 +228,7 @@ public struct AsyncFFTSequence<Base: AsyncSequence>: AsyncSequence
             var windowIdx = 0
 
             for i in 0..<count {
-                let targetFraction = Double(i) / Double(count - 1) // fp-safety:disable
+                let targetFraction = Double(i) / Double(count - 1) // fp-safety:disable — the sole caller passes window.count, guarded >= 2 above
                 let targetNs = targetFraction * totalNs
 
                 // Advance to the bracketing pair

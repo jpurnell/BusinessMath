@@ -280,48 +280,76 @@ public struct Lease {
         if let periods = periods, let firstPeriod = periods.first {
             switch firstPeriod.type {
             case .millisecond:
-                periodicRate = discountRate / (365.25 * 24 * 60 * 60 * 1000) // fp-safety:disable
+                periodicRate = discountRate / 31_557_600_000.0  // 365.25 * 24 * 60 * 60 * 1000
             case .second:
-                periodicRate = discountRate / (365.25 * 24 * 60 * 60) // fp-safety:disable
+                periodicRate = discountRate / 31_557_600.0  // 365.25 * 24 * 60 * 60
             case .minute:
-                periodicRate = discountRate / (365.25 * 24 * 60) // fp-safety:disable
+                periodicRate = discountRate / 525_960.0  // 365.25 * 24 * 60
             case .hourly:
-                periodicRate = discountRate / (365.25 * 24) // fp-safety:disable
+                periodicRate = discountRate / 8_766.0  // 365.25 * 24
             case .daily:
-                periodicRate = discountRate / 365.25 // fp-safety:disable
+                periodicRate = discountRate / 365.25
             case .monthly:
-                periodicRate = discountRate / 12.0 // fp-safety:disable
+                periodicRate = discountRate / 12.0
             case .quarterly:
-                periodicRate = discountRate / 4.0 // fp-safety:disable
+                periodicRate = discountRate / 4.0
             case .semiannual:
-                periodicRate = discountRate / 2.0 // fp-safety:disable
+                periodicRate = discountRate / 2.0
             case .annual:
                 periodicRate = discountRate
             case .custom:
                 // A transition stub has no periods-per-year to divide by. Scale the
                 // annual rate by the stub's actual length, which is what dividing by
                 // 12 / 4 / 2 above does for the regular cases.
-                periodicRate = discountRate * firstPeriod.durationInDays / 365.25 // fp-safety:disable
+                periodicRate = discountRate * firstPeriod.durationInDays / 365.25
             }
         } else {
             // Default to annual if no period info
             periodicRate = discountRate
         }
 
+        // A periodic rate of exactly -100% makes every discount factor `pow(0, n) = 0`, and the
+        // `guard discountFactor != 0 else { continue }` that used to sit in the loop then
+        // skipped every payment: three payments of 1000 against a residual of 500 returned a
+        // present value of **0.0**. Below -100% the base is negative, `pow` alternates sign
+        // across the integer periods, and the same lease returned 2000.0 at -150% and -500.0 at
+        // -200% — a negative present value for entirely positive payments. `!= 0` is also true
+        // of NaN, so a NaN rate flowed straight into the sum.
+        //
+        // None of that carried any signal, which is what the fail-silent rule is about. The
+        // condition is on the *periodic* rate rather than the annual one, because that is the
+        // number the discount factor is actually built from.
+        precondition(
+            periodicRate > -1,
+            "A periodic discount rate of -100% or lower has no present value; got \(periodicRate)."
+        )
+        let compoundingBase: Double = 1.0 + periodicRate
+
         var pv = 0.0
         for (index, payment) in payments.enumerated() {
             let period = Double(index + 1)
-            let discountFactor = pow(1.0 + periodicRate, period)
-            guard discountFactor != 0 else { continue }
-            pv += payment / discountFactor // fp-safety:disable
+            let discountFactor = pow(compoundingBase, period)
+            // Positive base, so the factor is positive — unless it underflows, which a base
+            // near zero over a long lease can do. That is not a payment worth skipping
+            // quietly; it is a model nobody can discount.
+            guard discountFactor > 0 else {
+                preconditionFailure(
+                    "The discount factor underflowed to zero at period \(period) with a periodic rate of \(periodicRate)."
+                )
+            }
+            pv += payment / discountFactor
         }
 
         // Add present value of residual
         if residualValue > 0 {
             let finalPeriod = Double(payments.count + 1)
-            let discountFactor = pow(1.0 + periodicRate, finalPeriod)
-            guard discountFactor != 0 else { return pv }
-            pv += residualValue / discountFactor // fp-safety:disable
+            let discountFactor = pow(compoundingBase, finalPeriod)
+            guard discountFactor > 0 else {
+                preconditionFailure(
+                    "The discount factor underflowed to zero at the residual period \(finalPeriod) with a periodic rate of \(periodicRate)."
+                )
+            }
+            pv += residualValue / discountFactor
         }
 
         return pv
@@ -352,28 +380,28 @@ public struct Lease {
         if let periods = periods, let firstPeriod = periods.first {
             switch firstPeriod.type {
             case .millisecond:
-                periodicRate = discountRate / (365.25 * 24 * 60 * 60 * 1000) // fp-safety:disable
+                periodicRate = discountRate / 31_557_600_000.0  // 365.25 * 24 * 60 * 60 * 1000
             case .second:
-                periodicRate = discountRate / (365.25 * 24 * 60 * 60) // fp-safety:disable
+                periodicRate = discountRate / 31_557_600.0  // 365.25 * 24 * 60 * 60
             case .minute:
-                periodicRate = discountRate / (365.25 * 24 * 60) // fp-safety:disable
+                periodicRate = discountRate / 525_960.0  // 365.25 * 24 * 60
             case .hourly:
-                periodicRate = discountRate / (365.25 * 24) // fp-safety:disable
+                periodicRate = discountRate / 8_766.0  // 365.25 * 24
             case .daily:
-                periodicRate = discountRate / 365.25 // fp-safety:disable
+                periodicRate = discountRate / 365.25
             case .monthly:
-                periodicRate = discountRate / 12.0 // fp-safety:disable
+                periodicRate = discountRate / 12.0
             case .quarterly:
-                periodicRate = discountRate / 4.0 // fp-safety:disable
+                periodicRate = discountRate / 4.0
             case .semiannual:
-                periodicRate = discountRate / 2.0 // fp-safety:disable
+                periodicRate = discountRate / 2.0
             case .annual:
                 periodicRate = discountRate
             case .custom:
                 // A transition stub has no periods-per-year to divide by. Scale the
                 // annual rate by the stub's actual length, which is what dividing by
                 // 12 / 4 / 2 above does for the regular cases.
-                periodicRate = discountRate * firstPeriod.durationInDays / 365.25 // fp-safety:disable
+                periodicRate = discountRate * firstPeriod.durationInDays / 365.25
             }
         } else {
             periodicRate = discountRate
@@ -953,8 +981,8 @@ public struct SaleAndLeaseback {
     public func immediateGain() -> Double {
         // Under ASC 842, the recognized gain is reduced by the PV of leaseback
         // since the seller retains some benefit through continued use
-        guard salePrice != 0 else { return gainOnSale } // fp-safety:disable
-        return gainOnSale - (gainOnSale * (leaseObligationPV / salePrice)) // fp-safety:disable
+        guard salePrice != 0 else { return gainOnSale }
+        return gainOnSale - (gainOnSale * (leaseObligationPV / salePrice)) // fp-safety:disable — guarded above: salePrice != 0
     }
 
     /// Alias for immediateGain() for compatibility
@@ -1001,14 +1029,14 @@ public func classifyLease(
 
     // Test 3: Lease term is major part of asset's useful life (≥75%)
     guard assetUsefulLife > 0 else { return .finance }
-    let termRatio = Double(leaseTerm) / Double(assetUsefulLife) // fp-safety:disable
+    let termRatio = Double(leaseTerm) / Double(assetUsefulLife) // fp-safety:disable — guarded above: assetUsefulLife > 0
     if termRatio >= 0.75 {
         return .finance
     }
 
     // Test 4: PV of lease payments ≥ substantially all of asset's fair value (≥90%)
     guard assetFairValue > 0 else { return .finance }
-    let pvRatio = presentValue / assetFairValue // fp-safety:disable
+    let pvRatio = presentValue / assetFairValue // fp-safety:disable — guarded above: assetFairValue > 0
     if pvRatio >= 0.90 {
         return .finance
     }

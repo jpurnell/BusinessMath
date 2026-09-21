@@ -254,7 +254,7 @@ public struct PureSwiftFFTBackend: FFTBackend, Sendable {
         var size = 2
         while size <= n {
             let halfSize = size / 2
-            let angle = -2.0 * Double.pi / Double(size) // fp-safety:disable
+            let angle = -2.0 * Double.pi / Double(size) // fp-safety:disable — size starts at 2 and doubles
 
             for start in stride(from: 0, to: n, by: size) {
                 for k in 0..<halfSize {

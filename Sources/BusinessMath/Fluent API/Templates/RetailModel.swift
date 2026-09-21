@@ -269,7 +269,7 @@ public struct RetailModel: Sendable {
     ///
     /// - Returns: Net profit margin percentage
     public func calculateNetProfitMargin() -> Double {
-        guard monthlyRevenue != 0 else { return 0 } // fp-safety:disable
+        guard monthlyRevenue != 0 else { return 0 }
         return calculateNetProfit() / monthlyRevenue // fp-safety:disable — guarded above
     }
 

@@ -1074,7 +1074,7 @@ public enum ValidationConstraint: Sendable {
             }
 
         case .nonZero:
-            if value == 0 { // fp-safety:disable
+            if value == 0 {
                 return ValidationError(
                     field: fieldName,
                     value: value,

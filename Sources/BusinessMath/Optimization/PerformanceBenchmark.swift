@@ -207,7 +207,7 @@ public struct PerformanceBenchmark<V: VectorSpace> where V.Scalar == Double {
 			let stdTime = standardDeviation(runs.map(\.executionTime))
 			let avgIterations = runs.map { Double($0.iterations) }.reduce(0, +) / Double(trials) // fp-safety:disable — trials >= 1
 			let successRate = Double(successfulRuns.count) / Double(trials) // fp-safety:disable — trials >= 1
-			let avgObjective = successfulRuns.isEmpty ? 0.0 : // fp-safety:disable
+			let avgObjective = successfulRuns.isEmpty ? 0.0 : // fp-safety:disable — the division is on the next line, guarded by !isEmpty
 				successfulRuns.map(\.objectiveValue).reduce(0, +) / Double(successfulRuns.count) // fp-safety:disable — guarded by !isEmpty
 			let bestObjective = runs.map(\.objectiveValue).min() ?? 0.0
 

@@ -254,7 +254,7 @@ public struct SimulatedAnnealing<V: VectorSpace>: MultivariateOptimizer where V.
                 let probability = Self.acceptanceProbability(deltaE: deltaE, temperature: temperature)
                 // Fixed: UInt32.max is 2^32 - 1, but shifted value ranges 0 to 2^32 - 1
                 // Divide by 2^32 (1 << 32) to get proper [0, 1) range
-                let randomValue = Double(rng.next() >> 32) / Double(1 << 32) // fp-safety:disable
+                let randomValue = Double(rng.next() >> 32) / Double(1 << 32) // fp-safety:disable — divisor is 2^32
                 accepted = randomValue < probability
             }
 
@@ -406,14 +406,14 @@ public struct SimulatedAnnealing<V: VectorSpace>: MultivariateOptimizer where V.
             // in Swift traps rather than returning a wrong answer: one draw in
             // 2^32 took the process down. The shift also biased every other
             // draw, by 1.5e-02 in the radius at u1 = 1e-9.
-            let u1 = Double(randRaw1 >> 32) / Double(UInt64(1) << 32) // fp-safety:disable
-            let u2 = Double(randRaw2 >> 32) / Double(UInt64(1) << 32) // fp-safety:disable
+            let u1 = Double(randRaw1 >> 32) / Double(UInt64(1) << 32) // fp-safety:disable — divisor is 2^32
+            let u2 = Double(randRaw2 >> 32) / Double(UInt64(1) << 32) // fp-safety:disable — divisor is 2^32
             let (gaussian, _): (Double, Double) = boxMullerSeed(u1, u2)
 
             // Scale perturbation (convert through Int for generic safety)
             let scaledGaussian = config.perturbationScale * coolingFactor * gaussian
             let scaledInt = Int(scaledGaussian * 1_000_000)
-            let perturbation = V.Scalar(scaledInt) / V.Scalar(1_000_000) * range // fp-safety:disable
+            let perturbation = V.Scalar(scaledInt) / V.Scalar(1_000_000) * range
 
             // Apply perturbation and clamp
             let newValue = currentArray[d] + perturbation
