@@ -392,8 +392,27 @@ public func survivalProbabilitiesFromSpreads<T: Real>(
         cumulativeTime = T(i + 1) * timeStep
         let spread = spreads[i]
 
-        // Convert spread to hazard rate
-        let hazardRate = spread / (T(1) - recovery)
+        // Convert spread to hazard rate.
+        //
+        // This was written out here as `spread / (T(1) - recovery)`, duplicating
+        // ``hazardRateFromSpread(spread:recoveryRate:)`` without its guard — the same shape as
+        // `CapitalStructure.wacc`, which documented a delegation it did not perform. The
+        // sibling refuses a recovery rate of 1 or more and documents that it returns nil for
+        // it; this copy divided anyway. `CreditCurve.init` validates nothing, so both inputs
+        // were reachable, and both answers were wrong in a direction no caller would question:
+        //
+        // | recovery | survival returned | what it claims |
+        // |---|---|---|
+        // | 1.0 | `[0, 0, 0, 0]` | certain immediate default, for a **fully recovering** bond |
+        // | 1.5 | `[1.0100, 1.0202, 1.0304, 1.0408]` | probabilities **above 1**, rising with time |
+        //
+        // At full recovery the loss given default is zero, so a positive spread is not a
+        // market quote that can be inverted — it is an inconsistent one.
+        guard let hazardRate = hazardRateFromSpread(spread: spread, recoveryRate: recovery) else {
+            preconditionFailure(
+                "A spread of \(spread) cannot be converted to a hazard rate at a recovery rate of \(recovery); recovery must be in [0, 1)."
+            )
+        }
 
         // Calculate survival probability
         let survival = T.exp(-hazardRate * cumulativeTime)

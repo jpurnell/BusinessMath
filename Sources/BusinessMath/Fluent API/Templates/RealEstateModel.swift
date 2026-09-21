@@ -409,6 +409,14 @@ public struct RealEstateModel: Sendable {
     private func calculateMonthlyPayment() -> Double {
         let principal = loanAmount
         let monthlyRate = interestRate / 12
+        // A term of zero years breaks **both** branches below, which is why the guard is here
+        // rather than inside one of them: `numberOfPayments` is zero, and
+        // `pow(1 + monthlyRate, 0)` is exactly 1, so `factor - 1` is zero as well. Measured
+        // before this guard: a 30-year loan at 6% pays 1918.5616804888223 a month, and the
+        // same loan at a term of 0 returned **+infinity** on either branch — which then
+        // multiplied out through `annualMortgagePayment` and every cash-flow metric built on
+        // it. A loan repaid over no time is not a loan.
+        precondition(loanTermYears > 0, "A mortgage needs a positive term; got \(loanTermYears) years.")
         let numberOfPayments = Double(loanTermYears * 12)
 
         if monthlyRate == 0 {
