@@ -11,6 +11,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### 2026-09-20 — Nothing unexamined is left above 50
+
+##### Internal
+
+- **`multipleLinearRegression`: 56 → 23**, and **`louvainCommunities`: 55 → below the
+  threshold.** With these two, **every function in `Sources/` scoring above 50 has now been
+  opened.** The six that remain on that list — `fitGeneralLME` 75, `icc` 73, `solve` 60,
+  `gibbsICCPosterior` 58, `solveRelaxation` 55, `algebraicSimplificationPass` 52 — each have
+  a defect-fix commit behind them from an earlier round.
+
+  `multipleLinearRegression` gave up its input validation and its variance-inflation loop.
+  The validator returns `yMean` as well as the shape, because it has to compute it anyway to
+  check that `y` varies and the total sum of squares wants the same number — forming it twice
+  would be two chances to form it differently.
+
+  `louvainCommunities` gave up the undirected view it builds before improving anything, and
+  the per-node choice of community. That second one is worth naming: staying put is scored on
+  the same footing as every candidate rather than handled as a special case, which is why a
+  node moves only when another community is *strictly* better, and candidates are visited in
+  sorted order so ties resolve identically however the graph was assembled.
+
+  Both verified **bit-identical** — four regressions across every output field (coefficients,
+  standard errors, t-statistics, p-values, confidence intervals, VIF, residuals, F and its
+  p-value), and the ten network tests including the determinism and no-structure cases.
+
+##### Where the queue stands
+
+Measured over the whole programme: **7 of 8 functions scoring ≥ 95 held a correctness
+defect; 0 of 8 below 95 did.** But two defects *were* found below that line this session —
+`buildBlock`'s crash at 68 and `multipleLinearRegression`'s NaN at 55 — and **neither was
+found by the complexity score**. Both came from grepping `fp-safety:disable` for
+suppressions with no justification written after them.
+
+Complexity and defect risk stop correlating somewhere around 90. The suppression grep does
+not.
+
 #### 2026-09-20 — A regression with no predictors returned a NaN wearing a p-value
 
 ##### Fixed

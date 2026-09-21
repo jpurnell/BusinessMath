@@ -109,21 +109,10 @@ public extension Graph {
 		var assignment: [Node: Int] = [:]
 		for (index, node) in nodes.enumerated() { assignment[node] = index }
 
-		var degree: [Node: Double] = [:]
-		var twiceEdges: Double = 0
-		var undirected: [Node: Set<Node>] = [:]
-		for node in nodes { undirected[node] = [] }
-		for node in nodes {
-			for target in neighbors(of: node) {
-				undirected[node]?.insert(target)
-				undirected[target]?.insert(node)
-			}
-		}
-		for node in nodes {
-			let count = Double(undirected[node]?.count ?? 0)
-			degree[node] = count
-			twiceEdges += count
-		}
+		let graph = undirectedView(of: nodes)
+		let undirected = graph.adjacency
+		let degree = graph.degree
+		let twiceEdges = graph.twiceEdges
 		guard twiceEdges > 0 else { return nil }
 
 		var communityDegree: [Int: Double] = [:]
@@ -146,19 +135,9 @@ public extension Graph {
 				}
 				communityDegree[current, default: 0] -= k
 
-				var bestGroup = current
-				var bestGain = Self.modularityGain(links: links[current] ?? 0,
-												   communityDegree: communityDegree[current] ?? 0,
-												   nodeDegree: k, twiceEdges: twiceEdges)
-				for (group, weight) in links.sorted(by: { $0.key < $1.key }) where group != current {
-					let gain = Self.modularityGain(links: weight,
-												   communityDegree: communityDegree[group] ?? 0,
-												   nodeDegree: k, twiceEdges: twiceEdges)
-					if gain > bestGain {
-						bestGain = gain
-						bestGroup = group
-					}
-				}
+				let bestGroup = Self.bestCommunity(
+					for: current, links: links, communityDegree: communityDegree,
+					nodeDegree: k, twiceEdges: twiceEdges)
 
 				communityDegree[bestGroup, default: 0] += k
 				if bestGroup != current {
@@ -176,6 +155,74 @@ public extension Graph {
 		}
 		let communities = grouped.keys.sorted().compactMap { grouped[$0] }
 		return communities.isEmpty ? nil : communities
+	}
+
+	/// The graph as an undirected one, with each node's degree and the total edge weight.
+	///
+	/// Modularity is defined on an undirected graph, so a directed edge seen from either end
+	/// is the same edge. Building the symmetric adjacency once — rather than asking
+	/// `neighbors(of:)` again inside the improvement loop — is also part of why the result
+	/// does not depend on the order the graph was assembled in, which
+	/// `louvainIsDeterministic` pins.
+	///
+	/// - Parameter nodes: Every node in the graph.
+	/// - Returns: The symmetric adjacency, each node's degree, and `2m`.
+	private func undirectedView(
+		of nodes: [Node]
+	) -> (adjacency: [Node: Set<Node>], degree: [Node: Double], twiceEdges: Double) {
+		var degree: [Node: Double] = [:]
+		var twiceEdges: Double = 0
+		var undirected: [Node: Set<Node>] = [:]
+		for node in nodes { undirected[node] = [] }
+		for node in nodes {
+			for target in neighbors(of: node) {
+				undirected[node]?.insert(target)
+				undirected[target]?.insert(node)
+			}
+		}
+		for node in nodes {
+			let count = Double(undirected[node]?.count ?? 0)
+			degree[node] = count
+			twiceEdges += count
+		}
+		return (undirected, degree, twiceEdges)
+	}
+
+	/// Which community a node belongs in, given what it links to.
+	///
+	/// Staying put is the baseline rather than a special case: `current` is scored on the
+	/// same footing as every candidate, so a node moves only when another community is
+	/// strictly better. Candidates are visited in sorted order so ties resolve the same way
+	/// on every run, whatever order the graph was assembled in.
+	///
+	/// - Parameters:
+	///   - current: The node's present community.
+	///   - links: Edge weight from this node into each candidate community.
+	///   - communityDegree: Total degree of each community, with this node already removed.
+	///   - nodeDegree: This node's degree.
+	///   - twiceEdges: `2m` for the whole graph.
+	/// - Returns: The community with the greatest modularity gain.
+	private static func bestCommunity(
+		for current: Int,
+		links: [Int: Double],
+		communityDegree: [Int: Double],
+		nodeDegree: Double,
+		twiceEdges: Double
+	) -> Int {
+		var bestGroup = current
+		var bestGain = modularityGain(links: links[current] ?? 0,
+									  communityDegree: communityDegree[current] ?? 0,
+									  nodeDegree: nodeDegree, twiceEdges: twiceEdges)
+		for (group, weight) in links.sorted(by: { $0.key < $1.key }) where group != current {
+			let gain = modularityGain(links: weight,
+									  communityDegree: communityDegree[group] ?? 0,
+									  nodeDegree: nodeDegree, twiceEdges: twiceEdges)
+			if gain > bestGain {
+				bestGain = gain
+				bestGroup = group
+			}
+		}
+		return bestGroup
 	}
 
 	/// The modularity gain from placing a node in a community.

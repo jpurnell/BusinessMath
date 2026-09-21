@@ -55,15 +55,31 @@ it still listed `icc` at 131 and `bayesianICC` at 101 while §2 of the same file
 fixed, because it was copied from the queue snapshot and never refreshed. **Re-measure rather
 than trusting it** — `quality-gate --no-cache --no-index-build --check complexity`.
 
+**Nothing unexamined is left above 50.** The six functions still scoring above it —
+`fitGeneralLME` 75, `icc` 73, `solve` 60, `gibbsICCPosterior` 58, `solveRelaxation` 55,
+`algebraicSimplificationPass` 52 — each have a defect-fix commit behind them from an earlier
+round.
+
 | Score | Function | Where |
 |---:|---|---|
-| **56** | `multipleLinearRegression` | `Statistics/Regression/MultipleLinearRegression.swift:232` — **defect fixed, decomposition still owed** |
-| **55** | `louvainCommunities` | `Network/Community/Community.swift:105` — the last unexamined one over 50 |
-| 45 | `standardisedMoments` | `Simulation/distributionMomentFit.swift` |
+| 45 | `standardisedMoments` | `Simulation/distributionMomentFit.swift` — the quadrature under the moment fit |
 | 42 | `dualRobustCounterpart` | `AdvancedOptimization/RobustOptimizer.swift` |
+| 26 | `varianceInflationFactors` | `Statistics/Regression/MultipleLinearRegression.swift` — extracted here |
 
-Done in this pass: `generalEMUpdate` 59 → 16, `linearRobustCounterpart` 59 → below, `detect`
-57 → below, `multiWayANOVA` 55 → below.
+Cleared in this pass: `generalEMUpdate` 59 → 16, `linearRobustCounterpart` 59 → below,
+`detect` 57 → below, `multiWayANOVA` 55 → below, `multipleLinearRegression` 56 → 23,
+`louvainCommunities` 55 → below.
+
+**What the score is and is not worth, measured.** Over the whole programme, **7 of 8
+functions scoring ≥ 95 held a correctness defect; 0 of 8 below 95 did.** But two defects
+*were* found below that line this session — `buildBlock`'s crash at 68 and
+`multipleLinearRegression`'s NaN at 55 — and **neither was found by the complexity score**.
+Both came from grepping `fp-safety:disable` for suppressions with no justification after
+them. Complexity and defect risk stop correlating around 90; that grep does not.
+
+**Next, in the order agreed:** WACC consumers outside the DSL, then `standardisedMoments`,
+then the package-wide suppression sweep — which on this session's evidence is the
+highest-yield item left.
 
 `solve` (60, BranchAndBound) was examined in an earlier round — two defects — so the highest
 genuinely unexamined score in `Sources/` is now **59**.

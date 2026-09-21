@@ -234,52 +234,7 @@ public func multipleLinearRegression(
     y: [Double],
     confidenceLevel: Double = 0.95
 ) throws -> RegressionResult {
-    // MARK: - Input Validation
-
-    guard !X.isEmpty && !y.isEmpty else {
-        throw RegressionError.insufficientData(message: "X and y cannot be empty")
-    }
-
-    let n = X.count
-    let p = X[0].count
-
-    guard n == y.count else {
-        throw RegressionError.dimensionMismatch(
-            expected: "X rows (\(n)) must equal y length",
-            actual: "y has length \(y.count)"
-        )
-    }
-
-    guard X.allSatisfy({ $0.count == p }) else {
-        throw RegressionError.invalidPredictorMatrix(message: "X must be rectangular (all rows same length)")
-    }
-
-    // An intercept-only "regression" has no predictor to regress on, and the F-statistic
-    // it produced said so in the worst available way: `(TSS - RSS) / Double(p)` with `p`
-    // zero came back **NaN**, paired with an `fStatisticPValue` of 1.0 — because the F-CDF
-    // refused the NaN and the `?? 0.0` fallback turned that refusal into "not significant".
-    // A statistic that is not a number, wearing a confident p-value, is the
-    // plausible-but-wrong result this package is not allowed to return.
-    guard p >= 1 else {
-        throw RegressionError.insufficientData(
-            message: "at least one predictor is required; X has rows with no columns")
-    }
-
-    guard n >= p + 1 else {
-        throw RegressionError.insufficientData(message: "Need at least \(p + 1) observations for \(p) predictors (have \(n))")
-    }
-
-    // Check for variance in y
-    // `Swift.max(_:, 1)` rather than a bare suppression: `n` is at least 1 from the
-    // emptiness guard above, and this puts that where the compiler and a reader can both
-    // see it. Of the seven suppressions this function carried, every one was written with
-    // no reason after it — the shape that hid a process crash elsewhere in this package.
-    let sampleCount = Double(Swift.max(n, 1))
-    let yMean = y.reduce(0.0, +) / sampleCount
-    let yVariance = y.map { pow($0 - yMean, 2) }.reduce(0.0, +) / sampleCount
-    guard yVariance > 1e-15 else {
-        throw RegressionError.noVariance(message: "y has no variance (all values approximately equal)")
-    }
+    let (n, p, yMean) = try validateRegressionInputs(X: X, y: y)
 
     // MARK: - Add Intercept Column to X
 
@@ -416,7 +371,100 @@ public func multipleLinearRegression(
         fStatisticPValue = 0.0
     }
 
-    // MARK: - Compute VIF (Variance Inflation Factors)
+    let vif = varianceInflationFactors(X: X, n: n, p: p, confidenceLevel: confidenceLevel)
+
+    // MARK: - Return Result
+
+    return RegressionResult(
+        intercept: intercept,
+        coefficients: coefficients,
+        rSquared: rSquared,
+        adjustedRSquared: adjustedRSquared,
+        fStatistic: fStatistic,
+        fStatisticPValue: fStatisticPValue,
+        standardErrors: standardErrors,
+        tStatistics: tStatistics,
+        pValues: pValues,
+        confidenceIntervals: confidenceIntervals,
+        vif: vif,
+        residuals: residuals,
+        fittedValues: fittedValues,
+        residualStandardError: residualStandardError,
+        n: n,
+        p: p
+    )
+}
+
+/// Checks the design and the response, and reports the shape the rest of the fit uses.
+///
+/// - Returns: The observation count, the predictor count, and the mean of `y` — which is
+///   computed here to check that `y` varies at all, and reused downstream for the total sum
+///   of squares rather than being formed twice.
+/// - Throws: ``RegressionError`` when the inputs are empty, ragged, mismatched, too short
+///   for the number of predictors, carry no predictors at all, or when `y` does not vary.
+private func validateRegressionInputs(
+    X: [[Double]], y: [Double]
+) throws -> (n: Int, p: Int, yMean: Double) {
+
+    guard !X.isEmpty && !y.isEmpty else {
+        throw RegressionError.insufficientData(message: "X and y cannot be empty")
+    }
+
+    let n = X.count
+    let p = X[0].count
+
+    guard n == y.count else {
+        throw RegressionError.dimensionMismatch(
+            expected: "X rows (\(n)) must equal y length",
+            actual: "y has length \(y.count)"
+        )
+    }
+
+    guard X.allSatisfy({ $0.count == p }) else {
+        throw RegressionError.invalidPredictorMatrix(message: "X must be rectangular (all rows same length)")
+    }
+
+    // An intercept-only "regression" has no predictor to regress on, and the F-statistic
+    // it produced said so in the worst available way: `(TSS - RSS) / Double(p)` with `p`
+    // zero came back **NaN**, paired with an `fStatisticPValue` of 1.0 — because the F-CDF
+    // refused the NaN and the `?? 0.0` fallback turned that refusal into "not significant".
+    // A statistic that is not a number, wearing a confident p-value, is the
+    // plausible-but-wrong result this package is not allowed to return.
+    guard p >= 1 else {
+        throw RegressionError.insufficientData(
+            message: "at least one predictor is required; X has rows with no columns")
+    }
+
+    guard n >= p + 1 else {
+        throw RegressionError.insufficientData(message: "Need at least \(p + 1) observations for \(p) predictors (have \(n))")
+    }
+
+    // Check for variance in y
+    // `Swift.max(_:, 1)` rather than a bare suppression: `n` is at least 1 from the
+    // emptiness guard above, and this puts that where the compiler and a reader can both
+    // see it. Of the seven suppressions this function carried, every one was written with
+    // no reason after it — the shape that hid a process crash elsewhere in this package.
+    let sampleCount = Double(Swift.max(n, 1))
+    let yMean = y.reduce(0.0, +) / sampleCount
+    let yVariance = y.map { pow($0 - yMean, 2) }.reduce(0.0, +) / sampleCount
+    guard yVariance > 1e-15 else {
+        throw RegressionError.noVariance(message: "y has no variance (all values approximately equal)")
+    }
+    return (n, p, yMean)
+}
+
+/// Variance inflation factors, one per predictor.
+///
+/// Each is `1 / (1 - R²)` from regressing that predictor on all the others, so a value of 1
+/// means the predictor is orthogonal to the rest and a large one means the fit cannot tell
+/// it apart from a combination of them. A perfectly collinear predictor gives an infinite
+/// factor rather than a division by zero, and an auxiliary regression that fails at all is
+/// reported the same way — in both cases the factor is genuinely undefined.
+///
+/// - Returns: One factor per predictor, in the design's own column order.
+private func varianceInflationFactors(
+    X: [[Double]], n: Int, p: Int, confidenceLevel: Double
+) -> [Double] {
 
     var vif = Array(repeating: 0.0, count: p)
     for j in 0..<p {
@@ -455,27 +503,7 @@ public func multipleLinearRegression(
             vif[j] = 1.0
         }
     }
-
-    // MARK: - Return Result
-
-    return RegressionResult(
-        intercept: intercept,
-        coefficients: coefficients,
-        rSquared: rSquared,
-        adjustedRSquared: adjustedRSquared,
-        fStatistic: fStatistic,
-        fStatisticPValue: fStatisticPValue,
-        standardErrors: standardErrors,
-        tStatistics: tStatistics,
-        pValues: pValues,
-        confidenceIntervals: confidenceIntervals,
-        vif: vif,
-        residuals: residuals,
-        fittedValues: fittedValues,
-        residualStandardError: residualStandardError,
-        n: n,
-        p: p
-    )
+    return vif
 }
 
 // MARK: - Helper Functions
