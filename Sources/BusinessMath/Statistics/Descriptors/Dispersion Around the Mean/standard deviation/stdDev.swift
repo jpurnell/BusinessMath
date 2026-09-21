@@ -26,10 +26,7 @@ public func stdDev<T: Real>(_ values: [T], _ pop: Population = .sample) -> T {
             return stdDevS(values)
     }
 }
-
-
-
-
-//public func stdDevTDist<T: Real>(_ values: [T]) -> T {
-//    return T.sqrt(varianceTDist(values))
-//}
+// A `stdDevTDist` was drafted here and left commented out. It delegated to `varianceTDist`,
+// which returned `(n - 1) / (n - 3)` — the variance of a *standard* t-distribution, a unitless
+// constant that ignored the caller's data — so its square root would have been just as
+// detached from the sample. Both are gone; `stdDev(_:)` is the answer at every sample size.

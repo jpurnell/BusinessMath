@@ -8,7 +8,12 @@
 import Foundation
 import Numerics
 
-/// When we are working with a subset (sample) of the total number of observations, we use the sum of squared average differences, but divide it by one fewer than the number of observations. If there are fewer than 30 observations in the sample, we use the T-Distribution of the Variance (varianceTDist)
+/// When we are working with a subset (sample) of the total number of observations, we use the
+/// sum of squared average differences, but divide it by one fewer than the number of
+/// observations. That is the unbiased estimator at every sample size; there is no small-sample
+/// variant of it. The t-distribution governs the sampling distribution of the *mean* — which is
+/// what makes confidence intervals and test statistics wider for small samples — and does not
+/// change this point estimate. A `varianceTDist` that claimed otherwise was removed in 3.0.0.
 ///
 ///
 /// Computes the sample variance for a given set of values.

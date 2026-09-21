@@ -11,6 +11,95 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### 2026-09-21 — What a divisor sweep found once it stopped looking only at divisors
+
+##### Removed
+
+- **`varianceTDist(_:)` is deleted. This is source-breaking.** For any sample of 30 or fewer
+  it returned `(n - 1) / (n - 3)` — the variance of a *standard* t-distribution with `n - 1`
+  degrees of freedom, a unitless constant that never looked at the caller's data:
+
+  | call | returns |
+  |---|---|
+  | `varianceTDist([1, 2, 3, 4, 5])` | 2.0 |
+  | `varianceTDist([1000, 2000, 3000, 4000, 5000])` | 2.0 |
+  | `variance([1, 2, 3, 4, 5])` | 2.5 |
+  | `variance([1000, …, 5000])` | 2,500,000 |
+
+  Above 30 it delegated to `variance(_:)`, so the units changed discontinuously — 1.074 at
+  n = 30, 4050.67 at n = 31. Below 4 it returned −1.0 at n = 2, infinity at n = 3, and 0.333
+  for an empty array.
+
+  There is no corrected version to put in its place. The premise in its own documentation,
+  that the t-distribution gives "a more accurate sample variance" for small samples, is not
+  true: `s² = Σ(x - x̄)² / (n - 1)` is unbiased at every sample size. The t-distribution
+  governs the sampling distribution of the *mean*, which is why confidence intervals widen
+  for small samples and why the point estimate does not move. **Use `variance(_:)`.**
+
+  Nothing in the package called it, nothing tested it, and the only two references were a
+  doc sentence in `sample variance.swift` claiming `sampleVariance` used it — it never did —
+  and a commented-out `stdDevTDist` that delegated to it. Both corrected.
+
+##### Fixed
+
+- **Both option-pricing models returned NaN at expiry, and the binomial tree priced a
+  zero-step call at zero.** Neither `BlackScholesModel` nor `BinomialTreeModel` contained a
+  single `guard`, `precondition` or `throws`.
+
+  | case | before | after |
+  |---|---|---|
+  | sound call and put, all five Greeks | — | **bit-identical** |
+  | at expiry, at the money | **every value NaN** | price 0, delta 0, gamma ∞, theta 0 |
+  | at expiry, in the money | price 20, delta 1, **gamma NaN, theta NaN** | gamma 0, theta −5 |
+  | zero volatility | price/delta/theta/rho right, **gamma NaN** | gamma 0 |
+  | spot of zero | **gamma NaN** | gamma 0 |
+  | tree, every degenerate case | **NaN** | the deterministic value |
+  | **tree with `steps: 0`** | **0.0** | traps |
+
+  The last row is the one that matters: a call worth 10.43 came back as 0.0, from a public
+  parameter with a default. Everything else at least announced itself.
+
+  With no diffusion the underlying arrives at its forward with certainty, so the option is
+  `max(S - K·exp(-rT), 0)` — at `timeToExpiry == 0` that is the intrinsic value. The Greeks
+  follow from the payoff being piecewise linear, with gamma reported as **infinity** at the
+  strike because it is unbounded rather than unknown. American exercise is where the two
+  models part company: a zero-volatility American put at S = 90 is worth 10.0 against the
+  European 5.12.
+
+- **Five rank-correlation functions rested on a standard error that does not exist below
+  n = 4.** Fisher's `SE(z) = sqrt(1.06 / (n - 3))` made `zScore(rho:items:)`,
+  `zScore(fisherR:items:)`, `zScore(_:vs:)`, `zScore(_:r:)` and `correlationBreakpoint`
+  return NaN for n ≤ 2 — and at n = 3, where the error is infinite, *every* correlation
+  scored exactly 0.0, including one of 0.99. `correlationBreakpoint` divided by that zero
+  outright. `tStatistic` had the same omission at ρ = ±1, so two observations of perfectly
+  monotone data returned NaN. `fisher(_:)`, in the same directory, already guarded its own
+  singularity and threw.
+
+- **`Lease.presentValue()` silently dropped every payment at a −100% discount rate.** Its
+  `guard discountFactor != 0 else { continue }` skipped each cash flow, so three payments of
+  1,000 against a residual of 500 returned **0.0**. Below −100% the compounding base is
+  negative and `pow` alternates sign: the same lease returned 2,000.0 at −150% and −500.0 at
+  −200% — a negative present value for entirely positive payments.
+
+- **`plotTornadoDiagram` crashed the process** for any base case that was not the exact
+  midpoint of its driver's range — `Fatal error: Negative count not allowed`, signal 5. All
+  ten fixtures in its suite were symmetric, which is the one split that does not go negative.
+
+- **Four divisors guarded at one call site and not at its twin**: `RetailModel`'s
+  `forStore:` overload, `SAFE.convert`'s `.postMoney` branch, and `CapTable.modelRound` /
+  `modelDownRound`, where a pre-money valuation of zero issued infinitely many shares and a
+  negative one issued a negative count.
+
+##### Changed
+
+- **Bare `fp-safety:disable` annotations in `Sources/` went from 71 to 0.** 23 were deleted
+  by folding their divisor to the literal it already evaluated to — `365.25 * 24 * 60 * 60 *
+  1000` is exactly `31_557_600_000.0`, every intermediate well under 2⁵³ — 5 were vestigial,
+  sitting on lines that are not divisions, and the rest now state the guard, closed enum or
+  loop invariant that makes them safe. A suppression that gives no reason is
+  indistinguishable from one nobody checked.
+
+
 #### 2026-09-20 — Where else a WACC is consumed, and the moments underneath the moment fit
 
 ##### Fixed
