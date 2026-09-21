@@ -336,11 +336,15 @@ public struct RetailModel: Sendable {
     ///   - storeIndex: Store index (for multi-location models)
     /// - Returns: Monthly revenue per square foot for the store
     public func calculateRevenuePerSquareFoot(squareFootage: Double, forStore storeIndex: Int) -> Double {
+        // The single-argument overload above guards this exact divisor and returns 0; this one
+        // did not, so a store entered with no floor area reported infinite revenue per square
+        // foot rather than nothing.
+        guard squareFootage > 0 else { return 0 }
         guard let avgRevenue = averageStoreRevenue else {
             // Single-store model: use total revenue
-            return monthlyRevenue / squareFootage // fp-safety:disable
+            return monthlyRevenue / squareFootage
         }
-        return avgRevenue / squareFootage // fp-safety:disable
+        return avgRevenue / squareFootage
     }
 
     // MARK: - Comprehensive Projections

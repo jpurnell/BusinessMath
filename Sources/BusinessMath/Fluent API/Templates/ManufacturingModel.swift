@@ -285,7 +285,11 @@ public struct ManufacturingModel: Sendable {
             return Period.month(year: year, month: month)
         }
 
-        let capacityUtilization = unitsPerMonth / productionCapacity // fp-safety:disable
+        // `calculateOverheadPerUnit` and `calculateCapacityUtilization` both guard this divisor
+        // and return 0; this third site did not. A capacity of zero made the utilization NaN,
+        // and NaN fails the `unitsProduced > 0` guard downstream, so the projection reported a
+        // unit cost of 0 against a positive revenue.
+        let capacityUtilization = productionCapacity > 0 ? unitsPerMonth / productionCapacity : 0.0
 
         let revenueValues = Array(repeating: calculateRevenue(unitsProduced: unitsPerMonth), count: months)
         let profitValues = Array(repeating: calculateProfit(unitsProduced: unitsPerMonth), count: months)

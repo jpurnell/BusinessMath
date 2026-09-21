@@ -603,18 +603,17 @@ public struct DistributionMomentFit: ContinuousDistribution, Sendable {
 	) -> (gamma: Double, logDelta: Double)? {
 		let (f1, f2) = residual
 
-		// A literal finite-difference step, so the divisor is non-zero by
-		// construction; reciprocated once rather than divided four times.
+		// A literal finite-difference step, reciprocated once rather than divided four times.
 		//
-		// The guard is not dead weight and is not for the reader: it is the *visible* zero
-		// check on the divisor. Extracting this function dropped it on the grounds that a
-		// literal cannot be zero, and the fp-safety checker immediately said so — the only
-		// warning in an otherwise clean 45/45 run. Writing `1e6` directly instead would
-		// remove the division altogether, but `1 / 1e-6` is not exactly `1e6` in binary, so
-		// that would change every solve.
+		// This carried `guard step > 0` for a while, to give the fp-safety checker a visible
+		// zero check on a divisor it would otherwise flag. The compiler then warned that the
+		// guard could never fail, so the two checkers were trading one warning for the other.
+		//
+		// The reciprocal is written out because it costs nothing to: `1 / 1e-6` and `1e6` are
+		// the same `Double`, bit for bit — both are `0x412e848000000000`. An earlier comment
+		// here asserted the opposite and was never measured.
 		let step = 1e-6
-		guard step > 0 else { return nil }
-		let inverseStep: Double = 1 / step
+		let inverseStep: Double = 1e6
 		guard let (g1, g2) = shapeResidual(
 				family: family, gamma: gamma + step, logDelta: logDelta,
 				skewness: skewness, kurtosis: kurtosis),

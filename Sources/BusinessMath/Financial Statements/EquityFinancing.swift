@@ -310,7 +310,9 @@ public struct CapTable {
         guard totalShares > 0 else { return self }
         let pricePerShare = preMoneyValuation / totalShares // fp-safety:disable
 
-        let investorShares = (investorOwnership / (1.0 - investorOwnership)) * totalShares
+        let residualOwnership = 1.0 - investorOwnership
+        guard residualOwnership > 0 else { return self }
+        let investorShares = (investorOwnership / residualOwnership) * totalShares
 
         let investor = Shareholder(
             name: "Down Round Investor",
@@ -395,8 +397,15 @@ public struct CapTable {
         guard totalShares > 0 else { return self }
         let pricePerShare = preMoneyValuation / totalShares // fp-safety:disable
 
-        // Calculate new shares for investor
-        let investorShares = (investorOwnership / (1.0 - investorOwnership)) * totalShares
+        // Calculate new shares for investor.
+        //
+        // This divisor is zero when the pre-money valuation is zero — the investor then owns the
+        // whole company and there is no residual to dilute — and negative when the pre-money is
+        // negative, which issued a *negative* share count. Neither carried a suppression, because
+        // the checker only sees divisors that are plain identifiers.
+        let residualOwnership = 1.0 - investorOwnership
+        guard residualOwnership > 0 else { return self }
+        let investorShares = (investorOwnership / residualOwnership) * totalShares
 
         let investor = Shareholder(
             name: investorName,
@@ -795,12 +804,21 @@ public struct SAFE {
     public func convert(seriesAValuation: Double) -> SAFEConversion {
         switch type {
         case .postMoney:
+            // `SAFE.init` does not validate the cap, and the `.preMoney` branch below guards its
+            // own conversion price while this one did not. A cap of zero made the ownership
+            // infinite, the price per share zero, and the share count infinite.
+            guard postMoneyCap > 0 else {
+                return SAFEConversion(shares: 0, pricePerShare: 0, appliedTerm: .cap, ownershipPercentOverride: nil)
+            }
             // Post-money SAFE: ownership = investment / cap
-            let ownershipPct = investment / postMoneyCap // fp-safety:disable
+            let ownershipPct = investment / postMoneyCap
             // Assume cap is based on some standard share count (e.g., 10M shares)
             let assumedShares = 10_000_000.0
-            let pricePerShare = postMoneyCap / assumedShares // fp-safety:disable
-            let shares = investment / pricePerShare // fp-safety:disable
+            let pricePerShare = postMoneyCap / 10_000_000.0
+            // `investment / pricePerShare` is `investment / (postMoneyCap / assumedShares)`,
+            // which is `ownershipPct * assumedShares`. Same number, one rounding instead of
+            // two, and no second divisor that has to be shown to be non-zero.
+            let shares = ownershipPct * assumedShares
 
             return SAFEConversion(
                 shares: shares,
@@ -948,7 +966,11 @@ public struct SAFEConversion {
         if let override = ownershipPercentOverride {
             return override
         }
-        return shares / (10_000_000.0 + shares) // fp-safety:disable
+        // Binding the assumed total makes the divisor visible: a share count of exactly
+        // -10,000,000 would otherwise divide by zero here.
+        let assumedTotalShares = 10_000_000.0 + shares
+        guard assumedTotalShares > 0 else { return 0 }
+        return shares / assumedTotalShares
     }
 }
 

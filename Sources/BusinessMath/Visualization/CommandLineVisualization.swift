@@ -215,6 +215,48 @@ public func plotHistogram(_ histogram: [(range: Range<Double>, count: Int)]) -> 
 /// print(plot)
 /// ```
 ///
+/// The two half-spans of one input's bar: how far the base case sits from each end.
+///
+/// `lowValues` and `highValues` are keyed by whether the *input driver* was low or high, not
+/// by which output is smaller — a cost driver has `low > high` — so the ends are sorted here
+/// rather than assumed. A base case outside the range gives that side its full extent and the
+/// other side zero, which is the honest picture: the range does not reach the base case.
+///
+/// - Returns: `(left, right)`, both `>= 0`, and both `0` if any input is not finite.
+internal func tornadoHalfSpans(low: Double, high: Double, base: Double) -> (left: Double, right: Double) {
+	let lo = Swift.min(low, high)
+	let hi = Swift.max(low, high)
+	let left = base - lo
+	let right = hi - base
+	// `>` is false for NaN, so a non-finite end collapses to a zero-width bar instead of
+	// reaching `Int(_:)` with something that traps.
+	let safeLeft = left > 0 ? left : 0.0
+	let safeRight = right > 0 ? right : 0.0
+	return (safeLeft, safeRight)
+}
+
+/// Columns for one side of a bar, by construction within `0...limit`.
+///
+/// This is the only place a bar width crosses from `Double` to `Int`, and it is written so
+/// that neither of the two traps downstream can be reached: `Int(_:)` traps on NaN and on
+/// anything outside `Int`'s range, and `String(repeating:count:)` traps on a negative count.
+/// The `guard` makes the divisor visibly positive, the `min` makes the fraction visibly at
+/// most one, and the clamp makes the result visibly in range — none of it is defensive
+/// duplication, each step is what removes one of those traps.
+///
+/// - Parameters:
+///   - span: The distance this side of the bar represents. Zero or negative renders nothing.
+///   - scale: The span that earns the full `limit`. Zero or negative renders nothing.
+///   - limit: The column budget for this side.
+/// - Returns: A count in `0...limit`.
+internal func tornadoBarWidth(span: Double, scale: Double, limit: Int) -> Int {
+	guard scale > 0, span > 0, limit > 0 else { return 0 }
+	let fraction = Swift.min(span / scale, 1.0)
+	guard fraction.isFinite else { return 0 }
+	let columns = Int(fraction * Double(limit))
+	return Swift.max(0, Swift.min(limit, columns))
+}
+
 /// - Complexity: O(n) where n is the number of input drivers
 public func plotTornadoDiagram(_ analysis: TornadoDiagramAnalysis) -> String {
 	// Handle empty analysis
@@ -224,11 +266,30 @@ public func plotTornadoDiagram(_ analysis: TornadoDiagramAnalysis) -> String {
 
 	let baseCaseOutput = analysis.baseCaseOutput
 
-	// Find the maximum impact for scaling bar lengths
+	// Find the maximum impact, for the number formatting below.
 	var maxImpact = 0.0
 	for input in analysis.inputs {
 		let impact = analysis.impacts[input] ?? 0.0
 		maxImpact = max(maxImpact, impact)
+	}
+
+	// Bars are scaled against the widest *half*-span across all inputs, not against the widest
+	// impact. Each side of a bar is padded into `maxBarWidth` columns, so a scale that lets one
+	// side ask for more than that has no way to render the answer: the old code scaled the whole
+	// bar to `maxBarWidth * 2` and then split it by the base case's position, which fits only
+	// when the base case is exactly the midpoint. Every fixture in the suite was exactly that,
+	// and anything else trapped in `String(repeating:count:)` with a negative count.
+	//
+	// For a symmetric input the two scales agree exactly — its half-span is `impact / 2` and the
+	// scale is `maxImpact / 2` — so this changes no output that previously rendered.
+	var maxHalfSpan = 0.0
+	for input in analysis.inputs {
+		let spans = tornadoHalfSpans(
+			low: analysis.lowValues[input] ?? baseCaseOutput,
+			high: analysis.highValues[input] ?? baseCaseOutput,
+			base: baseCaseOutput
+		)
+		maxHalfSpan = max(maxHalfSpan, max(spans.left, spans.right))
 	}
 
 	// Configuration
@@ -261,29 +322,11 @@ public func plotTornadoDiagram(_ analysis: TornadoDiagramAnalysis) -> String {
 		let high = analysis.highValues[input] ?? baseCaseOutput
 		let impact = analysis.impacts[input] ?? 0.0
 
-		// Calculate bar widths based on IMPACT, not deviation from base
-		// Total bar width should be proportional to impact
-		let totalBarWidth: Int
-		if maxImpact > 0 {
-			totalBarWidth = Int((impact / maxImpact) * Double(maxBarWidth * 2)) // fp-safety:disable
-		} else {
-			totalBarWidth = 0
-		}
-
-		// Split the bar at the base case position
-		// Determine what fraction of the range is left of base case
-		let range = high - low
-		var fractionLeft: Double
-		if range > 0 {
-			fractionLeft = (baseCaseOutput - low) / range
-			// Clamp to [0, 1] in case base is outside [low, high]
-			fractionLeft = max(0, min(1, fractionLeft))
-		} else {
-			fractionLeft = 0.5
-		}
-
-		let leftWidth = Int(Double(totalBarWidth) * fractionLeft)
-		let rightWidth = totalBarWidth - leftWidth
+		// Each side is scaled independently against the widest half-span, so each is within
+		// its own `maxBarWidth` budget without the two having to be split out of one number.
+		let spans = tornadoHalfSpans(low: low, high: high, base: baseCaseOutput)
+		let leftWidth = tornadoBarWidth(span: spans.left, scale: maxHalfSpan, limit: maxBarWidth)
+		let rightWidth = tornadoBarWidth(span: spans.right, scale: maxHalfSpan, limit: maxBarWidth)
 
 		// Create bars with direction indicators
 		let leftBar = String(repeating: "█", count: leftWidth)
