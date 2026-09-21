@@ -336,81 +336,107 @@ public struct DistributionMomentFit: ContinuousDistribution, Sendable {
 	static func standardisedMoments(family: JohnsonFamily, gamma: Double, delta: Double,
 									quadratureSteps: Int = 4_000)
 	-> (mean: Double, variance: Double, skewness: Double, kurtosis: Double) {
-		var raw = [Double](repeating: 0, count: 5)
-		raw[0] = 1
-
 		switch family {
 		case .normal:
 			return (mean: 0, variance: 1, skewness: 0, kurtosis: 3)
-
 		case .unbounded, .lognormal:
-			// Both are exponentials of a normal, so every raw moment is a finite sum
-			// of `E[e^{t(a + bZ)}] = e^{ta + t²b²/2}`. Exact, and much better
-			// conditioned than integrating sinh⁴ against a density.
-			let a: Double = -gamma / delta
-			let b: Double = 1 / delta
-			func exponentialMoment(_ t: Double) -> Double {
-				let linear: Double = t * a
-				let quadratic: Double = t * t * b * b / 2
-				return Foundation.exp(linear + quadratic)
-			}
-			if family == .lognormal {
-				for order in 1...4 { raw[order] = exponentialMoment(Double(order)) }
-			} else {
-				// sinh(x)^n = 2^-n Σ_j C(n,j)(−1)^j e^{(n−2j)x}
-				for order in 1...4 {
-					var total = 0.0
-					for j in 0...order {
-						let coefficient: Double = Double(Self.binomial(order, j))
-						let sign: Double = j % 2 == 0 ? 1 : -1
-						let power: Double = Double(order - 2 * j)
-						total += sign * coefficient * exponentialMoment(power)
-					}
-					// 2^order for order in 1...4, so strictly positive by construction.
-					let scaling: Double = Foundation.pow(2.0, Double(order))
-					guard scaling > 0 else { continue }
-					raw[order] = total / scaling
-				}
-			}
-
+			return centralise(exponentialRawMoments(family: family, gamma: gamma, delta: delta))
 		case .bounded:
-			// Simpson over z, weighted by the normal density. The transform is a
-			// logistic, so every power of it lies in (0, 1) and the integrand is
-			// dominated by the density — no cancellation, no growth.
-			let lower: Double = -12
-			let upper: Double = 12
-			// Simpson needs an even number of intervals and at least two of them.
-			guard quadratureSteps >= 2, quadratureSteps % 2 == 0 else { return (0, 0, 0, 3) }
-			let steps = quadratureSteps
-			let width: Double = upper - lower
-			// `quadratureSteps` is a parameter, so this is a real runtime check and
-			// not one the optimiser can fold away.
-			let stepCount: Double = Double(steps)
-			guard stepCount > 0 else { return (0, 0, 0, 3) }
-			let h: Double = width / stepCount
-			var sums = [Double](repeating: 0, count: 5)
-			for step in 0...steps {
-				let z: Double = lower + Double(step) * h
-				// The package's own standard normal density. Hand-rolling
-				// `exp(-z²/2)/√(2π)` here duplicated a function that already exists
-				// and is already tested, and put a division by a constant in a hot
-				// loop for no reason.
-				let density: Double = normalPDF(x: z, mean: 0, stdDev: 1)
-				let weight: Double
-				if step == 0 || step == steps { weight = 1 }
-				else if step % 2 == 1 { weight = 4 }
-				else { weight = 2 }
-				let w: Double = transform(family: .bounded, z: z, gamma: gamma, delta: delta)
-				var powered = 1.0
-				for order in 1...4 {
-					powered *= w
-					sums[order] += weight * density * powered
-				}
-			}
-			for order in 1...4 { raw[order] = sums[order] * h / 3 }
+			return centralise(boundedRawMoments(
+				gamma: gamma, delta: delta, quadratureSteps: quadratureSteps))
 		}
+	}
 
-		return centralise(raw)
+	/// Raw moments of the unbounded and lognormal members, in closed form.
+	///
+	/// Both are exponentials of a normal, so every raw moment is a finite sum of
+	/// `E[e^{t(a + bZ)}] = e^{ta + t²b²/2}`. Exact, and much better conditioned than
+	/// integrating `sinh⁴` against a density.
+	///
+	/// - Returns: `raw[0...4]`, with `raw[0]` equal to one.
+	static func exponentialRawMoments(
+		family: JohnsonFamily, gamma: Double, delta: Double
+	) -> [Double] {
+		var raw = [Double](repeating: 0, count: 5)
+		raw[0] = 1
+		// Both are exponentials of a normal, so every raw moment is a finite sum
+		// of `E[e^{t(a + bZ)}] = e^{ta + t²b²/2}`. Exact, and much better
+		// conditioned than integrating sinh⁴ against a density.
+		let a: Double = -gamma / delta
+		let b: Double = 1 / delta
+		func exponentialMoment(_ t: Double) -> Double {
+			let linear: Double = t * a
+			let quadratic: Double = t * t * b * b / 2
+			return Foundation.exp(linear + quadratic)
+		}
+		if family == .lognormal {
+			for order in 1...4 { raw[order] = exponentialMoment(Double(order)) }
+		} else {
+			// sinh(x)^n = 2^-n Σ_j C(n,j)(−1)^j e^{(n−2j)x}
+			for order in 1...4 {
+				var total = 0.0
+				for j in 0...order {
+					let coefficient: Double = Double(Self.binomial(order, j))
+					let sign: Double = j % 2 == 0 ? 1 : -1
+					let power: Double = Double(order - 2 * j)
+					total += sign * coefficient * exponentialMoment(power)
+				}
+				// 2^order for order in 1...4, so strictly positive by construction.
+				let scaling: Double = Foundation.pow(2.0, Double(order))
+				guard scaling > 0 else { continue }
+				raw[order] = total / scaling
+			}
+		}
+		return raw
+	}
+
+	/// Raw moments of the bounded member, by Simpson quadrature.
+	///
+	/// The transform is a logistic, so every power of it lies in `(0, 1)` and the integrand is
+	/// dominated by the normal density — no cancellation, no growth. Quadrature is used here
+	/// and nowhere else because this is the one member with no closed form.
+	///
+	/// - Returns: `raw[0...4]`, with `raw[0]` equal to one.
+	static func boundedRawMoments(
+		gamma: Double, delta: Double, quadratureSteps: Int
+	) -> [Double] {
+		var raw = [Double](repeating: 0, count: 5)
+		raw[0] = 1
+		// Simpson over z, weighted by the normal density. The transform is a
+		// logistic, so every power of it lies in (0, 1) and the integrand is
+		// dominated by the density — no cancellation, no growth.
+		let lower: Double = -12
+		let upper: Double = 12
+		// Simpson needs an even number of intervals and at least two of them.
+		guard quadratureSteps >= 2, quadratureSteps % 2 == 0 else { return raw } // centralise turns this into (0, 0, 0, 3)
+		let steps = quadratureSteps
+		let width: Double = upper - lower
+		// `quadratureSteps` is a parameter, so this is a real runtime check and
+		// not one the optimiser can fold away.
+		let stepCount: Double = Double(steps)
+		guard stepCount > 0 else { return raw } // centralise turns this into (0, 0, 0, 3)
+		let h: Double = width / stepCount
+		var sums = [Double](repeating: 0, count: 5)
+		for step in 0...steps {
+			let z: Double = lower + Double(step) * h
+			// The package's own standard normal density. Hand-rolling
+			// `exp(-z²/2)/√(2π)` here duplicated a function that already exists
+			// and is already tested, and put a division by a constant in a hot
+			// loop for no reason.
+			let density: Double = normalPDF(x: z, mean: 0, stdDev: 1)
+			let weight: Double
+			if step == 0 || step == steps { weight = 1 }
+			else if step % 2 == 1 { weight = 4 }
+			else { weight = 2 }
+			let w: Double = transform(family: .bounded, z: z, gamma: gamma, delta: delta)
+			var powered = 1.0
+			for order in 1...4 {
+				powered *= w
+				sums[order] += weight * density * powered
+			}
+		}
+		for order in 1...4 { raw[order] = sums[order] * h / 3 }
+		return raw
 	}
 
 	/// Central moments from raw ones, then standardised.

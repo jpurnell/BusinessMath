@@ -317,12 +317,28 @@ public struct CapitalStructure {
         return costOfDebt * (1.0 - taxRate)
     }
 
-    /// Weighted Average Cost of Capital
+    /// Weighted Average Cost of Capital.
+    ///
+    /// The comment here used to say "Call the global wacc function", and it did not: the
+    /// formula was written out a second time against `equityRatio` and `debtRatio`. Two
+    /// copies of one weighting is two places for a tax shield or a weight to drift, and this
+    /// package has paid for that pattern more than once. It delegates now, and the comment is
+    /// true.
+    ///
+    /// Bit-identical to the inline version it replaces: the free function forms its total as
+    /// `equityValue + debtValue` where ``totalValue`` forms it as `debtValue + equityValue`,
+    /// and IEEE 754 addition is commutative even though it is not associative.
+    ///
+    /// A structure with no debt and no equity has no cost of capital to report; this returns
+    /// zero there, matching ``debtRatio`` and ``equityRatio``, which is the convention this
+    /// type uses throughout rather than a claim that capital is free.
     public var wacc: Double {
-        // Call the global wacc function
-        let equityW = equityRatio
-        let debtW = debtRatio
-        return equityW * costOfEquity + debtW * costOfDebt * (1.0 - taxRate)
+        BusinessMath.wacc(
+            equityValue: equityValue,
+            debtValue: debtValue,
+            costOfEquity: costOfEquity,
+            costOfDebt: costOfDebt,
+            taxRate: taxRate)
     }
 
     /// The tax shield provided by debt (tax rate × debt value)

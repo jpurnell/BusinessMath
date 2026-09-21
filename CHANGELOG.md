@@ -11,6 +11,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+#### 2026-09-20 — Where else a WACC is consumed, and the moments underneath the moment fit
+
+##### Fixed
+
+- **`CapitalStructure.wacc` claimed to delegate and did not.** Its comment read *"Call the
+  global wacc function"*; the formula was written out a second time against `equityRatio`
+  and `debtRatio`. Two copies of one weighting is two places for a tax shield or a weight to
+  drift. It delegates now, and the comment is true.
+
+  Bit-identical: the free function forms its total as `equityValue + debtValue` where
+  `totalValue` forms it as `debtValue + equityValue`, and IEEE 754 addition is commutative
+  even though it is not associative.
+
+##### Tests
+
+- **The WACC consumption sweep found nothing else, and that is recorded with its evidence.**
+  After `DCFModel` was validated, every other place a discount rate is consumed was checked:
+
+  | site | at wacc = −100% | guarded? |
+  |---|---|---|
+  | `wacc(equityValue:…)` | not reached — it *computes* a rate | `totalValue > 0` before both divisions |
+  | `CapitalStructure.wacc` | same | via `equityRatio` / `debtRatio` |
+  | `enterpriseValueFromFCFF` | NaN | `denominator > 0`, plus NaN propagation |
+
+  The last one is now pinned, because **its NaN is accidental**. At `wacc = −100%` every
+  discount factor is `pow(0, n) = 0`, so the explicit-period present value is `+∞`; the
+  terminal value is negative wherever the growth guard lets the calculation through, so its
+  present value is `−∞`; and `+∞ + (−∞)` is NaN. Nothing in the function decided that. A
+  refactor that changed a sign or summed in a different order could turn the same input into
+  a finite-looking `+∞` — an enterprise value a caller would have no reason to distrust.
+
+  Six impossible rates now assert that no result is finite, and three sound ones that the
+  valuation still works.
+
+##### Internal
+
+- **`standardisedMoments`: 45 → below the threshold**, split into `exponentialRawMoments`
+  (closed form, for the unbounded and lognormal members) and `boundedRawMoments` (Simpson,
+  for the one member with no closed form). Verified **bit-identical** across 100 evaluations
+  — four families by five `gamma` values by five `delta` values.
+
+  Its two early exits returned the standardised tuple directly; they return the untouched
+  raw moments now and let `centralise` produce the same `(0, 0, 0, 3)`, which it does by its
+  own zero-variance guard rather than by a second literal.
+
 #### 2026-09-20 — Nothing unexamined is left above 50
 
 ##### Internal

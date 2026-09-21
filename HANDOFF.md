@@ -21,7 +21,7 @@ is the state and the traps.
 |---|---|
 | branch | `main`, pushed through the gStudy commit |
 | tags | latest **`v3.0.0-alpha.7`** (2026-09-18, tagged by the peer session) |
-| tests | **7,985 in 733 suites**, exit 0, **zero known issues** |
+| tests | **7,989 in 734 suites**, exit 0, **zero known issues** |
 | gate | `--no-cache --check all` → 45 of 45 ran, **0 errors and 0 warnings outside `doc-run`** |
 | `doc-run` | **flaky under load, not a regression** — see §4 |
 | guidelines repo | `../../development-guidelines` clean at `a5f9292`, `v2.4.0` tagged and pushed |
@@ -77,9 +77,34 @@ functions scoring ≥ 95 held a correctness defect; 0 of 8 below 95 did.** But t
 Both came from grepping `fp-safety:disable` for suppressions with no justification after
 them. Complexity and defect risk stop correlating around 90; that grep does not.
 
-**Next, in the order agreed:** WACC consumers outside the DSL, then `standardisedMoments`,
-then the package-wide suppression sweep — which on this session's evidence is the
-highest-yield item left.
+**WACC consumers: swept, and only one thing was wrong.** `CapitalStructure.wacc` claimed to
+call the free `wacc(...)` and instead wrote the formula out again; it delegates now. Every
+other consumer is already guarded, and `enterpriseValueFromFCFF`'s degenerate cases are now
+pinned because its NaN at −100% is accidental — `+∞ + (−∞)` — and a refactor could turn it
+into a finite-looking `+∞`.
+
+**`standardisedMoments`: 45 → below the threshold**, bit-identical over 100 evaluations.
+
+**Next: the suppression sweep, and it is large.** Census across `Sources/`:
+
+| | |
+|---|---|
+| `fp-safety:disable` total | **286** |
+| of those, **bare** (nothing written after) | **71** (four are this session's own prose) |
+
+On this session's evidence — three of nine bare-or-false suppressions in `BusinessMathDSL`
+hid defects, one a process crash and one a silently wrong Monte Carlo — that is the
+highest-yield list in the repository. The ones that read as riskiest on sight:
+
+- `DebtCovenants.swift:576` — `operatingIncome / interestExpense`, zero for a company with
+  no debt, which is an ordinary thing to be
+- `EquityFinancing.swift` — a dozen divisions by valuations and share counts
+- `RetailModel.swift:341,343` — `monthlyRevenue / squareFootage`
+- `ManufacturingModel.swift:288` — `unitsPerMonth / productionCapacity`
+- `LeaseAccounting.swift:316,324` — `payment / discountFactor`
+
+Many of the rest divide by literal constants and are genuinely safe; the point of the sweep
+is that nobody can tell which is which without reading them, because none of them says.
 
 `solve` (60, BranchAndBound) was examined in an earlier round — two defects — so the highest
 genuinely unexamined score in `Sources/` is now **59**.
