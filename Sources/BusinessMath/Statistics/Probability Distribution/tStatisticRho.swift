@@ -30,6 +30,17 @@ import Numerics
 ///
 /// Use this function when you are trying to determine the confidence or significance of your correlations in your statistical hypothesis testing.
 public func tStatistic<T: Real>(_ rho: T, dFr: T) -> T {
+    // `fisher(_:)` rejects this same singularity by throwing. This overload cannot throw, so
+    // it states the domain instead.
+    //
+    // Outside [-1, 1] the radicand `dFr / (1 - rho^2)` turns negative and the square root is
+    // NaN: a correlation that is not a correlation should not come back as a number at all.
+    // At exactly +/-1 the radicand is infinite and the statistic is +/-infinity, which is the
+    // correct limit — a perfect rank correlation has a vanishing p-value — so that stays.
+    precondition(rho >= T(-1) && rho <= T(1), "A t-statistic needs a correlation in [-1, 1]; got \(rho).")
+    // Zero degrees of freedom makes the radicand 0/0 at |rho| = 1. Measured: two observations
+    // of perfectly monotone data returned NaN, because n - 2 left nothing to test with.
+    precondition(dFr > T.zero, "A t-statistic needs positive degrees of freedom; got \(dFr).")
     let tStatistic = rho * T.sqrt(dFr / (1 - (rho *  rho)))
     return tStatistic
 }
@@ -56,5 +67,14 @@ public func tStatistic<T: Real>(_ rho: T, dFr: T) -> T {
 /// Use this function when you are examining a continuous variable in relation to a binary variable and you don't assume any particular distribution for the data.
 public func tStatistic<T: Real>(_ independent: [T], _ variable: [T]) throws -> T {
 	guard independent.count == variable.count else { throw ArrayError.mismatchedLengths }
+	// n - 2 degrees of freedom, so two observations leave none and one leaves a negative
+	// count. This used to reach the scalar overload with dFr = 0 and return NaN.
+	guard independent.count >= 3 else {
+		throw BusinessMathError.invalidInput(
+			message: "A rank-correlation t-statistic requires at least 3 observations (n - 2 degrees of freedom)",
+			value: "\(independent.count)",
+			expectedRange: ">= 3"
+		)
+	}
     return try tStatistic(spearmansRho(independent, vs: variable), dFr: T(independent.count - 2))
 }

@@ -24,6 +24,18 @@ import Numerics
 public func zScore<T: Real>(_ independent: [T], vs variable: [T]) throws -> T {
 	guard independent.count == variable.count else { throw ArrayError.mismatchedLengths }
     let n = independent.count
+	// Fisher's rank-correlation standard error is SE(z) = sqrt(1.06 / (n - 3)), so the
+	// statistic exists only for n >= 4. At n = 3 the error is infinite and every correlation
+	// scores zero; below that the radicand is negative and the result is NaN. Measured before
+	// this guard: `items` of 0, 1 and 2 all returned NaN, and 3 returned exactly 0.0 whatever
+	// the correlation was.
+	guard n >= 4 else {
+		throw BusinessMathError.invalidInput(
+			message: "Fisher's rank-correlation z-score requires at least 4 observations",
+			value: "\(n)",
+			expectedRange: ">= 4"
+		)
+	}
     let r = try spearmansRho(independent, vs: variable)
     return T.sqrt( T(n - 3) / (T(106) / T(100)) ) * (try fisher(r))
 }
@@ -44,5 +56,17 @@ public func zScore<T: Real>(_ independent: [T], vs variable: [T]) throws -> T {
 ///
 /// - Throws: `BusinessMathError.invalidInput` if r is exactly ±1
 public func zScore<T: Real>(_ independent: [T], r: T) throws -> T {
+	// Fisher's rank-correlation standard error is SE(z) = sqrt(1.06 / (n - 3)), so the
+	// statistic exists only for n >= 4. At n = 3 the error is infinite and every correlation
+	// scores zero; below that the radicand is negative and the result is NaN. Measured before
+	// this guard: `items` of 0, 1 and 2 all returned NaN, and 3 returned exactly 0.0 whatever
+	// the correlation was.
+	guard independent.count >= 4 else {
+			throw BusinessMathError.invalidInput(
+				message: "Fisher's rank-correlation z-score requires at least 4 observations",
+				value: "\(independent.count)",
+				expectedRange: ">= 4"
+			)
+		}
         return T.sqrt( (T(independent.count - 3) / (T(106) / T(100))) ) * (try fisher(r))
 }
