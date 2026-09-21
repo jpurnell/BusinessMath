@@ -57,8 +57,29 @@ public struct BinomialTreeModel<T: Real & Sendable> {
 		steps: Int = 100
 	) -> T {
 
+		// A tree with no steps has no nodes to induct over, and `timeToExpiry / T(steps)`
+		// divides by zero. The old code returned **0.0** for it — a call worth 10.43 reported
+		// as worthless, with no NaN and no error, from a parameter that is public and has a
+		// default. There is no limit to compute here: a zero-step tree is not a model.
+		precondition(steps >= 1, "A binomial tree needs at least one step; got \(steps).")
+
+		// `u - d` is zero exactly when `volatility * sqrt(dt)` is, and then the tree has no
+		// branching left to price. Measured before this branch: both a zero-volatility option
+		// and one valued on its expiry date returned NaN from the risk-neutral probability.
 		let dt = timeToExpiry / T(steps)
-		let u = T.exp(volatility * T.sqrt(dt))  // Up factor
+		let diffusion: T = volatility * T.sqrt(dt)
+		if diffusion <= T.zero {
+			return zeroDiffusionPrice(
+				optionType: optionType,
+				americanStyle: americanStyle,
+				spotPrice: spotPrice,
+				strikePrice: strikePrice,
+				timeToExpiry: timeToExpiry,
+				riskFreeRate: riskFreeRate
+			)
+		}
+
+		let u = T.exp(diffusion)  // Up factor
 		let d = T(1) / u  // Down factor
 		// Risk-neutral probability
 		let growth: T = T.exp(riskFreeRate * dt)
@@ -108,6 +129,46 @@ public struct BinomialTreeModel<T: Real & Sendable> {
 		}
 
 		return tree[0][0]
+	}
+
+	// MARK: - The zero-diffusion limit
+
+	/// What the tree is worth when there is no branching left to price.
+	///
+	/// With zero diffusion the underlying follows one deterministic path, `S * exp(rt)`, so the
+	/// European value is the discounted payoff on the forward — the same number
+	/// ``BlackScholesModel/zeroDiffusionPrice(optionType:spotPrice:strikePrice:timeToExpiry:riskFreeRate:)``
+	/// gives, since the tree converges to that model.
+	///
+	/// **American exercise is not the same number**, and this is the one place the two models
+	/// part company. Exercising a put at time `t` is worth `exp(-rt) * (K - S * exp(rt))`,
+	/// which is `K * exp(-rt) - S` — largest at `t = 0`. So an American put on a
+	/// non-volatile asset is worth exercising immediately, `max(K - S, 0)`, and that beats the
+	/// European value whenever the rate is positive. A call without dividends is never worth
+	/// exercising early, so the two agree there; taking the maximum covers both, and covers a
+	/// negative rate, where the European side is the larger one.
+	internal static func zeroDiffusionPrice(
+		optionType: OptionType,
+		americanStyle: Bool,
+		spotPrice: T,
+		strikePrice: T,
+		timeToExpiry: T,
+		riskFreeRate: T
+	) -> T {
+		let european: T = BlackScholesModel<T>.zeroDiffusionPrice(
+			optionType: optionType,
+			spotPrice: spotPrice,
+			strikePrice: strikePrice,
+			timeToExpiry: timeToExpiry,
+			riskFreeRate: riskFreeRate
+		)
+		guard americanStyle else { return european }
+		let exerciseNow: T = intrinsicValue(
+			optionType: optionType,
+			spotPrice: spotPrice,
+			strikePrice: strikePrice
+		)
+		return T.maximum(european, exerciseNow)
 	}
 
 	// MARK: - Helper Functions
