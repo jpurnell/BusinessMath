@@ -139,10 +139,32 @@ public struct JumpDiffusion: StochasticProcess, Sendable {
         let driftTerm = (adjustedDrift - volatility * volatility / 2.0) * dt // fp-safety:disable — constant 2.0
         let diffusionTerm = volatility * dt.squareRoot() * normalDraws
 
-        // Poisson jump count using the normal draw to derive a uniform for Poisson
-        // Transform normalDraws through the normal CDF to get a uniform [0,1]
+        // Poisson jump count using the normal draw to derive a uniform for Poisson.
+        //
+        // Transform normalDraws through the normal CDF to get a uniform [0,1]. This called a
+        // private Abramowitz & Stegun approximation that lived in this file, and it was not
+        // merely less accurate than `T.erf` — it was **wrong**. A&S 7.1.26 approximates
+        // `erf(x)` with `t = 1 / (1 + p*x)` *and* `exp(-x^2)` at the same argument, and
+        // `Phi(x) = (1 + erf(x / sqrt 2)) / 2`, so both halves must take `x / sqrt 2`. The
+        // local copy put `absX` in the polynomial and `absX^2 / 2` in the exponential, so the
+        // two disagreed by a factor of sqrt 2. Measured against the true normal CDF:
+        //
+        // | x | true | as it was | error |
+        // |---|---|---|---|
+        // | 0.25 | 0.598706326 | 0.626677195 | 2.80e-02 |
+        // | 0.50 | 0.691462461 | 0.728327668 | **3.69e-02** |
+        // | 1.00 | 0.841344746 | 0.870328641 | 2.90e-02 |
+        //
+        // Nearly four points of probability at the peak. The same approximation applied
+        // consistently errs by 6.9e-08, so the inconsistency cost a factor of 532,000.
+        //
+        // It mattered because this value is a *uniform*: the result feeds
+        // `poissonInverseCDF`, and a transform that is not uniform biases the jump counts
+        // away from the intensity the model was given. `BlackScholesModel` already recorded
+        // moving off its own copy of this approximation for a smaller reason — 6.25e-04 on an
+        // index-scale option — and this file kept one.
         let poissonMean = jumpIntensity * dt
-        let uniformForPoisson = normalCDF(normalDraws)
+        let uniformForPoisson = normalCDF(x: normalDraws)
         let jumpCount = poissonInverseCDF(mean: poissonMean, u: uniformForPoisson)
 
         // Accumulate jump component
@@ -171,24 +193,6 @@ public struct JumpDiffusion: StochasticProcess, Sendable {
         }
 
         return current * Double.exp(driftTerm + diffusionTerm + jumpComponent)
-    }
-
-    /// Approximate normal CDF for transforming normal draw to uniform.
-    private func normalCDF(_ x: Double) -> Double {
-        // Abramowitz & Stegun approximation
-        let a1 = 0.254829592
-        let a2 = -0.284496736
-        let a3 = 1.421413741
-        let a4 = -1.453152027
-        let a5 = 1.061405429
-        let p = 0.3275911
-
-        let sign: Double = x < 0 ? -1.0 : 1.0
-        let absX = abs(x)
-        let t = 1.0 / (1.0 + p * absX) // fp-safety:disable — denominator >= 1.0 (p > 0, absX >= 0)
-        let y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Double.exp(-absX * absX / 2.0) // fp-safety:disable — constant 2.0
-
-        return 0.5 * (1.0 + sign * y)
     }
 
     /// Poisson inverse CDF: given uniform u, return smallest k where CDF(k) >= u.

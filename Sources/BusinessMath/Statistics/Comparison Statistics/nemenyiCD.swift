@@ -85,8 +85,15 @@ public func nemenyiCD(judges: Int, items: Int, alpha: Double) -> Float {
     let q05: [Float] = [1.960, 2.343, 2.569, 2.728, 2.850, 2.949, 3.031, 3.102, 3.164]
     let q10: [Float] = [1.645, 2.052, 2.291, 2.459, 2.589, 2.693, 2.780, 2.855, 2.920]
 
-    // Validate inputs
-    guard items >= 2, items <= 10, judges >= 1 else {
+    // Validate inputs.
+    //
+    // The documented contract above says "Must be at least 2" for `judges`, and the guard
+    // said `>= 1`. A single judge produces no rank *variation* to test — the Nemenyi
+    // procedure compares mean ranks across judges, and with one judge every mean rank is
+    // that judge's own ranking — so the critical distance it returned was a finite number
+    // computed from a comparison that cannot be made. The divisor `6 * n` was never the
+    // problem; the contract was.
+    guard items >= 2, items <= 10, judges >= 2 else {
         return Float.nan
     }
 

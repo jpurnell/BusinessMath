@@ -967,6 +967,22 @@ struct NemenyiCDTests {
 
     // MARK: - Golden Path Tests
 
+    /// The documented contract says "Must be at least 2" for `judges`; the guard said
+    /// `>= 1`, so a single judge returned a finite critical distance. The Nemenyi procedure
+    /// compares mean ranks *across* judges, and with one judge every mean rank is that
+    /// judge's own ranking — there is no comparison to make, so there is no critical distance
+    /// to report. The divisor `6 * n` was never the problem; the contract was.
+    @Test("nemenyiCD() - a single judge is refused, as the contract says")
+    func nemenyiSingleJudgeIsRefused() {
+        #expect(nemenyiCD(judges: 1, items: 5, alpha: 0.05).isNaN,
+                "one judge is not a comparison")
+        #expect(nemenyiCD(judges: 0, items: 5, alpha: 0.05).isNaN)
+        // Two judges is the smallest real comparison, and it still answers.
+        let two = nemenyiCD(judges: 2, items: 5, alpha: 0.05)
+        #expect(!two.isNaN && two.isFinite, "two judges is the documented minimum: \(two)")
+        #expect(two > 0)
+    }
+
     @Test("nemenyiCD() - Formula validation at p=0.05")
     func nemenyiCDFormulaP05() {
         // CD = q_α * sqrt(k(k+1)/(6n))
