@@ -289,10 +289,27 @@ public struct RealEstateModel: Sendable {
 
     // MARK: - Return Metrics
 
-    /// Calculate cash-on-cash return for a given year
+    /// Calculate the **after-tax** cash-on-cash return for a given year.
+    ///
+    /// This divides ``afterTaxCashFlow(year:)`` by ``initialInvestment``, not
+    /// ``beforeTaxCashFlow(year:)``. The distinction is worth stating because the ordinary
+    /// industry convention is the *pre-tax* figure, and the two can differ in **sign**: on a
+    /// 400,000 property at 20% down and 6% over 30 years, with 36,000 of rent at 5% vacancy
+    /// against 12,000 of expenses, year one is
+    ///
+    /// | measure | year 1 |
+    /// |---|---|
+    /// | before-tax cash-on-cash | **-0.89%** |
+    /// | after-tax cash-on-cash (this) | **+1.33%** |
+    ///
+    /// The depreciation shield turns a property that does not cover its mortgage into one
+    /// that shows a positive return. Both numbers are real; they answer different questions,
+    /// and a caller comparing this against a broker's quoted cash-on-cash is comparing
+    /// against the other one. Divide ``beforeTaxCashFlow(year:)`` by ``initialInvestment``
+    /// for that.
     ///
     /// - Parameter year: Year of operation (1-indexed)
-    /// - Returns: Cash-on-cash return as percentage
+    /// - Returns: After-tax cash flow for the year as a fraction of the initial investment.
     public func calculateCashOnCashReturn(year: Int) -> Double {
         let cashFlow = afterTaxCashFlow(year: year)
         guard initialInvestment > 0 else { return 0 }
