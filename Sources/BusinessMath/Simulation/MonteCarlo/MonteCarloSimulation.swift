@@ -1004,6 +1004,31 @@ public struct MonteCarloSimulation: Sendable {
 				 dist is DistributionLogNormal) {
 				return false
 			}
+
+			// A triangular whose parameters the CPU sampler refuses is not GPU-compatible
+			// either, and saying so here is what keeps the two backends agreeing.
+			//
+			// `triangularDistribution(low:high:base:)` returns NaN for transposed bounds or a
+			// mode outside the range. The Metal kernel has no such check — it computes
+			// `fc = (mode - min) / (max - min)` and branches on it, so transposed bounds send
+			// the `u < fc` arm to `min + sqrt(u * (max - min) * (mode - min))`, which lands
+			// *above* the upper bound, and a mode outside the range makes `fc > 1` so that arm
+			// is taken every time. That is the defect `Distribution.triangular` was fixed for
+			// in `BusinessMathDSL`, in a shader no Swift precondition can reach.
+			//
+			// `DistributionTriangular.init` stores its parameters without validating, and its
+			// own `pdf` already guards `b > a, c >= a, c <= b` and returns NaN — so the type
+			// states the requirement in one place and not the other. Declining here routes the
+			// model to the CPU sampler, which refuses it loudly, instead of to a kernel that
+			// answers quietly and wrongly.
+			if let triangular = dist as? DistributionTriangular {
+				guard triangular.low.isFinite, triangular.high.isFinite, triangular.base.isFinite,
+					  triangular.low <= triangular.high,
+					  triangular.base >= triangular.low,
+					  triangular.base <= triangular.high else {
+					return false
+				}
+			}
 		}
 		return true
 	}
