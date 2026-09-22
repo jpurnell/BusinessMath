@@ -313,12 +313,28 @@ public func profitabilityIndex<T: Real>(rate: T, cashFlows: [T]) -> T {
 	}
 
 	// PI = PV of inflows / |PV of outflows|
-	guard pvNegative < T.zero else {
-		// No investments, return infinity or very large number
-		return T(1000000)
+	//
+	// This used to return the literal `T(1000000)` when there were no outflows, under a
+	// comment reading "return infinity or very large number". A profitability index of
+	// 1,000,000 is a value a real project can produce — a small outflow against large
+	// inflows — so a caller could not tell an extraordinary project from one this function
+	// was never given an investment for. `mirr` refuses the same input, by throwing with
+	// three suggestions attached; this is its sibling and it invented a number instead.
+	//
+	// The division answers both cases on its own, which is the change `sharpeRatio(weights:)`
+	// already made at zero risk for exactly this reason: unbounded return on no investment is
+	// `+infinity`, and no cash flows at all is `0 / 0`, which is genuinely undefined. Both are
+	// unmistakable, which `1000000` was not.
+	//
+	// The magnitude is taken rather than the negation because `pvNegative` is only ever
+	// assigned from negative terms, so it is exactly zero when there were none — and `-0.0`
+	// as a divisor turns a positive numerator into *negative* infinity.
+	let investment: T = pvNegative < T.zero ? -pvNegative : T.zero
+	guard investment > T.zero else {
+		return pvPositive > T.zero ? T.infinity : T.nan
 	}
 
-	return pvPositive / (-pvNegative)
+	return pvPositive / investment
 }
 
 // MARK: - Payback Period Functions
