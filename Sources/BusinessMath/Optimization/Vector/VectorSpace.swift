@@ -871,28 +871,96 @@ public struct VectorN<T: Real & BinaryFloatingPoint & Sendable & Codable>: Vecto
 		return (T(1) / n) * self
 	}
 
-	/// Project the vector onto the probability simplex (components sum to 1.0).
+	/// Project the vector onto the probability simplex: the nearest point whose components are
+	/// non-negative and sum to one.
 	///
-	/// This is useful for portfolio weights, probability distributions, and mixture coefficients.
-	/// Unlike `normalized()`, which creates a unit vector (Euclidean norm = 1.0),
-	/// this ensures the components sum to 1.0.
+	/// This is the operation behind long-only portfolio weights, probability vectors and
+	/// mixture coefficients — each of which requires **both** conditions. `normalized()`
+	/// gives a unit Euclidean norm instead, and ``normalizedToSumOne()`` gives proportional
+	/// shares, which is only a weight vector when the input is already non-negative.
 	///
 	/// # Example
 	/// ```swift
-	/// // Portfolio weights
-	/// let rawWeights = VectorN([3.0, 1.0, 2.0])
-	/// let weights = rawWeights.simplexProjection()  // [0.5, 0.167, 0.333]
-	/// print(weights.sum)  // 1.0
+	/// // A signal vector with a short view in it
+	/// let signal = VectorN([-1.0, 0.5, 2.0])
+	/// let weights = signal.simplexProjection()  // [0.0, 0.0, 1.0]
+	/// print(weights.sum)                        // 1.0
+	/// print(weights.toArray().allSatisfy { $0 >= 0 })  // true
 	/// ```
 	///
-	/// - Returns: A new vector where all components sum to 1.0
-	/// - Precondition: Vector must have at least one non-zero component
+	/// - Returns: The nearest point on the probability simplex, in Euclidean distance.
+	///
+	/// ## What this used to do, and why it changed
+	///
+	/// This returned `self / sum`, which is a **normalisation, not a projection**. The two
+	/// agree only when every component is already non-negative, and the difference is not
+	/// academic — the doc above names portfolio weights and probability distributions as the
+	/// use cases, and normalisation produces neither for signed input:
+	///
+	/// | input | `v / sum(v)` | projection |
+	/// |---|---|---|
+	/// | `[1, 2, 3]` | `[0.167, 0.333, 0.5]` | `[0, 0, 1]` |
+	/// | `[-1, 0.5, 2]` | `[-0.667, 0.333, 1.333]` — **negative weight** | `[0, 0, 1]` |
+	/// | `[-5, -3, -1]` | `[0.556, 0.333, 0.111]` — **ordering reversed** | `[0, 0, 1]` |
+	/// | `[0, 0, 0]` | traps | `[1/3, 1/3, 1/3]` |
+	///
+	/// The third row is the one that would have cost money: the most negative coordinate
+	/// received the largest weight, so a signal vector of expected returns would have been
+	/// turned into a portfolio concentrated in its worst asset. The fourth is well defined —
+	/// the point of the simplex nearest the origin is its centre — and used to be refused.
+	///
+	/// Squared distances confirm the change is a correction rather than a preference: for
+	/// `[1, 2, 3]` the projection sits at 9.000 and the normalisation at 9.720, so the old
+	/// answer was strictly farther from the input than the new one. Verified against a grid
+	/// search over the simplex at every case in the table.
+	///
+	/// ``normalizedToSumOne()`` is the old behaviour, under a name that describes it.
+	///
+	/// - Complexity: O(n log n), dominated by the sort.
 	public func simplexProjection() -> VectorN<T> {
-		let s = self.sum
-		guard s != 0 else {
-			preconditionFailure("Cannot project zero vector onto simplex")
+		let v = components
+		let n = v.count
+		guard n > 0 else { return self }
+
+		// Duchi, Shalev-Shwartz, Singer and Chandra (2008). Sort descending and walk the
+		// prefixes: each prefix length `j` implies a threshold that would put exactly that
+		// many coordinates above zero, and the answer is the longest prefix for which its own
+		// threshold still leaves its smallest member positive.
+		//
+		// `j == 1` always satisfies the test — `u₁ - (u₁ - 1)/1` is exactly 1 — so `rho` and
+		// the threshold are always assigned, and there is no uninitialised case to guard.
+		let descending = v.sorted(by: >)
+		var cumulative = T.zero
+		var threshold = T.zero
+		for j in 1...n {
+			cumulative += descending[j - 1]
+			let candidate: T = (cumulative - T(1)) / T(j)
+			if descending[j - 1] - candidate > T.zero {
+				threshold = candidate
+			}
 		}
-		return self / s
+		return VectorN(v.map { T.maximum($0 - threshold, T.zero) })
+	}
+
+	/// Scales the vector so its components sum to one, preserving their proportions.
+	///
+	/// This is what ``simplexProjection()`` used to compute. It is the right operation when
+	/// the components are already non-negative — turning raw counts or positive scores into
+	/// shares — and the wrong one otherwise: a negative component stays negative, and a
+	/// vector that is entirely negative comes back with its ordering reversed, because
+	/// dividing by a negative total flips every sign and rank together.
+	///
+	/// Unlike `normalized()`, which produces a unit Euclidean norm, this makes the components
+	/// sum to 1.
+	///
+	/// - Returns: The rescaled vector, or `nil` when the components sum to zero and no
+	///   rescaling can reach one. The old `simplexProjection()` trapped on that input; a
+	///   `nil` lets the caller decide, and matches how ``slice(_:)`` and ``removingLast()``
+	///   already report an impossible request on this type.
+	public func normalizedToSumOne() -> VectorN<T>? {
+		let total = self.sum
+		guard total != T.zero else { return nil }
+		return self / total
 	}
 	
 	/// Project this vector onto another vector.
