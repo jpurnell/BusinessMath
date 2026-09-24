@@ -78,9 +78,24 @@ public struct ExpressionMatrix: Sendable {
             preconditionFailure("Matrix columns (\(cols)) must match vector size (\(vector.count))")
         }
 
-        let resultElements = elements.map { row in
+        let resultElements = elements.map { row -> ExpressionProxy in
             let products = zip(row, vector.elements).map { $0 * $1 }
-            return products.reduce(products[0]) { $0 + $1 }
+            guard let first = products.first else { return ExpressionProxy(.constant(0.0)) }
+            // `.dropFirst()` is the whole fix. This read `products.reduce(products[0])`, which
+            // seeds the accumulator with the first product and then folds that same product in
+            // again, so every row came back as `products[0] + sum(products)` — the leading term
+            // counted twice.
+            //
+            // Measured on A = [[1, 2, 3], [4, 5, 6]] against x = [1, 2, 3]:
+            //
+            // | row | correct | returned | excess |
+            // |---|---|---|---|
+            // | 0 | 14 | **15** | A[0][0] = 1 |
+            // | 1 | 32 | **36** | A[1][0] = 4 |
+            //
+            // The four sibling reductions in `ExpressionArray.swift` all write
+            // `elements.dropFirst().reduce(elements[0])`; this was the one site that did not.
+            return products.dropFirst().reduce(first) { $0 + $1 }
         }
 
         return ExpressionArray(elements: resultElements)
