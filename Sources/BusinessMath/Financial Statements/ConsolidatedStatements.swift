@@ -356,7 +356,23 @@ public struct ConsolidatedStatements<T: Real & Sendable>: Sendable where T: Coda
 			return (entity, summary[keyPath: keyPath])
 		}
 
-		return pairs.sorted { $0.1 > $1.1 }
+		// Ties break on entity id rather than being left to the sort.
+		//
+		// `self.entities` is already sorted by id, so a *stable* sort would put equal-valued
+		// entities in id order — and Swift's current sort is stable, so that is what this
+		// returned. But the standard library documents `sorted(by:)` as **not guaranteed
+		// stable**, which makes that ordering an implementation detail rather than a promise.
+		// A peer ranking that reshuffles its ties on a toolchain upgrade is not reproducible,
+		// and reproducibility is the whole of §1 in `v3.0.0_SCOPE.md`.
+		//
+		// Written with two `>` comparisons rather than an equality test so no floating-point
+		// `==` is involved: NaN metrics compare false in both directions and fall through to
+		// the id, which keeps this a valid strict weak ordering.
+		return pairs.sorted { lhs, rhs in
+			if lhs.1 > rhs.1 { return true }
+			if rhs.1 > lhs.1 { return false }
+			return lhs.0.id < rhs.0.id
+		}
 	}
 
 	// MARK: - Filtering
