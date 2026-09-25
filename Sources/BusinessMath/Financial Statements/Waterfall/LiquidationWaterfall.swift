@@ -46,7 +46,17 @@ public struct LiquidationWaterfall: Sendable, Equatable {
     ///
     /// - Parameter tiers: The tiers, in any order. They are sorted by priority.
     public init(tiers: [Tier] = []) {
-        self.tiers = tiers.sorted { $0.priority < $1.priority }
+        // Sorted by priority, with ties broken on name.
+        //
+        // The tie-break is not decoration: `sorted(by:)` is documented as **not guaranteed
+        // stable**, so two tiers sharing a priority were ordered by an implementation detail —
+        // and in a waterfall that order decides **who gets paid when the money runs out**.
+        // Distributing 500,000 across two 300,000 tiers pays the first in full and the second
+        // 200,000; which one is "first" must not depend on the sort algorithm.
+        self.tiers = tiers.sorted { lhs, rhs in
+            if lhs.priority != rhs.priority { return lhs.priority < rhs.priority }
+            return lhs.name < rhs.name
+        }
     }
 
     /// Creates a waterfall from a declarative list of tiers.
@@ -116,53 +126,54 @@ public struct LiquidationWaterfall: Sendable, Equatable {
 /// Collects ``Tier`` values into a ``LiquidationWaterfall``.
 @resultBuilder
 public struct LiquidationWaterfallBuilder {
+    // The partial result threaded through this builder is `[Tier]`, not `Tier`.
+    //
+    // It used to be neither consistently: `buildBlock` consumed `Tier` while `buildOptional`
+    // produced `Tier?` and `buildArray` produced `LiquidationWaterfall`. A result builder
+    // needs one partial-result type through every `build*`, so those three could not be
+    // reached from any valid program — an `if`, an `if`/`else` or a `for` inside a waterfall
+    // each failed to compile:
+    //
+    //     if flag { Tier(…) }        error: conflicting arguments to generic parameter 'Wrapped'
+    //     if flag { … } else { … }   error: cannot convert 'LiquidationWaterfall' to 'Tier'
+    //     for i in 1...2 { … }       error: cannot convert '[LiquidationWaterfall]' to '[Tier]'
+    //
+    // That is why all five carried zero test coverage: it was a symptom, not an oversight.
+    // Straight-line waterfalls were unaffected and still build exactly as before.
 
-    /// Builds a waterfall from the given tiers.
-    ///
-    /// - Parameter components: The tiers.
-    /// - Returns: A waterfall holding them in priority order.
-    public static func buildBlock(_ components: Tier...) -> LiquidationWaterfall {
-        LiquidationWaterfall(tiers: Array(components))
+    /// Wraps a single tier as a partial result.
+    public static func buildExpression(_ expression: Tier) -> [Tier] {
+        [expression]
     }
 
-    /// Supports an optional tier in an `if` statement.
-    ///
-    /// - Parameter component: The tier, if present.
-    /// - Returns: The tier, if present.
-    public static func buildOptional(_ component: Tier?) -> Tier? {
+    /// Concatenates the statements of a block.
+    public static func buildBlock(_ components: [Tier]...) -> [Tier] {
+        components.flatMap { $0 }
+    }
+
+    /// Supports a tier behind an `if` with no `else`.
+    public static func buildOptional(_ component: [Tier]?) -> [Tier] {
+        component ?? []
+    }
+
+    /// Supports the first branch of an `if`-`else`.
+    public static func buildEither(first component: [Tier]) -> [Tier] {
         component
     }
 
-    /// Supports the first branch of an `if-else`.
-    ///
-    /// - Parameter component: The tier from that branch.
-    /// - Returns: The tier.
-    public static func buildEither(first component: Tier) -> Tier {
-        component
-    }
-
-    /// Supports the second branch of an `if-else`.
-    ///
-    /// - Parameter component: The tier from that branch.
-    /// - Returns: The tier.
-    public static func buildEither(second component: Tier) -> Tier {
+    /// Supports the second branch of an `if`-`else`.
+    public static func buildEither(second component: [Tier]) -> [Tier] {
         component
     }
 
     /// Supports a `for` loop over tiers.
-    ///
-    /// - Parameter components: The tiers produced by the loop.
-    /// - Returns: A waterfall holding them.
-    public static func buildArray(_ components: [Tier]) -> LiquidationWaterfall {
-        LiquidationWaterfall(tiers: components)
+    public static func buildArray(_ components: [[Tier]]) -> [Tier] {
+        components.flatMap { $0 }
     }
 
-    /// Passes a tier through unchanged.
-    ///
-    /// - Parameter expression: The tier.
-    /// - Returns: The tier.
-    public static func buildExpression(_ expression: Tier) -> Tier {
-        expression
+    /// Turns the accumulated tiers into the waterfall, which sorts them by priority.
+    public static func buildFinalResult(_ component: [Tier]) -> LiquidationWaterfall {
+        LiquidationWaterfall(tiers: component)
     }
 }
 
