@@ -271,11 +271,60 @@ public struct CashFlowModel {
 /// using Swift's result builder syntax.
 @resultBuilder
 public struct CashFlowModelBuilder {
-    /// Builds a cash flow model from the provided components.
+    // The partial result threaded through this builder is `[CashFlowModelComponent]`.
+    //
+    // It used to be inconsistent: `buildBlock` consumed `CashFlowModelComponent` and returned
+    // `CashFlowModel`, while `buildOptional` returned `CashFlowModelComponent?` and
+    // `buildArray` took `[CashFlowModelComponent]`. A result builder needs one partial-result
+    // type through every `build*`, so a `for` loop inside a projection did not compile:
+    //
+    //     error: cannot convert value of type '[CashFlowModel]'
+    //            to expected argument type '[CashFlowModelComponent]'
+    //
+    // That is why these carried no coverage — the same defect, and the same cause, as
+    // `LiquidationWaterfallBuilder`.
+
+    /// Wraps a single component as a partial result.
+    public static func buildExpression(_ expression: CashFlowModelComponent) -> [CashFlowModelComponent] {
+        [expression]
+    }
+
+    /// Concatenates the statements of a block.
+    public static func buildBlock(_ components: [CashFlowModelComponent]...) -> [CashFlowModelComponent] {
+        components.flatMap { $0 }
+    }
+
+    /// Supports a component behind an `if` with no `else`.
+    public static func buildOptional(_ component: [CashFlowModelComponent]?) -> [CashFlowModelComponent] {
+        component ?? []
+    }
+
+    /// Supports the first branch of an `if`-`else`.
+    public static func buildEither(first component: [CashFlowModelComponent]) -> [CashFlowModelComponent] {
+        component
+    }
+
+    /// Supports the second branch of an `if`-`else`.
+    public static func buildEither(second component: [CashFlowModelComponent]) -> [CashFlowModelComponent] {
+        component
+    }
+
+    /// Supports a `for` loop, keeping **every** component it yields.
     ///
-    /// - Parameter components: The revenue, expense, depreciation, and tax components.
-    /// - Returns: A configured `CashFlowModel`.
-    public static func buildBlock(_ components: CashFlowModelComponent...) -> CashFlowModel {
+    /// The previous body was `components.first ?? .revenue(Revenue(baseValue: 0))` under a
+    /// comment reading *"For array support, just take first component"*. Had the types ever
+    /// allowed a loop to compile, that would have silently dropped every component after the
+    /// first — and, worse, substituted a zero-revenue component nobody wrote when the loop
+    /// produced nothing at all.
+    public static func buildArray(_ components: [[CashFlowModelComponent]]) -> [CashFlowModelComponent] {
+        components.flatMap { $0 }
+    }
+
+    /// Resolves the accumulated components into the model.
+    ///
+    /// Later components of a given kind replace earlier ones, which is the behaviour
+    /// `buildBlock` always had.
+    public static func buildFinalResult(_ components: [CashFlowModelComponent]) -> CashFlowModel {
         var revenue: Revenue?
         var expenses: Expenses?
         var depreciation: Depreciation?
@@ -283,14 +332,10 @@ public struct CashFlowModelBuilder {
 
         for component in components {
             switch component {
-            case .revenue(let r):
-                revenue = r
-            case .expenses(let e):
-                expenses = e
-            case .depreciation(let d):
-                depreciation = d
-            case .taxes(let t):
-                taxes = t
+            case .revenue(let value): revenue = value
+            case .expenses(let value): expenses = value
+            case .depreciation(let value): depreciation = value
+            case .taxes(let value): taxes = value
             }
         }
 
@@ -300,27 +345,6 @@ public struct CashFlowModelBuilder {
             depreciation: depreciation,
             taxes: taxes
         )
-    }
-
-    /// Handles optional components in `if` statements without an `else`.
-    public static func buildOptional(_ component: CashFlowModelComponent?) -> CashFlowModelComponent? {
-        component
-    }
-
-    /// Handles the first branch of an `if-else` statement.
-    public static func buildEither(first component: CashFlowModelComponent) -> CashFlowModelComponent {
-        component
-    }
-
-    /// Handles the second branch of an `if-else` statement.
-    public static func buildEither(second component: CashFlowModelComponent) -> CashFlowModelComponent {
-        component
-    }
-
-    /// Handles `for` loops by collecting components into an array.
-    public static func buildArray(_ components: [CashFlowModelComponent]) -> CashFlowModelComponent {
-        // For array support, just take first component
-        components.first ?? .revenue(Revenue(baseValue: 0))
     }
 }
 
@@ -366,9 +390,12 @@ public protocol CashFlowModelComponentConvertible {
 }
 
 extension CashFlowModelBuilder {
-    /// Converts a conforming expression to a cash flow model component.
-    public static func buildExpression(_ expression: CashFlowModelComponentConvertible) -> CashFlowModelComponent {
-        expression.cashFlowModelComponent
+    /// Converts a conforming expression to a partial result.
+    ///
+    /// This returned a bare `CashFlowModelComponent` while the builder threaded
+    /// `[CashFlowModelComponent]`, which is the mismatch that made control flow unreachable.
+    public static func buildExpression(_ expression: CashFlowModelComponentConvertible) -> [CashFlowModelComponent] {
+        [expression.cashFlowModelComponent]
     }
 }
 
