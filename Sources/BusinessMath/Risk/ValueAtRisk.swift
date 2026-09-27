@@ -71,7 +71,12 @@ public struct ValueAtRisk {
 	) -> T {
 		guard !values.isEmpty else { return T(0) }
 
-		let sorted = values.sorted()
+		// A sample containing `nan` cannot be sorted, so there is no order statistic to
+		// interpolate between. Propagating `nan` matches `mean`, `median`, `stdDev` and
+		// `Skewness`, and mirrors `Percentiles(values:)`, which refuses the same input by
+		// throwing. Returning a number here meant the answer depended on where the `nan`
+		// happened to sit in the caller's array.
+		guard let sorted = ascendingSample(values) else { return T.nan }
 		let alpha: T = T(1) - confidenceLevel
 
 		// The library's single empirical quantile — type 7, linear interpolation

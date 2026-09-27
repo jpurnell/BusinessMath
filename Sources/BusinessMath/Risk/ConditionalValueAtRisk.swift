@@ -67,7 +67,9 @@ public struct ConditionalValueAtRisk {
 	) -> T {
 		guard !values.isEmpty else { return T(0) }
 
-		let sorted = values.sorted()
+		// See `ValueAtRisk.calculate`: an unsortable sample has no order statistics, and a
+		// number here would depend on where the `nan` sat rather than on the data.
+		guard let sorted = ascendingSample(values) else { return T.nan }
 		let alpha: T = T(1) - confidenceLevel
 
 		// The threshold is the value-at-risk itself, taken from the library's single

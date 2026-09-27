@@ -192,6 +192,9 @@ extension SimulationResults {
 	/// - Complexity: O(n log n) — sorts on every call.
 	private func calculatePercentile(alpha: Double) -> Double {
 		guard !values.isEmpty else { return 0.0 }
-		return quantile(sorted: values.sorted(), p: alpha)
+		// `quantile(sorted:p:)` requires its input to be sorted, which a sample containing
+		// `nan` cannot be. See `ascendingSample(_:)`.
+		guard let sorted = ascendingSample(values) else { return Double.nan }
+		return quantile(sorted: sorted, p: alpha)
 	}
 }
