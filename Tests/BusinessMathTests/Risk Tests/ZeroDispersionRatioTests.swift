@@ -81,6 +81,54 @@ struct ZeroDispersionRatioTests {
         #expect(portfolio.sharpeRatio.isEqual(to: 0.4222389260135855))
     }
 
+    // MARK: - PortfolioUtilities.sharpeRatio
+
+    /// A sixth, independently written Sharpe ratio lives at `Portfolio.sharpeRatio(weights:)`,
+    /// and it already returns an infinity here — its DocC argues the case explicitly:
+    /// "a real signal ... which a zero is far better at hiding than an infinity is".
+    ///
+    /// The free function in `PortfolioUtilities` was the sibling that diverged from it.
+    @Test("PortfolioUtilities_RisklessGain_MatchesItsCorrectSibling")
+    func portfolioUtilitiesRisklessGainMatchesItsCorrectSibling() {
+        let weights = VectorN([0.5, 0.5])
+        let returns = VectorN([0.10, 0.08])
+        let ratio = sharpeRatio(
+            weights: weights,
+            expectedReturns: returns,
+            covarianceMatrix: riskless,
+            riskFreeRate: 0.02
+        )
+        #expect(ratio.isEqual(to: .infinity), "9% guaranteed against a 2% bar, with no risk")
+    }
+
+    @Test("PortfolioUtilities_RisklessLoss_IsUnboundedlyUnattractive")
+    func portfolioUtilitiesRisklessLossIsUnboundedlyUnattractive() {
+        let weights = VectorN([0.5, 0.5])
+        let returns = VectorN([0.01, 0.005])
+        let ratio = sharpeRatio(
+            weights: weights,
+            expectedReturns: returns,
+            covarianceMatrix: riskless,
+            riskFreeRate: 0.02
+        )
+        #expect(ratio.isEqual(to: -.infinity))
+    }
+
+    /// Control: a real covariance is untouched.
+    @Test("PortfolioUtilities_RiskyCovariance_Unchanged")
+    func portfolioUtilitiesRiskyCovarianceUnchanged() {
+        let weights = VectorN([0.5, 0.5])
+        let returns = VectorN([0.10, 0.08])
+        let ratio = sharpeRatio(
+            weights: weights,
+            expectedReturns: returns,
+            covarianceMatrix: [[0.04, 0.01], [0.01, 0.09]],
+            riskFreeRate: 0.02
+        )
+        #expect(ratio.isFinite)
+        #expect(ratio > 0, "measured: \(ratio)")
+    }
+
     // MARK: - SharpeRatio
 
     /// The same defect in an independently written file: a constant return series has zero

@@ -192,7 +192,9 @@ struct PortfolioUtilitiesTests {
 
 	@Test("Sharpe ratio with zero volatility")
 	func sharpeRatioZeroVolatility() {
-		// Create zero-variance matrix (impossible in practice but tests edge case)
+		// A zero-variance matrix is not "impossible in practice", as this comment used to
+		// claim. It is what a genuinely risk-free instrument looks like, and — more often —
+		// what a collapsed covariance estimate looks like.
 		let matrix = Array(repeating: Array(repeating: 0.0, count: 3), count: 3)
 		let returns = VectorN([0.10, 0.10, 0.10])
 		let weights = VectorN<Double>.equalWeights(dimension: 3)
@@ -204,7 +206,12 @@ struct PortfolioUtilitiesTests {
 			riskFreeRate: 0.03
 		)
 
-		#expect(abs(sharpe - 0.0) < 1e-6, "Sharpe ratio should be 0 with zero volatility")
+		// This used to assert `sharpe == 0`, which made a guaranteed 7% over the risk-free
+		// rate indistinguishable from a guaranteed shortfall — both scored mid-table.
+		// `Portfolio.sharpeRatio(weights:)`, a separately written implementation of the same
+		// formula, has always returned the infinity and documents why: it is a real signal,
+		// "which a zero is far better at hiding than an infinity is".
+		#expect(sharpe.isEqual(to: .infinity), "7% guaranteed over the bar, at no risk")
 	}
 
 	// MARK: - Simplified Variance

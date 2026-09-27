@@ -384,9 +384,15 @@ public func sharpeRatio(
 	let variance = portfolioVariance(weights: weights, covarianceMatrix: covarianceMatrix)
 	let volatility = sqrt(variance)
 
-	guard volatility > 0.0 else { return 0.0 }
-
-	return (expectedReturn - riskFreeRate) / volatility // fp-safety:disable — guarded above
+	// A zero-volatility portfolio has an unbounded Sharpe ratio in the sign of its excess
+	// return, not a zero one. Returning `0.0` gave a guaranteed gain over the risk-free rate
+	// and a guaranteed shortfall the identical, mid-table score.
+	//
+	// `Portfolio.sharpeRatio(weights:)` — a separately written implementation of the same
+	// formula — already returns the infinity, and documents why: outside a genuinely
+	// risk-free instrument it usually means the covariance estimate collapsed, "which a zero
+	// is far better at hiding than an infinity is". This is that sibling brought into line.
+	return riskAdjustedRatio(excessReturn: expectedReturn - riskFreeRate, risk: volatility)
 }
 
 // MARK: - Simplified Portfolio Utilities
