@@ -47,6 +47,17 @@ public func correlationCoefficientP<T: Real>(_ x: [T], _ y: [T]) throws -> T {
 			actual: "\(y.count)"
 		)
 	}
+	// A non-finite observation makes `stdDev` a `nan`, and `nan > T.ulpOfOne` is false — so
+	// without this the zero-variance guard below caught the contamination and reported it as
+	// "one or both variables have zero variance". The action was right (it refused) but the
+	// explanation sent anyone debugging it looking for a constant column that is not there.
+	guard x.allSatisfy({ $0.isFinite }), y.allSatisfy({ $0.isFinite }) else {
+		throw BusinessMathError.dataQuality(
+			message: "Correlation requires finite observations",
+			context: ["x_invalid": "\(x.filter { !$0.isFinite }.count)",
+					  "y_invalid": "\(y.filter { !$0.isFinite }.count)"]
+		)
+	}
 	let numerator = covarianceP(x, y)
 	let denominator = (stdDev(x, .population) * stdDev(y, .population))
 	guard denominator > T.ulpOfOne else {

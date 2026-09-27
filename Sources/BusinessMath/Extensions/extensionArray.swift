@@ -56,7 +56,18 @@ extension Array where Element: Real {
         var rankArray: [Element] = []
 
         for i in 0..<self.count {
-            guard let index = sorted.firstIndex(of: self[i]) else { continue }
+            guard let index = sorted.firstIndex(of: self[i]) else {
+                // `firstIndex(of:)` compares with `==`, and `nan == nan` is false, so a
+                // `nan` is never found in `sorted` and this branch is reached. It used to
+                // `continue`, appending nothing — which made the result *shorter than the
+                // input* and broke the one-rank-per-observation invariant every caller
+                // relies on. `spearmansRho` then indexed past the end and trapped with
+                // "Index out of range".
+                //
+                // A `nan` has no rank, so say that and keep the position.
+                rankArray.append(Element.nan)
+                continue
+            }
             rankArray.append(Element(index + 1))
         }
 
@@ -64,6 +75,8 @@ extension Array where Element: Real {
         rankArray.forEach { counts[$0, default: 0] += 1 }
 
         for (index, absoluteRank) in rankArray.enumerated() {
+            // An unrankable position belongs to no tie group.
+            guard absoluteRank.isFinite else { continue }
             guard let countValue = counts[absoluteRank] else { continue }
             let n = Element(countValue)
             rankArray[index] = ((n * absoluteRank) + (((n - 1) * n) / 2)) / n
@@ -107,7 +120,18 @@ extension Array where Element: Real {
         var rankArray: [Element] = []
 
         for i in 0..<self.count {
-            guard let index = sorted.firstIndex(of: self[i]) else { continue }
+            guard let index = sorted.firstIndex(of: self[i]) else {
+                // `firstIndex(of:)` compares with `==`, and `nan == nan` is false, so a
+                // `nan` is never found in `sorted` and this branch is reached. It used to
+                // `continue`, appending nothing — which made the result *shorter than the
+                // input* and broke the one-rank-per-observation invariant every caller
+                // relies on. `spearmansRho` then indexed past the end and trapped with
+                // "Index out of range".
+                //
+                // A `nan` has no rank, so say that and keep the position.
+                rankArray.append(Element.nan)
+                continue
+            }
             rankArray.append(Element(index + 1))
         }
 
@@ -115,6 +139,8 @@ extension Array where Element: Real {
         rankArray.forEach { counts[$0, default: 0] += 1 }
 
         for (index, absoluteRank) in rankArray.enumerated() {
+            // An unrankable position belongs to no tie group.
+            guard absoluteRank.isFinite else { continue }
             guard let countValue = counts[absoluteRank] else { continue }
             let n = Element(countValue)
             rankArray[index] = ((n * absoluteRank) + (((n - 1) * n) / 2)) / n

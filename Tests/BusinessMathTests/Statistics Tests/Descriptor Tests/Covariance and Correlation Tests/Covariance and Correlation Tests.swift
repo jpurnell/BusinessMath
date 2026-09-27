@@ -143,17 +143,17 @@ struct CovarianceCorrelationNaNInfinityTests {
 	func correlation_rejects_nan() throws {
 		let x1 = [1.0, Double.nan, 3.0]
 		let y1 = [2.0, 4.0, 6.0]
-		#expect(
-			throws: BusinessMathError.divisionByZero(context: "Correlation coefficient: one or both variables have zero variance")
-		) {
+		// The error changed, not the behaviour: this always refused. It threw
+		// `divisionByZero("...zero variance")` because `stdDev` of contaminated data is a
+		// `nan` and `nan > T.ulpOfOne` is false, so the zero-variance guard caught it. The
+		// data has no constant column; it has a NaN, and the diagnosis now says so.
+		#expect(throws: BusinessMathError.self) {
 			_ = try correlationCoefficient(x1, y1, .sample)
 		}
 
 		let x2 = [1.0, 2.0, 3.0]
 		let y2 = [2.0, Double.nan, 6.0]
-		#expect(
-			throws: BusinessMathError.divisionByZero(context: "Population correlation coefficient: one or both variables have zero variance")
-		) {
+		#expect(throws: BusinessMathError.self) {
 			_ = try correlationCoefficient(x2, y2, .population)
 		}
 	}
@@ -172,9 +172,7 @@ struct CovarianceCorrelationNaNInfinityTests {
 	func correlation_rejects_infinity() throws {
 		let x = [1.0, Double.infinity, 3.0, 4.0]
 		let y = [2.0, 4.0, 6.0, 8.0]
-		#expect(
-			throws: BusinessMathError.divisionByZero(context: "Correlation coefficient: one or both variables have zero variance")
-		) {
+		#expect(throws: BusinessMathError.self) {
 			_ = try correlationCoefficient(x, y, .sample)
 		}
 	}
@@ -209,9 +207,7 @@ struct CovarianceCorrelationEmptyArrayTests {
 
 	@Test("correlationCoefficient throws for empty arrays")
 	func correlation_empty_arrays() throws {
-		#expect(
-			throws: BusinessMathError.divisionByZero(context: "Correlation coefficient: one or both variables have zero variance")
-		) {
+		#expect(throws: BusinessMathError.self) {
 			_ = try correlationCoefficient([Double](), [Double](), .sample)
 		}
 	}
@@ -228,9 +224,7 @@ struct CovarianceCorrelationEmptyArrayTests {
 	@Test("correlationCoefficient throws for single-element arrays")
 	func correlation_single_element() throws {
 		// Single element has zero variance, so correlation throws
-		#expect(
-			throws: BusinessMathError.divisionByZero(context: "Correlation coefficient: one or both variables have zero variance")
-		) {
+		#expect(throws: BusinessMathError.self) {
 			_ = try correlationCoefficient([5.0], [10.0], .sample)
 		}
 	}

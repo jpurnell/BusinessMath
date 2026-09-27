@@ -40,6 +40,17 @@ import Numerics
 ///   - Ensure that the `rank()` and `tauAdjustment()` methods are correctly implemented for the computations.
 public func spearmansRho<T: Real>(_ independent: [T], vs variable: [T]) throws -> T {
 	guard independent.count == variable.count else { throw ArrayError.mismatchedLengths }
+	// A `nan` cannot be ranked — `nan == nan` is false, so it matches nothing in the sorted
+	// copy — and a rank correlation computed from ranks that do not exist is not a number
+	// anyone should act on. This used to reach `rank()`, which dropped the element and
+	// returned a short array, and then trap here with "Index out of range".
+	guard independent.allSatisfy({ $0.isFinite }), variable.allSatisfy({ $0.isFinite }) else {
+		throw BusinessMathError.dataQuality(
+			message: "Spearman's rho requires finite observations; a NaN or infinity has no rank",
+			context: ["independent_invalid": "\(independent.filter { !$0.isFinite }.count)",
+					  "variable_invalid": "\(variable.filter { !$0.isFinite }.count)"]
+		)
+	}
     var sigmaD = T(0)
     let sigmaX = (T.pow(T(independent.count), T(3)) - T(independent.count)) / T(12) - independent.tauAdjustment()
     let sigmaY = (T.pow(T(variable.count), T(3)) - T(variable.count)) / T(12) - variable.tauAdjustment()

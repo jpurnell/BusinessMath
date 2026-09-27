@@ -47,6 +47,17 @@ public func correlationCoefficientS<T: Real>(_ x:[T], _ y:[T]) throws -> T {
 			actual: "\(y.count)"
 		)
 	}
+	// A non-finite observation makes `denominator` a `nan`, and `nan > T.ulpOfOne` is false —
+	// so without this the zero-variance guard below caught the contamination and reported it
+	// as "one or both variables have zero variance", sending anyone debugging it to look for
+	// a constant column that is not there.
+	guard x.allSatisfy({ $0.isFinite }), y.allSatisfy({ $0.isFinite }) else {
+		throw BusinessMathError.dataQuality(
+			message: "Correlation requires finite observations",
+			context: ["x_invalid": "\(x.filter { !$0.isFinite }.count)",
+					  "y_invalid": "\(y.filter { !$0.isFinite }.count)"]
+		)
+	}
 	var numerator = T(0)
 	var xDenom = T(0)
 	var yDenom = T(0)

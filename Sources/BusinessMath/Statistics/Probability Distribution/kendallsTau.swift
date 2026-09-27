@@ -65,6 +65,18 @@ public func kendallsTau<T: Real>(_ independent: [T], vs variable: [T]) throws ->
         throw BusinessMathError.insufficientData(
             required: 2, actual: independent.count, context: "Kendall's tau")
     }
+    // The sort below orders pairs with `<`, which is false in both directions for a `nan`,
+    // so the ordering it produces is unspecified and the concordance count is meaningless.
+    // It did not look meaningless: on one contaminated pair this returned exactly the
+    // coefficient of the *clean* data, 0.8894991799933214, and on another it returned
+    // -0.357 for strongly positively correlated observations.
+    guard independent.allSatisfy({ $0.isFinite }), variable.allSatisfy({ $0.isFinite }) else {
+        throw BusinessMathError.dataQuality(
+            message: "Kendall's tau requires finite observations; a NaN cannot be ordered",
+            context: ["independent_invalid": "\(independent.filter { !$0.isFinite }.count)",
+                      "variable_invalid": "\(variable.filter { !$0.isFinite }.count)"]
+        )
+    }
 
     // Sorted by x, ties broken by y, which is what makes a run of equal x contiguous and its
     // y values already ordered — so the inversion count below sees only genuine discordance.
