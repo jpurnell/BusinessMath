@@ -373,13 +373,24 @@ public struct PortfolioOptimizer {
 
 			let volatility = Double.sqrt(variance)
 
-			// Avoid division by zero
-			if volatility < 1e-10 {
-				return 1e10
+			// A near-zero volatility used to `return 1e10` here — the *worst* value for a
+			// minimiser, and so exactly the wrong ranking. A riskless portfolio that beats
+			// the risk-free rate is the best portfolio available, and this told the search it
+			// was the worst. Worse, the penalty is a *constant*, so the objective went flat:
+			// measured on a zero-covariance pair whose optimum is 100% of the higher-return
+			// asset, the search returned its [0.5, 0.5] starting point and still reported
+			// `converged: true`.
+			//
+			// Ranking by excess return at the same 1e10 scale keeps the sense right and,
+			// unlike a constant, leaves a gradient for the search to follow. It is what
+			// dividing by the 1e-10 floor would give, written so the guard below is one the
+			// fp-safety checker can see. The magnitude range is unchanged.
+			guard volatility > 1e-10 else {
+				return -(portfolioReturn - riskFreeRate) * 1e10
 			}
 
 			// Return negative Sharpe ratio (we minimize)
-			let sharpeRatio = (portfolioReturn - riskFreeRate) / volatility // fp-safety:disable — guarded above
+			let sharpeRatio = (portfolioReturn - riskFreeRate) / volatility
 			return -sharpeRatio
 		}
 
