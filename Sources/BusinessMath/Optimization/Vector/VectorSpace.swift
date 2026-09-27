@@ -357,6 +357,12 @@ public struct Vector2D<T: Real & BinaryFloatingPoint & Sendable & Codable>: Vect
 		let absX: T = x < T(0) ? -x : x
 		let absY: T = y < T(0) ? -y : y
 		let largest: T = T.maximum(absX, absY)
+		// `T.maximum` follows IEEE 754 `maxNum`, which treats a NaN as *missing*: with one
+		// bad component `largest` is the good one and the NaN propagates through the ratio
+		// below, but with every component bad `largest` is itself `nan`, which fails `> 0`
+		// and used to fall through to `T(0)`. A wholly corrupted vector then reported the
+		// norm of the zero vector — read, as the note above says, as a stationary point.
+		guard !largest.isNaN else { return T.nan }
 		guard largest > T(0) else { return T(0) }
 
 		let ratioX: T = x / largest
@@ -504,6 +510,12 @@ public struct Vector3D<T: Real & BinaryFloatingPoint & Sendable & Codable>: Vect
 		let absZ: T = z < T(0) ? -z : z
 		let largestXY: T = T.maximum(absX, absY)
 		let largest: T = T.maximum(largestXY, absZ)
+		// `T.maximum` follows IEEE 754 `maxNum`, which treats a NaN as *missing*: with one
+		// bad component `largest` is the good one and the NaN propagates through the ratio
+		// below, but with every component bad `largest` is itself `nan`, which fails `> 0`
+		// and used to fall through to `T(0)`. A wholly corrupted vector then reported the
+		// norm of the zero vector — read, as the note above says, as a stationary point.
+		guard !largest.isNaN else { return T.nan }
 		guard largest > T(0) else { return T(0) }
 
 		let ratioX: T = x / largest
@@ -671,10 +683,23 @@ public struct VectorN<T: Real & BinaryFloatingPoint & Sendable & Codable>: Vecto
 	/// ends a Newton or L-BFGS run with an error, and a zero norm is read as a stationary point.
 	public var norm: T {
 		var largest = T(0)
+		var containsNaN = false
 		for component in components {
+			// `magnitude > largest` is false for a `nan`, so the scan below silently drops
+			// one instead of carrying it into `largest`. Unlike the fixed-arity vectors,
+			// which use `T.maximum` and end up with a `nan` there, this loop leaves
+			// `largest` at zero — so a wholly corrupted vector reached the guard below
+			// looking exactly like the zero vector and returned a norm of `0`, which the
+			// note above says is read as a stationary point. Record it instead.
+			if component.isNaN {
+				containsNaN = true
+				continue
+			}
 			let magnitude: T = component < T(0) ? -component : component
 			if magnitude > largest { largest = magnitude }
 		}
+		guard !containsNaN else { return T.nan }
+
 		// An all-zero or empty vector has norm zero, and dividing by `largest` would be a
 		// division by zero. Returning here also keeps the empty case exact rather than NaN.
 		guard largest > T(0) else { return T(0) }

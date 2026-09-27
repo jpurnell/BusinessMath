@@ -63,13 +63,25 @@ public func kurtosis<T: Real>(_ values: [T], _ pop: Population = .sample) -> T {
 ///   - Ensure that the `values` array contains at least four elements to perform the sample kurtosis calculation.
 ///   - This is the Excel-compatible formula (KURT function).
 public func kurtosisS<T: Real>(_ values: [T]) -> T {
-	guard values.count >= 4 else { return T(0) }
+	// The bias correction below divides by `(n - 2)(n - 3)`, so fewer than four
+	// observations cannot support a sample kurtosis. This returned `0`, which is not
+	// "no answer" — excess kurtosis of zero states the sample is normal-tailed.
+	// Excel's KURT answers #DIV/0! here.
+	guard values.count >= 4 else { return T.nan }
 
 	let n = T(values.count)
 	let mean = average(values)
 	let s = stdDev(values)
 
-	guard s > T(0) else { return T(0) }
+	// Two undefined cases arrive through this one comparison, and `nan` is the right
+	// answer to both. A constant series has no dispersion, so the fourth standardised
+	// moment is 0/0; and `s` is itself `nan` for a contaminated sample, which fails
+	// `> 0` because every comparison against a NaN is false.
+	//
+	// Returning `T(0)` conflated them and, worse, said something definite: excess
+	// kurtosis of zero means *exactly normal-tailed*. A flat line has no tails, and a
+	// sample with a `nan` in it has no moments at all.
+	guard s > T(0) else { return T.nan }
 
 	// Calculate fourth moment
 	let m4 = values.map { T.pow((($0 - mean) / s), 4) }.reduce(T(0), +)
@@ -127,7 +139,15 @@ public func kurtosisP<T: Real>(_ values: [T]) -> T {
 	let mean = average(values)
 	let s = stdDevP(values)
 
-	guard s > T(0) else { return T(0) }
+	// Two undefined cases arrive through this one comparison, and `nan` is the right
+	// answer to both. A constant series has no dispersion, so the fourth standardised
+	// moment is 0/0; and `s` is itself `nan` for a contaminated sample, which fails
+	// `> 0` because every comparison against a NaN is false.
+	//
+	// Returning `T(0)` conflated them and, worse, said something definite: excess
+	// kurtosis of zero means *exactly normal-tailed*. A flat line has no tails, and a
+	// sample with a `nan` in it has no moments at all.
+	guard s > T(0) else { return T.nan }
 
 	// Calculate fourth standardized moment
 	let m4 = values.map { T.pow((($0 - mean) / s), 4) }.reduce(T(0), +)
