@@ -241,6 +241,10 @@ public func altmanZScore<T: Real>(
 	// Component A: Working Capital / Total Assets
 	let workingCapital = (balanceSheet.currentAssets - balanceSheet.currentLiabilities)[period] ?? T(0)
 	let totalAssets = balanceSheet.totalAssets[period] ?? T(0)
+	// Four of the five components are scaled by total assets, so a firm with none has no
+	// Z-Score to report. Zero is the right answer here rather than a sentinel: a company
+	// with no assets is not a going concern, and zero sits in the distress zone where such a
+	// company belongs. Contrast the liabilities case below, where zero means the opposite.
 	guard totalAssets != T(0) else { return T(0) }
 	let a = workingCapital / totalAssets
 
@@ -255,8 +259,26 @@ public func altmanZScore<T: Real>(
 	// Component D: Market Value of Equity / Total Liabilities
 	let marketValue = marketPrice * sharesOutstanding
 	let totalLiabilities = balanceSheet.totalLiabilities[period] ?? T(0)
-	guard totalLiabilities != T(0) else { return T(0) }
-	let d = marketValue / totalLiabilities
+	// This used to `guard totalLiabilities != T(0) else { return T(0) }`, which put the
+	// *safest* possible balance sheet in the distress zone. Zero liabilities means debt-free,
+	// and `Z < 1.81` is documented above as "High bankruptcy risk within 2 years", so the
+	// function returned the strongest bankruptcy warning it has about a company that owes
+	// nobody anything. Measured on one profitable company with 165,000 of assets: Z was 0.00
+	// with no liabilities and 5.92 after taking on 12,000 of payables, so acquiring debt
+	// moved it from "about to fail" to "safe".
+	//
+	// The ratio genuinely diverges when the denominator is zero, and an unbounded component D
+	// carries the whole score above the 2.99 safe-zone threshold, which is where a debt-free
+	// company belongs. With no equity value either the component is 0/0 and contributes
+	// nothing. A negative liability total is incoherent input and is left to divide as before.
+	let d: T
+	if totalLiabilities != T(0) {
+		d = marketValue / totalLiabilities
+	} else if marketValue > T(0) {
+		d = T.infinity
+	} else {
+		d = T(0)
+	}
 
 	// Component E: Sales / Total Assets
 	let sales = incomeStatement.totalRevenue[period] ?? T(0)
