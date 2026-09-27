@@ -398,10 +398,12 @@ struct ModelDebuggerTests {
             context: "Test"
         )
 
-        // When expected is zero, percentage difference is calculated as 0
-        // (see implementation: expected != 0 ? (difference / expected) * 100 : 0)
-        #expect(abs(explanation.percentageDifference - 0.0) < 1e-6)
-        #expect(abs(explanation.difference - 50.0) < 1e-6)
+        // This used to assert `percentageDifference == 0`, justified by quoting the
+        // implementation back at itself — so it locked in the defect and made `explain`
+        // look covered. 50 against 0 is not a 0% difference; the relative difference from
+        // zero is unbounded, and that is what is now reported.
+        #expect(explanation.percentageDifference.isEqual(to: .infinity))
+        #expect(explanation.difference.isEqual(to: 50.0))
     }
 
     @Test("Explain exact match")

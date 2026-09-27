@@ -330,7 +330,6 @@ public actor ModelDebugger {
         var suggestions: [DiagnosticSuggestion] = []
 
         let difference = value - expected
-        let percentDifference = expected != 0 ? abs(difference / expected) : 0 // fp-safety:disable — guarded inline
 
         // Check for NaN or infinity
         if value.isNaN {
@@ -351,11 +350,39 @@ public actor ModelDebugger {
             ))
         }
 
-        // Check tolerance
-        if !value.isNaN && !value.isInfinite && percentDifference > tolerance {
+        // A non-finite `expected` leaves nothing to compare against. Staying silent here
+        // reported a clean bill of health for a check that never actually ran.
+        if !expected.isFinite {
+            let kind = expected.isNaN ? "NaN" : "infinite"
             issues.append(DiagnosticIssue(
                 severity: .error,
-                message: "Value differs from expected by \((percentDifference * 100).number(2))% (tolerance: \((tolerance * 100).number(2))%)",
+                message: "Expected value is \(kind), so there is nothing to compare against",
+                location: context,
+                suggestion: "Supply a finite expected value"
+            ))
+        }
+
+        // Check tolerance.
+        //
+        // `tolerance` is *relative*, so it needs a non-zero `expected` to scale by. When
+        // `expected` is exactly zero the relative difference is unbounded for every non-zero
+        // value, so read `tolerance` as an absolute bound on the magnitude of `value`
+        // instead — the `atol` half of the conventional `|a - b| <= atol + rtol * |b|` rule.
+        // Substituting a relative difference of zero, as this did, passed a value of *any*
+        // size: `diagnose(value: 1_000_000_000, expected: 0)` reported no issues at all.
+        let relative = Self.relativeDifference(value: value, expected: expected)
+        let discrepancy = relative ?? abs(value)
+        let comparable = value.isFinite && expected.isFinite
+        if comparable && discrepancy > tolerance {
+            let detail: String
+            if relative != nil {
+                detail = "by \((discrepancy * 100).number(2))% (tolerance: \((tolerance * 100).number(2))%)"
+            } else {
+                detail = "by \(discrepancy.number(2)) against an expected value of exactly zero, where a relative tolerance has no scale to measure with (absolute tolerance: \(tolerance.number(2)))"
+            }
+            issues.append(DiagnosticIssue(
+                severity: .error,
+                message: "Value differs from expected \(detail)",
                 location: context,
                 suggestion: "Review calculation logic and input values"
             ))
@@ -382,6 +409,40 @@ public actor ModelDebugger {
             warnings: warnings,
             suggestions: suggestions
         )
+    }
+
+    // MARK: - Relative difference
+
+    /// Unsigned relative difference `|value - expected| / |expected|`.
+    ///
+    /// Returns `nil` when `expected` is zero — there is then no scale to divide by, and the
+    /// relative difference of any non-zero `value` is unbounded rather than zero. Making
+    /// that case unrepresentable as a number is the point: callers have to say what they
+    /// mean by it at their own site instead of inheriting a sentinel that also reads as
+    /// "perfect agreement".
+    ///
+    /// - Parameters:
+    ///   - value: The observed value.
+    ///   - expected: The reference value to scale by.
+    /// - Returns: The unsigned relative difference, or `nil` when `expected` is zero.
+    private static func relativeDifference(value: Double, expected: Double) -> Double? {
+        guard expected != 0 else { return nil }
+        return abs((value - expected) / expected)
+    }
+
+    /// Signed relative difference `(actual - expected) / expected`, keeping the direction
+    /// of the miss.
+    ///
+    /// Returns `nil` when `expected` is zero, for the same reason as
+    /// ``relativeDifference(value:expected:)``.
+    ///
+    /// - Parameters:
+    ///   - actual: The observed value.
+    ///   - expected: The reference value to scale by.
+    /// - Returns: The signed relative difference, or `nil` when `expected` is zero.
+    private static func signedRelativeDifference(actual: Double, expected: Double) -> Double? {
+        guard expected != 0 else { return nil }
+        return (actual - expected) / expected
     }
 
     // MARK: - Validation
@@ -460,7 +521,20 @@ public actor ModelDebugger {
         context: String? = nil
     ) -> Explanation {
         let difference = actual - expected
-        let percentDifference = expected != 0 ? (difference / expected) * 100 : 0
+
+        // The percentage difference from zero is unbounded, not zero. Reporting zero both
+        // published a fabricated statistic on `Explanation` and — because every magnitude
+        // branch below tests `abs(percentDifference)` — meant the largest possible
+        // discrepancy produced the least guidance. `Double.number(_:)` renders an infinity
+        // as `∞`, so `formatted()` stays readable.
+        let percentDifference: Double
+        if let relative = Self.signedRelativeDifference(actual: actual, expected: expected) {
+            percentDifference = relative * 100
+        } else if difference == 0 {
+            percentDifference = 0
+        } else {
+            percentDifference = difference < 0 ? -.infinity : .infinity
+        }
 
         var possibleReasons: [String] = []
         var suggestions: [String] = []
