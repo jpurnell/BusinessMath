@@ -775,7 +775,7 @@ public struct AsyncOutlierDetectionSequence<Base: AsyncSequence>: AsyncSequence 
             let variance = buffer.map { pow($0 - mean, 2) }.reduce(0.0, +) / Double(buffer.count - 1) // fp-safety:disable — guarded by buffer.count >= 2
             let stdDev = sqrt(variance)
 
-            let zScore = stdDev > 0 ? abs(value - mean) / stdDev : 0.0 // fp-safety:disable — guarded by stdDev > 0
+            let zScore = dispersionScaledScore(deviation: abs(value - mean), dispersion: stdDev)
             let isOutlier = zScore > threshold
 
             return OutlierDetection(value: value, score: zScore, isOutlier: isOutlier, method: "z-score", index: index)
@@ -797,7 +797,8 @@ public struct AsyncOutlierDetectionSequence<Base: AsyncSequence>: AsyncSequence 
             let upperBound = q3 + multiplier * iqr
 
             let isOutlier = value < lowerBound || value > upperBound
-            let score = iqr > 0 ? Swift.min(abs(value - q1), abs(value - q3)) / iqr : 0.0 // fp-safety:disable — guarded by iqr > 0
+            let deviation = Swift.min(abs(value - q1), abs(value - q3))
+            let score = dispersionScaledScore(deviation: deviation, dispersion: iqr)
 
             return OutlierDetection(value: value, score: score, isOutlier: isOutlier, method: "iqr", index: index)
         }
@@ -813,7 +814,7 @@ public struct AsyncOutlierDetectionSequence<Base: AsyncSequence>: AsyncSequence 
             let mad = calculateMedian(deviations)
 
             // Modified Z-score: M_i = 0.6745 * (x_i - median) / MAD
-            let modifiedZScore = mad > 0 ? 0.6745 * abs(value - median) / mad : 0.0 // fp-safety:disable — guarded by mad > 0
+            let modifiedZScore = dispersionScaledScore(deviation: 0.6745 * abs(value - median), dispersion: mad)
             let isOutlier = modifiedZScore > threshold
 
             return OutlierDetection(value: value, score: modifiedZScore, isOutlier: isOutlier, method: "mad", index: index)
@@ -1350,7 +1351,7 @@ public struct AsyncCompositeAnomalySequence<Base: AsyncSequence>: AsyncSequence 
             let mean = buffer.reduce(0.0, +) / Double(buffer.count) // fp-safety:disable — guarded by buffer.count >= 2
             let variance = buffer.map { pow($0 - mean, 2) }.reduce(0.0, +) / Double(buffer.count - 1) // fp-safety:disable — guarded by buffer.count >= 2
             let stdDev = sqrt(variance)
-            return stdDev > 0 ? abs(value - mean) / stdDev : 0.0 // fp-safety:disable — guarded by stdDev > 0
+            return dispersionScaledScore(deviation: abs(value - mean), dispersion: stdDev)
         }
 
         private func calculateIQRScore(value: Double) -> Double {
@@ -1359,7 +1360,8 @@ public struct AsyncCompositeAnomalySequence<Base: AsyncSequence>: AsyncSequence 
             let q1 = sorted[sorted.count / 4]
             let q3 = sorted[3 * sorted.count / 4]
             let iqr = q3 - q1
-            return iqr > 0 ? Swift.min(abs(value - q1), abs(value - q3)) / iqr : 0.0 // fp-safety:disable — guarded by iqr > 0
+            let deviation = Swift.min(abs(value - q1), abs(value - q3))
+            return dispersionScaledScore(deviation: deviation, dispersion: iqr)
         }
 
         private func calculateMADScore(value: Double) -> Double {
@@ -1367,7 +1369,7 @@ public struct AsyncCompositeAnomalySequence<Base: AsyncSequence>: AsyncSequence 
             let median = calculateMedian(buffer)
             let deviations = buffer.map { abs($0 - median) }
             let mad = calculateMedian(deviations)
-            return mad > 0 ? 0.6745 * abs(value - median) / mad : 0.0 // fp-safety:disable — guarded by mad > 0
+            return dispersionScaledScore(deviation: 0.6745 * abs(value - median), dispersion: mad)
         }
 
         private func calculateMedian(_ values: [Double]) -> Double {
@@ -1381,4 +1383,34 @@ public struct AsyncCompositeAnomalySequence<Base: AsyncSequence>: AsyncSequence 
             }
         }
     }
+}
+
+// MARK: - Dispersion-scaled scoring
+
+/// A dispersion-scaled anomaly score, `deviation / dispersion`.
+///
+/// Every outlier method here divides a distance-from-centre by a measure of the window's
+/// spread — standard deviation, interquartile range, median absolute deviation. When that
+/// spread is zero the window is constant, and each site used to substitute a score of `0`.
+///
+/// Zero is the wrong fallback, because for an anomaly score it does not mean "unknown", it
+/// means "perfectly normal". Since `isOutlier = score > threshold`, the z-score and MAD
+/// detectors stopped flagging anything once the window went flat — and a flat window is the
+/// ordinary state of a healthy metric, whose *first* departure is exactly what they exist
+/// to catch. Measured: twenty readings of 5.0 followed by 1,000,000 scored 0.0 and was not
+/// flagged.
+///
+/// With no spread to measure against, a non-zero deviation is infinitely many units of
+/// dispersion away; a zero deviation is no anomaly at all. The composite scorer normalises
+/// with `min(1.0, total / count / 3.0)`, so an infinity saturates there at exactly 1.0
+/// rather than escaping into a caller's arithmetic.
+///
+/// - Parameters:
+///   - deviation: Non-negative distance of the value from the window's centre.
+///   - dispersion: Non-negative spread of the window.
+/// - Returns: `deviation / dispersion`; `.infinity` when the window has no spread but the
+///   value deviates from it, and `0` when neither does.
+private func dispersionScaledScore(deviation: Double, dispersion: Double) -> Double {
+    guard dispersion > 0 else { return deviation > 0 ? .infinity : 0 }
+    return deviation / dispersion
 }

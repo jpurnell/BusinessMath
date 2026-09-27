@@ -69,11 +69,7 @@ public struct SharpeRatio {
 		let meanReturn = mean(values)
 		let standardDeviation = stdDev(values)
 
-		if standardDeviation > T(0) {
-			return (meanReturn - riskFreeRate) / standardDeviation
-		} else {
-			return T(0)
-		}
+		return riskAdjustedRatio(excessReturn: meanReturn - riskFreeRate, risk: standardDeviation)
 	}
 
 	// MARK: - TimeSeries Convenience Methods

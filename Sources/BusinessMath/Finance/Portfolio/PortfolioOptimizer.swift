@@ -328,7 +328,7 @@ public struct PortfolioOptimizer {
 			weights: result.solution,
 			expectedReturn: portfolioReturn,
 			volatility: portfolioVolatility,
-			sharpeRatio: portfolioVolatility > 0 ? portfolioReturn / portfolioVolatility : 0, // fp-safety:disable — guarded inline
+			sharpeRatio: riskAdjustedRatio(excessReturn: portfolioReturn, risk: portfolioVolatility),
 			converged: result.converged,
 			iterations: result.iterations
 		)
@@ -423,7 +423,7 @@ public struct PortfolioOptimizer {
 		let portfolioReturn = expectedReturns.dot(finalWeights)
 		let portfolioVariance = calculateVariance(weights: finalWeights, covariance: covariance)
 		let portfolioVolatility = Double.sqrt(portfolioVariance)
-		let sharpeRatio = portfolioVolatility > 0 ? (portfolioReturn - riskFreeRate) / portfolioVolatility : 0 // fp-safety:disable — guarded inline
+		let sharpeRatio = riskAdjustedRatio(excessReturn: portfolioReturn - riskFreeRate, risk: portfolioVolatility)
 
 		return OptimalPortfolio(
 			weights: finalWeights,
@@ -589,7 +589,7 @@ public struct PortfolioOptimizer {
 			weights: finalWeights,
 			expectedReturn: portfolioReturn,
 			volatility: portfolioVolatility,
-			sharpeRatio: portfolioVolatility > 0 ? portfolioReturn / portfolioVolatility : 0, // fp-safety:disable — guarded inline
+			sharpeRatio: riskAdjustedRatio(excessReturn: portfolioReturn, risk: portfolioVolatility),
 			converged: converged,
 			iterations: iterations
 		)
@@ -655,7 +655,7 @@ public struct PortfolioOptimizer {
 		let portfolioReturn = expectedReturns.dot(finalWeights)
 		let portfolioVariance = calculateVariance(weights: finalWeights, covariance: covariance)
 		let portfolioVolatility = Double.sqrt(portfolioVariance)
-		let sharpeRatio = portfolioVolatility > 0 ? (portfolioReturn - riskFreeRate) / portfolioVolatility : 0 // fp-safety:disable — guarded inline
+		let sharpeRatio = riskAdjustedRatio(excessReturn: portfolioReturn - riskFreeRate, risk: portfolioVolatility)
 
 		return OptimalPortfolio(
 			weights: finalWeights,

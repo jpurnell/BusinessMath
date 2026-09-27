@@ -71,21 +71,18 @@ public struct SortinoRatio {
 		// Calculate downside deviation (only returns below risk-free rate)
 		let downsideReturns = values.filter { $0 < riskFreeRate }
 
+		// No downside periods at all is the best outcome Sortino can describe, not a
+		// mediocre one: the denominator is zero, so the ratio is unbounded rather than `0`.
+		// It is the same zero-risk case as a downside deviation that works out to zero, so
+		// both fall through to the shared guard.
+		var downsideDeviation = T(0)
 		if downsideReturns.count > 0 {
 			let downsideDiffs = downsideReturns.map { ($0 - riskFreeRate) * ($0 - riskFreeRate) }
 			let downsideDiffsSum = downsideDiffs.reduce(T(0), +)
 			let downsideVariance = downsideDiffsSum / T(downsideReturns.count)
-			let downsideDeviation = T.sqrt(downsideVariance)
-
-			if downsideDeviation > T(0) {
-				return (meanReturn - riskFreeRate) / downsideDeviation
-			} else {
-				return T(0)
-			}
-		} else {
-			// No downside risk
-			return T(0)
+			downsideDeviation = T.sqrt(downsideVariance)
 		}
+		return riskAdjustedRatio(excessReturn: meanReturn - riskFreeRate, risk: downsideDeviation)
 	}
 
 	// MARK: - TimeSeries Convenience Methods

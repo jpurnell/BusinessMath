@@ -337,9 +337,30 @@ struct RiskMetricsAdditionalTests {
 		let ts = TimeSeries(periods: periods, values: returns)
 		let metrics = ComprehensiveRiskMetrics(returns: ts, riskFreeRate: 0.0)
 
-		// Should not be NaN or infinite even if stdev == 0
-		#expect(metrics.sharpeRatio.isFinite)
-		#expect(metrics.sortinoRatio.isFinite)
+		// This used to require `.isFinite`, which was bought with a wrong answer: a
+		// guaranteed 1% per period at zero risk against a 0% risk-free rate scored exactly
+		// `0.0` — the same as a mediocre portfolio, and mid-table in any ranking.
+		//
+		// The hazard the original comment named is NaN, and the reason NaN is dangerous is
+		// that it is *unordered*: it silently poisons `<`, `max(by:)` and `sort`. An
+		// infinity has none of that behaviour. It compares correctly, which is exactly what
+		// `PortfolioOptimizer.efficientFrontier` needs when it selects with
+		// `max(by: { $0.sharpeRatio < $1.sharpeRatio })`. So the property worth holding is
+		// "not NaN, and correctly ordered" rather than "finite".
+		#expect(!metrics.sharpeRatio.isNaN)
+		#expect(!metrics.sortinoRatio.isNaN)
+		#expect(metrics.sharpeRatio.isEqual(to: .infinity), "riskless and above the bar")
+		#expect(metrics.sortinoRatio.isEqual(to: .infinity))
+
+		// The ordering that the old `0.0` broke.
+		let mediocre: [Double] = [0.02, -0.01, 0.03, -0.02]
+		let mediocrePeriods = mediocre.enumerated().map {
+			Period.month(year: 2030, month: ($0.offset % 12) + 1)
+		}
+		let mediocreSeries = TimeSeries(periods: mediocrePeriods, values: mediocre)
+		let mediocreMetrics = ComprehensiveRiskMetrics(returns: mediocreSeries, riskFreeRate: 0.0)
+		#expect(mediocreMetrics.sharpeRatio < metrics.sharpeRatio,
+				"a riskless gain must outrank a volatile one")
 	}
 
 	@Test("Max drawdown exact check (≈ 33.333%)")
