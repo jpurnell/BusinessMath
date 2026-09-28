@@ -1,535 +1,176 @@
-# Handoff — 2026-09-19 (Tier 2: ten items closed, twelve defects and one explanation)
+# Handoff — 2026-09-28 (contaminated-input sweep: 22 commits, Phase 1 half done)
 
-**Six items of Tier 2 closed, seven defects.** The bytecode optimizer,
-`RobustOptimizer`/`CuttingPlaneMaster` and `solveRelaxation` shipped as `e70829ac`; `solve`
-(160 → 60, two defects) and `MonteCarloExpressionModel.evaluate` as `d3359c3c`; both are inside
-**`v3.0.0-alpha.7`**, which a peer session tagged along with its density work. This commit —
-`extractVariableShift`, three defects including a **behaviour-breaking default change** — is the
-first thing above that tag.
+**Head is `b4a3a4a7`, pushed and CI-green. 8,350 tests / 779 suites, gate 45/45 at 0 warnings.**
 
-**A peer session is working in this repo concurrently.** It landed `chi2pdf`, a `density`
-requirement on `ContinuousDistribution` across 30-odd files, and the alpha.7 tag while this work
-was in flight. `git fetch` before assuming the remote is where you left it, and expect
-`CHANGELOG.md` to be the only file both sides touch.
+A long defect-hunting campaign against one class: **a guard that is correct while the value it
+returns is wrong**. ~48 defects and 4 hard crashes fixed. This handoff exists because the work
+is mid-phase and the remaining items are precise enough to lose.
 
-The work queue is **`project/plans/TIER2_COMPLEXITY_QUEUE.md`**. That file is the plan; this file
-is the state and the traps.
+## Read first
 
-## State
-
-| | |
+| document | what it is |
 |---|---|
-| branch | `main`, pushed through the gStudy commit |
-| tags | latest **`v3.0.0-alpha.7`** (2026-09-18, tagged by the peer session) |
-| tests | **7,989 in 734 suites**, exit 0, **zero known issues** |
-| gate | `--no-cache --check all` → 45 of 45 ran, **0 errors and 0 warnings outside `doc-run`** |
-| `doc-run` | **flaky under load, not a regression** — see §4 |
-| guidelines repo | `../../development-guidelines` clean at `a5f9292`, `v2.4.0` tagged and pushed |
-| CI | **green on `3cbf3ccd`** after five red pushes nobody looked at — see below |
-
-**The known issue is gone, and the invariant has flipped.** `SaaSModel` used to answer a churn
-rate above 1 with a negative customer count; the `withKnownIssue` standing in for the missing
-validation is now a real test. **A run reporting any known issue at all is a regression.**
-
-Its doc claimed the fix was breaking on *two* public initialisers. `SaaSModel` has exactly one,
-and the `var` half of the claim was the real obstacle — see §2.
-
-**The gate's warning count is 0.** The ten standing `[test-quality]` warnings were cleared at
-`5de783ca` and the last at `2af9e0ff`. **Any warning at all is now yours.**
-
-Always `--check all`. Plain `--no-cache` runs a subset and prints an identical PASSED line.
-`--check` takes **one** checker per flag; `--check a,b,c` prints *"No checkers enabled"* and exits 0.
-Tagging does not change what the gate runs — measured both ways on `346a50ad`.
-
----
-
-## 1. Resume here
-
-Pick the next target from `project/plans/TIER2_COMPLEXITY_QUEUE.md`, and **open it by building an
-independent oracle, not by reading it.** Across the whole sweep every defect was found by
-differencing against a second opinion and none by inspection, with a green 7,800-test suite
-endorsing each wrong answer throughout.
-
-Highest unexamined scores, re-measured on this commit. The table this replaced was stale:
-it still listed `icc` at 131 and `bayesianICC` at 101 while §2 of the same file reported both
-fixed, because it was copied from the queue snapshot and never refreshed. **Re-measure rather
-than trusting it** — `quality-gate --no-cache --no-index-build --check complexity`.
-
-**Nothing unexamined is left above 50.** The six functions still scoring above it —
-`fitGeneralLME` 75, `icc` 73, `solve` 60, `gibbsICCPosterior` 58, `solveRelaxation` 55,
-`algebraicSimplificationPass` 52 — each have a defect-fix commit behind them from an earlier
-round.
-
-| Score | Function | Where |
-|---:|---|---|
-| 45 | `standardisedMoments` | `Simulation/distributionMomentFit.swift` — the quadrature under the moment fit |
-| 42 | `dualRobustCounterpart` | `AdvancedOptimization/RobustOptimizer.swift` |
-| 26 | `varianceInflationFactors` | `Statistics/Regression/MultipleLinearRegression.swift` — extracted here |
-
-Cleared in this pass: `generalEMUpdate` 59 → 16, `linearRobustCounterpart` 59 → below,
-`detect` 57 → below, `multiWayANOVA` 55 → below, `multipleLinearRegression` 56 → 23,
-`louvainCommunities` 55 → below.
-
-**What the score is and is not worth, measured.** Over the whole programme, **7 of 8
-functions scoring ≥ 95 held a correctness defect; 0 of 8 below 95 did.** But two defects
-*were* found below that line this session — `buildBlock`'s crash at 68 and
-`multipleLinearRegression`'s NaN at 55 — and **neither was found by the complexity score**.
-Both came from grepping `fp-safety:disable` for suppressions with no justification after
-them. Complexity and defect risk stop correlating around 90; that grep does not.
-
-**WACC consumers: swept, and only one thing was wrong.** `CapitalStructure.wacc` claimed to
-call the free `wacc(...)` and instead wrote the formula out again; it delegates now. Every
-other consumer is already guarded, and `enterpriseValueFromFCFF`'s degenerate cases are now
-pinned because its NaN at −100% is accidental — `+∞ + (−∞)` — and a refactor could turn it
-into a finite-looking `+∞`.
-
-**`standardisedMoments`: 45 → below the threshold**, bit-identical over 100 evaluations.
-
-**Next: the suppression sweep, and it is large.** Census across `Sources/`:
-
-| | |
-|---|---|
-| `fp-safety:disable` total | **286** |
-| of those, **bare** (nothing written after) | **71** (four are this session's own prose) |
-
-On this session's evidence — three of nine bare-or-false suppressions in `BusinessMathDSL`
-hid defects, one a process crash and one a silently wrong Monte Carlo — that is the
-highest-yield list in the repository. The ones that read as riskiest on sight:
-
-- `DebtCovenants.swift:576` — `operatingIncome / interestExpense`, zero for a company with
-  no debt, which is an ordinary thing to be
-- `EquityFinancing.swift` — a dozen divisions by valuations and share counts
-- `RetailModel.swift:341,343` — `monthlyRevenue / squareFootage`
-- `ManufacturingModel.swift:288` — `unitsPerMonth / productionCapacity`
-- `LeaseAccounting.swift:316,324` — `payment / discountFactor`
-
-Many of the rest divide by literal constants and are genuinely safe; the point of the sweep
-is that nobody can tell which is which without reading them, because none of them says.
-
-`solve` (60, BranchAndBound) was examined in an earlier round — two defects — so the highest
-genuinely unexamined score in `Sources/` is now **59**.
-
-Examined, for contrast: `fitGeneralLME` 75, `icc` 73, `gibbsICCPosterior` 58.
-`generalAIREMLUpdate` was 121 and is now 19; `gStudy` 85, `bootstrap` 79, `Period.next` 77
-and `buildBlock` 68 are all now below the threshold.
-
-**Nothing in `Sources/` scores above 75 any more, and the 100+ band is empty.** Measured
-defect yield over the whole programme: **7 of 8 functions scoring >= 95 held a correctness
-defect; 0 of 4 below 95 did** — though `buildBlock` at 68 held a *crash*, so the band below 95
-is not empty of value, only of the tangled-arithmetic defects the high band was full of. Treat
-15 as the gate's note level and ~90 as the "open this with an oracle" line; below that, the
-value is decomposition and coverage.
-
-## 2. What closed, and what it cost
-
-### Shipped as `e70829ac`
-
-- **The bytecode optimizer miscompiled every ternary.** `algebraicSimplificationPass`'s
-  `default:` branch popped one operand whatever the arity, so `select` (three) and the thirteen
-  binary operators left operands for the next instruction's identity rules to claim.
-  `(1.0 + (input[0] ? -0.0 : 7.0))` optimised into `input0 ? 1.0 : 7.0`.
-- **The cutting-plane certificate was not a certificate.** `CuttingPlaneMaster` read its lower
-  bound from the model minimised over the *trust region*. `min |x − 1000|` from `x = 0` returned
-  `x = 100` with `optimalityGap: 0.0, converged: true`, after one round.
-- **`solveRelaxation` 291 → 55**, stages extracted into `BranchAndBoundCutting.swift`.
-- **`RobustOptimizer` audited, clean.** The LP route was confirmed to fire by instrumentation
-  (8 of 8 cases), not assumed — iteration count does *not* separate the two routes.
-
-### `solveShape` — 62 → below threshold, no defect, and a region the fixtures could not reach
-
-- **Eight points cannot test a thirty-five-start strategy.** `MomentFitTests` is good
-  coverage — it computes the fitted moments by its own quadrature, so it checks an answer
-  rather than the solver's residual — but it carries eight hand-written moment sets topping
-  out at `|skewness|` 1.2 and kurtosis 6. The solver's own comment says it tries seven
-  `gamma` starts crossed with five `delta` starts because *"a fixed start fails on perfectly
-  ordinary moment sets"*. That is a claim about a region.
-- **The sweep generates targets backwards.** It picks `(gamma, delta)` on a grid, asks
-  `standardisedMoments` what moments that member has, and requires `solveShape` to find its
-  way back — so every target is attainable by construction and a failure is the solver
-  missing a solution that certainly exists. 47 positions, no convergence failures, worst
-  round-trip 6.27e-11.
-- **The lognormal branch had no oracle at all.** It is a bisection, not the Newton solve.
-  Now checked against `beta1 = (omega + 2)^2 (omega - 1)` and `delta = 1 / sqrt(ln omega)`,
-  both written out in the test rather than taken from the source.
-- Five helpers extracted; **bit-identical** across all 54 solves.
-- I claimed measured tolerances in the doc comment before measuring them, and the real
-  numbers were 10-50x tighter. Corrected. Stating a measurement you have not taken is worse
-  than stating none.
-
-### CI was red for five pushes, and the reason it stayed red is the process, not the bug
-
-`test(g-study)` turned CI red and the four pushes after it inherited that red. The commit
-before it was green, so the origin was never in doubt — **nobody ran `gh run list`.** This
-file's own state table said "CI: not verified since the Tier 2 sweep began", and
-`CLAUDE.md` says *"After pushing, watch the run. `gh run view <id> --json jobs` — do not
-assume."* Five pushes went out against that instruction, each one reporting a green local
-suite and a green local gate, neither of which is evidence about CI.
-
-**The bug itself is the documented one.** Swift 6.2.1 on CI, 6.4 locally: nested `map`
-closures whose element type has nothing to anchor it, mixing a `Double(...)` conversion with
-nested integer arithmetic —
-
-    let rawAB = (0..<nP).map { p in (0..<nR).map { r in Double((p * 3 + r * 5) % 7) - 3 } }
-
-— builds instantly on 6.4 and fails on 6.2.1 with *"unable to type-check this expression in
-reasonable time"*. Reported 200 times across every file in the module; the four real
-locations came out of `grep -A 2 "unable to type-check" | grep -oE "Tests/.*\.swift:[0-9]+"`,
-exactly as `CLAUDE.md` describes. All four were in `GStudyTwoFacetOracleTests`.
-
-Rewritten as annotated `for` loops with the integer arithmetic bound to a typed `let` before
-conversion. Two `#expect` conditions elsewhere were hardened at the same time, on the
-principle that a second red run costs twenty minutes and a bound intermediate costs nothing.
-
-**The rule this leaves:** a green local `swift test` and a green 45/45 gate say nothing about
-CI. Only a CI run settles a type-check timeout — so push, then watch, before starting the
-next thing.
-
-### The suppression sweep — 9 down to 1, and a silently wrong Monte Carlo
-
-Following the bare-suppression trail through the rest of `BusinessMathDSL` found a second
-defect, worse than the crash because nothing failed.
-
-- **`Distribution.triangular` sampled from outside its own support.** Its suppression named
-  the requirement *"triangular requires max > min"*, and nothing required it — `.triangular`
-  is a plain enum case with no validating constructor. Over 20,000 draws, the transposed
-  spelling `(0.30, 0.20, 0.10)` put **every** sample outside [0.10, 0.30] and ranged to 0.400;
-  a mode outside the range put 17,578 of 20,000 outside. No NaN, no crash, just numbers.
-  Now a precondition, with an exit test that checks stderr actually names the requirement.
-- **`DCFModel` was the other one.** `waccRate` is now validated where it is read, and both
-  divisions guarded where they are used.
-- **9 suppressions to 1.** The survivor is `/ 2`, a literal constant. Most were removed by
-  `Swift.max(divisor, 1)`, which puts the fact where the compiler and a reader can see it
-  rather than asserting it in a comment — and which deleted two special-case branches, since
-  one step falls out correctly on its own.
-- **The lesson is sharper than "bare suppressions are suspect".** A justification makes a
-  suppression *reviewable*, not *correct*: two of the justified ones here were false, and the
-  file itself already records a third — *"u1 from random in [0,1)"* given as the reason a
-  `log` was safe, which is the interval containing the pole. The only annotation that cannot
-  lie is the one that is not needed.
-
-### `buildBlock` — 68 → below threshold, and a crash found by a missing justification
-
-- **`Sensitivity(on:range:steps: 1)` crashed the process.** `steps - 1` is zero, the step size
-  came out infinite, `Double(0) * .infinity` gave a NaN multiplier, and the scenario's *name*
-  formatted it with `Int(multiplier * 100)` — a trapping conversion. A degenerate range like
-  `1.0...1.0` reached the same trap through `0.0 / 0.0`.
-- **The marker was a bare suppression.** `Vary` has the identical division, has always
-  guarded it, and its `fp-safety:disable` carries the justification that earns it — *"steps >=
-  2 from guard above"*. The annotation was copied to the sensitivity path without the guard.
-  Of the nine suppressions in `BusinessMathDSL`, seven say why they are safe; **the two bare
-  ones are this crash and `DCFModel.swift:179`**. A suppression with nothing written after it
-  is where the guard is missing — cheap to grep for, and it found this.
-- **`DCFModel.swift:179` is the other one, and is left open deliberately.**
-  `tv / pow(1 + waccRate, years)` is a division by zero at exactly −100% WACC, and nothing
-  validates `waccRate` — line 159 above it makes the claim "always > 0" that this depends on.
-  Far-fetched input, and deciding what a −100% cost of capital *should* do is a design
-  question rather than a fix. Flagged, not patched.
-- A scenario's name can no longer trap: `percentLabel(_:)` falls back to a plain description.
-- **The cartesian product is now pinned** — stacked `Vary` multiplies (`k^n`), the first
-  variation seeds rather than multiplying an empty set, and a tornado varies one parameter at
-  a time (six scenarios, not nine). Expected sets enumerated directly, not folded.
-- Four component cases extracted. Identical on seven declaration shapes by raw bit pattern;
-  the only behaviour that changed is the input that used to crash.
-
-### `Period.next()` — 77 → below threshold, no defect, and a lesson about mutations
-
-- **Nine copies of one guard.** Every rung spelled out the same
-  `guard let nextDate = calendar.date(byAdding:value:to:) else { return self }`. That is what
-  put the function third from the top, and it is the shape that hides a rung quietly
-  returning `self` instead of stepping. One `stepped(by:value:rebuild:)` carries it now and
-  `next()` is a flat ten-case dispatch.
-- **Eight of ten rungs had no direct assertion anywhere.** Only semiannual was tested, plus
-  `nextIfSteppable()` returning nil for custom. Millisecond, second, minute, hourly, daily,
-  monthly, quarterly and annual were untouched — and those hold December into January, Q4
-  into Q1, and February in a leap year.
-- **The oracle does calendar arithmetic without a calendar.** Julian day numbers by the
-  standard integer algorithm, stepping by integer millisecond addition. `next()` is built on
-  `Calendar.date(byAdding:)` and reads back through `dateComponents`, so an oracle using the
-  same API could only catch a wrong unit or count. Includes **2100, which is not a leap
-  year** — the hundred-year rule, reached by nothing in the package before.
-- **Four mutations passed and all four were behaviourally equivalent.** A quarterly period
-  re-anchors to a quarter-start month every step, so the month-to-quarter map is only ever
-  asked about 1, 4, 7 and 10, exactly where the correct and off-by-one forms agree; a
-  four-month step lands on 5, 8, 11, 2, whose quarters are the same sequence. Those
-  expressions carry neither risk nor the possibility of proof. **A mutation that does not
-  change behaviour is not evidence about a test** — `theComparisonDiscriminates` now supplies
-  that evidence directly.
-- Identical across eleven seeds and six steps each: start date, type and label unchanged.
-
-### `DiscountCurve.bootstrap` — 79 → below threshold, no defect, and fifty dead lines
-
-- **A whole first pass was computed and discarded.** Fifty lines walked every integer year,
-  bootstrapped the quoted tenors and interpolated the rest, and then `dfMap.removeAll()`
-  cleared the map before the real solve began. Its own trailing comment explained why that
-  pass was unsound; the code was left in anyway. Nothing between the loop and the `removeAll`
-  read `dfMap`, so deleting it is **bit-identical** — 79 → 34 from the deletion alone.
-- **The gap interpolation was written out three times** — Newton residual, its derivative,
-  and the final store. A residual disagreeing with its own derivative shows up only as slow
-  convergence, which nothing measures. One helper now serves all three.
-- **No defect in the algorithm.** An exact oracle chooses the curve first, derives par rates
-  in closed form (`c_N = (1 - DF(N)) / SUM DF(i)`, the exact inverse of the par condition)
-  and requires the bootstrap to give the curve back, at the nodes and in the gaps. Worst
-  relative gap 1.58e-16, about one ulp. Three mutations caught with 48, 39 and 82 failures.
-- **The existing repricing test is genuinely good** — it goes through `discountFactor(at:)`,
-  so the interpolation is exercised, and gap DFs enter the annuity. What it could not do is
-  check an *answer* rather than a residual, and every case it runs starts at tenor 1. Three
-  new ladders quote nothing until year 2, 5 and 10 — the branch that anchors on `DF(0) = 1`
-  and fills a gap below the first quoted tenor, which nothing reached before.
-
-### `gStudy` two-facet — 85 → below threshold, and **no defect**
-
-- **A clean sweep, and worth recording as one.** Degrees of freedom, mean squares and all
-  seven variance components agree with an exact oracle. Two deliberate mutations — a swapped
-  `sigma_pr` divisor, and dropping `+ MS_e` from `sigma_p` — are both caught, before and
-  after the refactor.
-- **The oracle builds the data rather than reading it.** Seven mutually orthogonal effects
-  (main effects centred, two-way double-centred, residual triple-centred) whose sums of
-  squares are known in closed form from the effect arrays. No sampling noise, no second
-  implementation to be wrong the same way. Mean squares are checked separately from the
-  components, so a failure names the stage.
-- **5 x 4 x 3 on purpose.** Every divisor in the EMS inversion is a different product of the
-  three dimensions; the existing tests use 3x2x2 and 4x2x3, where several coincide and a
-  swapped divisor is invisible. A guard test asserts the six divisors stay distinct.
-- **The oracle's own first fixture was broken and its guard caught it.** The residual array
-  used `% 13` against a coefficient of 13, so the `r` term cancelled and the three-way
-  contrast was identically zero — `MS_e` was ~1e-16 everywhere and three of the new tests
-  passed against it. The truncation test failed and named it. `oracleDesignsExerciseEveryTerm`
-  now asserts every constructed term contributes.
-- **What the old tests asserted could not fail**: seven components exist, every variance
-  `>= 0` (the function truncates negatives, so this is a tautology), `totalVariance` equals
-  the sum it is computed from, percentages sum to the total they are shares of. The test
-  called "Known three-way data with verifiable variance components" works four means out by
-  hand in comments and asserts none of them.
-- Eight helpers extracted, nothing above 18. The percentage block was duplicated across both
-  overloads and is now one function. **Bit-identical** across both overloads and five designs.
-
-### The churn rate that produced negative customers — the package's last known issue
-
-- **Three models answered an impossible churn rate instead of refusing it.** `SaaSModel` at
-  `churnRate: 1.2` returned **−20** customers for month 1. `SubscriptionBoxModel` and
-  `MarketplaceModel` share the recurrence and shared the defect.
-- **The contract already existed in three places and only the projections ignored it.**
-  `StandardTemplates.createSaaSModel` threw for exactly this input, `retentionRate` guarded and
-  returned `nil`, and `calculateCustomerCount` returned the number. The range had been written
-  out four times across two files and the copies had diverged; it is now one function,
-  `validatedRate(_:named:)`.
-- **Checked in different places for one reason: mutability.** `SaaSModel.churnRate` is a `var`,
-  so no initialiser can be the boundary — checked at the point of use, with a test that mutates
-  a sound model into an unsound one. The other two hold theirs in a `let`, so construction *is*
-  the boundary and **no method signature on those two types changed**.
-- **Deliberately untouched:** the deprecated unit-economics methods. `calculateLTV` and its four
-  siblings are already `@available(*, deprecated)` and each names a replacement that handles bad
-  churn correctly. Adding `throws` to a deprecated method breaks callers for nothing.
-- **Two assertions changed meaning, not shape**, and say so in their own docs: they used to build
-  a box with an impossible rate and record what it answered. That box cannot be built now, so
-  they assert the refusal at construction instead.
-
-### `generalAIREMLUpdate` — 121 → 19, one defect and one it exposed
-
-- **The Average Information matrix used a truncated projection, understating it by 13.5%.**
-  `P` is not block diagonal by group. Under a trace against a block-diagonal `dV_k` only its
-  diagonal blocks survive, so the score's per-group accumulation is exact — but
-  `AI[j][k] = 1/2 (dV_j P r)' P (dV_k P r)` sandwiches a vector between two `P`s and needs the
-  whole matrix. The source built one `nig x nig` block per group and never formed `P`.
-  It is the projection error the score had, in the one place the cancellation that rescued
-  the score does not reach: `Pr` is orthogonal to `X` by the normal equations, `dV_k P r` is
-  not.
-- **Nothing could have caught it from a converged fit.** The score fixes the optimum; the
-  information only sets the step, and Newton with a wrong Hessian still lands on the right
-  answer. The statsmodels comparison agrees to 1e-5 either way.
-- **New oracle**: `GeneralAIREMLOracleTests` assembles the entire `N x N` projection, with a
-  Gauss-Jordan inverse written in the test so it shares no path with the source's Cholesky,
-  and evaluates score and information directly — at variance parameters built from the sample
-  variance of `y`, never from a fit, and deliberately away from the optimum where the score is
-  zero by definition. Source vs dense: score 3.36e-06, information **0.135**. Source vs the
-  block-diagonal truncation: 2.99e-06 — which is what identified the mechanism rather than
-  inferring it. After the fix, 2.99e-06 against the full projection.
-- **`paramHasConverged` drove its absolute and relative thresholds from one number**, which
-  the tolerance change below exposed: a model with no group effect ran its full budget and
-  reported failure on data it had been fitting. A near-zero variance component can never pass
-  the relative branch, so the absolute branch is the only thing that converges it, and
-  tightening the relative test tightened that floor too. Now separate, floor fixed at 1e-8 —
-  the value it already had — so nothing that converged before can stop.
-- **Default `tolerance` 1e-8 → 1e-9** in `fitGeneralLME` *and both wrappers*. A correct
-  information matrix is larger, so steps are smaller, so a step-size stopping rule fires
-  sooner: the hardest design stopped one iteration early. One more iteration takes its
-  remaining Newton step from 1.9e-05 to 2.2e-06 and its fixed effects from 1.3e-06 off
-  statsmodels to 6.0e-08 — better than the 3.6e-07 that was previously the worst anywhere.
-  **1e-10 is past a cliff** where the near-degenerate design stops converging; the sweep is in
-  the DocC. The wrappers pass `tolerance` through, so a wrapper left on the old default makes
-  `fitRandomIntercept(model)` and `fitGeneralLME(model)` disagree — which is how it surfaced.
-- **Eight helpers extracted**, only two scoring above the threshold at all. **Bit-identical**
-  on all six designs — every variance component, fixed effect and standard error compared as
-  raw bit patterns, not within a tolerance. Dead parameters `ni` and `N` removed.
-
-### `fitGeneralLME` — 131 → 75, and an open question closed
-
-- **The standard-error gap against statsmodels is explained and is not ours.** An independent
-  numpy implementation of `(X'V^-1 X)^-1`, fed statsmodels' *own* components, reproduces our
-  numbers and still differs from statsmodels by up to 1.2%. statsmodels' SEs are consistently
-  larger and the gap widens where the likelihood flattens — a covariance that also carries
-  variance-parameter uncertainty. The file's "unexplained" note is now an explanation.
-- **New oracle**: `standardErrorsAreTheGLSCovariance` computes the same quantity by assembling the
-  whole `N x N` covariance and solving it densely, where the source accumulates block per group.
-  Bound measured at 1e-5 against a worst observed 8.2e-7.
-- Extracted `validateGeneralLME`, `generalSlopeVarianceStart`, `generalBLUPs`,
-  `generalFeasibleStep`. **Bit-identical** on all six fixture designs.
-- `generalAIREMLUpdate` is still **121** — the next target.
-
-### `bayesianICC` — the same ICC(1,1) defect, third implementation
-
-- After finding it in the EM estimator the **class** was swept, not the instance: every site
-  turning variance components into an ICC. There were two, and `bayesianICC`'s private
-  `iccFromComponents` had `case .twoWayRandom, .oneWayRandom:` as well. Fixed by **deleting** the
-  duplicate — both samplers now call the shared `iccFromVarianceComponents`, so one place is left
-  to get wrong. Posterior mean for ICC(1,1) moves 0.2807 → 0.1881 against a classical 0.1657.
-- **Two of my own tests passed for the wrong reason and were rewritten.** A 0.2 tolerance passed
-  while the defect was live (gap 0.115); it is now 0.06, measured. And "the two overloads agree on
-  complete data" was testing a *delegation* — the optional overload hands a complete matrix
-  straight to the other one — so it now asserts bit-identical results and a separate test removes
-  a cell to reach the missing-data sweep.
-- **One Gibbs sweep instead of two: complexity 101/54 → 45/32, and 17% faster.** The presence of
-  a cell is now asked once at setup rather than on every cell of every sweep. Measured at `-O`:
-  complete 0.6107 → 0.6013s, missing 0.7214 → **0.5974s**. A first attempt using a flat cell list
-  was **27% slower** on the complete path — `s[cells.subject[c]]` is a gather where the nested
-  loop hoisted `s[i]` — and was not shipped; grouping the cells by subject restores the hoist.
-- **Bit-identity is the verification, and it earned it.** Two attempts changed every draw while
-  leaving the posterior means almost untouched: collapsing the complete overload's ANOVA-based
-  initialisation into the missing overload's heuristic, and factoring `mu + s[i]` out of a
-  subtraction. A tolerance-based test would have passed both.
-
-### `icc` (EM overload) — 131 → 73, two defects
-
-- **`.oneWayRandom` carried the `.twoWayRandom, .absolute` formula character for character**, so
-  ICC(1,1) returned the ICC(2,1) figure — 0.28976 where Shrout & Fleiss (1979) publish .17,
-  overstating agreement by three quarters. The one-way subject term is `s² − r²/k`, not `s²`.
-- **`maxIterations` defaulted to 200 where the EM needs up to 1263.** Eighteen of twenty-four
-  single-cell deletions expired, returning `converged: false` with an estimate that was nearly
-  right. Raised to 5000. Parameter-based convergence was tried and is *slower*.
-- `logLikelihood` is an **independence approximation**, not the model's likelihood, and now says
-  so. **Open: whether the EM should be REML** so the two `icc` overloads agree on complete data —
-  they currently differ by ~0.06, which is ML bias tracking `(n-1)/n` and `(k-1)/k`.
-
-### `extractVariableShift` — 95 → 21, three defects
-
-- **`enableVariableShifting` defaulted to `false`**, and it is the only thing between the
-  simplex's implicit `x ≥ 0` and a model that says otherwise. `x ≥ -3, minimise x` returned
-  **0.0 with status `.optimal`**; `x = -3` and `-5 ≤ x ≤ -1` returned `.infeasible`. Now defaults
-  to `true` on both initialisers. It cannot make a model worse — `needsShift` is false when
-  nothing is negative, so only the wrong models move.
-- **An equality was not treated as a bound.** Both equality spellings were skipped; pinning a
-  variable at −3 bounds it below by −3, and `ConstraintSense.equal` fell through a sense test
-  with no `default`.
-- **The shift depended on constraint order.** Plain assignment meant the last constraint won:
-  `[x ≥ -10, x ≥ -3]` gave −3, reversed gave −10. All paths now take the binding bound.
-
-### Earlier commits
-
-- **`solve`: 160 → 60, two defects.** Five separate result constructions, each answering "what do
-  I report when nothing was found" on its own. Every no-incumbent exit reported
-  `objectiveValue: +∞` regardless of sense, so a **maximisation** that found nothing reported the
-  best conceivable value — beside a `bestBound` of `-∞`, an answer beating its own bound. And the
-  no-incumbent exit applied the *inverse* variable shift to `initialGuess`, which was never
-  shifted: a solve started `from: [0, 0]` with lower bounds at `-5` returned `[-5, -5]`. All five
-  exits now route through one `makeResult`.
-- **`MonteCarloExpressionModel.toClosure()` counted an unevaluable draw as `0.0`.** The
-  interpreter throws for `sqrt` of a negative, `log` of a non-positive and division by zero; the
-  closure discarded all of it for a number the model never produced, and `MonteCarloSimulation`
-  uses that closure as its CPU path. On `log(x)` over 300 draws spanning `[-1, 3]`, 75 threw, 75
-  became zero, the reported mean was 0.0707 against 0.0943 over the defined draws, and **no
-  sample was non-finite**. Now `Double.nan`, which propagates.
-
-### `evaluate`: decided, and the measurement is the lesson
-
-`evaluate` is a flat 22-case dispatch table whose score came from a stack guard repeated in every
-case. Folding those into two `@inline(__always)` pop helpers takes it **104 → 41** — and makes it
-**44% faster**, not slower:
-
-| variant | 2M evaluations, `-O` |
-|---|---|
-| as it was | 0.4002s |
-| pop helpers, no capacity hint | 0.3206s |
-| pop helpers + `reserveCapacity(maxStackDepth())` | **0.2249s** |
-
-**The debug measurement said 34% *slower* and was nearly acted on.** At `-Onone`,
-`@inline(__always)` is advisory, so every helper becomes a real call with `inout` exclusivity
-checking. Debug and release disagreed on the *sign*, not the size. Benchmark anything in this
-package at `-O` or not at all — the note is now on the function itself.
-
-## 3. What this session did
-
-Tier 2 opened on the premise that a high complexity score marks code no one has an oracle for.
-**Sixteen defects in twelve commits**, every one a wrong answer that a green 7,800-test suite was
-endorsing, and not one found by reading the code.
-
-| Commit | What was wrong |
-|---|---|
-| `81f7d733` | Branch-and-cut **cut off the optimum** — Gomory fractional cuts applied to a mixed problem. Replaced with Gomory mixed-integer cuts; `generateMIRCut` delegates |
-| `5a96e887` | Cycling detection inert (a `break` bound to the wrong loop); the global bound read from selection order, not the best open node; branches emitted as closures the solver could not read exactly |
-| `0809cd1c` | **Constrained optimizers returned infeasible points as `.converged`.** Now `.infeasible` with the least-violating point and its measured violation — the user's call, so a modeller can see the conflict and fix the bounds |
-| `0667be66` | Simulated annealing had **no inner Markov chain, a constant step size, and stagnation firing during exploration** — three of the algorithm's defining features. Benchmark went 7.34 → 0.00052 |
-| `85e1e991` | `IslandModel` reported violation **0.0 while 2.78 outside** the feasible set; a `.zero` default on `constraintViolation` was a fail-silent trap |
-| `fe71c669` | The genetic algorithm had both of annealing's defects: `generations` inert, mutation width never narrowing |
-| `65b4ebca` `c18434c5` | `numericalGradient` returned **exactly zero past 1e10**, so `1.9e105` came back labelled `.converged`; `VectorN/2D/3D.norm` returned `inf` or `0` for finite norms. The same absolute-step bug was in every other finite difference in the package |
-| `39ed2885` | Branch-and-bound was **non-deterministic across processes** — four `Set` iterations let Swift's per-process hash seed decide LP row order and every tie-break downstream |
-
-Clean sweeps, no defects found: `SimplexSolver` (1,600 cases + duality), `AsyncSimplexSolver`
-(600), DEA CCR/BCC (1,999), the unconstrained heuristics.
-
-**A rule came out of it**, now in the guidelines repo at `rules/correct_answers.md`, tagged
-`v2.4.0`: a test must pin the correct answer, not merely assert accurately. Where expected values
-come from, why a tolerance is measured rather than chosen, and why a fixture set cannot reach the
-inputs an algorithm generates for itself.
-
----
-
-## 4. Traps, carried forward
-
-- **`doc-run` is the package's only cross-process determinism test.** It executes each article
-  twice in separate processes and diffs. That is how the hash-seed defect surfaced; no unit test
-  could have found it, because a process agrees with itself.
-- **`doc-run` is load-sensitive, and it bit again on 2026-09-18.** At load average 150–270 the
-  full gate reported two `doc-run` errors: `5.11-PerformanceBenchmarking.md` killed at its
-  deadline and `5.16-GPUAccelerationTutorial.md` differing on 9 of 179 output lines. Four further
-  `doc-run` passes on the same tree: one clean, three with a *deadline kill* on whichever of the
-  two articles lost the race, and **"0 produced different output on a second run"** every time.
-  Neither article references anything this session changed — checked by grepping them for the
-  type names. Treat a `doc-run` failure at high load as unproven until it reproduces quiet.
-  Note also that the **pre-commit hook's default profile does not include `doc-run`**, so this
-  flake cannot block a commit.
-- **Never background a `git commit` here.** The pre-commit hook takes ~9 minutes; a 2-minute
-  command budget SIGTERMs it mid-gate. Give it a long timeout and let it run in the foreground.
-- **CI skips docs-only pushes.** A commit touching only Markdown gets no run at all — prove it by
-  diffing against the last CI-green commit, not by waiting.
-- **The scratchpad is `/private/tmp` and does not survive a reboot.** Anything worth keeping goes
-  into the repo. Done this session: see §5.
-
----
-
-## 5. Housekeeping
-
-| File | State |
-|---|---|
-| `project/plans/TIER2_COMPLEXITY_QUEUE.md` | the work queue, 205 functions with locations |
-| `project/plans/upcoming/parked/OneDimensionalInterpolator.swift.parked` | approved ("do both, additively") but never wired up. Not compiled — the `.parked` extension and the location outside `Sources/` both keep SPM away |
-| `Tests/.../BytecodeDifferentialTests.swift` | **unparked and committed** — it is green now, so it belongs in `Tests/` |
-
-**A note that cost a commit to learn:** the pre-commit gate builds the *working tree*, not the
-index. A failing test left untracked in `Tests/` blocks every subsequent commit, not just the one
-that would add it. Park such a file outside `Sources/` and `Tests/` rather than leaving it lying
-around.
-
-**`Calendar.gregorianUTC` is already shared — verified 2026-09-18.** `SwiftDeterminism` vends it
-(v1.2.0, `0d002fa`), this package depends on `from: "1.2.0"` and resolves to exactly that, and
-`Sources/BusinessMath/Valuation/DayCountConvention.swift:61` is a one-line alias
-`let gregorianUTC: Calendar = .gregorianUTC` that all 186 call sites go through. Nothing to
-migrate. The hand-built UTC calendars remaining in `Tests/` are deliberate: a suite checking
-zone-invariance must construct its expectation independently of the constant under test.
-
-## 6. Open decisions, none blocking
-
-- **Twenty-two commits are untagged above `v3.0.0-alpha.6`.** No decision has been made about
-  whether they become `alpha.7` or wait. Nothing depends on it.
-- **`CLAUDE.md` is gitignored**, so the reading-list correction recorded in it does not survive a
-  fresh clone. Not fixed; fixing it means either un-ignoring the file or moving the correction
-  into `project/`.
+| `project/plans/CONTAMINATED_INPUT_CONTRACT.md` | the behavioural spec — **freeze before any fan-out** |
+| `project/plans/CONTAMINATED_INPUT_SWEEP_PLAN.md` | the five phases, with measured yield rates |
+| `quality-gate-swift-project/plans/proposals/AFallbackIsAnAnswer.md` | the checker that would end this class (pushed, `85844a9`) |
+
+The single fact underneath everything: **every comparison against `nan` is false, including
+`nan == nan`.** It never raises. It answers *no*, and "no" is valid everywhere in Swift.
+
+## What is DONE
+
+Twenty-two commits, `3898aafb` … `b4a3a4a7`. Four hard crashes fixed (`spearmansRho`,
+`DiscountCurve.bootstrap`, `CapitalAllocationOptimizer.optimizeIntegerProjects`, and 18
+trapping config parameters across the heuristics). Shapes B and D (two-arm sign classification,
+NaN-absorbing clamp) are **finished repository-wide**. Shape A is finished for eleven areas.
+
+## What is OPEN, in priority order
+
+### 1. Phase 1 traps — 21 remaining, all verified by a read-only agent, none fixed
+
+`Int(x)` traps for non-finite **and** for out-of-range. Fix by screening at the **entry point**,
+never at the conversion: all four already-fixed traps needed the screen earlier, and one needed
+it earlier than a *count* was taken or the fix turned a crash into `Index out of range`.
+
+**Statistics (3)**
+- `Statistics/Experiment/PowerAnalysis.swift:112` — `Int(rounded)`. `meanSampleSize`/
+  `proportionSampleSize` deliberately `return T.infinity` as a sentinel (`:132`, `:145`). Also
+  reachable with no infinity at all: `minimumDetectableEffect: 1e-10` gives `exact ≈ 1.6e21`.
+  The DocC already promises `- Throws: ExperimentError when the design has no finite answer` —
+  documented, never implemented. Screen before `:111`.
+- `Statistics/Classification/ClassifierEvaluation.swift:185` — `Int(scaled)`. The clamp on the
+  next line is **one line too late**: it clamps the `Int` after the conversion traps. Move the
+  clamp into `T` before converting. Init screens `isFinite` but not magnitude; scores are
+  legitimately unbounded (only ordered by `roc`/`auc`).
+- `Statistics/.../DistributionPoisson.swift:85` — `Int(lambda + spread)`, `lambda: 1e19` traps.
+  Screen in `init?(lambda:)` at `:53`.
+
+**Simulation / Streaming / Operations (10)**
+- `Simulation/MonteCarlo/SimulationResults.swift:506` — `Int(max(log10(p5), log10(p99))…)`.
+  Reachable with **entirely legitimate finite data**: all-zero values → `log10(0) = -inf`;
+  any loss distribution (negative percentiles) → `nan`. Also via `.undefined(values:)`.
+- `Simulation/MonteCarlo/SimulationResults.swift:454` — `Int(ceil(range / binWidth))`,
+  out-of-range for a heavy tail over a tight interquartile core.
+- `Streaming/StreamingFrequencyDomain.swift:84` and `:85` — `spectrum.power(in: 0.15 ..< .infinity)`
+  is the natural spelling of "all power above 0.15 Hz" and crashes. Clamp in `Double` first.
+- `Operations/InventorySimulator.swift:167` and `:170` — `meanLeadTime`/`leadTimeStdDev` never
+  screened. NB the same value is the trip count of `for _ in 0..<days`, so a finiteness-only
+  patch converts the crash into an unbounded loop.
+- `Simulation/distributionCumulativeDiscrete.swift:82` — the guard above is `allSatisfy(isFinite)`,
+  which passes `1e300`. Widen it; it must stay before the `map`.
+- `Simulation/distributionDiscreteCounts.swift:112` — `Int(mean + 20 * deviation)`, `p = 1e-300`.
+- `Simulation/distributionGeometric.swift:161` — only `q = -.infinity` reaches it; weakest.
+- `Simulation/distributionTriangular.swift:51` — `Int(uSeed * 1_000_000)`; five guards precede it
+  and none touches `uSeed`, the public fourth parameter.
+
+**Valuation and elsewhere (8)**
+- `Valuation/CreditDerivatives/CreditTermStructure.swift:114` — `Int(maturity) * 4`. In-repo path:
+  `bootstrapCreditCurve` → `bootstrapHazardRate` → `cdsSpread`. **Also** `for i in 1...numPeriods`
+  traps for `maturity < 0.25`, so a finiteness-only fix swaps one crash for another.
+- `Scenario Analysis/FinancialSimulation.swift:316` — `conditionalValueAtRisk(.nan)`, one hop.
+- `Valuation/Debt/NelsonSiegel.swift:236` — `bond.maturity`; crashes a whole calibration, not one
+  price. Screen in `BondMarketData.init`.
+- `Operational Drivers/DriverProjection.swift:415` — `"P\(Int(p * 100))"`, a **label string** takes
+  the process down. `BusinessMathDSL/ScenarioAnalysis.swift:383-393` already fixed this exact
+  shape and documents it — the correctly-behaving sibling.
+- `Portfolio/PortfolioUtilities.swift:295` — `sparsity: .nan`; `max(5, …)` runs after the trap.
+- `Valuation/Curves/DiscountCurve.swift:377` — the **other** `Int(` in that file; the existing
+  `placeable` filter screens finiteness but not magnitude. Widen that predicate, do not add a
+  second guard.
+- `Fluent API/Templates/StandardTemplates.swift:1186` — `loanTermYears`; `nan` already screened
+  by `> 0`, `+inf` is not. Extend the guard at `:1102`.
+- `Stochastic/JumpDiffusion.swift:209` — `jumpIntensity: .infinity` passes `> 0`. Weakest.
+
+### 2. `altmanZScore` on a period the statements do not cover — VERIFIED, unfixed
+
+Measured this session:
+
+    period covered   -> Z = 5.92  (safe)
+    period NOT covered -> Z = 0.00 (DISTRESS), totalAssets[period] == nil
+
+A solvent company scores "high bankruptcy risk within 2 years" because the caller asked about a
+quarter outside its books. This is the **third** path into the guard at
+`Financial Statements/CreditMetrics.swift:244`, which already carries a nine-line comment
+justifying zero for *a firm with no assets* — the comment never mentions an uncovered period.
+`piotroskiScore` is worse: it takes `period` *and* `priorPeriod` and thresholds on both, so an
+uncovered prior period silently awards the "increasing ROA" point.
+
+### 3. Phase 2 — the plan's scoping was WRONG; corrected findings
+
+`CONTAMINATED_INPUT_SWEEP_PLAN.md` §2.1 says the `?? 0` class lives in Time Series. **It does
+not.** Time Series' 78 hits are `DateComponents.year/month/day ?? 0` — Foundation calendar
+unwraps, a different shape entirely (a missing component silently becomes year 0). Network's 20
+are `[Node: Double]` accumulators, correct by construction.
+
+The real class is **75 sites in Financial Statements (63), Model Definition, Diagnostics and
+Industry Models**, top files `CreditMetrics.swift` (25) and `FinancialPeriodSummary.swift` (20).
+
+A design note was produced and its §3.7 clause is ready to paste into the contract. Its findings:
+- `TimeSeries` **cannot** distinguish "before the series starts" from "a hole in the middle" —
+  `periods` is derived from the value keys (`self.periods = valueDict.keys.sorted()`), and
+  `Period: Comparable` sorts **type-first**, so `periods.first`/`.last` do not bound a span.
+- Therefore the rule must be **"narrow the domain, don't fabricate the observation"**, which
+  `TimeSeries.zip(with:)` already does and which needs **no API change**.
+- `FinancialPeriodSummary.init` is declared `throws` and contains **zero `throw` statements**;
+  it fills 20 fields with fabricated zeros for any period. Highest-value fix, and the one most
+  likely to turn fixtures red — budget for fixture repair, not for the guard.
+- Recommendation: land §3.7, fix `workingCapitalTurnover` and `altmanZScore` now, defer
+  `FinancialPeriodSummary` and `piotroskiScore` to a deliberate pass.
+
+### 4. Phase 3 — two probe harnesses were authored and LOST with the agent context
+
+Re-author them; it is one agent each, ~5 minutes. Targets and the questions that matter:
+
+**Streaming** — the point is that it is **stateful**, so the probe must test RECOVERY: feed N
+clean values, then one `.nan`, then N more clean, and print every emitted element. Cover
+`rollingMean` vs `rollingStatistics` (incremental `runningSum -= evicted` cannot subtract a NaN
+back out; the recomputing sibling is the control), `rollingVariance` (reverse-Welford, same),
+`cusum` (does `Swift.max(0, nan)` erase accumulated evidence of a real shift?), `ewma`
+(`outOfControl` false forever after contamination), `detectSeasonalAnomalies` (per-season
+poisoning — put a real 999 spike in the same season position later in the stream),
+`compositeAnomalyScore`, `detectBreakpoints` and `detectChangePoints` (does one NaN suppress an
+unmistakable 10→50 level shift?), `forecastErrors`. Exclude `detectOutliers`/`detectTrend`, fixed.
+
+**Time Series** — two questions. (a) contamination at first/middle/last (position-dependence is
+itself the finding); (b) **a genuine gap with no NaN at all** — months 1,2,4,5 with no month 3 —
+against a dense control and a zero-filled control. Watch `aggregate(to:.quarterly,.average)`:
+Q1 divided by "months we happen to have" rather than months in the quarter. Also `cagr`
+(`startValue > T.zero` is false for NaN → returns 0, "no growth"), `forecastError` (`mape` has an
+explicit `isNaN ? T.zero` → a **perfect** forecast score for unscoreable data),
+`decomposeTimeSeries` (residual `T(1)` = "trend × seasonal explains this perfectly"), and
+`ExponentialTrend.fit` (throws "requires all positive values" for a NaN — wrong diagnosis).
+
+## Method — these each cost something to learn
+
+- **Probe before theorising.** Several agent predictions were too strong and dissolved on
+  measurement; two of my own hypotheses were wrong.
+- **Write the test red first; keep controls that pass on both sides.** Fixing 3 of 5 clamp sites
+  left two tests red, which found the remaining pair plus two inline copies grep had missed.
+- **The fix is where the new bugs come from.** The knapsack fix took three attempts, each caught
+  by a *different* trap.
+- **Measure control values, never recall them.** Fabricated expected values were caught twice.
+- **Agent findings are claims until measured.** 295 triaged sites, 82% legitimate.
+- **Do not fan out before the contract is frozen** — the defect class *is* inconsistency.
+- **A gate run from `.claude/worktrees/` examines 0 files and prints PASSED.** Agents must not
+  self-certify; they author probes, one process executes them.
+- **Do not run parallel `swift build`s** — this machine killed runs twice for memory pressure.
+- `swift test --filter` matches **type** names, not `@Suite` display names.
+- Never put a bare `cat > file` before a heredoc; it eats the heredoc and leaves a 0-byte file.
+
+## Known non-defects — do not re-report
+
+`LMEDiagnostics` ×3 (throws before the guards are reachable; variance floored at `ulpOfOne`),
+`postHocTests:233` (`normalRangeCDF` unreachable — `:304` fires first), `SimplexSolver:606`
+(`1.0` is a genuine no-op scale), `ManufacturingModel` zero-production unit cost (**0 is correct**
+— at zero output there are no units to carry a cost; an unconstrained cost-minimisation is the
+badly-posed part, and two existing tests pin it), the `RetailModel` `!=` NaN path (already
+correct), the weighted CCC overload (does not exist).
+
+## CI
+
+`Release Tests` → **Thread Sanitizer (macOS)** has failed twice, both cleared by a re-run on
+identical code. Only that job; Release Tests pass on ubuntu-24.04 and macos-26 and plain CI is
+green. The log stops **mid-build** with no error text and the workflow timeout (120 min) is never
+approached. Hypothesis is runner memory pressure — **unproven**; the honest next step is a
+diagnostic on that job, not a guess. Do not treat a TSan-only failure as a code regression
+without checking the other two jobs first.
