@@ -148,7 +148,15 @@ public struct HazardRateCurve<T: Real & BinaryFloatingPoint & Sendable>: Sendabl
             protectionLeg += df * marginalDefault * lossGivenDefault
         }
 
-        // Fair spread: protection / annuity
+        // Fair spread: protection / annuity.
+        //
+        // A `nan` annuity — one bad hazard rate on the curve makes `integrateHazardRate` and
+        // therefore every survival probability `nan` — fails `> 0` and used to return zero: a
+        // fair spread of 0 bp, i.e. protection on this name is free because it cannot default.
+        // On a credit screen that ranks or thresholds fair spreads, the one name that could
+        // not be evaluated sorted to the safest position in the book. `defaultProbability` on
+        // the same object propagates correctly, so the two accessors disagreed about one curve.
+        guard !premiumAnnuity.isNaN else { return premiumAnnuity }
         guard premiumAnnuity > T.zero else { return T.zero }
         return protectionLeg / premiumAnnuity
     }

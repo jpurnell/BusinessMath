@@ -174,6 +174,10 @@ public struct DiscountCurve: Sendable {
             return -log(firstDF) / firstT
         }
         let df = discountFactor(at: tenor)
+        // A zero rate is not a refusal: 0% is a real quote, and in a market with negative
+        // rates it is mid-range, so it sorts, thresholds and prices like one. Meanwhile
+        // `discountFactor(at:)` on the same curve correctly returns `nan` for the same point.
+        guard !df.isNaN else { return df }
         guard df > 0 else { return 0.0 }
         return -log(df) / tenor // fp-safety:disable — tenor > 1e-15 from guard above
     }
@@ -200,6 +204,7 @@ public struct DiscountCurve: Sendable {
         }
         let df1 = discountFactor(at: t1)
         let df2 = discountFactor(at: t2)
+        guard !df1.isNaN, !df2.isNaN else { return Double.nan }
         guard df1 > 0, df2 > 0 else { return 0.0 }
         return -(log(df2) - log(df1)) / interval // fp-safety:disable — abs(interval) > 1e-15 from guard above
     }
@@ -351,7 +356,16 @@ public struct DiscountCurve: Sendable {
             return DiscountCurve(asOfDate: asOfDate, tenors: [], discountFactors: [])
         }
 
-        let sorted = parRates.sorted { $0.tenor < $1.tenor }
+        // `Int(entry.tenor)` below traps outright on a non-finite tenor ("Double value cannot
+        // be converted to Int"), and `$0.tenor < $1.tenor` is false in both directions for a
+        // `nan`, so the sort's order is unspecified as well. A tenor that cannot be placed on
+        // the year grid cannot contribute a knot; a bad *rate* is handled in the loop instead,
+        // where it belongs.
+        let placeable = parRates.filter { $0.tenor.isFinite }
+        guard !placeable.isEmpty else {
+            return DiscountCurve(asOfDate: asOfDate, tenors: [], discountFactors: [])
+        }
+        let sorted = placeable.sorted { $0.tenor < $1.tenor }
 
         // We store DFs at all integer years up to the maximum tenor
         // so that intermediate payment dates are always available.
@@ -383,7 +397,24 @@ public struct DiscountCurve: Sendable {
             // one that applies when nothing is quoted at year 1.
             let lastKnownYear = prevParYear
             let lastKnownDF: Double = lastKnownYear > 0 ? (dfMap[lastKnownYear] ?? 1.0) : 1.0
-            guard lastKnownDF > 0 else { continue }
+
+            // `solveTerminalDiscountFactor` floors its result at 1e-10, so this can only fail
+            // on a `nan`. It used to `continue` *without advancing `prevParYear`*, so the next
+            // quote re-read the same bad anchor and was dropped too, and so on: five quotes
+            // with the 3y contaminated returned tenors [1, 2, 3] instead of [1 ... 10]. A
+            // ten-year curve silently became a three-year one.
+            //
+            // Later tenors genuinely do depend on earlier ones in a bootstrap, so everything
+            // from here on is unknown — but unknown and absent are different answers. Record
+            // `nan` across the segment and advance, so the grid keeps its shape and a caller
+            // can see which knots could not be solved.
+            guard lastKnownDF > 0 else {
+                for g in (lastKnownYear + 1)...year where g >= 1 {
+                    dfMap[g] = Double.nan
+                }
+                prevParYear = year
+                continue
+            }
             let lnDFLast: Double = lastKnownYear > 0 ? log(lastKnownDF) : 0.0
 
             let sumKnown = annuityOfSettledYears(dfMap, through: lastKnownYear)
