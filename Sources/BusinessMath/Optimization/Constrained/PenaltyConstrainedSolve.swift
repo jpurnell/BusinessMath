@@ -26,6 +26,12 @@ internal func constraintViolation<V: VectorSpace>(
 	if constraint.isEquality {
 		return value < V.Scalar.zero ? -value : value
 	}
+	// `V.Scalar.maximum` is IEEE `maxNum`, which treats a NaN as *missing* — so
+	// `maximum(0, nan)` is `0`, reporting that a constraint nobody could evaluate is satisfied
+	// exactly. A constraint closure returns NaN whenever a heuristic explores where the user's
+	// `log`, `sqrt` or division by a decision variable is undefined, which is ordinary during a
+	// search. The equality branch above already propagates, because `nan < 0` is false.
+	guard !value.isNaN else { return value }
 	return V.Scalar.maximum(V.Scalar.zero, value)
 }
 
@@ -46,6 +52,10 @@ internal func worstConstraintViolation<V: VectorSpace>(
 	var worst = V.Scalar.zero
 	for constraint in constraints {
 		let amount = constraintViolation(of: constraint, at: point)
+		// `amount > worst` is false for a NaN, so an unevaluable constraint would leave `worst`
+		// at zero and the point would certify as feasible. A constraint that cannot be
+		// evaluated dominates: nothing is known about feasibility here.
+		if amount.isNaN { return amount }
 		if amount > worst { worst = amount }
 	}
 	return worst

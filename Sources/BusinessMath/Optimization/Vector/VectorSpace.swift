@@ -149,6 +149,10 @@ public extension VectorSpace {
 	func cosineSimilarity(with other: Self) -> Scalar {
 		let dotProduct = self.dot(other)
 		let norms = self.norm * other.norm
+		// Since `norm` learned to return `nan` for a wholly contaminated vector, this guard
+		// can see one — and `0` is not neutral on a [-1, 1] scale, it outranks every genuinely
+		// dissimilar candidate. The documented `0` is for a *zero-norm* vector and is kept.
+		guard !norms.isNaN else { return norms }
 		guard norms > Scalar(0) else { return Scalar(0) }
 		return dotProduct / norms
 	}
@@ -1413,8 +1417,14 @@ extension VectorN {
 	public func angle(with other: VectorN<T>) -> T {
 		let dotProduct = self.dot(other)
 		let norms = self.norm * other.norm
+		// An angle of 0 radians means "the same direction" — the best possible match — so a
+		// contaminated vector would rank as an exact hit. Note the clamp below would produce
+		// the same 0 even without the guard: `Swift.min(1, .nan)` is `1`, and `acos(1)` is 0.
+		guard !norms.isNaN else { return norms }
 		guard norms > T(0) else { return T(0) }
-		let cosAngle = Swift.max(-T(1), Swift.min(T(1), dotProduct / norms))
+		let ratio = dotProduct / norms
+		guard !ratio.isNaN else { return ratio }
+		let cosAngle = Swift.max(-T(1), Swift.min(T(1), ratio))
 		return T.acos(cosAngle)
 	}
 }

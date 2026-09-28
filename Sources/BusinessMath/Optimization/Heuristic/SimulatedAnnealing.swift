@@ -342,6 +342,17 @@ public struct SimulatedAnnealing<V: VectorSpace>: MultivariateOptimizer where V.
     ///   - temperature: Current annealing temperature, strictly positive.
     /// - Returns: Acceptance probability in `[0, 1]`.
     static func acceptanceProbability(deltaE: V.Scalar, temperature: Double) -> Double {
+        // `deltaE > 0` is false for a NaN, so an unevaluable move used to fall into the
+        // "strict improvement" arm and be accepted with certainty. Worse than the single bad
+        // move: `currentEnergy` then became NaN and stayed NaN, since every later
+        // `deltaE` is `x - nan`, so the Metropolis test was switched off for the rest of the
+        // schedule and the walker random-walked at full step size to a "converged" finish.
+        //
+        // Zero rather than `nan` here, deviating from the contract's default for a
+        // non-throwing numeric: this is a decision probability, not a measurement, and the
+        // honest answer to "should I accept a move I cannot evaluate" is no. It also keeps
+        // the documented `[0, 1]` return type honest.
+        guard !deltaE.isNaN else { return 0.0 }
         guard deltaE > V.Scalar.zero else { return 1.0 }
         guard temperature > 0 else { return 0.0 }
         return exp(-Double(deltaE) / temperature)
