@@ -194,7 +194,13 @@ public struct ManufacturingModel: Sendable {
     /// - Returns: Number of units needed to break even
     public func calculateBreakEvenUnits() -> Double {
         let cmPerUnit = calculateContributionMarginPerUnit()
-        guard cmPerUnit > 0 else { return 0 }
+        // A non-positive contribution margin means break-even is never reached: the product loses
+        // money on every unit sold. Returning `0` said the opposite — already past
+        // break-even from the first one, the best possible value on a "how much do I
+        // need" scale. The guard was written against a division by zero and silently
+        // took the negative case with it.
+        guard !cmPerUnit.isNaN else { return .nan }
+        guard cmPerUnit > 0 else { return .infinity }
         return monthlyOverhead / cmPerUnit // fp-safety:disable — guarded above
     }
 

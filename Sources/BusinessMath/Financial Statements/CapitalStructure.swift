@@ -54,7 +54,14 @@ public func wacc(
 ) -> Double {
     let totalValue = equityValue + debtValue
 
-    // Handle edge case of zero total value
+    // Handle edge case of zero total value.
+    //
+    // `nan > 0` is false too, so an unvaluable equity or debt stake came out of this
+    // door and reported a weighted average cost of capital of **zero**: capital is
+    // free. WACC is the hurdle rate, so every project clears `irr > wacc` and every
+    // NPV discounted at it is the undiscounted sum. A firm with genuinely no capital
+    // keeps the documented `0`.
+    guard !totalValue.isNaN else { return Double.nan }
     guard totalValue > 0 else { return 0.0 }
 
     let equityWeight = equityValue / totalValue
@@ -290,6 +297,11 @@ public struct CapitalStructure {
 
     /// Proportion of financing from debt (D / (D+E))
     public var debtRatio: Double {
+        // Zero leverage is the safest reading on any covenant or credit screen, so an
+        // unvaluable capital structure reported as the most conservatively financed in
+        // the book. The identical guard in `equityRatio` below is *correct* — zero
+        // equity is the alarming end — and the two must not be tidied into agreement.
+        guard !totalValue.isNaN else { return Double.nan }
         guard totalValue > 0 else { return 0.0 }
         return debtValue / totalValue
     }

@@ -240,7 +240,11 @@ public struct RetailModel: Sendable {
     /// - Returns: Days inventory outstanding
     public func calculateDaysInventoryOutstanding() -> Double {
         let turnover = calculateInventoryTurnover()
-        guard turnover > 0 else { return 0 }
+        // Days inventory outstanding is lower-is-better, so `0` was the best possible
+        // value: stock that never moves was reported as selling through the same day,
+        // and any "DIO under 60 days" check passed unconditionally.
+        guard !turnover.isNaN else { return .nan }
+        guard turnover > 0 else { return .infinity }
         return 365.0 / turnover // fp-safety:disable — guarded above
     }
 
@@ -311,7 +315,13 @@ public struct RetailModel: Sendable {
     /// - Returns: Monthly revenue needed to break even
     public func calculateBreakEvenRevenue() -> Double {
         let grossMargin = calculateGrossMargin()
-        guard grossMargin > 0 else { return 0 }
+        // A non-positive gross margin means break-even is never reached: the product loses
+        // money on every unit sold. Returning `0` said the opposite — already past
+        // break-even from the first one, the best possible value on a "how much do I
+        // need" scale. The guard was written against a division by zero and silently
+        // took the negative case with it.
+        guard !grossMargin.isNaN else { return .nan }
+        guard grossMargin > 0 else { return .infinity }
         return operatingExpenses / grossMargin // fp-safety:disable — guarded above
     }
 
