@@ -339,7 +339,18 @@ public struct SaaSModel: Sendable {
         let startMRR = try calculateMRR(forMonth: startMonth)
         let endMRR = try calculateMRR(forMonth: endMonth)
 
-        guard startMRR > 0 else { return 0 }
+        // A growth rate of 0 is *flat* — mid-table in any ranking, and it reads as a healthy
+        // stable business. Measured: a model whose MRR could not be computed scored 0.0 and
+        // sorted above every genuinely contracting peer. This function already throws.
+        guard startMRR.isFinite else {
+            throw BusinessMathError.dataQuality(
+                message: "Growth rate requires a finite starting MRR",
+                context: ["startMRR": "\(startMRR)"])
+        }
+        guard startMRR > 0 else {
+            throw BusinessMathError.divisionByZero(
+                context: "growth rate from a zero MRR base is undefined, not flat")
+        }
         return (endMRR - startMRR) / startMRR
     }
 

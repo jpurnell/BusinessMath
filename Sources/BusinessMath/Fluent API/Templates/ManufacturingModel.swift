@@ -141,6 +141,17 @@ public struct ManufacturingModel: Sendable {
     /// - Returns: Total cost per unit
     public func calculateUnitCost(atCapacityUtilization capacityUtilization: Double) -> Double {
         let unitsProduced = productionCapacity * capacityUtilization
+        // A `nan` utilisation is not zero production — it is an unusable input, and returning a
+        // cost of 0 for it says production was free.
+        guard !unitsProduced.isNaN else { return .nan }
+
+        // Zero production keeps its documented answer of 0. NOTE this is a deliberate prior
+        // decision, pinned by `AdditionalModelTests.zeroCapacityDoesNotDivide` ("returns zero
+        // from every quotient rather than an infinity") and by
+        // `DegenerateDivisorGuardTests.manufacturingZeroCapacity`. It is worth revisiting:
+        // measured, sweeping utilisation for the cheapest unit cost picks 0% capacity outright,
+        // because 0 is the best value on a cost scale. Overhead spread over no units is
+        // arguably unbounded rather than free. Left as-is pending that call.
         guard unitsProduced > 0 else { return 0 }
         let overheadPerUnit = monthlyOverhead / unitsProduced // fp-safety:disable — guarded above
         return variableCostPerUnit + overheadPerUnit
@@ -151,6 +162,9 @@ public struct ManufacturingModel: Sendable {
     /// - Parameter production: Number of units produced
     /// - Returns: Overhead cost per unit
     public func calculateOverheadPerUnit(atProduction production: Double) -> Double {
+        // See `calculateUnitCost(atCapacityUtilization:)`: a `nan` production is an unusable
+        // input; zero production keeps its documented 0 pending the same call.
+        guard !production.isNaN else { return .nan }
         guard production > 0 else { return 0 }
         return monthlyOverhead / production // fp-safety:disable — guarded above
     }

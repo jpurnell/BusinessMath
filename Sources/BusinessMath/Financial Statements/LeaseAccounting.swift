@@ -803,8 +803,19 @@ public func leasePaymentsPV(
     periods: Int,
     discountRate: Double
 ) -> Double {
-    // PV of annuity formula
-    guard discountRate > 0 else {
+    // PV of annuity formula.
+    //
+    // `nan > 0` is false, so a contaminated rate returned the undiscounted sum — a confident,
+    // finite, plausible present value. And a *negative* rate, ordinary in EUR markets, came
+    // out the same door even though the annuity formula below handles it correctly: measured
+    // at r = -0.02 this returned 5000.00 against a true 5314.58. Understating the lease PV
+    // biases `netAdvantageToLeasing = buyPV - leasePV` upward, which flips
+    // `LeaseVsBuyAnalysis.shouldLease` from false to true.
+    //
+    // `discountRate == 0` genuinely is the undiscounted sum — the limit of the annuity as the
+    // rate goes to zero — and keeps its answer byte for byte.
+    guard !discountRate.isNaN else { return .nan }
+    guard discountRate != 0 else {
         return periodicPayment * Double(periods)
     }
 

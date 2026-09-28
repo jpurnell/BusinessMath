@@ -273,8 +273,16 @@ public struct RetailModel: Sendable {
     ///
     /// - Returns: Net profit margin percentage
     public func calculateNetProfitMargin() -> Double {
-        guard monthlyRevenue != 0 else { return 0 }
-        return calculateNetProfit() / monthlyRevenue // fp-safety:disable — guarded above
+        let netProfit = calculateNetProfit()
+        // The `!=` comparison is deliberately kept: `nan != 0` is true, so contamination still
+        // propagates through the division below. Only the exact-zero arm changes. A margin of
+        // 0 is exactly break-even, so it passed every `margin >= 0` screen and outranked every
+        // loss-making comparator — measured -inf against a reported 0.0 for a month with no
+        // revenue but real operating expenses.
+        guard monthlyRevenue != 0 else {
+            return netProfit == 0 ? .nan : (netProfit < 0 ? -.infinity : .infinity)
+        }
+        return netProfit / monthlyRevenue // fp-safety:disable — guarded above
     }
 
     /// Calculate net profit margin for a specific month.
@@ -284,7 +292,14 @@ public struct RetailModel: Sendable {
     public func calculateNetProfitMargin(forMonth month: Int) -> Double {
         let netProfit = calculateNetProfit(forMonth: month)
         let revenue = calculateRevenue(forMonth: month)
-        guard revenue != 0 else { return 0 }
+        // The `!=` comparison is deliberately kept: `nan != 0` is true, so contamination still
+        // propagates through the division below. Only the exact-zero arm changes. A margin of
+        // 0 is exactly break-even, so it passed every `margin >= 0` screen and outranked every
+        // loss-making comparator — measured -inf against a reported 0.0 for a month with no
+        // revenue but real operating expenses.
+        guard revenue != 0 else {
+            return netProfit == 0 ? .nan : (netProfit < 0 ? -.infinity : .infinity)
+        }
         return netProfit / revenue // fp-safety:disable — guarded above
     }
 
