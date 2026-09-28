@@ -301,6 +301,14 @@ public struct ConsolidatedStatements<T: Real & Sendable>: Sendable where T: Coda
 
 		guard !values.isEmpty else { return nil }
 
+		// `FinancialPeriodSummary` guards its margins with `if revenue != T(0)`, and
+		// `nan != 0` is *true*, so a contaminated revenue divides through to a `nan` margin and
+		// reaches this array. `sorted()` is then unspecified — the *valid* peers come back out
+		// of order — and `sorted[mid]` returns an arbitrary entity's figure as the cohort
+		// median. `nil` already means "no entities", so an unusable cohort says `nan` instead:
+		// a different answer from "nobody reported".
+		guard values.allSatisfy({ $0.isFinite }) else { return T.nan }
+
 		let sorted = values.sorted()
 		let mid = sorted.count / 2
 

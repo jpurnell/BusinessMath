@@ -806,6 +806,7 @@ extension Investment {
 /// - ``Investment/npv``
 /// - ``Investment/irr``
 /// - ``Investment/profitabilityIndex``
+
 public struct InvestmentPortfolio: Sendable {
     /// Array of investments in the portfolio.
     ///
@@ -842,7 +843,16 @@ public struct InvestmentPortfolio: Sendable {
 
     /// Get investments ranked by NPV (highest first).
     public func rankedByNPV() -> [Investment] {
-        investments.sorted { $0.npv > $1.npv }
+        // Two comparisons plus the original position, rather than one `>`. A single
+        // comparison is not a strict weak ordering when a key is `nan` — `>` is false in both
+        // directions — and `sorted(by:)` is then unspecified, so the **clean** projects come
+        // back in the wrong order. This is a capital-allocation ranking: a caller funds the
+        // top N, and a lower-NPV project can be funded ahead of a higher one with no symptom.
+        // The tie-break on the original index also makes the result stable, which `sorted(by:)`
+        // does not otherwise promise.
+        investments.enumerated().sorted { lhs, rhs in
+            ordersBefore((lhs.element.npv, lhs.offset), (rhs.element.npv, rhs.offset))
+        }.map(\.element)
     }
 
     /// Get investments ranked by IRR (highest first).
@@ -851,13 +861,22 @@ public struct InvestmentPortfolio: Sendable {
             guard let irr = inv.irr else { return nil }
             return (inv, irr)
         }
-        .sorted { $0.1 > $1.1 }
-        .map { $0.0 }
+        .enumerated()
+        .sorted { lhs, rhs in
+            // `compactMap` above filters `nil` IRRs but not non-finite ones.
+            ordersBefore((lhs.element.1, lhs.offset), (rhs.element.1, rhs.offset))
+        }
+        .map { $0.element.0 }
     }
 
     /// Get investments ranked by profitability index (highest first).
     public func rankedByPI() -> [Investment] {
-        investments.sorted { $0.profitabilityIndex > $1.profitabilityIndex }
+        // See `rankedByNPV()`. `profitabilityIndex` returns `nan` for a contaminated cash
+        // flow, and PI is the standard capital-rationing rank.
+        investments.enumerated().sorted { lhs, rhs in
+            ordersBefore((lhs.element.profitabilityIndex, lhs.offset),
+                         (rhs.element.profitabilityIndex, rhs.offset))
+        }.map(\.element)
     }
 
     /// Total NPV of all investments.
@@ -1017,5 +1036,34 @@ extension Investment: CustomStringConvertible {
         }
 
         return result
+    }
+}
+
+/// Orders two ranking keys highest-first, placing an unevaluable key last.
+///
+/// A lone `>` is not a strict weak ordering when a key is `nan`: the comparison is false in
+/// both directions, so `sorted(by:)` is unspecified and the **clean** elements come back in the
+/// wrong order. These are capital-allocation rankings — a caller funds the top N — so a
+/// lower-NPV project could be funded ahead of a higher one with no symptom.
+///
+/// Falling through to a tie-break is not enough either. That makes a `nan` key compare *equal*
+/// to every other element, and equality in a strict weak ordering must be transitive: with
+/// `bad == high`, `bad == low` and `high > low` the relation contradicts itself. An unevaluable
+/// key therefore needs a definite position, and last is the honest one — it cannot be ranked,
+/// so it is not ranked above anything.
+///
+/// - Parameters:
+///   - lhs: Left key and its original position.
+///   - rhs: Right key and its original position.
+/// - Returns: `true` when `lhs` sorts before `rhs`.
+internal func ordersBefore(_ lhs: (key: Double, offset: Int), _ rhs: (key: Double, offset: Int)) -> Bool {
+    switch (lhs.key.isNaN, rhs.key.isNaN) {
+    case (true, true): return lhs.offset < rhs.offset
+    case (true, false): return false
+    case (false, true): return true
+    case (false, false):
+        if lhs.key > rhs.key { return true }
+        if rhs.key > lhs.key { return false }
+        return lhs.offset < rhs.offset
     }
 }
