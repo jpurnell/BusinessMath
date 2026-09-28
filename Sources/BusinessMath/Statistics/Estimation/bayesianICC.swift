@@ -297,6 +297,19 @@ public func bayesianICC<T: Real>(
             context: "Bayesian ICC requires at least 2 subjects (rows)")
     }
 
+    // The `[[T?]]` overload takes the same screen as its non-optional sibling above: a `nan`
+    // among the *present* cells makes every mean square `nan`, every variance component `nan`,
+    // and `iccFromVarianceComponents` then answers its own `denominator > 0` test with `T.zero`
+    // — so every draw comes back exactly 0 and the posterior reports a confident "poor
+    // agreement" with a credible interval of [0, 0]. A `nil` cell is missing data, which this
+    // overload exists to handle, and is left alone.
+    let invalid = ratings.reduce(0) { $0 + $1.compactMap { $0 }.filter { !$0.isFinite }.count }
+    guard invalid == 0 else {
+        throw BusinessMathError.dataQuality(
+            message: "Bayesian ICC requires finite ratings",
+            context: ["invalid_count": "\(invalid)"])
+    }
+
     let k = ratings[0].count
     guard k >= 2 else {
         throw BusinessMathError.insufficientData(

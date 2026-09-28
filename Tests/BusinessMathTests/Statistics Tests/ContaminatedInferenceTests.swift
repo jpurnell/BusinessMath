@@ -131,6 +131,23 @@ struct ContaminatedInferenceTests {
         #expect(result.iccSamples.allSatisfy { $0.isFinite })
     }
 
+    /// The `[[T?]]` overload takes the same screen; a `nil` cell is missing data and stays
+    /// legitimate, a `nan` among the present cells is not.
+    @Test("BayesianICC_OptionalOverload_RefusesContaminationButNotMissingness")
+    func bayesianICCOptionalOverloadRefusesContaminationButNotMissingness() throws {
+        let config = GibbsConfig<Double>(iterations: 200, burnIn: 100, thinning: 1,
+                                         chains: 2, seed: 20_260_928)
+        let contaminated: [[Double?]] = [[9, 8, 8], [7, 6, 7], [5, .nan, 5],
+                                         [8, 9, 8], [6, 5, 6], [4, 4, 5]]
+        #expect(throws: BusinessMathError.self) {
+            try bayesianICC(contaminated, model: .twoWayRandom, config: config)
+        }
+        let missing: [[Double?]] = [[9, 8, 8], [7, 6, 7], [5, nil, 5],
+                                    [8, 9, 8], [6, 5, 6], [4, 4, 5]]
+        let result = try bayesianICC(missing, model: .twoWayRandom, config: config)
+        #expect(result.iccMean.isFinite, "a nil cell is missing data, not contamination")
+    }
+
     // MARK: - Diagnosis, not just refusal
 
     /// Contamination and a genuinely constant column produced identical error text.
