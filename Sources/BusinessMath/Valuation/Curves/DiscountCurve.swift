@@ -111,6 +111,11 @@ public struct DiscountCurve: Sendable {
     /// - Returns: The interpolated (or extrapolated) discount factor.
     public func discountFactor(at tenor: Double) -> Double {
         // DF(0) = 1 by definition
+        // `nan > 0` is false, so an unusable tenor returned 1.0 — the maximum discount
+        // factor, full face value, indistinguishable from the correct `DF(0) = 1`. This
+        // file's `zeroRate` and `forwardRate` already propagate; this makes the third
+        // accessor agree with them.
+        guard !tenor.isNaN else { return Double.nan }
         guard tenor > 0 else { return 1.0 }
 
         // Empty curve: return 1

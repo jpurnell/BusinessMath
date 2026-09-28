@@ -53,6 +53,12 @@ public struct HazardRateCurve<T: Real & BinaryFloatingPoint & Sendable>: Sendabl
     /// - Parameter time: Time horizon in years
     /// - Returns: Survival probability (0 to 1)
     public func survivalProbability(time: T) -> T {
+        // `nan > 0` is false, so an unusable time returned a survival probability of 1 —
+        // certain survival, the safest possible reading, for a name nobody could evaluate.
+        // `ConstantHazardRate` and `TimeVaryingHazardRate` in `HazardRateModel.swift` have
+        // no such guard and propagate correctly; this is the member of the family that
+        // drifted. `time == 0` genuinely is certain survival and keeps its answer.
+        guard !time.isNaN else { return T.nan }
         guard time > T.zero else { return T(1) }
 
         let integral = integrateHazardRate(upTo: time)
@@ -83,6 +89,9 @@ public struct HazardRateCurve<T: Real & BinaryFloatingPoint & Sendable>: Sendabl
 	///   - t2: End time
     /// - Returns: Forward hazard rate
     public func forwardHazardRate(from t1: T, to t2: T) -> T {
+        // See `survivalProbability(time:)`: a zero forward hazard is the safe end, and both
+        // comparisons are false for a `nan`.
+        guard !t1.isNaN, !t2.isNaN else { return T.nan }
         guard t2 > t1 else { return T.zero }
 
         let integral2 = integrateHazardRate(upTo: t2)

@@ -220,6 +220,21 @@ public func bayesianICC<T: Real>(
 
     // ANOVA initialization — the method-of-moments estimates, which start the chain near where
     // it is going. Only available here: the missing-data overload cannot form these mean squares.
+    // `twoWayANOVA` has no finiteness check, so a contaminated rating makes every mean
+    // square `nan`, the initial variance components `nan`, and `sampleInverseGamma`'s
+    // `scale > 0` guard fail on every sweep — so `current` stays `nan` for the whole run.
+    // `iccFromVarianceComponents` then answers its own `denominator > 0` test with `T.zero`,
+    // and **every draw comes back exactly 0**. Measured: 400 of 400 draws at 0.0, giving
+    // mean 0, median 0 and a credible interval of [0, 0] — a confident "poor agreement"
+    // finding with a tight interval, sitting beside a `sigmaSubjectsMean` of `nan` in the
+    // same result object.
+    let invalid = ratings.reduce(0) { $0 + $1.filter { !$0.isFinite }.count }
+    guard invalid == 0 else {
+        throw BusinessMathError.dataQuality(
+            message: "Bayesian ICC requires finite ratings",
+            context: ["invalid_count": "\(invalid)"])
+    }
+
     let anova = try twoWayANOVA(ratings)
     let nT = T(n)
     let kT = T(k)

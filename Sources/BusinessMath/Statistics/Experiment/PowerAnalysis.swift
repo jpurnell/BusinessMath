@@ -225,9 +225,17 @@ extension Experiment {
 			return zSum * standardDeviation * T.sqrt(ratio)
 
 		case let .proportion(baseline):
-			let belowZero = baseline < T(0)
-			let aboveOne = baseline > T(1)
-			guard !belowZero, !aboveOne else {
+			// Written as a positive range test rather than two negated ones, because
+			// `nan < 0` and `nan > 1` are both false: a contaminated baseline passed straight
+			// through and reached `bisectEffect`, where `high = 1 - baseline` is `nan`,
+			// `nan > 0` fails, and the bisection returned **0** — "this sample size detects an
+			// arbitrarily small effect", the most optimistic possible answer to a sizing
+			// question. Measured: 0.0 at perArm 1565 and at perArm 1 alike, the answer being
+			// independent of sample size being the tell.
+			//
+			// `achievedPower` and `sampleSizePerArm` on the same object already refuse it, via
+			// `validatedProportions`; this is the entry point that did not.
+			guard baseline >= T(0), baseline <= T(1) else {
 				throw ExperimentError.invalidProportion(Double(baseline))
 			}
 			return Self.bisectEffect(

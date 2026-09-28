@@ -77,6 +77,18 @@ public func concordanceCorrelationCoefficient<T: Real>(
 		sxy += dx * dy
 	}
 
+	// A `nan` makes `muX` and so `sxx` `nan`, and `nan > 0` is false — so the zero-variance
+	// guard below caught contamination and reported "x series has zero variance" for data
+	// with no constant column. Measured: the NaN case and a genuinely constant column
+	// produced byte-identical error text, sending a reader hunting for something that is
+	// not there. Right action, wrong diagnosis.
+	let invalid = x.filter { !$0.isFinite }.count + y.filter { !$0.isFinite }.count
+	guard invalid == 0 else {
+		throw BusinessMathError.dataQuality(
+			message: "Concordance correlation requires finite observations",
+			context: ["invalid_count": "\(invalid)"])
+	}
+
 	guard sxx > T.zero else {
 		throw BusinessMathError.divisionByZero(context: "x series has zero variance")
 	}

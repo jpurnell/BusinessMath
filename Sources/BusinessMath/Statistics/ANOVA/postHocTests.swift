@@ -50,6 +50,21 @@ private func validatePostHocInputs<T: Real>(
 			context: "Post-hoc tests require at least 2 groups")
 	}
 
+	// A contaminated group makes `means[i]` `nan`, so `qStat` is `nan`, and
+	// `studentizedRangeCDF`'s `guard q > T.zero` — false for a `nan` — returns 0, giving
+	// `pValue = 1.0, isSignificant: false`: "no evidence whatsoever" for that pair, which is the
+	// most reassuring answer the test can give. Its siblings `bonferroniPostHoc` and
+	// `scheffePostHoc` do refuse the same input, but by way of `tCDF`/`fCDF` throwing about an
+	// incomplete-beta argument or a negative F-statistic — the right action with a diagnosis
+	// that names the wrong thing. One screen here makes all three agree and say why.
+	for group in groups {
+		guard group.allSatisfy({ $0.isFinite }) else {
+			throw BusinessMathError.dataQuality(
+				message: "Post-hoc tests require finite observations",
+				context: ["invalid_count": "\(group.filter { !$0.isFinite }.count)"])
+		}
+	}
+
 	for (i, group) in groups.enumerated() {
 		guard !group.isEmpty else {
 			throw BusinessMathError.insufficientData(

@@ -76,6 +76,17 @@ public struct CapitalAllocationOptimizer<T> where T: Real & Sendable & Codable &
 
 		/// The return on investment (NPV / capital required).
 		public var roi: T {
+			// This is the sole ranking key of the greedy allocator, which sorts on it. A `nan`
+			// `capitalRequired` fired the guard and yielded `0` — measured, that ranks *above*
+			// a project with ROI -2.0, so an unevaluable project read as "breaks even" and
+			// outranked one that destroys value. A `nan` `npv` passed the guard and made the
+			// key itself `nan`, which is worse: the sort predicate stops being a strict weak
+			// ordering and the *valid* projects come back misordered — measured, the highest-ROI
+			// project moved from first place to fourth.
+			//
+			// The `> 0` arm stays for a genuine zero-capital project; only contamination is
+			// diverted.
+			guard !capitalRequired.isNaN, !npv.isNaN else { return T.nan }
 			guard capitalRequired > 0 else { return 0 }
 			return npv / capitalRequired
 		}
@@ -257,7 +268,29 @@ public struct CapitalAllocationOptimizer<T> where T: Real & Sendable & Codable &
 			)
 		}
 
+		// `Int(budget)` and `Int(project.capitalRequired)` below trap on any value that is not
+		// representable as an `Int` — non-finite, or simply enormous — taking the process down
+		// along with every other project in the array. That is the same shape as the
+		// `spearmansRho` and `Int(entry.tenor)` traps found earlier in this sweep. A project
+		// that cannot be sized cannot enter the knapsack, and with a non-throwing signature
+		// dropping it is the only option; an unusable budget allocates nothing.
+		//
+		// Filtered before `n` is taken, so the table and the loop agree on the count.
+		let sizable = Double(budget)
+		guard sizable.isFinite, sizable < Double(Int.max) else {
+			return AllocationResult(
+				allocations: [:],
+				totalNPV: 0,
+				capitalUsed: 0,
+				projectsSelected: []
+			)
+		}
+		let projects = projects.filter {
+			let cost = Double($0.capitalRequired)
+			return cost.isFinite && cost < Double(Int.max) && $0.npv.isFinite
+		}
 		let n = projects.count
+
 		let maxBudget = Int(budget)
 
 		// DP table: dp[i][w] = max NPV using first i projects with budget w

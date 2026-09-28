@@ -145,14 +145,19 @@ public struct ManufacturingModel: Sendable {
         // cost of 0 for it says production was free.
         guard !unitsProduced.isNaN else { return .nan }
 
-        // Zero production keeps its documented answer of 0. NOTE this is a deliberate prior
-        // decision, pinned by `AdditionalModelTests.zeroCapacityDoesNotDivide` ("returns zero
-        // from every quotient rather than an infinity") and by
-        // `DegenerateDivisorGuardTests.manufacturingZeroCapacity`. It is worth revisiting:
-        // measured, sweeping utilisation for the cheapest unit cost picks 0% capacity outright,
-        // because 0 is the best value on a cost scale. Overhead spread over no units is
-        // arguably unbounded rather than free. Left as-is pending that call.
+        // Zero production returns 0, and that is deliberate — pinned by
+        // `AdditionalModelTests.zeroCapacityDoesNotDivide` and
+        // `DegenerateDivisorGuardTests.manufacturingZeroCapacity`.
+        //
+        // It was queried during the contaminated-input sweep, because sweeping utilisation for
+        // the cheapest unit cost picks 0% capacity outright and 0 is the best value on a cost
+        // scale. The answer is that the sweep is the badly-posed part, not this return: at zero
+        // output there are no units to carry a cost, so "cost per unit" has no subject. A model
+        // searching for an operating point should maximise profit, or minimise unit cost
+        // subject to `units >= X`; minimising unit cost unconstrained will always prefer making
+        // nothing, whatever this function returns. Left as it stands on that reasoning.
         guard unitsProduced > 0 else { return 0 }
+
         let overheadPerUnit = monthlyOverhead / unitsProduced // fp-safety:disable — guarded above
         return variableCostPerUnit + overheadPerUnit
     }
