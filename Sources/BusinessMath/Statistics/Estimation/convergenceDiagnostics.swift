@@ -110,6 +110,15 @@ public func effectiveSampleSize<T: Real>(_ samples: [T]) -> Int where T: BinaryF
     }
     variance = variance / nT
 
+    // A `nan` variance fails `> 0` exactly as a zero one does, so a diverged or contaminated
+    // chain came out the door marked "constant sequence" and was handed `n` — every draw
+    // independent, the best mixing a chain can have. Measured on six draws with one `nan`:
+    // the clean chain scored 4 of 6 and the contaminated one 6 of 6, so contamination earned
+    // the *better* convergence certificate. `rHatStatistic` in this file already reports
+    // unusable input at the alarming end, returning 10 to "indicate non-convergence"; this is
+    // the same signal in ESS terms.
+    guard !variance.isNaN else { return 0 }
+
     guard variance > T.zero else {
         // Constant sequence: ESS = n (no autocorrelation structure to speak of)
         return n

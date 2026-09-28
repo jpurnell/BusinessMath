@@ -116,6 +116,16 @@ public func selectBandwidth<T: Real>(
 			required: 2, actual: values.count,
 			context: "Bandwidth selection requires at least 2 values")
 	}
+	// `stdDev` propagates a `nan` and the quartiles below come from `values.sorted()`, whose
+	// order is unspecified with one present — so `silverman` became `nan`, failed `> 0`, and
+	// the guard written for "data has no spread" returned the literal 0.1. Measured against a
+	// clean answer of 0.974: a fabricated constant presented as a selected bandwidth, from a
+	// function whose other guards throw.
+	guard values.allSatisfy({ $0.isFinite }) else {
+		throw BusinessMathError.dataQuality(
+			message: "Bandwidth selection requires finite values",
+			context: ["invalid_count": "\(values.filter { !$0.isFinite }.count)"])
+	}
 
 	let n = T(values.count)
 	let sigma = stdDev(values, .sample)

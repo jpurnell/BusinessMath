@@ -205,6 +205,17 @@ public func percentRank<T: Real & BinaryFloatingPoint>(
 			message: "Significant digits must be at least one",
 			value: "\(significantDigits)", expectedRange: "[1, ∞)")
 	}
+	// `sorted()` is unspecified on a collection containing a `nan` — the *valid* elements come
+	// back out of order — and the interpolation below assumes a monotonic array. Measured: the
+	// same sample ranked 0.0625 with the `nan` in the middle against 0.167 clean, and threw
+	// "outside the set's range" with it at the front. A percent rank that depends on where an
+	// unusable reading sat is not a percent rank.
+	guard values.allSatisfy({ $0.isFinite }) else {
+		throw BusinessMathError.dataQuality(
+			message: "Percent rank requires finite values; the sample cannot be ordered",
+			context: ["invalid_count": "\(values.filter { !$0.isFinite }.count)"])
+	}
+
 	let sorted = values.sorted()
 	guard let smallest = sorted.first, let largest = sorted.last,
 		  value >= smallest, value <= largest else {
