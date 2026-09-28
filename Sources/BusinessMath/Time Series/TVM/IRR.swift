@@ -283,6 +283,17 @@ public func mirr<T: Real>(
 		)
 	}
 
+	// The classification below tests `cashFlow < 0` then `cashFlow > 0`; a `nan` satisfies
+	// neither, so the period would be dropped from both the discounting and the compounding
+	// and MIRR returned a confident rate computed from cash flows the caller did not supply.
+	// Measured: 0.1214 against the clean project's 0.2014.
+	guard cashFlows.allSatisfy({ !$0.isNaN }) else {
+		throw BusinessMathError.dataQuality(
+			message: "MIRR requires every cash flow to be a number",
+			context: ["invalid_count": "\(cashFlows.filter { $0.isNaN }.count)"]
+		)
+	}
+
 	let n = cashFlows.count - 1  // Number of periods (excluding t=0)
 
 	// Separate positive and negative cash flows

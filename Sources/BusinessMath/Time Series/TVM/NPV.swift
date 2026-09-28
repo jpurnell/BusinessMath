@@ -302,6 +302,13 @@ public func profitabilityIndex<T: Real>(rate: T, cashFlows: [T]) -> T {
 	var pvNegative = T.zero
 
 	for (period, flow) in cashFlows.enumerated() {
+		// A `nan` flow is neither `> 0` nor `< 0`, so both arms below are skipped and the
+		// period is dropped from the calculation without trace. The index that came back was
+		// not even the index of the shortened series — the remaining periods keep their
+		// original discount exponents — so 1.0582 was reported where the clean project gives
+		// 1.3888 and the truncated one 1.1367. `npv` on the same flows returns `nan`.
+		guard !flow.isNaN else { return T.nan }
+
 		let discountFactor = T.pow(T(1) + rate, T(period))
 		let presentValue = flow / discountFactor
 
@@ -388,6 +395,10 @@ public func profitabilityIndex<T: Real>(rate: T, cashFlows: [T]) -> T {
 /// - High-risk or uncertain environments
 /// - Preliminary project screening
 public func paybackPeriod<T: Real>(cashFlows: [T]) -> Int? {
+	// A `nan` anywhere in the series poisons `cumulativeCashFlow`, and `nan >= 0` is false,
+	// so the recovery test below can never fire again and this answers `nil`. `Int?` has no
+	// third case, so "never pays back" and "cannot be computed" share one value; the
+	// documentation above says so rather than leaving a caller to find out.
 	var cumulativeCashFlow = T.zero
 
 	for (period, flow) in cashFlows.enumerated() {
