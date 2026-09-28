@@ -857,9 +857,20 @@ public struct AsyncTrendDetectionSequence<Base: AsyncSequence>: AsyncSequence wh
             }
             let rSquared = 1.0 - (ssResidual / ssTotal) // fp-safety:disable — ssTotal is 0 only if all y identical, slope would be 0 and both ss equal
 
-            // Determine direction
+            // Determine direction.
+            //
+            // A `nan` slope fails `abs(slope) < 0.1` and `slope > 0` alike — both comparisons
+            // are false — and used to land in the trailing `else`, which is not "the
+            // remaining case" but "everything that is not the first two". A window containing
+            // one `nan` was therefore reported as a *downward* trend.
+            //
+            // `TrendDirection` has no case for "cannot tell", and adding one would break
+            // exhaustive switches in consumers, so an unusable window reports `.flat`: no
+            // trend detected. Paired with the zero confidence below, that says nothing was
+            // found rather than asserting a direction the data cannot support.
+            let usable = slope.isFinite && rSquared.isFinite
             let direction: TrendDirection
-            if abs(slope) < 0.1 {
+            if !usable || abs(slope) < 0.1 {
                 direction = .flat
             } else if slope > 0 {
                 direction = .upward
@@ -867,10 +878,15 @@ public struct AsyncTrendDetectionSequence<Base: AsyncSequence>: AsyncSequence wh
                 direction = .downward
             }
 
+            // `Swift.min(1, .nan)` returns **1.0**, so clamping an unusable R² produced
+            // *maximum* confidence rather than none — the one value that invites a caller to
+            // act on the direction above.
+            let confidence = usable ? Swift.max(0, Swift.min(1, rSquared)) : 0
+
             let trend = TrendDetection(
                 direction: direction,
                 slope: slope,
-                confidence: Swift.max(0, Swift.min(1, rSquared))
+                confidence: confidence
             )
 
             // Try to slide window for next iteration

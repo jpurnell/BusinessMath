@@ -271,6 +271,13 @@ public func altmanZScore<T: Real>(
 	// carries the whole score above the 2.99 safe-zone threshold, which is where a debt-free
 	// company belongs. With no equity value either the component is 0/0 and contributes
 	// nothing. A negative liability total is incoherent input and is left to divide as before.
+	//
+	// The `marketValue > 0` test below is false for a `nan` as well as for zero, so a NaN
+	// market capitalisation against zero liabilities would fall to the final `else` and
+	// contribute a component of 0 — yielding a finite, confident Z-Score from an input nobody
+	// can value. Screen it first: a company whose equity cannot be valued has no Z-Score.
+	guard !marketValue.isNaN else { return T.nan }
+
 	let d: T
 	if totalLiabilities != T(0) {
 		d = marketValue / totalLiabilities
