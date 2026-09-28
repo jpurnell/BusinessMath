@@ -24,6 +24,12 @@ import Numerics
 ///
 /// Use this function when dealing with uniform distributions, such as for simple random selection processes.
 public func uniformCDF<T: Real>(x: T) -> T {
+    // `x < 0` and `x < 1` are both false for a `nan`, so control used to fall through to the
+    // trailing `return T(1)` — asserting P(X <= x) = 1, the certainty end of the scale, for an
+    // observation nobody can place. `normalCDF` and `logNormalCDF` propagate; this is the
+    // member of the family that drifted.
+    guard !x.isNaN else { return x }
+
     if x < T(0) {
         return T(0)
     }

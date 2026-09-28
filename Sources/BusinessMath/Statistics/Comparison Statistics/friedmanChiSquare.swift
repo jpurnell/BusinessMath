@@ -137,6 +137,12 @@ public func friedmanChiSquareFromRankSums<T: Real>(rankSums: [T], judges: Int, i
 
     let chi2 = multiplier * sigmaValue - tail
 
-    // Ensure non-negative result (can be slightly negative due to floating-point errors)
+    // Ensure non-negative result (can be slightly negative due to floating-point errors).
+    //
+    // `max(T(0), .nan)` returns `0` — the exact centre of the null, "the treatments are
+    // indistinguishable" — so this tidy-up was reporting a confident no-effect finding for
+    // rankings it could not evaluate. The correction is for a value slightly below zero, not
+    // for an absent one.
+    guard !chi2.isNaN else { return chi2 }
     return max(T(0), chi2)
 }

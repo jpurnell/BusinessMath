@@ -123,6 +123,12 @@ public func kendallWFromRankSums<T: Real>(rankSums: [T], judges: Int, items: Int
         s += deviation * deviation
     }
 
+    // A `nan` `s` fails `abs(s) > ulpOfOne` exactly as a zero one does, so this guard — written
+    // for "the rank sums are identical, there is no agreement variance" — was also absorbing
+    // contaminated rankings and reporting measured zero concordance. This function's own
+    // documentation promises `nan` for unusable input, and two other guards below return it.
+    guard !s.isNaN else { return T.nan }
+
     // If S is essentially zero, there's no agreement variance
     guard abs(s) > T.ulpOfOne else {
         return T(0)
@@ -139,7 +145,10 @@ public func kendallWFromRankSums<T: Real>(rankSums: [T], judges: Int, items: Int
     let w = (T(12) * s) / denominator
 
     // Clamp to valid range [0, 1] to handle floating-point errors
-    return max(T(0), min(T(1), w))
+    // `min(T(1), .nan)` returns `1`, so clamping an uncomputable coefficient yields the
+    // *maximum* one. Clamp only a real number; the floating-point tidy-up this guards
+    // against is a value slightly outside [0, 1], not an absent one.
+    return w.isNaN ? w : max(T(0), min(T(1), w))
 }
 
 // MARK: - Concordance Analysis Result
@@ -231,7 +240,11 @@ public func concordanceAnalysis<T: Real & Sendable>(_ rankings: [[T]]) throws ->
     let denomUncorrected = mT * mT * (nT * nT * nT - nT)
     let w: T
     if abs(denomUncorrected) > T.ulpOfOne {
-        w = max(T(0), min(T(1), (T(12) * s) / denomUncorrected))
+        let raw = (T(12) * s) / denomUncorrected
+        // `min(T(1), .nan)` is `1`: clamping here turned an uncomputable coefficient into
+        // perfect concordance, and carried the p-value below across 0.05 with it. The `else`
+        // arm two lines down already had this right.
+        w = raw.isNaN ? raw : max(T(0), min(T(1), raw))
     } else {
         w = T.nan
     }
@@ -239,7 +252,8 @@ public func concordanceAnalysis<T: Real & Sendable>(_ rankings: [[T]]) throws ->
     let denomCorrected = denomUncorrected - mT * totalT
     let wCorrected: T
     if abs(denomCorrected) > T.ulpOfOne {
-        wCorrected = max(T(0), min(T(1), (T(12) * s) / denomCorrected))
+        let rawCorrected = (T(12) * s) / denomCorrected
+        wCorrected = rawCorrected.isNaN ? rawCorrected : max(T(0), min(T(1), rawCorrected))
     } else {
         wCorrected = w
     }
@@ -250,7 +264,10 @@ public func concordanceAnalysis<T: Real & Sendable>(_ rankings: [[T]]) throws ->
     let sigmaVal = sigma(rankSums: rankSums)
     let friedCoeff = T(12) / (mT * nT * (nT + T(1)))
     let friedSub = T(3) * mT * (nT + T(1))
-    let friedman = max(T(0), friedCoeff * sigmaVal - friedSub)
+    let rawFriedman = friedCoeff * sigmaVal - friedSub
+    // `max(T(0), .nan)` is `0` — no treatment effect — which sat in the same result object as
+    // a W of 1.0 claiming perfect concordance. Same tidy-up, same trap as `friedmanChiSquare`.
+    let friedman = rawFriedman.isNaN ? rawFriedman : max(T(0), rawFriedman)
 
     let pValue: T
     if chi2 > T(0) && df > 0 {
@@ -306,7 +323,9 @@ public func concordanceAnalysisFromRankSums<T: Real & Sendable>(
     let denom = m * m * (n * n * n - n)
     let w: T
     if abs(denom) > T.ulpOfOne {
-        w = max(T(0), min(T(1), (T(12) * s) / denom))
+        let raw = (T(12) * s) / denom
+        // See the note on the clamp in `concordanceAnalysis`: `min(T(1), .nan)` is `1`.
+        w = raw.isNaN ? raw : max(T(0), min(T(1), raw))
     } else {
         w = T.nan
     }
@@ -317,7 +336,10 @@ public func concordanceAnalysisFromRankSums<T: Real & Sendable>(
     let sigmaVal = sigma(rankSums: rankSums)
     let friedCoeff = T(12) / (m * n * (n + T(1)))
     let friedSub = T(3) * m * (n + T(1))
-    let friedman = max(T(0), friedCoeff * sigmaVal - friedSub)
+    let rawFriedman = friedCoeff * sigmaVal - friedSub
+    // `max(T(0), .nan)` is `0` — no treatment effect — which sat in the same result object as
+    // a W of 1.0 claiming perfect concordance. Same tidy-up, same trap as `friedmanChiSquare`.
+    let friedman = rawFriedman.isNaN ? rawFriedman : max(T(0), rawFriedman)
 
     let pValue: T
     if chi2 > T(0) && df > 0 {
@@ -402,7 +424,8 @@ public func concordanceAnalysisNA<T: Real & Sendable>(_ rankings: [[T?]]) throws
 
     let rhoBar = weightedRhoSum / totalWeight
     let mEffT = T(mEff)
-    let w = max(T(0), min(T(1), (rhoBar * (mEffT - T(1)) + T(1)) / mEffT))
+    let rawW = (rhoBar * (mEffT - T(1)) + T(1)) / mEffT
+    let w = rawW.isNaN ? rawW : max(T(0), min(T(1), rawW))
 
     let nT = T(totalItems)
     let chi2 = mEffT * (nT - T(1)) * w
