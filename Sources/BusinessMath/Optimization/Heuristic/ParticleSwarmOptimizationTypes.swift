@@ -168,10 +168,10 @@ public struct ParticleSwarmConfig: Sendable {
         self.constraintPenaltyWeight = penaltyIsUsable ? constraintPenaltyWeight : penaltyFallback
         self.swarmSize = swarmSize
         self.maxIterations = maxIterations
-        self.inertiaWeight = inertiaWeight
-        self.cognitiveCoefficient = cognitiveCoefficient
-        self.socialCoefficient = socialCoefficient
-        self.velocityClamp = velocityClamp
+        self.inertiaWeight = usableParameter(inertiaWeight, fallback: 0.7298)
+        self.cognitiveCoefficient = usableParameter(cognitiveCoefficient, fallback: 1.49618)
+        self.socialCoefficient = usableParameter(socialCoefficient, fallback: 1.49618)
+        self.velocityClamp = usableParameter(velocityClamp)
         self.seed = seed
     }
 

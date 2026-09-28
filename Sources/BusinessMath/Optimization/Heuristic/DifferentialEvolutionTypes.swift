@@ -196,7 +196,7 @@ public struct DifferentialEvolutionConfig: Sendable {
         self.constraintPenaltyWeight = penaltyIsUsable ? constraintPenaltyWeight : penaltyFallback
         self.populationSize = populationSize
         self.generations = generations
-        self.mutationFactor = mutationFactor
+        self.mutationFactor = usableParameter(mutationFactor, fallback: 0.8)
         self.crossoverRate = crossoverRate
         self.strategy = strategy
         self.seed = seed

@@ -140,7 +140,7 @@ public struct SimulatedAnnealingConfig: Sendable {
         self.finalTemperature = finalTemperature
         self.coolingRate = coolingRate
         self.maxIterations = maxIterations
-        self.perturbationScale = perturbationScale
+        self.perturbationScale = usableParameter(perturbationScale, fallback: 0.3)
         self.reheatInterval = reheatInterval
         self.reheatTemperature = reheatTemperature
         self.seed = seed

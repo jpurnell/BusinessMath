@@ -156,7 +156,7 @@ public struct GeneticAlgorithmConfig: Sendable {
         self.generations = generations
         self.crossoverRate = crossoverRate
         self.mutationRate = mutationRate
-        self.mutationStrength = mutationStrength
+        self.mutationStrength = usableParameter(mutationStrength, fallback: 0.1)
         self.eliteCount = eliteCount
         self.tournamentSize = tournamentSize
         self.seed = seed

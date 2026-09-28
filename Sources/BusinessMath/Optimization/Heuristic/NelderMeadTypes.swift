@@ -107,12 +107,12 @@ public struct NelderMeadConfig: Sendable {
         let penaltyFallback: Double = 100
         let penaltyIsUsable = constraintPenaltyWeight > 0 && constraintPenaltyWeight.isFinite
         self.constraintPenaltyWeight = penaltyIsUsable ? constraintPenaltyWeight : penaltyFallback
-        self.reflectionCoefficient = reflectionCoefficient
-        self.expansionCoefficient = expansionCoefficient
-        self.contractionCoefficient = contractionCoefficient
-        self.shrinkCoefficient = shrinkCoefficient
-        self.initialSimplexSize = initialSimplexSize
-        self.tolerance = tolerance
+        self.reflectionCoefficient = usableParameter(reflectionCoefficient, fallback: 1.0)
+        self.expansionCoefficient = usableParameter(expansionCoefficient, fallback: 2.0)
+        self.contractionCoefficient = usableParameter(contractionCoefficient, fallback: 0.5)
+        self.shrinkCoefficient = usableParameter(shrinkCoefficient, fallback: 0.5)
+        self.initialSimplexSize = usableParameter(initialSimplexSize, fallback: 1.0)
+        self.tolerance = usableParameter(tolerance, fallback: 1e-6)
         self.maxIterations = maxIterations
     }
 
