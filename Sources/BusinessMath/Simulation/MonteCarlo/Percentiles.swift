@@ -108,6 +108,38 @@ public struct Percentiles: Sendable {
 	
 	// MARK: - Initialization
 
+	/// A percentile set for a sample that cannot produce one.
+	///
+	/// Every statistic is `nan`. This exists because ``init(values:)`` correctly *refuses*
+	/// non-finite input by throwing, and a non-throwing caller still has to put something in
+	/// a non-optional stored property. `SimulationResults` used to answer that by rebuilding
+	/// from the literal `[0]`, which made every percentile, the range and the interquartile
+	/// range exactly zero — a complete, confident summary of a sample nobody could summarise.
+	///
+	/// - Parameter values: The sample, kept so callers can still see what was supplied.
+	static func undefined(values: [Double]) -> Percentiles {
+		Percentiles(undefinedFor: values)
+	}
+
+	private init(undefinedFor values: [Double]) {
+		self.values = values
+		self.sortedValues = values
+		self.min = .nan
+		self.max = .nan
+		self.p025 = .nan
+		self.p5 = .nan
+		self.p10 = .nan
+		self.p25 = .nan
+		self.p50 = .nan
+		self.p75 = .nan
+		self.p90 = .nan
+		self.p95 = .nan
+		self.p975 = .nan
+		self.p99 = .nan
+		self.interquartileRange = .nan
+	}
+
+
 	/// Creates a Percentiles struct from an array of values.
 	///
 	/// The values are sorted internally, and all standard percentiles are calculated.

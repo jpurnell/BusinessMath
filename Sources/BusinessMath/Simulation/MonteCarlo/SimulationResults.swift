@@ -136,17 +136,19 @@ public struct SimulationResults: Sendable {
 		let simStats = SimulationStatistics(values: values)
 //		logger.debug("simStats set with \(simStats.values.count) values, mean of \(simStats.mean)")
 		self.statistics = simStats
-		// Try to create percentiles from values, fall back to single zero value
-		// Note: Percentiles([0]) should never fail (non-empty, finite), but we use
-		// do-catch for safety rather than try!
+		// `Percentiles(values:)` throws for an empty sample and for any non-finite value. The
+		// fallback used to rebuild from the literal `[0]`, which reported every percentile,
+		// the range and the interquartile range as exactly zero — measured: a run containing
+		// one `nan` gave p5 = p95 = iqr = 0.0 while `valueAtRisk` on the same object
+		// correctly gave `nan`. One result answering two ways about one sample.
+		//
+		// The note that used to sit here ("Percentiles([0]) should never fail — non-empty,
+		// finite") explains how: it was written against the *empty* case, and the finiteness
+		// refusal added later falls into the same catch.
 		do {
 			self.percentiles = try Percentiles(values: values)
-		} catch { // logging: Percentiles init failed, fallback to single zero value
-			do {
-				self.percentiles = try Percentiles(values: [0])
-			} catch { // logging: absolute fallback should never reach here
-				preconditionFailure("Failed to create Percentiles with fallback value [0]: \(error)")
-			}
+		} catch { // logging: sample is empty or non-finite — percentiles are undefined, not zero
+			self.percentiles = .undefined(values: values)
 		}
 	}
 

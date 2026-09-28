@@ -213,9 +213,16 @@ public struct SimulationStatistics: Sendable {
 	/// - Parameter values: Array of Double values
 	/// - Returns: Tuple containing all calculated statistics
 	private static func calculateStatistics(from values: [Double]) -> (mean: Double, median: Double, min: Double, max: Double, variance: Double, stdDev: Double, skewness: Double) {
-		// Calculate min and max
-		let minValue = values.min() ?? 0.0
-		let maxValue = values.max() ?? 0.0
+		// Calculate min and max.
+		//
+		// `Sequence.min()` seeds with the first element and replaces only on `e < result`, and
+		// every comparison against a `nan` is false — so a `nan` after index 0 is skipped and
+		// the finite minimum is returned, while a `nan` *at* index 0 is never replaced.
+		// Measured: [nan,1,3] gave nan, [1,nan,3] gave 1.0, [3,nan,1] gave 1.0, all while
+		// `mean` and `stdDev` on the same struct correctly reported `nan`.
+		let contaminated = values.contains { $0.isNaN }
+		let minValue = contaminated ? Double.nan : (values.min() ?? 0.0)
+		let maxValue = contaminated ? Double.nan : (values.max() ?? 0.0)
 
 		// Calculate mean using library function (via file-level alias)
 		let meanValue = globalMean(values)

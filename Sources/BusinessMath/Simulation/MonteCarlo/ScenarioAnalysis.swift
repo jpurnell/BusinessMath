@@ -345,10 +345,20 @@ public struct ScenarioComparison: Sendable {
 		by metric: ScenarioMetric,
 		ascending: Bool
 	) -> [(name: String, results: SimulationResults)] {
+		// Written as two comparisons plus a name tie-break rather than one, so the predicate
+		// stays a strict weak ordering when a metric is `nan`. A single `<` is not: `nan < x`
+		// and `x < nan` are both false, which leaves `sorted(by:)` unspecified and reshuffles
+		// the *clean* scenarios — the damage is not the contaminated row but the valid ones
+		// around it. `ConsolidatedStatements.ranked(by:)` has always been written this way and
+		// says why; this is its sibling brought into line.
 		let sorted = results.sorted { lhs, rhs in
 			let lhsValue = metric.value(from: lhs.value)
 			let rhsValue = metric.value(from: rhs.value)
-			return ascending ? lhsValue < rhsValue : lhsValue > rhsValue
+			let first = ascending ? lhsValue : rhsValue
+			let second = ascending ? rhsValue : lhsValue
+			if first < second { return true }
+			if second < first { return false }
+			return lhs.key < rhs.key
 		}
 
 		return sorted.map { (name: $0.key, results: $0.value) }
