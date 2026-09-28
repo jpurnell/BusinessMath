@@ -248,6 +248,11 @@ public struct ZScoreAnomalyDetector<T: Real & Sendable & Codable> {
 	/// Written once rather than once per branch: the flat-baseline path and the ordinary one
 	/// classified their scores with two identical copies of this ladder.
 	private static func severity(for zScore: T, threshold: T) -> AnomalySeverity? {
+		// `nan > threshold` is false, so an unevaluable score used to be discarded here and
+		// the reading passed as ordinary — a detector silently dropping the one point it
+		// could not measure. A reading with no usable score is the most anomalous thing in
+		// the window, not the least.
+		guard !zScore.isNaN else { return .severe }
 		guard zScore > threshold else { return nil }
 		let three: T = 3
 		let four: T = 4
@@ -318,8 +323,17 @@ public struct ModifiedZScoreAnomalyDetector<T: Real & Sendable & Codable> {
 		let values = data.valuesArray
 		guard !values.isEmpty else { return [] }
 
-		let centre: T = median(values)
-		let deviations: [T] = values.map { abs($0 - centre) }
+		// A non-finite reading is itself an anomaly — it is precisely the kind of point this
+		// detector exists to surface — and it must not be allowed to disable the detector for
+		// every other point. `median` propagates a `nan`, so one bad reading made `centre` and
+		// then `scale` `nan`, `scale > T.zero` false, and the guard below certified the whole
+		// series clean. Measured: a series containing both a 250 and a `nan` reported no
+		// anomalies at all.
+		let finite: [T] = values.filter { $0.isFinite }
+		guard !finite.isEmpty else { return Anomaly<T>.unusableReadings(in: data) }
+
+		let centre: T = median(finite)
+		let deviations: [T] = finite.map { abs($0 - centre) }
 		let scale: T = median(deviations)
 
 		// A MAD of zero means more than half the sample sits on a single value. The ratio
@@ -327,14 +341,15 @@ public struct ModifiedZScoreAnomalyDetector<T: Real & Sendable & Codable> {
 		// say and says nothing, rather than reporting every distinct value as infinitely
 		// anomalous. `ZScoreAnomalyDetector`'s fallback scale is not borrowed here: it is
 		// a proportion of the *mean*, which is the quantity this detector exists to avoid.
-		guard scale > T.zero else { return [] }
+		guard scale > T.zero else { return Anomaly<T>.unusableReadings(in: data) }
 
 		let consistency: T = T(6745) / T(10_000)   // Φ⁻¹(0.75)
 		let three: T = 3
 		let four: T = 4
 
-		var anomalies: [Anomaly<T>] = []
+		var anomalies: [Anomaly<T>] = Anomaly<T>.unusableReadings(in: data)
 		for (index, value) in values.enumerated() {
+			guard value.isFinite else { continue }   // already reported above
 			let deviation: T = abs(value - centre)
 			let scaled: T = consistency * deviation
 			let score: T = scaled / scale
@@ -358,6 +373,37 @@ public struct ModifiedZScoreAnomalyDetector<T: Real & Sendable & Codable> {
 			))
 		}
 		return anomalies
+	}
+}
+
+
+extension Anomaly {
+	/// The readings in a series that carry no usable number, reported as anomalies.
+	///
+	/// A `nan` or an infinity is exactly what an anomaly detector exists to surface, and every
+	/// detector here used to drop it: the comparisons that decide whether a point is anomalous
+	/// (`value < lowerFence`, `score > cutoff`, `zScore > threshold`) are all false for a
+	/// `nan`, so the one unusable reading was the one point guaranteed not to be reported.
+	///
+	/// Worse, a `nan` propagates through `median`, so it also made the *scale* unusable and the
+	/// `scale > 0` guard — written for a genuinely degenerate sample — certified the whole
+	/// series clean.
+	///
+	/// - Parameter data: The series to scan.
+	/// - Returns: One `.severe` anomaly per non-finite reading, in series order.
+	static func unusableReadings(in data: TimeSeries<T>) -> [Anomaly<T>] {
+		let values = data.valuesArray
+		var found: [Anomaly<T>] = []
+		for (index, value) in values.enumerated() where !value.isFinite {
+			found.append(Anomaly(
+				period: data.periods[index],
+				value: value,
+				expectedValue: T.nan,
+				deviationScore: T.nan,
+				severity: .severe
+			))
+		}
+		return found
 	}
 }
 
@@ -413,7 +459,12 @@ public struct IQRAnomalyDetector<T: Real & Sendable & Codable & BinaryFloatingPo
 		let values = data.valuesArray
 		guard values.count >= 4 else { return [] }
 
-		let sorted: [T] = values.sorted()
+		// `sorted()` is unspecified on a collection containing a `nan` — the *valid* elements
+		// come back out of order — and `quantile(sorted:p:)` documents that callers must screen
+		// them out first. Sort the finite readings; the unusable ones are reported separately.
+		let finite: [T] = values.filter { $0.isFinite }
+		guard finite.count >= 4 else { return Anomaly<T>.unusableReadings(in: data) }
+		let sorted: [T] = finite.sorted()
 		let quarter: T = T(1) / T(4)
 		let threeQuarters: T = T(3) / T(4)
 		let q1: T = quantile(sorted: sorted, p: quarter)
@@ -422,19 +473,20 @@ public struct IQRAnomalyDetector<T: Real & Sendable & Codable & BinaryFloatingPo
 
 		let lowerFence: T = q1 - k * iqr
 		let upperFence: T = q3 + k * iqr
-		let centre: T = median(values)
+		let centre: T = median(finite)
 
 		// A zero IQR means the middle half of the sample is a single value, so the fences
 		// collapse onto it and every distinct observation lies outside. That is a
 		// degenerate sample rather than a series of anomalies, and the score below would
 		// divide by zero besides.
-		guard iqr > T.zero else { return [] }
+		guard iqr > T.zero else { return Anomaly<T>.unusableReadings(in: data) }
 
 		let three: T = 3
 		let four: T = 4
 
-		var anomalies: [Anomaly<T>] = []
+		var anomalies: [Anomaly<T>] = Anomaly<T>.unusableReadings(in: data)
 		for (index, value) in values.enumerated() {
+			guard value.isFinite else { continue }   // already reported above
 			guard value < lowerFence || value > upperFence else { continue }
 
 			// How many IQRs past the nearer fence the point sits, so the score is
