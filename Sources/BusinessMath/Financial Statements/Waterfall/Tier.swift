@@ -155,6 +155,12 @@ public struct Tier: Sendable, Equatable {
             // so that later pro-rata tiers preserve the intended split.
             let totalProfitsForRatio = profitsDistributed / othersShare
             let shouldHave = totalProfitsForRatio * targetShare
+            // Absence means this tier's name has received nothing from any earlier
+            // tier, which is a measurement rather than a gap: the context is an
+            // accumulator the waterfall builds from empty under these same keys.
+            // The `?? 0` is therefore correct, but it makes the tier's `name` the
+            // party's identity — a catch-up tier named other than the recipient it is
+            // catching up for starts from zero and over-distributes.
             let alreadyHas = context.currentDistributions[name] ?? 0
 
             let owed = max(0, shouldHave - alreadyHas)

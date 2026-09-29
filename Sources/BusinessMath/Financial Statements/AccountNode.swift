@@ -124,10 +124,14 @@ public struct AccountNode<T: Real & Sendable>: Sendable where T: Codable {
     ///
     /// - If this node has children, returns the sum of all children's totals (recursive).
     /// - If this node is a leaf with an account, returns the account's value for the period.
-    /// - If neither children nor account exist, returns zero.
+    /// - If neither children nor account exist, returns zero — a node holding no account
+    ///   contributes nothing by construction, whatever period is asked about.
+    /// - If this node's account does not report the period, returns `.nan`, and that
+    ///   propagates through the sum so an enclosing node declines to answer too.
     ///
     /// - Parameter period: The time period to query.
-    /// - Returns: The aggregated total for the period.
+    /// - Returns: The aggregated total for the period, or `.nan` where the period is not
+    ///   reported by an account beneath this node.
     public func total(for period: Period) -> T {
         guard children.isEmpty else {
             return children.reduce(T.zero) { sum, child in
@@ -135,11 +139,30 @@ public struct AccountNode<T: Real & Sendable>: Sendable where T: Codable {
             }
         }
 
+        // A node that carries no account holds no figure of its own. Zero is the measured
+        // contribution of an empty grouping node, not a stand-in for one.
         guard let account = account else {
             return T.zero
         }
 
-        return account.timeSeries[period] ?? T.zero
+        // A period the account does not report is not answerable — narrow the domain, do not
+        // fabricate the observation (contract §3.7). This function returns `T`, so `.nan` is
+        // how its signature says so (§3.1), the same way `altmanZScore` does.
+        //
+        // `TimeSeries.periods` is derived from the value keys, so `nil` here means this account
+        // filed nothing for this period. It never means "the figure was zero": a filed zero is
+        // stored and comes back as `0`.
+        //
+        // The caller was otherwise told that a node reporting 100 / 200 / 300 across three
+        // months earned exactly `0` in December 2099 — the answer `AccountNodeTests`
+        // `totalMissingPeriod` pinned as correct until this change. Worse, the `reduce` above
+        // summed that zero into the consolidated parent, so a group containing one subsidiary
+        // with shorter coverage understated its own total with no diagnostic at all.
+        guard let value = account.timeSeries[period] else {
+            return T.nan
+        }
+
+        return value
     }
 
     // MARK: - Search

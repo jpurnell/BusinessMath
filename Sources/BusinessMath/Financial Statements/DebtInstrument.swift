@@ -400,21 +400,46 @@ public struct AmortizationSchedule {
     /// Total payment (principal + interest) in each period
     public let payment: [Period: Double]
 
-    /// Total interest paid over the life of the loan
+    // The `?? 0.0` in the three totals below is unreachable, and it is worth saying why
+    // rather than leaving a reader to decide it is the usual "a missing period
+    // contributes nothing to a total then reported as the whole" defect.
+    //
+    // `AmortizationSchedule` has no explicit initializer, so its memberwise one is
+    // `internal` however public the stored properties are, and the only call to it in
+    // the package is `DebtInstrument.schedule()`. That function writes every one of the
+    // five dictionaries for every element of `periods`, in all four branches of
+    // `AmortizationType`; `generatePeriods()` advances the cursor by a whole period each
+    // iteration, so `periods` carries no duplicate key either. No caller can hand this
+    // type a `periods` array its dictionaries do not cover.
+    //
+    // A `??` here therefore reports nothing and hides nothing. If the type ever gains a
+    // public memberwise or decoded initializer, that stops being true and these three
+    // become the defect they currently only resemble — validate the schedule there, not
+    // here, so the caller is told which period is missing instead of being handed a
+    // total that is quietly short.
+
+    /// Total interest paid over the life of the loan.
+    ///
+    /// Sums `interest` over every period in the schedule. The schedule's dictionaries
+    /// are populated over exactly `periods` by construction, so this is the whole figure.
     public var totalInterest: Double {
         periods.reduce(0.0) { sum, period in
             sum + (interest[period] ?? 0.0)
         }
     }
 
-    /// Total principal paid over the life of the loan
+    /// Total principal paid over the life of the loan.
+    ///
+    /// Sums `principal` over every period in the schedule; see ``totalInterest``.
     public var totalPrincipal: Double {
         periods.reduce(0.0) { sum, period in
             sum + (principal[period] ?? 0.0)
         }
     }
 
-    /// Total of all payments over the life of the loan
+    /// Total of all payments over the life of the loan.
+    ///
+    /// Sums `payment` over every period in the schedule; see ``totalInterest``.
     public var totalPayments: Double {
         periods.reduce(0.0) { sum, period in
             sum + (payment[period] ?? 0.0)

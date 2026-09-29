@@ -238,7 +238,30 @@ public actor ModelProfiler {
 
             let durations = measurements.map { $0.duration }
             let memoryUsages = measurements.map { $0.memoryUsed }
-			let percentiles = try? Percentiles(values: durations) // silent: empty or invalid durations yield nil percentiles
+
+			// `Percentiles` refuses a sample it cannot summarise — empty, or containing a
+			// non-finite reading — rather than returning one, and `undefined(values:)` is the
+			// answer it supplies to a non-throwing caller: every statistic `nan`. Its own
+			// documentation records why, and it is this defect: rebuilding from a literal made
+			// every percentile exactly zero, "a complete, confident summary of a sample nobody
+			// could summarise". For a *duration*, zero is worse than mid-table — it is the
+			// fastest execution representable, reported as a measurement.
+			//
+			// The extremes come from the same value rather than from `durations.min()/max()`,
+			// which are `sorted[0]` and `sorted[n-1]` of the identical sample when it is usable.
+			// Taking both from here keeps the row consistent: either all five statistics are
+			// measured or all five say they are not. `min()`/`max()` would not have said so —
+			// every comparison with NaN is false, so they skip a contaminated reading in silence
+			// and report a finite extreme next to a NaN mean.
+			let percentiles: Percentiles
+			do {
+				percentiles = try Percentiles(values: durations)
+			} catch { // logging: the refusal is already the row — every statistic reads `nan`
+				// `Percentiles` refuses exactly the samples `undefined(values:)` describes: empty, or
+				// holding a non-finite reading. So the caller is told, by the row itself, the same
+				// thing the error would say — and a profiling summary has no channel to say it twice.
+				percentiles = .undefined(values: durations)
+			}
 
             let stats = OperationStatistics(
                 operation: operation,
@@ -247,11 +270,11 @@ public actor ModelProfiler {
                 totalTime: durations.reduce(0, +),
                 averageTime: mean(durations),
 				stdDevTime: stdDev(durations),
-                minTime: durations.min() ?? 0,
-                maxTime: durations.max() ?? 0,
+                minTime: percentiles.min,
+                maxTime: percentiles.max,
                 medianTime: median(durations),
-                percentile95: percentiles?.p95 ?? 0,
-				percentile99: percentiles?.p99 ?? 0,
+                percentile95: percentiles.p95,
+				percentile99: percentiles.p99,
                 totalMemory: memoryUsages.reduce(0, +),
                 averageMemory: memoryUsages.reduce(0, +) / Int64(memoryUsages.count)
             )

@@ -58,9 +58,18 @@ internal func averageTimeSeries<T: Real>(_ timeSeries: TimeSeries<T>) -> TimeSer
 	var averagedValues: [Period: T] = [:]
 	let two = T(2)
 
+	// NON-DEFECT under contract §3.7, verified rather than assumed — both `?? T(0)` reads in
+	// this loop are unreachable, so neither can fabricate a zero balance for an uncovered
+	// period. `TimeSeries` stores `periods` and `values` from one dictionary and derives the
+	// former from the latter: `self.periods = valueDict.keys.sorted()` at `TimeSeries.swift:185`
+	// and `self.periods = data.keys.sorted()` at `:292` — the only two initializers that assign
+	// the property, with the `Codable` init delegating to the first — while `subscript(_:)` is a
+	// plain `values[period]` at `:324`. A series' period list and its key set are therefore the
+	// same set. This loop indexes only `timeSeries.periods` (`i` and `i - 1` are both in
+	// `0..<periods.count`), so every subscript hits. Left as written; do not re-audit.
 	for i in 0..<periods.count {
 		let currentPeriod = periods[i]
-		let currentValue = timeSeries[currentPeriod] ?? T(0)
+		let currentValue = timeSeries[currentPeriod] ?? T(0)  // unreachable fallback — see above
 
 		if i == 0 {
 			// First period: no prior period, use current value
@@ -68,7 +77,7 @@ internal func averageTimeSeries<T: Real>(_ timeSeries: TimeSeries<T>) -> TimeSer
 		} else {
 			// Subsequent periods: average of prior and current
 			let priorPeriod = periods[i - 1]
-			let priorValue = timeSeries[priorPeriod] ?? T(0)
+			let priorValue = timeSeries[priorPeriod] ?? T(0)  // unreachable fallback — see above
 			averagedValues[currentPeriod] = (priorValue + currentValue) / two
 		}
 	}
@@ -107,12 +116,18 @@ extension TimeSeries where T: Real {
 
 		var growthValues: [Period: T] = [:]
 
+		// NON-DEFECT under contract §3.7, on the same verified invariant as `averageTimeSeries`
+		// above: `TimeSeries.periods` is `values.keys.sorted()` (`TimeSeries.swift:185`, `:292`)
+		// and `subscript(_:)` is `values[period]` (`:324`), so every period in `self.periods`
+		// has a value. This loop indexes only `self.periods`, so neither `?? T(0)` can fire and
+		// neither can report a fabricated zero balance as the basis of a growth rate. Left as
+		// written; do not re-audit.
 		for i in 1..<periods.count {
 			let currentPeriod = periods[i]
 			let priorPeriod = periods[i - 1]
 
-			let currentValue = self[currentPeriod] ?? T(0)
-			let priorValue = self[priorPeriod] ?? T(0)
+			let currentValue = self[currentPeriod] ?? T(0)  // unreachable fallback — see above
+			let priorValue = self[priorPeriod] ?? T(0)      // unreachable fallback — see above
 
 			if priorValue != T(0) {
 				let growth = (currentValue - priorValue) / priorValue

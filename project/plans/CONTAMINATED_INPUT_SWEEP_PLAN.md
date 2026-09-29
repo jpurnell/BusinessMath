@@ -154,6 +154,127 @@ fixtures red — budget it as a deliberate pass with fixture repair, not as part
 
 **Expected:** a design note and two fixes in this phase; a second, larger pass for the rest.
 
+#### Phase 2 closeout — census re-run 2026-09-29 09:30
+
+**Phase 2 is NOT closed.** One in-scope file still fabricates a zero from a period lookup, in a
+shape the `?? 0` grep does not match.
+
+**Method.** Census re-run over the four corrected-scope areas — `Financial Statements` (33
+files, 17,440 lines), `Model Definition` (11 / 2,671), `Diagnostics` (3 / 2,566),
+`Industry Models` (1 / 503) — for `?? 0`, `?? 0.0`, `?? T(0)`, `?? T.zero`, `?? .zero`,
+`?? Double(0)`, and for `[period, default: 0]`. DocC and comment lines excluded. File counts
+are recorded because an empty result over an empty directory reads identically to a clean one.
+Other agents were editing during the run, so the timestamp is part of the result.
+
+**Open — in scope, not covered.**
+
+| file | lines | shape |
+|---|---|---|
+| `Financial Statements/DebtCovenants.swift` | helper at `434-437` and `599-602`; call sites `513`, `514`, `521`, `531`, `557`, `563`, `565`, `604`, `614` | `func toDouble(_ value: T?) -> Double { guard let val = value else { return 0.0 } … }` applied to nine `series[period]` reads |
+
+This is §3.7 wearing a helper. The fallback is a `guard … return 0.0` inside a local function,
+so it matches no `??` pattern; the nine call sites read like plain conversions. The file's own
+comment just below the first helper records the *ratio-series* absence being fixed in this
+campaign, which is a different lookup — the income-statement and balance-sheet reads above were
+not. The fallback lands on both sides of a covenant test: `totalLiabilities[period]` and
+`operatingIncome[period]` fabricated as `0` give a leverage ratio of `0`, so a
+**maximum**-leverage covenant passes for a period the statements never covered;
+`totalEquity[period]` at `557` fabricated as `0` breaches a **minimum**-net-worth covenant for
+the same reason. Not fixed here — `DebtCovenants` belongs to another agent's file set.
+
+Line numbers in this file moved twice during the census (the helper was at `421`/`582` an hour
+earlier), so verify by symbol rather than by line.
+
+**Closed — in scope, covered, verified this run.**
+
+| file | lines | verdict |
+|---|---|---|
+| `Financial Statements/DebtInstrument.swift` | `427`, `436`, `445` | non-defect, documented at `403-414`: the memberwise init is internal, the sole caller writes all five dictionaries for every element of `periods` |
+| `Financial Statements/DebtCovenants.swift` | `522` | `principalPayment ?? 0.0` is an optional **parameter**, not a lookup |
+| `Financial Statements/Waterfall/Tier.swift` | `164` | name-keyed running accumulator; "nothing distributed yet" really is `0` |
+| `Financial Statements/Waterfall/LiquidationWaterfall.swift` | `115`, `118`, `126`, `128` | same accumulator idiom |
+| `Financial Statements/TimeSeriesExtensions.swift` | `63`, `71`, `114`, `115` | non-defect, **unreachable** — see below |
+| `Industry Models/OilGasEPModel.swift` | `246`, `252` | fixed this run — see below |
+| `Model Definition` (11 files) | — | zero sites of any of the shapes; the 10 `??` present are name-keyed solver seeds, coefficient accumulators and `?? .infinity` |
+| `Diagnostics` (3 files) | — | zero sites remaining; `ModelDebugger` `796`/`1316` and `ModelProfiler` `250-254` were fixed by their agent during this run |
+
+**`TimeSeriesExtensions.swift` — the earlier claim was right, and covers all four sites, not
+two.** The evidence is a single invariant: `TimeSeries.periods` is assigned only twice, both
+from the value dictionary (`TimeSeries.swift:185` `valueDict.keys.sorted()`, `:292`
+`data.keys.sorted()`; the `Codable` init delegates to the first), and `subscript(_:)` is a plain
+`values[period]` at `:324`. A series' period list and its key set are therefore the same set.
+Both `averageTimeSeries` (`63`, `71`) and `periodOverPeriodGrowth` (`114`, `115`) index only
+`timeSeries.periods` / `self.periods`, at `i` and `i - 1` within `0..<periods.count`, so no
+subscript can miss. Recorded in-source as non-defects so nobody re-audits them.
+
+*Adjacent, not fixed:* `averageTimeSeries` averages `periods[i]` with `periods[i - 1]`, the
+adjacent element of the **sorted list**, which is not the calendar-prior period when the series
+has a gap. That is a semantics question, not a §3.7 fallback, and is logged rather than acted on.
+
+**`OilGasEPModel.swift` — two sites, two different verdicts.**
+
+- `:246` `commodityPrices[period] ?? 0.0` — **defect, fixed.** A gap in the price deck valued the
+  period's barrels at $0/bbl while `periodLOE` on the next line still charged the full per-BOE
+  operating cost against those same barrels, so the fabricated answer was not a shut-in (which
+  produces nothing and owes nothing) but a *producing* well booking zero revenue at full cash
+  cost. Measured on the `CommodityCoverageTests` fixture — one well at 100 BOEPD, 3,100 BOE in
+  January, $15/BOE LOE, $100,000 DD&A, $50,000 G&A — January net income went from **+$16,195 to
+  -$196,500**, and because `runningCash`, `runningPPE` and `runningRE` accumulate across the
+  loop, the hole propagated into every later period's balance sheet. Now
+  `BusinessMathError.missingData(account: "<commodity> price", period:)`; `project` was already
+  `throws`, so no API change.
+- `:252` `hedgeSettlements?[period] ?? 0.0` — **two levels, decided separately.** The **outer**
+  `nil` (`hedgingProgram == nil`) means the producer runs unhedged: zero settlement is the
+  observation, kept deliberately and now pinned by a test so a later sweep does not "fix" it.
+  The **inner** `nil` would be the §3.7 shape but is unreachable: `totalSettlements` appends a
+  row for every period of the price series (`HedgingProgram.swift:126`), emitting a real `0`
+  where no instrument settles rather than omitting the period, and the period-list/key-set
+  invariant above does the rest — so the inner lookup misses exactly when the price lookup does,
+  by which point `:246` has already thrown. Written as an explicit guard rather than left as
+  `?? 0.0` so a future change to `totalSettlements` fails loudly instead of silently reinstating
+  the fabricated zero.
+
+**`Period.swift` (61) and `PeriodArithmetic.swift` (9): the out-of-scope reading is still
+right.** Every one of the 61 in `Period.swift` is a `DateComponents` field unwrap — `.year` 21,
+`.hour` 12, `.minute` 9, `.second` 6, `.month` 5, `.day` 5, `.nanosecond` 3, summing to exactly
+61 — and filtering those seven names out leaves **nothing**. None is a period lookup.
+(`FiscalCalendar.swift` has 4 more of the same at `174-176` and `256`. The counts measured here
+are 61 / 9 / 4 against the 62 / 10 / 4 recorded in the section above.)
+
+*What a missing calendar component actually produces* — two sub-classes, not one:
+
+- **`Period.swift` — absolute components of a `Date`.** `.hour`/`.minute`/`.second`/`.nanosecond
+  ?? 0` normalise to midnight, which is the intent. `.year ?? 0` is year 0 — the proleptic
+  Gregorian 1 BC, roughly two millennia off, and in the label formatters at `562`, `572`, `581`,
+  `589` it renders as the string `"0000"`. `.month ?? 0` / `.day ?? 0` are outside the valid
+  range entirely, so a date reconstructed from them is whatever `Calendar` does with an
+  out-of-range component rather than a date at all.
+- **`PeriodArithmetic.swift` — difference components** from `Calendar.dateComponents(_:from:to:)`
+  (`113`, `119`, `124`, `129`, `134`, `139`, `144`, `150`, `156`). Here `?? 0` fabricates an
+  **elapsed duration of zero**, not a year-0 date — a different wrong answer with a different
+  blast radius (a zero denominator in any per-unit-time rate).
+
+Whoever scopes this class should split it on that line. It needs its own probe.
+
+**Same shape, other areas — found, not fixed.**
+
+- `Derivatives/Hedging/HedgingProgram.swift:221` — `totalProduction[period] ?? .zero` in
+  `effectiveRealizedPrice`. `totalProduction` is an independent caller-supplied series, so a
+  period present in `spotPrices` but absent from it takes the `production == .zero` branch and
+  reports `effective = spot` — "hedging changed nothing" — for a period whose production is
+  simply unknown. Reachable, and the same §3.7 shape. (`:220`, `settlements[period] ?? .zero`, is
+  unreachable by the `totalSettlements` argument above.)
+- `Industry Models/OilGasEPModel.swift:67-73` — `WellProductionProfile.production(for:)` returns
+  `0.0` when `dailyProduction[period]` is `nil`. Same period-lookup shape, but the verdict is
+  genuinely ambiguous rather than clearly wrong: a well with no rate on file for a period may
+  well have been offline, and zero BOE is then the right contribution to `totalProduction`. It
+  returns non-optional `Double`, its DocC states the zero, and `OilGasEPModelTests`'
+  `productionMissingPeriod` pins it. Left alone deliberately — deciding it is an API question
+  (§3.1 would say `.nan`), not a guard to add in passing. Flagged so the next sweep sees it.
+- The repo-wide `[key, default: 0] += …` hits (`ProductionPlanning`, `ResourceAllocation`,
+  `EquityFinancing`, `LeaseAccounting`, `Network/*`, `Extensions/extensionArray`, `AuditTrail`,
+  `AttributionModel`) are all name-keyed counting accumulators, not period lookups. Not defects.
+
 ### Phase 3 — Streaming and Time Series, by probe
 
 **Scope:** the two largest never-probed areas, 245 public functions between them.

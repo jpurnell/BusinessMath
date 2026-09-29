@@ -245,7 +245,24 @@ extension Account {
 	/// - Throws: If account creation fails
 	/// - Note: Original account is unchanged (immutable operation)
 	public func applying(adjustment: AccountAdjustment<T>) throws -> Account<T> {
-		// Build adjusted values period by period
+		// Build adjusted values period by period.
+		//
+		// Both fallbacks below are deliberate, and they are deliberate for different reasons.
+		//
+		// The base lookup cannot miss: `TimeSeries.periods` is `values.keys.sorted()` in every
+		// initializer, so a period drawn from `self.timeSeries.periods` is by construction a key
+		// of `self.timeSeries`. The `?? T(0)` is unreachable rather than a fabricated figure.
+		//
+		// The adjustment lookup can miss, and zero is the right answer when it does: an
+		// adjustment that does not name this period was not booked in it. A one-time Q1
+		// settlement is deliberately a one-period series applied to a four-quarter account — the
+		// documented use case above — so zero is its true contribution to Q2 through Q4, not a
+		// stand-in for an unknown. Narrowing to the adjustment's own periods would shrink a
+		// four-quarter account to one quarter and discard three measured balances.
+		//
+		// The domain is the account's, which is why an adjustment booked in a period the account
+		// does not report is dropped: the base figure for that period is unknown, so the sum is
+		// not answerable there and no period is invented to hold it (contract §3.7).
 		let adjustedValues = self.timeSeries.periods.map { period -> T in
 			let baseValue = self.timeSeries[period] ?? T(0)
 			let adjustmentValue = adjustment.amount[period] ?? T(0)
@@ -318,7 +335,10 @@ extension Account {
 	public func applying(adjustments: [AccountAdjustment<T>]) throws -> Account<T> {
 		guard !adjustments.isEmpty else { return self }
 
-		// Build adjusted values period by period
+		// Build adjusted values period by period. Both fallbacks are the same two decisions as
+		// in `applying(adjustment:)` above: the base lookup is unreachable because
+		// `TimeSeries.periods` is derived from the value keys, and an adjustment that does not
+		// name this period contributes a measured zero rather than an unknown.
 		let adjustedValues = self.timeSeries.periods.map { period -> T in
 			let baseValue = self.timeSeries[period] ?? T(0)
 
@@ -453,7 +473,9 @@ extension IncomeStatement {
 	/// - Over-adjusting reduces credibility; document thoroughly
 	///
 	/// - Parameter adjustments: Array of pro forma adjustments to apply
-	/// - Returns: Time series of adjusted EBITDA values
+	/// - Returns: Time series of adjusted EBITDA values, covering only the periods ``ebitda``
+	///   itself reports. A period the underlying accounts do not all cover is left out rather
+	///   than reported as the adjustments alone.
 	/// - SeeAlso: ``ebitda``
 	/// - SeeAlso: ``AccountAdjustment``
 	public func adjustedEBITDA(adjustments: [AccountAdjustment<T>]) -> TimeSeries<T> {
@@ -461,19 +483,48 @@ extension IncomeStatement {
 			return self.ebitda
 		}
 
-		// Build adjusted EBITDA period by period
-		let adjustedValues = self.periods.map { period -> T in
-			let baseEBITDA = self.ebitda[period] ?? T(0)
+		// Build adjusted EBITDA period by period, over the periods ``ebitda`` actually reports —
+		// narrow the domain, do not fabricate the observation (contract §3.7). The `?? T(0)`
+		// this replaces would have reported adjusted EBITDA for an uncovered quarter as the sum
+		// of the addbacks alone: a company with $2M of normalizations and no statements for the
+		// quarter answering "adjusted EBITDA $2M", which is the headline number of a
+		// quality-of-earnings bridge.
+		//
+		// It was, as it stood, unreachable, and the reason is worth recording because it lives
+		// two files away: `FinancialStatementHelpers.validatePeriodConsistency` rejects any
+		// account whose series does not cover every period the statement declares, so every
+		// aggregate here covers at least `self.periods`, and `zip` — which is what `+` and `-`
+		// on a `TimeSeries` are — intersects sets that all contain it. A role with no accounts
+		// at all is not the exception it looks like: `aggregateAccounts` zero-fills it over
+		// exactly `self.periods`. So the invariant that made the fallback dead is enforced by a
+		// different type's initializer, and this function no longer depends on it.
+		//
+		// Reading `self.ebitda` once also stops the aggregation being recomputed per period.
+		let reportedEBITDA = self.ebitda
 
-			// Sum all adjustment values for this period
+		var adjustedPeriods: [Period] = []
+		var adjustedValues: [T] = []
+		adjustedPeriods.reserveCapacity(self.periods.count)
+		adjustedValues.reserveCapacity(self.periods.count)
+
+		for period in self.periods {
+			guard let baseEBITDA = reportedEBITDA[period] else { continue }
+
+			// Sum all adjustment values for this period.
+			//
+			// An adjustment that does not name this period was not booked in it, which is a
+			// measured zero rather than a gap: a one-time Q1 addback is deliberately a
+			// one-period series applied across four quarters, and zero is its true contribution
+			// to the other three.
 			let totalAdjustmentForPeriod = adjustments.reduce(T(0)) { sum, adj in
 				let adjustmentValue = adj.amount[period] ?? T(0)
 				return sum + adjustmentValue
 			}
 
-			return baseEBITDA + totalAdjustmentForPeriod
+			adjustedPeriods.append(period)
+			adjustedValues.append(baseEBITDA + totalAdjustmentForPeriod)
 		}
 
-		return TimeSeries(periods: self.periods, values: adjustedValues)
+		return TimeSeries(periods: adjustedPeriods, values: adjustedValues)
 	}
 }

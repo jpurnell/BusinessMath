@@ -67,7 +67,10 @@ struct LinearCycleSolver<T: Real & Sendable & LosslessStringConvertible> {
 	///
 	/// - Returns: Each member's series, over the periods where the whole system is defined.
 	/// - Throws: ``CycleSolverError`` when the system has no usable answer; ``FormulaError``
-	///   when a formula cannot be read or names an account that does not exist.
+	///   when a formula cannot be read or names an account that does not exist;
+	///   ``BusinessMathError/missingData(account:period:)`` when a coefficient or constant the
+	///   system needs has no value in the period being solved, rather than substituting a zero
+	///   that would change the system.
 	func solve() throws -> [String: TimeSeries<T>] {
 		guard !members.isEmpty else { return [:] }
 
@@ -120,16 +123,59 @@ struct LinearCycleSolver<T: Real & Sendable & LosslessStringConvertible> {
 	}
 
 	/// Builds and solves the `(I − A)m = c` system for one period.
+	///
+	/// ## The two ways a number can be absent here are not the same thing
+	///
+	/// A member with **no entry at all** in `coefficients` does not appear in that formula, so
+	/// its weight genuinely is zero in every period — that is what ``AffineForm`` means by "an
+	/// absent member has weight zero", and it is how every sparse form in a cycle is
+	/// represented. Refusing it would make the ordinary case unsolvable.
+	///
+	/// A member that **is** present but has no value *in this period* is a different claim
+	/// entirely. The period lies outside the span that coefficient covers, and writing zero
+	/// there does not decline to answer — it asserts that this variable does not participate in
+	/// this equation. A fabricated constant asserts that the equation sums to zero. Either one
+	/// changes the system, and Gaussian elimination will return a confident solution to the
+	/// system it was handed rather than the one the modeller wrote.
+	///
+	/// ``solvablePeriods(of:)`` is what keeps that case out, by intersecting exactly these
+	/// series. Reaching the guards below therefore means the domain and the system have drifted
+	/// apart, and a refusal is the only honest thing left — the same reason ``notLinear(_:)``
+	/// checks what the classifier already promised.
 	private func solveSystem(_ forms: [AffineForm], in period: Period) throws -> [T] {
 		var matrix: [[T]] = []
 		var vector: [T] = []
 
 		for (row, form) in forms.enumerated() {
-			matrix.append(members.enumerated().map { column, member in
-				let coefficient = form.coefficients[member]?[period] ?? T(0)
-				return (row == column ? T(1) : T(0)) - coefficient
-			})
-			vector.append(form.constant[period] ?? T(0))
+			var coefficients: [T] = []
+			for (column, member) in members.enumerated() {
+				var weight = T(0)
+				if let series = form.coefficients[member] {
+					// Present in this equation, absent in this period. Without this the caller
+					// would be handed a solved value for a system in which this member had been
+					// silently dropped from this row.
+					guard let known = series[period] else {
+						throw BusinessMathError.missingData(
+							account: member,
+							period: period.description
+						)
+					}
+					weight = known
+				}
+				let diagonal: T = (row == column ? T(1) : T(0))
+				coefficients.append(diagonal - weight)
+			}
+			matrix.append(coefficients)
+
+			// Without this the equation would be read as summing to zero — a right-hand side
+			// the modeller never wrote, in a system elimination will solve without complaint.
+			guard let constant = form.constant[period] else {
+				throw BusinessMathError.missingData(
+					account: members[row],
+					period: period.description
+				)
+			}
+			vector.append(constant)
 		}
 
 		do {

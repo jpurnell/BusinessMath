@@ -638,6 +638,10 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// - Current assets appear as **positive** values
 	/// - Current liabilities appear as **negative** values (to show they reduce NWC)
 	///
+	/// A role's series carries the periods its accounts report, for liabilities as well as
+	/// assets. A period the aggregate does not cover is left out rather than reported as a
+	/// balance of zero.
+	///
 	/// - Returns: Dictionary mapping balance sheet roles to their working capital contribution
 	/// - SeeAlso: ``netWorkingCapital``
 	/// - SeeAlso: ``currentAssets``
@@ -663,10 +667,30 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 		for role in currentLiabilityRoles {
 			let accountsForRole = currentLiabilityAccounts.filter { $0.balanceSheetRole == role }
 			if !accountsForRole.isEmpty {
-				// Negate to show as reduction in working capital
+				// Negate to show as reduction in working capital.
+				//
+				// This negates the aggregate in place rather than re-keying it to `periods` with
+				// a `?? T(0)` for any period the aggregate did not carry. That fallback was a
+				// fabricated observation of the shape contract §3.7 forbids — a payables balance
+				// of exactly `0` reads as "owed nothing", lands at the favourable end of every
+				// working-capital screen, and cannot be told apart from a filed zero.
+				//
+				// It was, as it stood, unreachable, and the reason is worth recording because it
+				// lives two files away: `FinancialStatementHelpers.validatePeriodConsistency`
+				// rejects any account whose series does not cover every period the statement
+				// declares, so each account here covers at least `periods`, and
+				// `aggregateAccounts` sums them with `+` — which is `zip`, an intersection — so
+				// the aggregate covers at least `periods` too. The invariant that made the
+				// fallback dead is enforced by a different type's initializer, and this property
+				// no longer depends on it.
+				//
+				// Negating in place also matches the current-asset branch above, which stores its
+				// aggregate unchanged. Where the two ever differ — accounts filed for quarters
+				// beyond the statement's declared span — the asset components already carried
+				// those periods and the liability components dropped them, leaving a bridge whose
+				// two halves had different domains.
 				let aggregated = FinancialStatementHelpers.aggregateAccounts(accountsForRole, periods: periods)
-				let negatedValues = periods.map { period in -(aggregated[period] ?? T(0)) }
-				components[role] = TimeSeries(periods: periods, values: negatedValues)
+				components[role] = aggregated.mapValues { -$0 }
 			}
 		}
 

@@ -159,12 +159,20 @@ struct AccountNodeTests {
 
     // MARK: - 10. Total for Missing Period
 
-    @Test("Total returns zero for a period not in any account")
+    /// This test asserted `0.0` until 2026-09-29, and the value it was pinning was fabricated:
+    /// the node reports monthly revenue of 100/200/300 and was answering that December 2099 —
+    /// a period its account does not report at all — earned exactly nothing. A period the data
+    /// does not cover is not answerable, so `total(for:)` now says so with `.nan`.
+    @Test("Total is not answerable for a period the account does not report")
     func totalMissingPeriod() throws {
         let account = try makeAccount(name: "Revenue", values: [100.0, 200.0, 300.0])
         let node = AccountNode<Double>(id: "rev", account: account)
         let missingPeriod = Period.month(year: 2099, month: 12)
 
-        #expect(abs(node.total(for: missingPeriod) - 0.0) < 1e-6)
+        #expect(node.total(for: missingPeriod).isNaN)
+
+        // Control: the covered periods still answer, and answer correctly.
+        let january: Double = node.total(for: jan2025)
+        #expect(abs(january - 100.0) < 1e-6)
     }
 }

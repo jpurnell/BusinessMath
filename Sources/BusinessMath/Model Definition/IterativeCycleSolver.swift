@@ -270,6 +270,9 @@ struct IterativeCycleSolver<T: Real & Sendable & LosslessStringConvertible> {
 	/// tolerance of the new value, per period. Either satisfies, because a model holding both
 	/// cash in the billions and a margin of 0.4 has no single threshold that means anything in
 	/// both places.
+	///
+	/// A period `previous` does not cover counts as moving, because nothing was compared. See
+	/// the guard below for why the alternative reads as convergence.
 	private func step(from previous: TimeSeries<T>, to updated: TimeSeries<T>)
 		-> (magnitude: T, sign: Int, moving: Bool) {
 		var magnitude = T(0)
@@ -278,7 +281,22 @@ struct IterativeCycleSolver<T: Real & Sendable & LosslessStringConvertible> {
 
 		for period in updated.periods {
 			guard let new = updated[period] else { continue }
-			let delta = new - (previous[period] ?? T(0))
+
+			// A period the previous iterate does not cover has not been compared to anything.
+			// Reading the absent prior as zero makes `delta` the whole of `new`, and for a
+			// member that settles near zero that is a change of about nothing: `moving` stays
+			// empty, `solve()` takes the `sweep.moving.isEmpty` exit, and a single evaluation
+			// from a warm start is returned as a fixed point. (A large `new` fails the other
+			// way, inflating the reported change, which costs sweeps but no wrong answer.)
+			// Unsettled is the only verdict a comparison that did not happen can support, and
+			// no magnitude is recorded because none was measured — `finalChange` and the
+			// divergence classifier both read that window.
+			guard let old = previous[period] else {
+				moving = true
+				continue
+			}
+
+			let delta = new - old
 			let size = abs(delta)
 
 			if size > magnitude {

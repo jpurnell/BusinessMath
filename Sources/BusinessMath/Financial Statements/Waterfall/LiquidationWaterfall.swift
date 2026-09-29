@@ -82,6 +82,20 @@ public struct LiquidationWaterfall: Sendable, Equatable {
         }
 
         var remaining = proceeds
+        // `allDistributions` and `context.currentDistributions` are accumulators this
+        // function builds from empty, keyed by recipient name. Every `?? 0` below reads
+        // the same key it then writes, so an absent key can only mean "no tier has paid
+        // this recipient yet" — a real measurement of nothing accrued, never a lookup
+        // that failed to find data held somewhere else. That is why they are not the
+        // period-keyed fabrication the contaminated-input contract is about, and why
+        // `WaterfallZeroKeyTests` pins them: a later sweep should not "fix" them.
+        //
+        // The identity here is the *name string*, which is the one thing that can go
+        // wrong: two tiers sharing a name merge into a single entry with no diagnostic,
+        // and a catch-up tier named differently from the pro-rata participant standing
+        // for the same party reads that party as unpaid (see `Tier.distribute`). Both
+        // are naming-contract gaps for `init` to police, not defaults to second-guess
+        // here.
         var allDistributions: [String: Double] = [:]
 
         let totalCapital = tiers.reduce(0.0) { $0 + $1.capitalReturn }

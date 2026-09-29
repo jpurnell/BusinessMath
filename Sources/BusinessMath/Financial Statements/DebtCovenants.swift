@@ -45,7 +45,20 @@ import OSLog
 @available(macOS 11.0, *)
 public struct FinancialCovenant {
 //	let logger = Logger(subsystem: "\(#file)", category: "\(#function)")
-    /// Types of financial covenant requirements
+    /// Types of financial covenant requirements.
+    ///
+    /// `principalPayment` is read only by ``FinancialMetric/debtServiceCoverage``, whose
+    /// denominator is interest **plus** scheduled principal. It defaults to `nil`, and
+    /// `nil` is taken as *no scheduled amortisation in this period* — true of a bullet
+    /// or interest-only facility, and the reason the default exists. A `Double?` cannot
+    /// distinguish that from an author who simply did not supply the figure, and the two
+    /// are not symmetric: leaving principal out shrinks the denominator, so the reported
+    /// coverage is higher than the real one and a `minimumRatio` DSCR covenant reads as
+    /// **complied with** when it may be breached. Supply it whenever the facility
+    /// amortises.
+    ///
+    /// `minimumValue` and `maximumValue` carry no `principalPayment` at all and pass
+    /// `nil`, so a DSCR expressed as a value covenant is always interest-only coverage.
     public enum Requirement {
         case minimumRatio(metric: FinancialMetric, threshold: Double, principalPayment: Double? = nil)
         case maximumRatio(metric: FinancialMetric, threshold: Double, principalPayment: Double? = nil)
@@ -418,31 +431,55 @@ public struct CovenantMonitor {
         period: Period,
         principalPayment: Double?
     ) -> Double where T: Codable {
-        func toDouble(_ value: T?) -> Double {
-            guard let val = value else { return 0.0 }
-            return Double(val)
-        }
-
         // A balance sheet ratio series omits any period whose denominator is zero,
-        // because the ratio has no value there. Absence therefore means one of two
-        // different things, and `toDouble` collapses both to `0.0`: for a period with
-        // no data that is the reading this function already gives everywhere else, but
-        // for a zero denominator it is the wrong answer in the direction that matters —
-        // a minimum current-ratio covenant would be breached by a company that owes
-        // nothing short-term, and a maximum debt-to-equity covenant would be passed by
-        // a company with no equity at all. Unbounded coverage is already written as
-        // `Double.infinity` in this file (see `.debtToEBITDA` and
-        // `.debtServiceCoverage`), and it gives both covenants the right verdict.
+        // because the ratio has no value there, and it omits any period its operands do
+        // not both cover. Absence therefore means three different things, and `?? 0.0`
+        // used to collapse all three: for a zero denominator `0.0` is the wrong answer
+        // in the direction that matters — a minimum current-ratio covenant would be
+        // breached by a company that owes nothing short-term, and a maximum
+        // debt-to-equity covenant would be passed by a company with no equity at all.
+        // Unbounded coverage is already written as `Double.infinity` in this file (see
+        // `.debtToEBITDA` and `.debtServiceCoverage`), and it gives both covenants the
+        // right verdict; an uncovered period is `.nan`, for the reasons set out on the
+        // guard below.
+        //
+        // Every non-ratio metric below reaches its series through `covenantReading`,
+        // which answers an uncovered period with `.nan` for the reasons documented on
+        // that function. The one reading still fabricated here is an **unrecognised**
+        // `.custom` metric name, which returns `0.0` at the bottom of this switch and so
+        // breaches a minimum covenant and passes a maximum one. That is a misspelled
+        // metric rather than missing data, and it wants a diagnostic rather than a
+        // quieter number; it is recorded here rather than changed in passing.
         func ratioMetric(
             _ ratio: TimeSeries<T>,
             _ numerator: TimeSeries<T>,
             over denominator: TimeSeries<T>
         ) -> Double {
             if let value = ratio[period] { return Double(value) }
-            guard let bottom = denominator[period], bottom == T(0) else { return 0.0 }
+            // The ratio series omits a period for two unrelated reasons, and the guard
+            // below separates them.
+            //
+            // The only way `BalanceSheet.ratio(_:over:)` drops a period both operands
+            // cover is a zero denominator, so a *failed* guard here means at least one
+            // operand does not cover this period at all — the statements the caller
+            // supplied stop short of it, or start after it. That is not answerable, and
+            // `0.0` does not decline to answer it: for a minimum-ratio covenant `0.0`
+            // is the breach end of the threshold and for a maximum-ratio covenant it is
+            // the compliant end, so the same missing data certifies a default on one
+            // covenant and clean compliance on another. `.nan` fails both `>=` and
+            // `<=`, so an uncovered period certifies nothing in either direction and
+            // `actualValue` shows the caller that no figure was computed.
+            //
+            // Note the two operands need not share a period domain: an aggregated
+            // accessor is `accounts[0].timeSeries + …`, and `+` on a `TimeSeries` is
+            // `zip`, so the aggregate spans the *intersection* of its accounts. A
+            // balance sheet whose current-asset account is one quarter shorter than its
+            // current-liability accounts reaches exactly this branch.
+            guard let bottom = denominator[period], let top = numerator[period], bottom == T(0) else {
+                return .nan
+            }
             // Zero underneath. With nothing on top either, the entity is empty and
             // there is nothing to report; with something on top the figure is unbounded.
-            let top = numerator[period] ?? T(0)
             return top == T(0) ? 0.0 : .infinity
         }
 
@@ -471,15 +508,21 @@ public struct CovenantMonitor {
             )
 
         case .debtToEBITDA:
-            let totalDebt = toDouble(balanceSheet.totalLiabilities[period])
-            let ebitda = toDouble(incomeStatement.operatingIncome[period])
+            let totalDebt = covenantReading(balanceSheet.totalLiabilities[period])
+            let ebitda = covenantReading(incomeStatement.operatingIncome[period])
 //				logger.debug("\(#function) got (\(totalDebt)/\(ebitda))=\(totalDebt/ebitda)")
+            // Screen the unanswerable reading before the zero-EBITDA exit, because
+            // `abs(nan) > 0.001` is false and would have taken it: a period the
+            // statements do not cover would have been reported as `.infinity`, which a
+            // maximum debt/EBITDA covenant reads as a breach and a minimum one as
+            // boundless coverage. Zero EBITDA is a measurement and keeps its `.infinity`.
+            guard !totalDebt.isNaN, !ebitda.isNaN else { return .nan }
             guard abs(ebitda) > 0.001 else { return Double.infinity }
             return totalDebt / ebitda
 
         case .debtServiceCoverage:
             // DSCR = EBITDA / (Interest + Principal Payment)
-            let ebitda = toDouble(incomeStatement.operatingIncome[period])
+            let ebitda = covenantReading(incomeStatement.operatingIncome[period])
 
             // Find interest expense from income statement
             let interestAccounts = incomeStatement.expenseAccounts.filter { account in
@@ -489,13 +532,21 @@ public struct CovenantMonitor {
             }
 
             let interestExpense: Double = interestAccounts.reduce(0.0) { sum, account in
-                let value = toDouble(account.timeSeries[period])
+                let value = covenantReading(account.timeSeries[period])
                 return sum + value
             }
 
+            // Omitted means no scheduled amortisation, which is a real term sheet
+            // (bullet, interest-only) and not a gap to refuse. See `Requirement` for
+            // why the conflation with "not supplied" is documented rather than closed:
+            // `Double?` cannot carry the difference and widening it is source-breaking.
             let principal = principalPayment ?? 0.0
             let debtService = interestExpense + principal
 
+            // As above: an unanswerable EBITDA or interest expense must not fall
+            // through the zero-debt-service exit and be reported as infinite coverage,
+            // which is the passing end of a minimum DSCR covenant.
+            guard !ebitda.isNaN, !debtService.isNaN else { return .nan }
             guard abs(debtService) > 0.001 else { return Double.infinity }
             return ebitda / debtService
 
@@ -511,15 +562,15 @@ public struct CovenantMonitor {
         case .tangibleNetWorth:
             // Simplified: Tangible Net Worth ≈ Total Equity for now
             // (Would need intangible asset identification for accurate calculation)
-            return toDouble(balanceSheet.totalEquity[period])
+            return covenantReading(balanceSheet.totalEquity[period])
 
         case .custom(let metricName):
             // Handle custom string-based metrics
             switch metricName.lowercased() {
             case "ebitda", "minimum ebitda":
-                return toDouble(incomeStatement.operatingIncome[period])
+                return covenantReading(incomeStatement.operatingIncome[period])
             case "networth", "net worth":
-                return toDouble(balanceSheet.totalEquity[period])
+                return covenantReading(balanceSheet.totalEquity[period])
             default:
                 // Unknown custom metric, return 0
                 return 0.0
@@ -547,18 +598,56 @@ public struct CovenantMonitor {
     }
 }
 
+/// Reads one period out of a statement series for a covenant test.
+///
+/// Returns `.nan` when the series does not cover `period`. It used to return `0.0`,
+/// which is not a reading of an absent period but an assertion about it, and the
+/// assertion is wrong in **both** directions at once — the same missing quarter cleared
+/// one covenant and tripped another in the same report:
+///
+/// | fabricated as `0` | covenant | verdict |
+/// |---|---|---|
+/// | `totalLiabilities`, `operatingIncome` | maximum debt/EBITDA | leverage of `0` → **passes** |
+/// | `totalEquity` | minimum tangible net worth | net worth of `0` → **breaches** |
+/// | one interest account of several | minimum interest coverage | expense understated → **passes** |
+///
+/// So neither "it fails safe" nor "it fails loud" was available as a defence. This is
+/// the contaminated-input contract's §3.7 — *narrow the domain; do not fabricate the
+/// observation* — wearing a helper: the `??` sat one level below every call site, which
+/// is why a grep for `?? 0` across this file found nothing.
+///
+/// The `period` a covenant is tested at is **caller-supplied** and need not be one the
+/// statement declares, so these reads are live rather than dead. Inside the statement's
+/// own declared periods they cannot return `nil` at all:
+/// `FinancialStatementHelpers.validatePeriodConsistency` rejects any account that does
+/// not cover every declared period, supersets are permitted, and the `zip` behind
+/// `TimeSeries.+` intersects sets that all contain those periods — so every aggregated
+/// accessor spans at least `statement.periods`.
+///
+/// `.nan` rather than a throw: `calculateMetric` returns `Double` into a
+/// ``CovenantComplianceResult`` whose `isCompliant` is a `Bool`, and neither has room
+/// for "not answerable". Widening them is a deliberate API decision, not a guard to add
+/// in passing. What `.nan` buys is that no *plausible* figure is reported —
+/// `actualValue` shows the caller that nothing was computed — and that the verdict stops
+/// depending on which way the covenant's threshold points: `nan >= x` and `nan <= x` are
+/// both false, so a missing period can no longer clear a ceiling. It still reads as
+/// non-compliance rather than as silence, which is the conflation left to that API
+/// decision.
+///
+/// - Parameter value: The result of a `series[period]` lookup.
+/// - Returns: The value as a `Double`, or `.nan` if the period is not covered.
+private func covenantReading<T: BinaryFloatingPoint>(_ value: T?) -> Double {
+    guard let val = value else { return .nan }
+    return Double(val)
+}
+
 /// Calculate interest coverage ratio
 public func calculateInterestCoverage<T: Real & BinaryFloatingPoint & Sendable>(
     incomeStatement: IncomeStatement<T>,
     balanceSheet: BalanceSheet<T>,
     period: Period
 ) -> Double where T: Codable {
-    func toDouble(_ value: T?) -> Double {
-        guard let val = value else { return 0.0 }
-        return Double(val)
-    }
-
-    let operatingIncome = toDouble(incomeStatement.operatingIncome[period])
+    let operatingIncome = covenantReading(incomeStatement.operatingIncome[period])
 
     // Find interest expense from income statement
     let interestAccounts = incomeStatement.expenseAccounts.filter { account in
@@ -568,10 +657,16 @@ public func calculateInterestCoverage<T: Real & BinaryFloatingPoint & Sendable>(
     }
 
     let interestExpense: Double = interestAccounts.reduce(0.0) { sum, account in
-        let value = toDouble(account.timeSeries[period])
+        let value = covenantReading(account.timeSeries[period])
         return sum + value
     }
 
+    // An interest account that does not cover `period` poisons the sum, and the sum
+    // must not then take the no-interest-expense exit: `abs(nan) > 0.001` is false, so
+    // a missing period would have reported `.infinity` — boundless coverage, the
+    // passing end of a minimum interest-coverage covenant. A genuinely zero interest
+    // expense is a measurement and keeps its `.infinity`.
+    guard !operatingIncome.isNaN, !interestExpense.isNaN else { return .nan }
     guard abs(interestExpense) > 0.001 else { return Double.infinity }
     let ratio: Double = operatingIncome / interestExpense // fp-safety:disable — guarded above: abs(interestExpense) > 0.001
     return ratio

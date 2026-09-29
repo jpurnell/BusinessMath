@@ -787,18 +787,40 @@ public actor ModelDebugger {
             AccountSnapshot(revenue: component, periods: allPeriods)
         }
 
-        // Calculate revenue by period for expense calculations
+        // Calculate revenue by period, for the percent-of-revenue expenses below.
+        //
+        // Reachable, unlike most lookups of this shape. The usual reason a `?? 0` on a series
+        // cannot fire is that the loop iterates that same series' own keys, and `TimeSeries`
+        // derives `periods` from them. Not here: `allPeriods` is a *union* formed over every
+        // revenue **and** cost component above, so each component is asked about periods only
+        // its siblings covered. A component whose series stops early — or a period that only a
+        // cost component contributed — leaves a revenue component with nothing to say.
+        // Adding zero for it is not a missing observation, it is the assertion that the
+        // component earned nothing, and this total is the denominator every percent-of-revenue
+        // cost is calculated from: the fabricated shortfall comes back as a confidently
+        // understated expense rather than as a gap anyone can see.
+        //
+        // So a period some component cannot answer for is left out of the dictionary entirely.
+        // That is what `AccountSnapshot(revenue:periods:)` already does with the same gap in its
+        // own series a few lines below, and what `TimeSeries.zip(with:)` does everywhere.
         var revenueByPeriod: [Period: Double] = [:]
         for period in allPeriods {
             var periodRevenue = 0.0
+            var covered = true
             for component in model.revenueComponents {
                 if let timeSeries = component.timeSeries {
-                    periodRevenue += timeSeries[period] ?? 0
+                    guard let value = timeSeries[period] else {
+                        covered = false
+                        break
+                    }
+                    periodRevenue += value
                 } else {
                     periodRevenue += component.amount
                 }
             }
-            revenueByPeriod[period] = periodRevenue
+            if covered {
+                revenueByPeriod[period] = periodRevenue
+            }
         }
 
         // Create expense account snapshots
@@ -1313,7 +1335,20 @@ public struct AccountSnapshot: Sendable {
         } else {
             // Single-value cost - calculate for each period
             for period in periods {
-                let revenue = revenueByPeriod[period] ?? 0
+                // This lookup could not miss until the caller above changed: `revenueByPeriod`
+                // was written for every key of the same `allPeriods` this loop walks, so the
+                // fallback was dead code sitting behind a total dictionary. Now that the
+                // caller leaves out the periods it cannot answer for, the miss is the whole
+                // signal, and it means revenue is *unknown* — not that it was zero.
+                //
+                // A `.fixed` cost never consults revenue, so it is reported either way — that
+                // is why this asks about the cost type rather than simply skipping. A
+                // `.variable` cost computed against a fabricated zero reports an expense of
+                // exactly zero, which is indistinguishable from an expense that did not occur,
+                // and it flows into `total` as well. The period is left out instead, exactly as
+                // the revenue initialiser above leaves out a period its own series lacks.
+                let revenue = revenueByPeriod[period]
+                if case .variable = cost.type, revenue == nil { continue }
                 let value = cost.calculate(revenue: revenue, for: period)
                 valueDict[period] = value
                 totalValue += value

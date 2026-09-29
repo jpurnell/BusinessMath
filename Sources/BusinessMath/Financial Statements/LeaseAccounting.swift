@@ -949,7 +949,30 @@ public struct SaleAndLeaseback {
         self.discountRate = discountRate
     }
 
-    /// Convenience init with alternative parameter names
+    /// Convenience init that reads the leaseback terms from a payment series.
+    ///
+    /// The term is the number of periods in `leasebackPayments` and the payment is the
+    /// **first** of them, so this initializer models a level schedule. An escalating or
+    /// stepped schedule is flattened to its opening payment, which understates
+    /// ``leaseObligationPV`` and therefore overstates ``netCashBenefit``; build such a
+    /// transaction with ``init(salePrice:bookValue:leaseTerm:annualLeasePayment:discountRate:)``
+    /// and a payment you have chosen yourself.
+    ///
+    /// - Note: An **empty** `leasebackPayments` leaves the payment `.nan`. It used to
+    ///   leave it `0.0`, which is not a reading of an empty series but a claim about it:
+    ///   a zero payment over a zero-period term prices ``leaseObligationPV`` at `0`, so
+    ///   ``netCashBenefit`` became the whole sale price and ``isEconomicallyBeneficial``
+    ///   answered `true` — the most favourable verdict the type can give, from a series
+    ///   that said nothing at all. With `.nan` the derived figures are visibly not
+    ///   computed and `isEconomicallyBeneficial` is `false`, because `nan > 0` is false.
+    ///
+    /// - Parameters:
+    ///   - carryingValue: Carrying value of the asset before sale.
+    ///   - salePrice: Amount received from the sale.
+    ///   - leasebackPayments: The leaseback payments, one per period.
+    ///   - discountRate: Discount rate for PV calculations.
+    ///   - startDate: Retained for source compatibility; the term comes from
+    ///     `leasebackPayments`.
     public init(
         carryingValue: Double,
         salePrice: Double,
@@ -960,7 +983,11 @@ public struct SaleAndLeaseback {
         self.salePrice = salePrice
         self.bookValue = carryingValue
         self.leaseTerm = leasebackPayments.periods.count
-        self.annualLeasePayment = leasebackPayments.valuesArray.first ?? 0.0
+        // `valuesArray` is ordered by the sorted periods, so `first` is the opening
+        // payment rather than an arbitrary dictionary element. Empty means the caller
+        // supplied no payments, which is a gap in the data and not a leaseback that
+        // costs nothing; see the note above.
+        self.annualLeasePayment = leasebackPayments.valuesArray.first ?? .nan
         self.discountRate = discountRate
     }
 

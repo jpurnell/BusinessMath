@@ -203,8 +203,15 @@ public struct OilGasEPModel: Sendable {
     ///
     /// - Parameters:
     ///   - periods: The projection periods (must be non-empty).
-    ///   - commodityPrices: A time series of commodity prices by period.
+    ///   - commodityPrices: A time series of commodity prices by period. Must cover every
+    ///     period in `periods`.
     /// - Returns: A ``StatementIntegration`` linking IS, BS, and CF statements.
+    /// - Throws: ``BusinessMathError/missingData(account:period:)`` when `commodityPrices` does
+    ///   not cover a projected period. A price that was never supplied is not a price of zero:
+    ///   valuing produced barrels at $0/bbl books zero revenue against the full lease operating
+    ///   expense those same barrels incur, and the running cash, PP&E and retained-earnings
+    ///   balances carry the hole into every later period. Also thrown by account or statement
+    ///   validation.
     public func project(
         periods: [Period],
         commodityPrices: TimeSeries<Double>
@@ -242,14 +249,67 @@ public struct OilGasEPModel: Sendable {
                 totalProduction += well.production(for: period)
             }
 
-            // 2. Commodity price for this period
-            let price = commodityPrices[period] ?? 0.0
+            // 2. Commodity price for this period.
+            //
+            // This read was `commodityPrices[period] ?? 0.0`. A gap in the price deck therefore
+            // priced the barrels at $0/bbl, and the caller was told a *producing* well booked
+            // zero revenue for the quarter — while `periodLOE` below still charges the full
+            // lease operating expense on the very barrels that were just valued at nothing. So
+            // the fabricated answer is not even a shut-in: a shut-in produces nothing and
+            // therefore incurs no LOE. On the fixture in `CommodityCoverageTests` (3,100 BOE in
+            // January, $15/BOE LOE, $100,000 DD&A, $50,000 G&A) a missing January price turned
+            // net income of **+$16,195 into -$196,500** and, because `runningCash`,
+            // `runningPPE` and `runningRE` accumulate across the loop, carried that hole into
+            // every later period's balance sheet as well.
+            //
+            // A price that was never supplied is not a price of zero, so the domain is narrowed
+            // instead — contract §3.7, matching `altmanZScore`/`piotroskiScore` in
+            // `CreditMetrics.swift`. `project` already throws, so this costs no API change.
+            guard let price = commodityPrices[period] else {
+                throw BusinessMathError.missingData(
+                    account: "\(commodityPriceName) price",
+                    period: period.label
+                )
+            }
 
             // 3. Revenue = production * price
             var periodRevenue = totalProduction * price
 
-            // 4. Hedge settlements (added to revenue / other income)
-            let hedgeSettlement = hedgeSettlements?[period] ?? 0.0
+            // 4. Hedge settlements (added to revenue / other income).
+            //
+            // This was `hedgeSettlements?[period] ?? 0.0`, which collapsed two absences that mean
+            // different things. They are decided separately here.
+            //
+            // OUTER — `hedgingProgram == nil`: this producer runs unhedged. Zero settlement is
+            // the observation, not a substitute for one, and it is what the optional exists to
+            // say. Kept deliberately; `unhedgedProducerSettlesAtZero` defends it against a later
+            // sweep reading it as a §3.7 fallback.
+            //
+            // INNER — a hedged producer with no settlement recorded for a period: that *would* be
+            // the §3.7 shape, a covered period whose settlement was fabricated as zero. It is
+            // unreachable, and provably so. `hedgeSettlements` is
+            // `program.totalSettlements(realizedPrices: commodityPrices)`, which appends a row
+            // for **every** period of `commodityPrices` (`HedgingProgram.swift:126`), emitting a
+            // real `0` when no instrument settles rather than omitting the period; and
+            // `TimeSeries.periods` is `values.keys.sorted()` (`TimeSeries.swift:185`, `:292`)
+            // with `subscript(_:)` a plain `values[period]` (`:324`), so a series' period list
+            // and its key set are the same set. The inner lookup therefore misses exactly when
+            // `commodityPrices[period]` misses, and the guard above has already thrown by then.
+            // It is written as a guard rather than left as `?? 0.0` so the proof lives next to
+            // the claim and a future change to `totalSettlements` fails loudly instead of
+            // silently reinstating the fabricated zero.
+            let hedgeSettlement: Double
+            if let hedgeSettlements {
+                guard let settlement = hedgeSettlements[period] else {
+                    throw BusinessMathError.missingData(
+                        account: "hedge settlement",
+                        period: period.label
+                    )
+                }
+                hedgeSettlement = settlement
+            } else {
+                hedgeSettlement = 0.0
+            }
             periodRevenue += hedgeSettlement
             hedgeSettlementValues.append(hedgeSettlement)
 
