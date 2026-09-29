@@ -216,11 +216,16 @@ struct MultiPeriodReportTests {
 			balanceSheet: balanceSheets[0]
 		)
 
+		// Both summaries must describe Q1, because that is the only thing this test is about:
+		// two entities, one period. It previously built this one from the *Q2* statements,
+		// which do not cover Q1 at all — the summary reached the entity check only because the
+		// initializer fabricated zeros for every figure it could not find. It now refuses, so
+		// the fixture asks for the quarter it actually means.
 		let summary2 = try FinancialPeriodSummary(
 			entity: entity2,
 			period: q1,
-			incomeStatement: incomeStatements[1],
-			balanceSheet: balanceSheets[1]
+			incomeStatement: incomeStatements[0],
+			balanceSheet: balanceSheets[0]
 		)
 
 		// The other case — and the one `MultiPeriodReportError.self` could not tell from
@@ -393,8 +398,13 @@ struct MultiPeriodReportTests {
 		#expect(debtToEquity.count == 4)
 		#expect(debtToEBITDA.count == 4)
 
-		// Debt decreasing over time, so leverage should decline
-		#expect(debtToEquity[3] < debtToEquity[0], "Debt/Equity should decline")
+		// Debt decreasing over time, so leverage should decline.
+		//
+		// `debtToEquityTrend` is `[T?]`: a quarter with no equity has no leverage ratio.
+		// This fixture has equity throughout, which `#require` asserts.
+		let deQ1 = try #require(debtToEquity[0], "Q1 equity is non-zero, so D/E is defined")
+		let deQ4 = try #require(debtToEquity[3], "Q4 equity is non-zero, so D/E is defined")
+		#expect(deQ4 < deQ1, "Debt/Equity should decline")
 	}
 
 	@Test("Track valuation multiples over time")

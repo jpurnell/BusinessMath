@@ -191,6 +191,10 @@ extension AsyncSequence where Element == Double {
 
     /// Calculate exponential moving average
     /// - Parameter alpha: Smoothing factor (0 < alpha <= 1), higher values give more weight to recent values
+    ///
+    /// A non-finite observation is not smoothed in: its position yields `nan` and the next
+    /// usable observation resumes from the state that preceded it, so recovery is at the very
+    /// next element. See ``AsyncEMASequence`` for the full rule.
     public func exponentialMovingAverage(alpha: Double) -> AsyncEMASequence<Self> {
         AsyncEMASequence(base: self, alpha: alpha)
     }
@@ -366,6 +370,14 @@ public struct AsyncRollingMeanSequence<Base: AsyncSequence>: AsyncSequence where
 /// - Convergence analysis
 /// - Overall data characterization
 ///
+/// ## Contaminated Input
+/// A `nan` observation contaminates every later output and that is the **correct** answer, not
+/// an oversight: a cumulative mean is defined over all values seen so far, so the unusable one
+/// is permanently a member of what is being averaged and there is nothing to recover from.
+/// Do not "fix" this into agreement with ``AsyncEMASequence``, which skips the observation
+/// instead — that is licensed by exponential weighting giving any single observation bounded,
+/// decaying influence, and it does not apply here.
+///
 /// - SeeAlso: ``AsyncRollingMeanSequence``, ``AsyncCumulativeSumSequence``
 public struct AsyncCumulativeMeanSequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
     /// Yields cumulative mean values.
@@ -449,6 +461,11 @@ public struct AsyncCumulativeMeanSequence<Base: AsyncSequence>: AsyncSequence wh
 /// contaminates outputs `i - window + 1 ... i` and output `i + 1` is clean again — the same
 /// footprint ``AsyncRollingStatisticsSequence`` already had. ``AsyncRollingStdDevSequence``
 /// inherits this, being the square root of this sequence.
+///
+/// ## Degenerate Window
+/// With `window: 1` the sample variance is `0/0` — the Bessel denominator is zero — and this
+/// sequence reports `nan` rather than `0`. `0` was a claim of measured, minimal spread, which
+/// is what a volatility screen reads as calmest. For `window: 2` and above nothing changes.
 ///
 /// - SeeAlso: ``AsyncRollingStdDevSequence``, ``AsyncRollingStatisticsSequence``
 public struct AsyncRollingVarianceSequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
@@ -534,11 +551,16 @@ public struct AsyncRollingVarianceSequence<Base: AsyncSequence>: AsyncSequence w
             // marked only the 4 windows that held the bad datum. Rebuild the Welford state
             // from the window whenever it shows the damage, and adopt the rebuilt state as
             // soon as the window itself is clean again.
+            // A window of one observation has no sample variance: the Bessel denominator is
+            // zero and the quantity is 0/0. Reporting `0.0` told the caller the spread had
+            // been measured and was the smallest possible — and `rollingStdDev(window: 1)`,
+            // which is the square root of this, said the stream was perfectly steady. Not
+            // yet evaluable is not zero (contract §4).
             if runningMean.isFinite, runningM2.isFinite {
                 if n > 1 {
                     variance = runningM2 / Double(n - 1) // fp-safety:disable — guarded by n > 1
                 } else {
-                    variance = 0.0
+                    variance = Double.nan
                 }
             } else {
                 let rebuilt = welfordState(buffer)
@@ -549,7 +571,7 @@ public struct AsyncRollingVarianceSequence<Base: AsyncSequence>: AsyncSequence w
                 if n > 1 {
                     variance = rebuilt.m2 / Double(n - 1) // fp-safety:disable — guarded by n > 1
                 } else {
-                    variance = 0.0
+                    variance = Double.nan
                 }
             }
 
@@ -999,6 +1021,14 @@ public struct AsyncRollingSumSequence<Base: AsyncSequence>: AsyncSequence where 
 /// ## Technical Note
 /// Uses constant memory regardless of stream length, maintaining only the running sum.
 ///
+/// ## Contaminated Input
+/// A `nan` observation contaminates every later output and that is the **correct** answer, not
+/// an oversight: a running total is defined over all values seen so far, so the unusable one is
+/// permanently a term of the sum and there is nothing to recover from. Do not "fix" this into
+/// agreement with ``AsyncEMASequence``, which skips the observation instead — that is licensed
+/// by exponential weighting giving any single observation bounded, decaying influence, and it
+/// does not apply here.
+///
 /// - SeeAlso: ``AsyncRollingSumSequence``, ``AsyncCumulativeMeanSequence``
 public struct AsyncCumulativeSumSequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
     /// Yields cumulative sum values.
@@ -1089,6 +1119,21 @@ public struct AsyncCumulativeSumSequence<Base: AsyncSequence>: AsyncSequence whe
 /// The first value initializes the EMA directly. Subsequent values apply the exponential
 /// weighting formula, creating a smooth continuous sequence.
 ///
+/// ## Contaminated Input
+/// A non-finite observation is not smoothed in. Its position yields `nan`, the smoothing state
+/// from before it is preserved, and the next usable observation resumes from that state — so
+/// the operator recovers on the very next element rather than staying contaminated for the
+/// rest of the stream. Output length is still one element per input. From the recovery
+/// position onward the result is bit-identical to smoothing the same series with the unusable
+/// observation simply absent. A non-finite *first* observation leaves the EMA unseeded, so the
+/// next usable observation initializes it.
+///
+/// This matches ``AsyncDoubleExponentialSmoothingSequence``. The line is weighted versus
+/// unweighted rather than recursive versus not: an exponentially weighted estimator gives any
+/// single observation bounded, decaying influence, so excluding one and continuing is honest,
+/// while ``AsyncCumulativeMeanSequence`` and ``AsyncCumulativeSumSequence`` are defined as
+/// "all values seen so far" and therefore retain a `nan` for the rest of the stream.
+///
 /// - SeeAlso: ``AsyncRollingMeanSequence``, ``AsyncCumulativeMeanSequence``
 public struct AsyncEMASequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
     /// Yields exponential moving average values.
@@ -1138,6 +1183,29 @@ public struct AsyncEMASequence<Base: AsyncSequence>: AsyncSequence where Base.El
             guard let value = try await baseIterator.next() else {
                 return nil
             }
+
+            // The recursion feeds its own output back in, so folding one unusable observation
+            // into the state pins every later output at `nan` — the caller is told the whole
+            // remainder of the stream is unsmoothable, not just the position that was. An
+            // unusable observation says nothing about the level, so it is not smoothed in: the
+            // state from before it survives, the next usable observation smooths from there,
+            // and recovery is at the very next element. The position is still marked `nan`
+            // rather than dropped, which keeps one output per input (contract §3.5) and
+            // refuses to hand back the previous EMA as though it had been re-measured.
+            //
+            // This is the treatment already shipped for `doubleExponentialSmoothing` and
+            // applied to its siblings; the dividing line is weighted versus unweighted, not
+            // recursive versus not. An exponentially weighted estimator gives any single
+            // observation bounded, decaying influence, so excluding one and continuing is
+            // honest. `cumulativeMean` and `cumulativeSum` are *defined* as "all values seen
+            // so far", so for them retention is the true answer and they are left alone.
+            //
+            // Infinities are screened here too, against contract §3.6's default, because they
+            // genuinely break this computation: for every `0 < alpha < 1` the update
+            // `alpha * finite + (1 - alpha) * infinity` is again infinite, so an infinite EMA
+            // is absorbing and never recovers, and at `alpha == 1` the `(1 - alpha)` factor
+            // makes it `0 * infinity`, which is `nan`. Either way it is permanent.
+            guard value.isFinite else { return Double.nan }
 
             if let currentEma = ema {
                 ema = alpha * value + (1.0 - alpha) * currentEma
@@ -1192,6 +1260,11 @@ public struct AsyncEMASequence<Base: AsyncSequence>: AsyncSequence where Base.El
 /// formerly reported a finite extremum for such a window unless the `nan` happened to sit in
 /// the first slot, because `Sequence.min()`/`max()` compare with `<` and every comparison
 /// against `nan` is false. Recovery is at output `i + 1` for a `nan` at input index `i`.
+///
+/// ## Degenerate Window
+/// With `window: 1`, `variance` and `stdDev` are `nan` rather than `0`: sample variance over a
+/// single observation is `0/0`, and `0` claimed a measured spread of zero. `mean`, `min`,
+/// `max`, `sum` and `count` are unaffected. For `window: 2` and above nothing changes.
 ///
 /// - SeeAlso: ``RollingStats``, ``AsyncCumulativeStatisticsSequence``
 public struct AsyncRollingStatisticsSequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
@@ -1277,7 +1350,16 @@ public struct AsyncRollingStatisticsSequence<Base: AsyncSequence>: AsyncSequence
                 let delta2 = value - runningMean
                 m2 += delta * delta2
             }
-            let variance = count > 1 ? m2 / Double(count - 1) : 0.0 // fp-safety:disable — guarded by count > 1
+            // A window of one observation has no sample variance: the Bessel denominator is
+            // zero and the quantity is 0/0. Reporting `0.0` told the caller the window's
+            // spread had been measured and was the smallest possible, which is what a
+            // volatility screen reads as calmest. Not-yet-evaluable is not zero (contract §4).
+            let variance: Double
+            if count > 1 {
+                variance = m2 / Double(count - 1) // fp-safety:disable — guarded by count > 1
+            } else {
+                variance = Double.nan
+            }
             let stdDev = sqrt(variance)
 
             // `min()`/`max()` walk the window with `<`, and every comparison against `nan` is
@@ -1320,7 +1402,7 @@ public struct AsyncRollingStatisticsSequence<Base: AsyncSequence>: AsyncSequence
 /// for try await stats in stream.cumulativeStatistics() {
 ///     print("After \(stats.count) values: mean = \(stats.mean), stdDev = \(stats.stdDev)")
 /// }
-/// // Output: After 1 values: mean = 10.0, stdDev = 0.0
+/// // Output: After 1 values: mean = 10.0, stdDev = nan
 /// //         After 2 values: mean = 15.0, stdDev = 7.07
 /// //         After 3 values: mean = 20.0, stdDev = 10.0
 /// //         After 4 values: mean = 25.0, stdDev = 12.91
@@ -1345,6 +1427,22 @@ public struct AsyncRollingStatisticsSequence<Base: AsyncSequence>: AsyncSequence
 ///
 /// This approach avoids catastrophic cancellation errors that can occur when computing
 /// variance as E[X²] - E[X]² with large means.
+///
+/// ## Warm-Up
+/// The first element has `variance` and `stdDev` of `nan`, not `0`. Sample variance with
+/// Bessel's correction is `0/0` for a single observation — it is not yet evaluable, and `0`
+/// would report the calmest possible reading for a stream that has said nothing about spread.
+/// From the second element onward the value is the ordinary sample variance.
+///
+/// ## Contaminated Input
+/// Every field is cumulative, so a `nan` observation contaminates the rest of the stream and
+/// there is no recovery to be had — unlike the rolling sequences, the bad datum never leaves
+/// the aggregate. `mean`, `variance`, `stdDev` and `sum` report `nan` from that point on by
+/// ordinary IEEE propagation; `min` and `max` now do the same. They previously did not: both
+/// `value < min` and `value > max` are false for a `nan`, so the observation was dropped from
+/// the extrema and a finite floor and ceiling were reported for a history whose mean this same
+/// struct admitted it could not compute — and a `nan` in the very first position left the
+/// seeds untouched, reporting min = `+infinity` above max = `-infinity`.
 ///
 /// - SeeAlso: ``CumulativeStats``, ``AsyncRollingStatisticsSequence``
 public struct AsyncCumulativeStatisticsSequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
@@ -1380,6 +1478,7 @@ public struct AsyncCumulativeStatisticsSequence<Base: AsyncSequence>: AsyncSeque
         private var m2: Double = 0.0  // Sum of squared deviations
         private var min: Double = .infinity
         private var max: Double = -.infinity
+        private var hasUnorderable = false
 
         init(base: Base.AsyncIterator) {
             self.baseIterator = base
@@ -1402,8 +1501,23 @@ public struct AsyncCumulativeStatisticsSequence<Base: AsyncSequence>: AsyncSeque
             sum += value
 
             // Update min and max
-            if value < min { min = value }
-            if value > max { max = value }
+            // Every comparison against `nan` is false, so `value < min` and `value > max` are
+            // *both* skipped for one and the observation vanishes from the extrema — while
+            // `sum` and `mean`, plain arithmetic in this same struct, correctly report `nan`
+            // for it. The caller would have been told the floor and ceiling of the history
+            // were known when one of its observations was not, which is the defect already
+            // fixed in `RollingStats`. A `nan` as the *first* observation was worse still: it
+            // left the seeds untouched and reported min = +infinity, max = -infinity — a
+            // minimum above the maximum. Cumulative statistics never drop an observation, so
+            // once one has been seen the extrema stay unknown for the rest of the stream,
+            // exactly as `mean` and `sum` do. Infinities are left alone (contract §3.6): they
+            // order correctly, and an infinite extremum is the true answer.
+            if value.isNaN {
+                hasUnorderable = true
+            } else {
+                if value < min { min = value }
+                if value > max { max = value }
+            }
 
             // Update mean and variance using Welford's online algorithm
             let delta = value - mean
@@ -1411,15 +1525,28 @@ public struct AsyncCumulativeStatisticsSequence<Base: AsyncSequence>: AsyncSeque
             let delta2 = value - mean
             m2 += delta * delta2
 
-            let variance = count > 1 ? m2 / Double(count - 1) : 0.0 // fp-safety:disable — guarded by count > 1
+            // A single observation has no sample variance: the Bessel denominator is zero and
+            // the quantity is 0/0. Reporting `0.0` claimed a measured spread of zero — the
+            // most stable reading on the scale, and the one a volatility monitor treats as
+            // safest — for a stream that has not yet said anything about spread at all.
+            // Warm-up is not "normal" (contract §4): the answer is not yet evaluable.
+            let variance: Double
+            if count > 1 {
+                variance = m2 / Double(count - 1) // fp-safety:disable — guarded by count > 1
+            } else {
+                variance = Double.nan
+            }
             let stdDev = sqrt(variance)
+
+            let reportedMin: Double = hasUnorderable ? Double.nan : min
+            let reportedMax: Double = hasUnorderable ? Double.nan : max
 
             return CumulativeStats(
                 mean: mean,
                 variance: variance,
                 stdDev: stdDev,
-                min: min,
-                max: max,
+                min: reportedMin,
+                max: reportedMax,
                 sum: sum,
                 count: count
             )
@@ -1676,8 +1803,23 @@ public struct AsyncRollingSuccessiveDifferenceRMSSequence<Base: AsyncSequence>: 
 ///
 /// ## Mathematical Background
 /// ```
-/// rate = count(|d[i]| > threshold) / N    where d[i] = x[i+1] - x[i]
+/// rate = count(|d[i]| > threshold) / count(|d[i]| is comparable)
 /// ```
+/// where `d[i] = x[i+1] - x[i]`. For a window every difference of which is comparable the
+/// denominator is `N` and this is the textbook definition.
+///
+/// ## Contaminated Input
+/// A difference that is `nan` — from a `nan` observation, or from `∞ - ∞` — cannot be compared
+/// against the threshold at all. It is excluded from **both** the numerator and the
+/// denominator, so the rate reports the exceedance fraction among the differences that could
+/// actually be evaluated rather than diluting it with one that could not. When *no* difference
+/// in the window is comparable the rate is `.nan`: there is no evidence to report a fraction
+/// from, and `0` would say "nothing exceeded the threshold".
+///
+/// The element type is `Double`, so the count behind the fraction cannot be returned alongside
+/// it without a source-breaking change (contract §3.3). Pair this with
+/// `rollingStatistics(window:)` over the same stream when the caller needs to
+/// know how much of the window was usable.
 ///
 /// - Complexity: O(1) per element after initial window fill.
 public struct AsyncRollingThresholdExceedanceRateSequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
@@ -1706,14 +1848,17 @@ public struct AsyncRollingThresholdExceedanceRateSequence<Base: AsyncSequence>: 
 
     /// Iterator for the rolling threshold exceedance rate sequence.
     ///
-    /// Maintains a `Deque` of boolean exceedance flags and a running count
-    /// for O(1) incremental computation.
+    /// Maintains a `Deque` of exceedance flags and running counts for O(1) incremental
+    /// computation. A flag is `nil` where the difference could not be compared against the
+    /// threshold at all, which keeps that position out of both the numerator and the
+    /// denominator of the reported rate.
     public struct Iterator: AsyncIteratorProtocol {
         private var baseIterator: Base.AsyncIterator
         private let window: Int
         private let threshold: Double
-        private var exceedanceFlags: Deque<Bool> = []
+        private var exceedanceFlags: Deque<Bool?> = []
         private var exceedCount: Int = 0
+        private var evaluableCount: Int = 0
         private var previousValue: Double?
         private var isComplete = false
 
@@ -1750,9 +1895,12 @@ public struct AsyncRollingThresholdExceedanceRateSequence<Base: AsyncSequence>: 
 
                 let prev = previousValue ?? current
                 let absDiff = abs(current - prev)
-                let exceeds = absDiff > threshold
-                exceedanceFlags.append(exceeds)
-                if exceeds { exceedCount += 1 }
+                let flag: Bool? = Self.exceedanceFlag(absDiff, threshold: threshold)
+                exceedanceFlags.append(flag)
+                if let flag {
+                    evaluableCount += 1
+                    if flag { exceedCount += 1 }
+                }
                 previousValue = current
             }
 
@@ -1761,27 +1909,64 @@ public struct AsyncRollingThresholdExceedanceRateSequence<Base: AsyncSequence>: 
                 isComplete = true
                 return nil
             }
-            let rate = Double(exceedCount) / Double(exceedanceFlags.count)
+            // `absDiff > threshold` is **false** for a `nan`, so before this the difference
+            // was filed as "did not exceed" and divided into a denominator of `window`: a
+            // confident fraction over a window one of whose differences was never compared.
+            // The partial-evidence rule applies instead — the rate covers what could be
+            // evaluated, so a window of 4 with one unusable difference and one exceedance
+            // reports 1/3, not 1/4. When nothing in the window is evaluable there is no
+            // fraction to report and the answer is `.nan`; `0` would be read as "no
+            // exceedances", the quiet end of the scale a monitor thresholds against.
+            let rate: Double
+            if evaluableCount > 0 {
+                rate = Double(exceedCount) / Double(evaluableCount) // fp-safety:disable — guarded by evaluableCount > 0
+            } else {
+                rate = Double.nan
+            }
 
             // Try to slide window for next iteration
             if let current = try await baseIterator.next() {
                 let prev = previousValue ?? current
                 let absDiff = abs(current - prev)
-                let exceeds = absDiff > threshold
+                let flag: Bool? = Self.exceedanceFlag(absDiff, threshold: threshold)
 
                 // Evict oldest
                 let evicted = exceedanceFlags.removeFirst()
-                if evicted { exceedCount -= 1 }
+                if let evicted {
+                    evaluableCount -= 1
+                    if evicted { exceedCount -= 1 }
+                }
 
                 // Add new
-                exceedanceFlags.append(exceeds)
-                if exceeds { exceedCount += 1 }
+                exceedanceFlags.append(flag)
+                if let flag {
+                    evaluableCount += 1
+                    if flag { exceedCount += 1 }
+                }
                 previousValue = current
             } else {
                 isComplete = true
             }
 
             return rate
+        }
+
+        /// Classifies one absolute successive difference against the threshold.
+        ///
+        /// - Parameters:
+        ///   - absDiff: The absolute successive difference.
+        ///   - threshold: The exceedance threshold.
+        /// - Returns: `true` when the difference exceeds the threshold, `false` when it does
+        ///   not, and `nil` when the comparison cannot be made at all — either operand being
+        ///   `nan`. An infinite difference is comparable and exceeds every finite threshold
+        ///   (contract §3.6).
+        private static func exceedanceFlag(_ absDiff: Double, threshold: Double) -> Bool? {
+            // A `nan` answers "no" to `>` exactly as a small difference does, so returning
+            // `false` here would report an uncompared difference as a measured non-exceedance.
+            // A `nan` threshold does the same to the whole stream: every window would come
+            // back `0.0`, telling the caller nothing ever exceeded a bound never applied.
+            guard !absDiff.isNaN, !threshold.isNaN else { return nil }
+            return absDiff > threshold
         }
     }
 }
@@ -1839,7 +2024,8 @@ extension AsyncSequence where Element == Double {
     /// - Parameters:
     ///   - window: The number of successive differences per window. Must be ≥ 1.
     ///   - threshold: Exceedance threshold (strict greater-than on absolute difference).
-    /// - Returns: An async sequence of exceedance rate values in [0, 1].
+    /// - Returns: An async sequence of exceedance rate values in [0, 1], or `.nan` for a
+    ///   window in which no difference could be compared against the threshold.
     ///
     /// ## Usage Example
     /// ```swift
@@ -1849,6 +2035,11 @@ extension AsyncSequence where Element == Double {
     ///     print(rate)  // 0.5
     /// }
     /// ```
+    ///
+    /// A difference that is `nan` cannot be compared, so it is left out of both the numerator
+    /// and the denominator: the rate is the exceedance fraction among the differences that
+    /// could be evaluated. A window with nothing evaluable yields `.nan`. See
+    /// ``AsyncRollingThresholdExceedanceRateSequence`` for the full rule.
     public func rollingThresholdExceedanceRate(window: Int, threshold: Double) -> AsyncRollingThresholdExceedanceRateSequence<Self> {
         AsyncRollingThresholdExceedanceRateSequence(base: self, window: window, threshold: threshold)
     }

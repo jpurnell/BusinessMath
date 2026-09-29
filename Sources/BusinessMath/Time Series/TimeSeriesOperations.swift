@@ -11,7 +11,14 @@ import Numerics
 // MARK: - AggregationMethod
 
 /// Methods for aggregating time series data to larger periods.
-public enum AggregationMethod {
+///
+/// The `Sendable` conformance is unconditional and costs nothing: this is an enum of six
+/// cases with no associated values, so it has no storage to protect. It is written out
+/// because a `public` enum does not receive the implicit conformance a non-public one would,
+/// and without it a caller under strict concurrency cannot send a method across an isolation
+/// boundary — into a task group, or into `@Test(arguments:)`, which is where the absence was
+/// first noticed.
+public enum AggregationMethod: Sendable {
 	/// Sum all values in the period.
 	case sum
 
@@ -42,6 +49,14 @@ extension TimeSeries {
 	/// - Parameter transform: A closure that transforms each value.
 	/// - Returns: A new time series with transformed values.
 	///
+	/// ## Labels are carried through unchanged
+	///
+	/// A label names a **period**, not the value observed in it, and this operation changes no
+	/// period: every label the caller supplied is on the result. Before this rule the labels
+	/// were dropped, so a caller who named their periods got those names back only for as long
+	/// as they never transformed the series — information they had supplied, discarded by an
+	/// operation that had no view on it.
+	///
 	/// ## Example
 	/// ```swift
 	/// let timeSeries = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
@@ -49,7 +64,7 @@ extension TimeSeries {
 	/// ```
 	public func mapValues(_ transform: (T) -> T) -> TimeSeries<T> {
 		let newValues = valuesArray.map(transform)
-		return TimeSeries(periods: periods, values: newValues, metadata: metadata)
+		return carryingLabels(periods: periods, values: newValues)
 	}
 
 	/// Returns a new time series containing only values that satisfy the predicate.
@@ -92,6 +107,13 @@ extension TimeSeries {
 	/// let cleaned = TimeSeries(data: scoreable, metadata: series.metadata)
 	/// ```
 	///
+	/// ## Labels follow their own periods
+	///
+	/// A retained period keeps the label the caller gave it; a period the predicate rejected
+	/// takes its label with it. Nothing is reassigned, so a label never appears against a
+	/// period other than the one it was written for. A retained period that the caller never
+	/// labelled stays unlabelled — ``label(for:)`` answers `nil`, as it did on the source.
+	///
 	/// ## Example
 	/// ```swift
 	/// let timeSeries = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
@@ -118,7 +140,7 @@ extension TimeSeries {
 			}
 		}
 
-		return TimeSeries(periods: filteredPeriods, values: filteredValues, metadata: metadata)
+		return carryingLabels(periods: filteredPeriods, values: filteredValues)
 	}
 
 	// MARK: - Binary Operations
@@ -131,6 +153,21 @@ extension TimeSeries {
 	///   - other: The other time series to combine with.
 	///   - operation: A closure that combines values from both series.
 	/// - Returns: A new time series with combined values.
+	///
+	/// ## The receiver's labels, and only the receiver's
+	///
+	/// Two operands can name the same period differently, and there is no rule that resolves
+	/// that disagreement without inventing one — picking the longer string, concatenating
+	/// them, or preferring whichever happens to be non-`nil` would all put a name on the
+	/// result that neither caller wrote. So the result carries **`self`'s** labels for the
+	/// periods it emits, and `other`'s are not consulted. This is the rule the result's
+	/// ``metadata`` already follows: the receiver is the series the result inherits
+	/// its identity from.
+	///
+	/// The asymmetry is deliberate and reaches the operators, which are defined in terms of
+	/// this method: `a + b` is labelled as `a` is, and `b + a` as `b` is, though the values
+	/// agree. If the labels of both operands matter, combine them yourself — the operands are
+	/// still in hand, and ``init(data:metadata:labels:)`` takes any map you decide on.
 	///
 	/// ## Example
 	/// ```swift
@@ -150,7 +187,7 @@ extension TimeSeries {
 			}
 		}
 
-		return TimeSeries(periods: resultPeriods, values: resultValues, metadata: metadata)
+		return carryingLabels(periods: resultPeriods, values: resultValues)
 	}
 
 	// MARK: - Missing Value Handling
@@ -166,6 +203,17 @@ extension TimeSeries {
 	/// let allMonths = (1...12).map { Period.month(year: 2025, month: $0) }
 	/// let filled = sparseSeries.fillForward(over: allMonths)
 	/// ```
+	///
+	/// ## A filled period has no name
+	///
+	/// Labels are carried for the periods that were **observed** — those present in the
+	/// source. A period this call filled gets none: its value was taken from a neighbour, and
+	/// that neighbour's label is a name the caller wrote for a different period. Copying it
+	/// across would put the caller's own words behind an observation they never made.
+	///
+	/// The converse does not hold: an absent label does not prove a period was filled, since a
+	/// caller may label some periods and not others. Read ``label(for:)`` as "the
+	/// name this period was given", never as a coverage flag.
 	///
 	/// - Note: This is one of the four ways to state, in your own code, what an unmeasured
 	///   period is worth. ``aggregate(to:method:)`` will not choose one of them for you: it
@@ -189,7 +237,7 @@ extension TimeSeries {
 			value != nil ? period : nil
 		}
 
-		return TimeSeries(periods: nonNilPeriods, values: nonNilValues, metadata: metadata)
+		return carryingLabels(periods: nonNilPeriods, values: nonNilValues)
 	}
 
 	/// Fills missing values by propagating the next known value backward.
@@ -203,6 +251,17 @@ extension TimeSeries {
 	/// let allMonths = (1...12).map { Period.month(year: 2025, month: $0) }
 	/// let filled = sparseSeries.fillBackward(over: allMonths)
 	/// ```
+	///
+	/// ## A filled period has no name
+	///
+	/// Labels are carried for the periods that were **observed** — those present in the
+	/// source. A period this call filled gets none: its value was taken from a neighbour, and
+	/// that neighbour's label is a name the caller wrote for a different period. Copying it
+	/// across would put the caller's own words behind an observation they never made.
+	///
+	/// The converse does not hold: an absent label does not prove a period was filled, since a
+	/// caller may label some periods and not others. Read ``label(for:)`` as "the
+	/// name this period was given", never as a coverage flag.
 	///
 	/// - Note: This is one of the four ways to state, in your own code, what an unmeasured
 	///   period is worth. ``aggregate(to:method:)`` will not choose one of them for you: it
@@ -229,7 +288,7 @@ extension TimeSeries {
 			value != nil ? period : nil
 		}
 
-		return TimeSeries(periods: nonNilPeriods, values: nonNilValues, metadata: metadata)
+		return carryingLabels(periods: nonNilPeriods, values: nonNilValues)
 	}
 
 	/// Fills missing values with a constant value.
@@ -246,6 +305,17 @@ extension TimeSeries {
 	/// let filled = sparseSeries.fillMissing(with: 0.0, over: allMonths)
 	/// ```
 	///
+	/// ## A filled period has no name
+	///
+	/// Labels are carried for the periods that were **observed** — those present in the
+	/// source. A period this call filled gets none: the constant is the caller's assumption
+	/// about a period nobody measured, and no name was ever written for it. Borrowing a
+	/// neighbour's would put the caller's own words behind an observation they never made.
+	///
+	/// The converse does not hold: an absent label does not prove a period was filled, since a
+	/// caller may label some periods and not others. Read ``label(for:)`` as "the
+	/// name this period was given", never as a coverage flag.
+	///
 	/// - Note: This is one of the four ways to state, in your own code, what an unmeasured
 	///   period is worth. ``aggregate(to:method:)`` will not choose one of them for you: it
 	///   omits a target period the data does not cover end to end, so making the coverage
@@ -261,7 +331,7 @@ extension TimeSeries {
 			}
 		}
 
-		return TimeSeries(periods: targetPeriods, values: resultValues, metadata: metadata)
+		return carryingLabels(periods: targetPeriods, values: resultValues)
 	}
 
 	/// Fills missing values using linear interpolation.
@@ -278,6 +348,18 @@ extension TimeSeries {
 	/// let allMonths = Period.documentationQuarters
 	/// let interpolated = sparseSeries.interpolate(over: allMonths)
 	/// ```
+	///
+	/// ## An interpolated period has no name
+	///
+	/// Labels are carried for the periods that were **observed** — those present in the
+	/// source. A period this call interpolated gets none: its value was computed from the
+	/// known points on either side, and either of their labels is a name the caller wrote for
+	/// a different period. Copying one across would put the caller's own words behind an
+	/// observation they never made.
+	///
+	/// The converse does not hold: an absent label does not prove a period was interpolated,
+	/// since a caller may label some periods and not others. Read ``label(for:)``
+	/// as "the name this period was given", never as a coverage flag.
 	///
 	/// - Note: This is one of the four ways to state, in your own code, what an unmeasured
 	///   period is worth. ``aggregate(to:method:)`` will not choose one of them for you: it
@@ -342,7 +424,7 @@ extension TimeSeries {
 			}
 		}
 
-		return TimeSeries(periods: resultPeriods, values: resultValues, metadata: metadata)
+		return carryingLabels(periods: resultPeriods, values: resultValues)
 	}
 
 	// MARK: - Aggregation
@@ -397,6 +479,34 @@ extension TimeSeries {
 	/// covered quarter means for one. A sub-daily source, a source no finer than the target,
 	/// and a bucket whose members are of mixed period types have no whole-number tiling to
 	/// count against either, so all of these are emitted from whatever they contain.
+	///
+	/// ## The result carries no labels, deliberately
+	///
+	/// ``labels`` on the result is always `nil`, whatever the source carried. This
+	/// is a decision, not an oversight — every other operation in this file now carries the
+	/// caller's labels through, and this one is the exception.
+	///
+	/// The periods in the result did not exist in the source. A label the caller wrote for
+	/// March is a name for March; putting it on Q1 would say they had named the quarter, and
+	/// naming the quarter after whichever of its months came first, or last, or happened to be
+	/// labelled, is a choice they never made. There is no combining rule either: three month
+	/// names do not reduce to a quarter name without writing prose nobody asked for. So the
+	/// honest answer is that no label applies, and the result says so by having none.
+	///
+	/// A caller who wants the aggregate labelled is naming a period they can see in the
+	/// result, and can say so directly:
+	///
+	/// ```swift
+	/// let monthly = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
+	/// let quarterly = monthly.aggregate(to: .quarterly, method: .sum)
+	/// let quarterNames: [String] = quarterly.periods.indices.map { "Reporting quarter \($0 + 1)" }
+	/// let named = TimeSeries(
+	///     periods: quarterly.periods,
+	///     values: quarterly.valuesArray,
+	///     metadata: quarterly.metadata,
+	///     labels: quarterNames
+	/// )
+	/// ```
 	///
 	/// ## Unusable observations
 	///
@@ -463,6 +573,12 @@ extension TimeSeries {
 			resultValues.append(Self.combine(values, using: method))
 		}
 
+		// No `carryingLabels` here, and that is the decision rather than the oversight it looks
+		// like. Every other operation in this file carries the caller's labels to the periods
+		// they were written for; these periods are new. A name written for March is not a name
+		// for Q1, and there is no rule that turns three month names into a quarter name without
+		// writing prose the caller never asked for. The result therefore has no labels at all,
+		// which is the only honest thing it can say. See the DocC section above.
 		return TimeSeries(periods: resultPeriods, values: resultValues, metadata: metadata)
 	}
 
@@ -598,6 +714,50 @@ extension TimeSeries {
 			let largest: T = values.max() ?? firstValue
 			return unscoreable ? T.nan : largest
 		}
+	}
+
+	// MARK: - Label Support
+
+	/// Builds a result series over `resultPeriods`, carrying each period's own label from this
+	/// series.
+	///
+	/// A label is a name the caller wrote for one particular period, so it travels with that
+	/// period and with no other. A period that is in the result but was not in the source — one
+	/// a fill or an interpolation introduced — is left unnamed rather than given a neighbour's
+	/// name, because a neighbour's name is an observation the caller did not make.
+	///
+	/// - Parameters:
+	///   - resultPeriods: The periods of the result, in the order they were produced.
+	///   - resultValues: The values of the result, parallel to `resultPeriods`.
+	/// - Returns: The result series, labelled where the source labelled the same period.
+	private func carryingLabels(periods resultPeriods: [Period], values resultValues: [T]) -> TimeSeries<T> {
+		// An unlabelled source has nothing to carry, and this keeps the common case on exactly
+		// the initializer it used before labels were carried at all.
+		guard let sourceLabels = labels else {
+			return TimeSeries(periods: resultPeriods, values: resultValues, metadata: metadata)
+		}
+
+		var data: [Period: T] = [:]
+		data.reserveCapacity(resultPeriods.count)
+		for (period, value) in Swift.zip(resultPeriods, resultValues) {
+			data[period] = value
+		}
+
+		var kept: [Period: String] = [:]
+		kept.reserveCapacity(resultPeriods.count)
+		for period in resultPeriods {
+			// A period the source never named stays unnamed. The label map is allowed to be
+			// partial — ``init(data:metadata:labels:)`` takes any map — so an absent entry is
+			// the same "no name was given" it was on the way in, not a new claim.
+			guard let label = sourceLabels[period] else { continue }
+			kept[period] = label
+		}
+
+		// `kept` may be empty, when a labelled series kept only periods it had not named. The
+		// empty map is retained rather than folded to `nil`: the caller did supply labels, and
+		// `nil` would say they had not. Nothing reads the difference — ``label(for:)`` answers
+		// `nil` either way — so this costs nothing and claims less.
+		return TimeSeries(data: data, metadata: metadata, labels: kept)
 	}
 }
 

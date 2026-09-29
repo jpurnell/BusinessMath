@@ -58,7 +58,27 @@ public extension TimeSeries where T: BinaryFloatingPoint {
     ///   ``BusinessMathError/dataQuality(message:context:)`` when the series contains a
     ///   non-finite observation. ``StationarityTestResult/isStationary`` is a `Bool` and
     ///   ``StationarityTestResult/recommendation`` is an instruction, so there is no value
-    ///   either can take that means "not answerable".
+    ///   either can take that means "not answerable". `RegressionError.noVariance` for a
+    ///   noiseless series, which is arithmetically correct and explained below.
+    ///
+    /// ## A perfectly deterministic series is refused, and the message is about `Δy`
+    ///
+    /// ADF does not regress on the series. It regresses the **first difference** `Δy_t` on
+    /// `y_{t-1}` and on lagged differences. A series with no stochastic component at all —
+    /// `100, 110, 120, … 210` — has `Δy_t = 10` at every `t`, so the dependent vector is a
+    /// constant and `multipleLinearRegression` throws
+    /// `noVariance("y has no variance (all values approximately equal)")`. The design matrix
+    /// is degenerate in the same way: its lagged-difference columns are constant, hence
+    /// collinear with the intercept.
+    ///
+    /// So the refusal is right and there is no unit root to test for — but the `y` in that
+    /// message is `Δy`, not the series the caller passed, and a caller reading it about values
+    /// running 100 to 210 will go looking for a constant column that is not there. Read it as
+    /// *"the differenced series is constant"*.
+    ///
+    /// This is a property of noiseless fixtures, not of short ones. Any series with genuine
+    /// variation in its increments is tested normally, including the 60-point mean-reverting
+    /// and random-walk fixtures pinned in `StationarityTests`.
     func augmentedDickeyFuller(lag: Int? = nil) throws -> StationarityTestResult<T> {
         let y = valuesArray.map { Double($0) }
         let n = y.count

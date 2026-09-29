@@ -186,6 +186,27 @@ public struct TimeSeriesDecomposition<T: Real & Sendable>: Sendable {
 ///   ``BusinessMathError/dataQuality(message:context:)`` if any observation is not finite.
 ///   A single `nan` is smeared across the whole moving-average window that contains it, so
 ///   there is no one season that could be marked instead.
+///   `SeasonalityError.divisionByZero` if the trend passes through zero (see below), and
+///   `SeasonalityError.insufficientData` if the centred moving average leaves a season with
+///   no usable observation — reachable only at `periodsPerYear == 2` with exactly four
+///   values, where five are needed.
+///
+/// ## The trend must keep one sign
+///
+/// These indices are multipliers, so they exist only where the ratio `value / trend` does. A
+/// series whose trend crosses zero — a business moving from loss into profit, a net-flow
+/// figure, a temperature in Celsius — has no multiplicative seasonal description: the ratio is
+/// unbounded at the crossing and inverts its sign beyond it. The function refuses rather than
+/// averaging those ratios, because the normalisation step conceals the problem completely: the
+/// indices still sum to `periodsPerYear`, which is the invariant a caller would check, while
+/// the season ranking they encode can be wrong end to end.
+///
+/// A wholly negative trend is accepted and is meaningful — a loss that deepens 30% every Q4 is
+/// a multiplicative statement — and returns the same indices as the negated series.
+///
+/// There is no escape hatch through ``decomposeTimeSeries(timeSeries:periodsPerYear:method:)``
+/// with `.additive`: that method derives its seasonal component from these same ratios, so it
+/// refuses on the same data. See its documentation.
 ///
 /// ## Example
 ///
@@ -199,7 +220,10 @@ public struct TimeSeriesDecomposition<T: Real & Sendable>: Sendable {
 /// ## Requirements
 ///
 /// - At least 2 complete seasonal cycles (e.g., 8 values for quarterly data)
+/// - At `periodsPerYear == 2`, five values rather than four — the centred average of an even
+///   two-wide window is defined at only `count - 3` positions
 /// - periodsPerYear must be positive
+/// - The trend must not change sign or reach zero
 ///
 /// ## Use Cases
 ///
@@ -251,10 +275,62 @@ public func seasonalIndices<T: Real & Sendable>(
 	// Calculate centered moving average (trend)
 	let trend = calculateCenteredMovingAverage(values: values, window: periodsPerYear)
 
+	// A seasonal index is a *multiplier*: `Index[season] = mean(Value / Trend)`, normalised so
+	// the indices average to 1. That statement only means anything while the trend keeps one
+	// sign. A trend that passes through zero makes `Value / Trend` unbounded near the crossing
+	// and flips its sign on the far side, so each season's "multiplier" is the average of
+	// numbers that share neither a scale nor a sign — and the normalisation hides it, because
+	// dividing by the mean restores the sum-to-`periodsPerYear` invariant whatever the ratios
+	// were.
+	//
+	// Measured on [-60, -45, -30, -5, -20, -5, 10, 35, 20, 35, 50, 75] — an exactly linear
+	// trend from -55 to +55 carrying the fixed offsets [-5, 0, +5, +20], i.e. a business
+	// crossing from loss into profit with a seasonal swing that is constant in currency. The
+	// centred moving average runs -30, -20, -10, 0, 10, 20, 30, 40, and the function returned
+	// [0.8136, 0.6780, 1.0169, 1.4915] summing to exactly 4. Season 1, the one season with no
+	// seasonal offset at all, is reported 32% below average; season 3's ratios were 0.1667 and
+	// 3.5, which measure distance from the zero crossing rather than any seasonal effect.
+	//
+	// The exact zero is not the dangerous part and the `trend[i] != T.zero` filter below does
+	// not address it. Shifting the same series up by 5 gives a trend of -25, -15, -5, 5, 15,
+	// 25, 35, 45 — no exact zero anywhere, nothing filtered — and the indices come back
+	// [0.7975, 0.4557, 1.6835, 1.0633], still summing to 4, with the season ranking inverted:
+	// the largest true effect (+20) is reported as roughly average and the neutral season as
+	// 54% below. So the test is on the *sign span*, not on equality with zero.
+	//
+	// A wholly negative trend is fine and stays accepted: `(-v) / (-t)` is the ratio of the
+	// positive case, and the same series negated returns byte-identical indices. A run of
+	// losses that deepen every Q4 is a coherent multiplicative statement.
+	//
+	// This is not contamination and must not be routed into the finite-values guard above
+	// (contract §5): every observation here is a real, finite measurement. The data is sound
+	// and the multiplicative *model* is undefined for it, so the diagnosis names the model.
+	// `SeasonalityError.divisionByZero` is the case written for exactly this — its own
+	// documentation reads "Division by zero in multiplicative decomposition" — rather than a
+	// new case, which would break an exhaustive `switch` in a consumer.
+	let definedTrend: [T] = trend.filter { !$0.isNaN }
+	let trendTouchesZero: Bool = definedTrend.contains { $0 == T.zero }
+	let trendHasPositive: Bool = definedTrend.contains { $0 > T.zero }
+	let trendHasNegative: Bool = definedTrend.contains { $0 < T.zero }
+	let trendSpansZero: Bool = trendTouchesZero || (trendHasPositive && trendHasNegative)
+	guard !trendSpansZero else {
+		throw SeasonalityError.divisionByZero(
+			"""
+			Seasonal indices are multiplicative (value / trend) and are undefined for a series \
+			whose trend passes through zero: the ratio is unbounded at the crossing and changes \
+			sign across it, so the averaged index is not a multiplier. Every observation is \
+			valid — this is a property of the series, not a data-quality problem. Model the \
+			seasonal effect in the series' own units instead of as a proportion.
+			""")
+	}
+
 	// Calculate ratios (value / trend) for each period
 	var seasonalRatios: [[T]] = Array(repeating: [], count: periodsPerYear)
 
 	for i in 0..<values.count {
+		// `trend[i] != T.zero` is unreachable after the sign-span guard above, which refuses
+		// any defined zero. It is kept as the local precondition for the division rather than
+		// tidied away: without it the line reads as an unguarded divide.
 		if i < trend.count && !trend[i].isNaN && trend[i] != T.zero {
 			let ratio = values[i] / trend[i]
 			let seasonIndex = i % periodsPerYear
@@ -262,12 +338,41 @@ public func seasonalIndices<T: Real & Sendable>(
 		}
 	}
 
-	// Average the ratios for each season
+	// Average the ratios for each season.
+	//
+	// The `T(1)` that used to sit here was the prohibited constant (contract §4). A seasonal
+	// index of 1 is not "unknown": it is the precise statement that this season carries no
+	// seasonal effect, and it then propagates into the normalisation so the remaining seasons
+	// are rescaled around a season that was never measured.
+	//
+	// It is reachable on entirely clean, positive, monotone data. With `periodsPerYear = 2`
+	// and the minimum four observations the contract above allows, [10, 20, 30, 40] gives a
+	// centred moving average defined at index 2 only, so season 0 gets the single ratio 1.5,
+	// season 1 gets none and is fabricated as 1, and after normalisation the caller is handed
+	// [1.2, 0.8] — a ±20% seasonal swing on a perfectly straight line — summing to exactly 2,
+	// which is the invariant a careful caller would check.
+	//
+	// The shortfall is geometric, not statistical. For an odd window the centred average is
+	// defined at `count - periodsPerYear + 1` consecutive positions and for an even window of
+	// four or more at `count - periodsPerYear`; both are at least `periodsPerYear` once
+	// `count >= periodsPerYear * 2`, so every season is covered. The single exception is
+	// `periodsPerYear == 2`, where the second averaging pass loses one further position and
+	// only `count - 3` remain — one position, covering one season, when `count == 4`. Five
+	// observations cover both, which is why `periodsPerYear * 2 + 1` is the exact requirement
+	// for the only configuration that can reach this.
+	//
+	// Marking the season `.nan` instead (contract §3.5) would not help: the normalisation sums
+	// the indices, so one `.nan` makes all of them `.nan`, and `seasonallyAdjust` then divides
+	// by it silently — `nan != T.zero` is true, so its zero-index guard does not fire. The
+	// caller would get an all-`nan` array and no diagnosis. The contamination guard at the top
+	// of this function already chose to refuse for the same reason.
 	var indices: [T] = []
 	for ratios in seasonalRatios {
 		guard !ratios.isEmpty else {
-			indices.append(T(1))
-			continue
+			throw SeasonalityError.insufficientData(
+				required: periodsPerYear * 2 + 1,
+				provided: values.count
+			)
 		}
 		let average = ratios.reduce(T.zero, +) / T(ratios.count)
 		indices.append(average)
@@ -293,7 +398,10 @@ public func seasonalIndices<T: Real & Sendable>(
 ///   - periodsPerYear: Number of periods in one seasonal cycle (e.g., 4 for quarterly, 12 for monthly)
 /// - Returns: Array of seasonal indices, one per season
 /// - Throws: `SeasonalityError` if insufficient data or invalid parameters, or
-///   ``BusinessMathError/dataQuality(message:context:)`` if any observation is not finite
+///   ``BusinessMathError/dataQuality(message:context:)`` if any observation is not finite,
+///   or `SeasonalityError.divisionByZero` if the trend passes through zero — these indices
+///   are multipliers and a multiplicative description does not exist for such a series. See
+///   ``seasonalIndices(values:periodsPerYear:)``.
 ///
 /// ## Examples
 ///
@@ -556,7 +664,31 @@ public func applySeasonal<T: Real & Sendable>(
 /// - Returns: `TimeSeriesDecomposition` containing trend, seasonal, and residual components
 /// - Throws: `SeasonalityError` if insufficient data or invalid parameters, or
 ///   ``BusinessMathError/dataQuality(message:context:)`` if any observation is not finite
-///   (propagated from `seasonalIndices(timeSeries:periodsPerYear:)`)
+///   (propagated from `seasonalIndices(timeSeries:periodsPerYear:)`), or
+///   `SeasonalityError.divisionByZero` if the trend passes through zero — **under either
+///   method**, for the reason below.
+///
+/// ## A trend that passes through zero is refused under both methods
+///
+/// A multiplicative decomposition genuinely has no meaning for such a series: `Value = Trend ×
+/// Seasonal` cannot describe a trend that is zero, and the residual `Value / (Trend ×
+/// Seasonal)` is unbounded at the crossing.
+///
+/// A textbook *additive* decomposition would be well defined there — `Value = Trend + Seasonal
+/// + Residual` never divides by the trend, and a seasonal swing measured in the series' own
+/// units survives the sign change intact. This implementation nevertheless refuses, and the
+/// reason is worth stating plainly rather than hiding: its additive seasonal component is not
+/// computed additively. It is obtained by re-centring the *multiplicative* indices returned by
+/// ``seasonalIndices(timeSeries:periodsPerYear:)`` (`index - mean(indices)`), so it inherits
+/// every ratio those indices were built from. Given a zero-crossing trend it would be centring
+/// numbers that measure distance from the crossing, then subtracting them from values that
+/// carry units.
+///
+/// So the two methods agree here because they share the ratio computation, not because
+/// additive decomposition is undefined. Computing a genuinely additive index — the per-season
+/// mean of `value - trend`, centred to sum to zero — would lift this restriction for
+/// `.additive` and would change every additive result this function has ever returned. That is
+/// a deliberate API decision, not a guard to add in passing.
 ///
 /// ## Undefined residuals at the ends of the series
 ///

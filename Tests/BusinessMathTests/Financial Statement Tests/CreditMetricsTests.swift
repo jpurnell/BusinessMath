@@ -605,7 +605,7 @@ struct CreditMetricsTests {
 		let priorPeriod = Period.quarter(year: 2024, quarter: 4)
 		let currentPeriod = Period.quarter(year: 2025, quarter: 1)
 
-		let score = piotroskiScore(
+		let score = try piotroskiScore(
 			incomeStatement: incomeStatement,
 			balanceSheet: balanceSheet,
 			cashFlowStatement: cashFlowStatement,
@@ -637,7 +637,7 @@ struct CreditMetricsTests {
 		let priorPeriod = Period.quarter(year: 2024, quarter: 4)
 		let currentPeriod = Period.quarter(year: 2025, quarter: 1)
 
-		let score = piotroskiScore(
+		let score = try piotroskiScore(
 			incomeStatement: incomeStatement,
 			balanceSheet: balanceSheet,
 			cashFlowStatement: cashFlowStatement,
@@ -663,7 +663,7 @@ struct CreditMetricsTests {
 		let priorPeriod = Period.quarter(year: 2024, quarter: 4)
 		let currentPeriod = Period.quarter(year: 2025, quarter: 1)
 
-		let score = piotroskiScore(
+		let score = try piotroskiScore(
 			incomeStatement: incomeStatement,
 			balanceSheet: balanceSheet,
 			cashFlowStatement: cashFlowStatement,
@@ -711,7 +711,7 @@ struct CreditMetricsTests {
 		let priorPeriod = Period.quarter(year: 2024, quarter: 4)
 		let currentPeriod = Period.quarter(year: 2025, quarter: 1)
 
-		let score = piotroskiScore(
+		let score = try piotroskiScore(
 			incomeStatement: incomeStatement,
 			balanceSheet: balanceSheet,
 			cashFlowStatement: cashFlowStatement,
@@ -866,7 +866,7 @@ struct CreditMetricsTests {
 		let priorPeriod = Period.quarter(year: 2024, quarter: 4)
 		let currentPeriod = Period.quarter(year: 2025, quarter: 1)
 
-		let score = piotroskiScore(
+		let score = try piotroskiScore(
 			incomeStatement: incomeStatement,
 			balanceSheet: balanceSheet,
 			cashFlowStatement: cashFlowStatement,

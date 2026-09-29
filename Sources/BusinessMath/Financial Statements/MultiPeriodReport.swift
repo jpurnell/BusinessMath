@@ -212,12 +212,19 @@ public struct MultiPeriodReport<T: Real & Sendable>: Codable, Sendable where T: 
 	}
 
 	/// Track debt-to-equity ratio across all periods.
-	public func debtToEquityTrend() -> [T] {
+	///
+	/// - Returns: One entry per period, in period order. `nil` where the ratio is undefined
+	///   because the company had no equity that period — leverage against nothing is
+	///   unbounded, not zero, and `0.0` here read as "unlevered" for the opposite case.
+	public func debtToEquityTrend() -> [T?] {
 		periodSummaries.map { $0.debtToEquityRatio }
 	}
 
 	/// Track current ratio across all periods.
-	public func currentRatioTrend() -> [T] {
+	///
+	/// - Returns: One entry per period, in period order. `nil` where the company had no
+	///   current liabilities, so there was nothing for current assets to cover.
+	public func currentRatioTrend() -> [T?] {
 		periodSummaries.map { $0.currentRatio }
 	}
 

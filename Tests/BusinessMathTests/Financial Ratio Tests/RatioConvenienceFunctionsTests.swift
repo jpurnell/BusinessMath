@@ -378,7 +378,7 @@ struct RatioConvenienceFunctionsTests {
 				let q2 = periods[1]
 
 				// Test that both functions return the same result
-				let scoreOriginal = piotroskiScore(
+				let scoreOriginal = try piotroskiScore(
 						incomeStatement: incomeStatement,
 						balanceSheet: balanceSheet,
 						cashFlowStatement: cashFlowStatement,
@@ -386,7 +386,7 @@ struct RatioConvenienceFunctionsTests {
 						priorPeriod: q1
 				)
 
-				let scoreAlias = piotroskiFScore(
+				let scoreAlias = try piotroskiFScore(
 						incomeStatement: incomeStatement,
 						balanceSheet: balanceSheet,
 						cashFlowStatement: cashFlowStatement,
@@ -794,7 +794,7 @@ struct RatioConvenienceFunctionsAdditionalTests {
 								let q1 = periods[0]
 								let q2 = periods[1]
 
-								let score = piotroskiFScore(
+								let score = try piotroskiFScore(
 												incomeStatement: incomeStatement,
 												balanceSheet: balanceSheet,
 												cashFlowStatement: cfs,

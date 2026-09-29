@@ -258,9 +258,15 @@ struct StreamingAnomalyDetectionTests {
             scores.append(score)
         }
 
-        // The anomalous value should have a higher composite score
-        let maxScore = try #require(scores.max(by: { $0.score < $1.score }))
+        // Warm-up scores are `.nan` — "not yet evaluable", since the first observations have
+        // no window to be scored against. Every comparison against a NaN is false, so
+        // `max(by:)` over the raw scores is not a strict weak ordering and its result is
+        // unspecified. A caller ranking observations must drop the unevaluable ones first;
+        // that is what this does, and it is the ordering contract the API now carries.
+        let evaluable = scores.filter { !$0.score.isNaN }
+        let maxScore = try #require(evaluable.max(by: { $0.score < $1.score }))
         #expect(maxScore.score > 0.5)  // Composite score ranges 0-1
+        #expect(maxScore.value.isEqual(to: 25.0), "the spike must be the highest-scoring observation")
     }
 
     // MARK: - Memory Efficiency Tests

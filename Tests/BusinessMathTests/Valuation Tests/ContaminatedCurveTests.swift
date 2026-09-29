@@ -40,7 +40,10 @@ import Foundation
 /// Elementwise comparison for a numeric sequence; `==` on `[Double]` is refused by the gate,
 /// because it hides three different claims.
 private func agree(_ lhs: [Double], _ rhs: [Double]) -> Bool {
-    lhs.count == rhs.count && zip(lhs, rhs).allSatisfy { $0.isEqual(to: $1) }
+    // `isEqual(to:)` is IEEE equality, so `nan.isEqual(to: .nan)` is **false**. This sweep
+    // deliberately marks unevaluable positions with `.nan`, so two NaNs in the same slot
+    // are an agreement, not a mismatch — without this a marked position can never match.
+    lhs.count == rhs.count && zip(lhs, rhs).allSatisfy { $0.isEqual(to: $1) || ($0.isNaN && $1.isNaN) }
 }
 
 @Suite("Discount curves built from contaminated quotes")

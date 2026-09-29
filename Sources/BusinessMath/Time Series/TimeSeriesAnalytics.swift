@@ -137,18 +137,49 @@ extension TimeSeries {
 	///
 	/// Growth rate is calculated as (current - previous) / previous.
 	///
-	/// - Parameter lag: The number of periods to look back (default: 1).
-	/// - Returns: A time series of growth rates.
+	/// - Parameter lag: The number of periods to look back (default: 1). A `lag` outside
+	///   `0...count` yields an empty series rather than trapping.
+	/// - Returns: A time series of growth rates carrying **one entry for every period from
+	///   index `lag` onward**. A period whose growth rate is undefined is marked `.nan`; it is
+	///   never omitted, so `count` is `periods.count - lag` for any series the lag supports.
 	///
 	/// ## Example
 	/// ```swift
 	/// let months = Period.documentationQuarters
-	/// let periods = Period.documentationQuarters
 	/// let revenue = TimeSeries(periods: months, values: [100, 110, 121])
-	/// let growth = revenue.growthRate(lag: 1)  // [nil, 0.10, 0.10]
+	/// let growth = revenue.growthRate(lag: 1)  // two entries: 0.10 and 0.10
 	/// ```
+	///
+	/// ## Growth from a zero base
+	/// Growth from a base of zero is **undefined, not infinite**. `0 -> 100` and `0 -> 1` are
+	/// equally "infinite" growth, and a pair of inputs that cannot be told apart by the answer
+	/// is the signature of undefinedness rather than of an unbounded quantity. The period is
+	/// therefore reported as `.nan` — the same answer ``cagr(from:to:)`` gives through
+	/// ``BusinessMath/cagr(beginningValue:endingValue:years:)``, which returns `.nan` rather
+	/// than the `+infinity` it used to for a non-positive beginning value.
+	///
+	/// Measured before that was true, the period was **dropped from the result entirely**: a
+	/// twelve-month series with one zero month came back with ten growth rates instead of
+	/// eleven, and `count` — which is exactly what a caller checks — reported a series one
+	/// observation shorter than the one it was handed, with no diagnostic anywhere saying which
+	/// month had gone or why. That is contract §3.5's length invariant and §4's "silently
+	/// dropping a value" in the same line.
+	///
+	/// A `nan` previous value is *not* special-cased: `nan != 0` is true like every comparison
+	/// against `nan`, so the division propagates the contamination to that period's rate and
+	/// that period's rate only. That is already the right answer and is stated here rather than
+	/// relied upon.
 	public func growthRate(lag: Int = 1) -> TimeSeries<T> {
 		guard !isEmpty else {
+			return TimeSeries(periods: [], values: [], metadata: metadata)
+		}
+
+		// A negative `lag` starts the loop at a negative `i` and reads `periods[i]`; a `lag` past
+		// the end forms a range whose lower bound exceeds its upper. Both **trap**, so the caller
+		// is not told anything at all — the process stops. Following ``movingAverage(window:)``,
+		// which answers an impossible window with an empty series, a lag this series cannot
+		// support has no growth rates to report and `count == 0` says so.
+		guard lag >= 0, lag <= periods.count else {
 			return TimeSeries(periods: [], values: [], metadata: metadata)
 		}
 
@@ -159,13 +190,29 @@ extension TimeSeries {
 			let currentPeriod = periods[i]
 			let previousPeriod = periods[i - lag]
 
-			if let currentValue = self[currentPeriod],
-			   let previousValue = self[previousPeriod],
-			   previousValue != T.zero {
-				let rate = (currentValue - previousValue) / previousValue
-				resultPeriods.append(currentPeriod)
-				resultValues.append(rate)
+			// `periods` is derived from the value keys, so neither lookup can fail today. If one
+			// ever did, the period is one the data does not cover and there is no rate to
+			// report for it — §3.7's "narrow the domain, do not fabricate the observation",
+			// which is what the omission here means. It is *not* the zero-base case below,
+			// where the data is present and the answer is undefined.
+			guard let currentValue = self[currentPeriod],
+				  let previousValue = self[previousPeriod] else { continue }
+
+			// Measured before this branch: a legitimately zero previous value failed
+			// `previousValue != T.zero` and the period was appended to neither array, so the
+			// returned series was shorter than the span it covered and nothing in it said so.
+			// The rate is undefined rather than unbounded — see **Growth from a zero base** —
+			// so the position is kept and marked.
+			let rate: T
+			if previousValue == T.zero {
+				rate = T.nan
+			} else {
+				let change: T = currentValue - previousValue
+				rate = change / previousValue
 			}
+
+			resultPeriods.append(currentPeriod)
+			resultValues.append(rate)
 		}
 
 		return TimeSeries(periods: resultPeriods, values: resultValues, metadata: metadata)
@@ -373,6 +420,24 @@ extension TimeSeries {
 	/// ``PeriodType/custom`` range has no defined successor, and two periods of different
 	/// types have no common step — the periods are treated as adjacent, so an irregular
 	/// series keeps exactly the behaviour it has always had rather than silently emptying.
+	///
+	/// ## Contaminated input
+	/// A window containing a non-finite observation reports `.nan`, and the **next window that
+	/// does not contain it reports a real average** — the contamination lasts exactly `window`
+	/// positions, no more.
+	///
+	/// That is not what a running sum does by default. `windowSum = windowSum - oldValue`
+	/// cannot subtract a `nan` back out (`nan - nan` is `nan`), so once one entered the sum
+	/// every later average was `nan` for the rest of the series — measured as 9 of 14 outputs
+	/// on a 4-wide window, the last one included, against the recomputing sibling
+	/// `rollingStatistics(window:)` which gave 4 of 14 and recovered. The fix is to keep the
+	/// unusable observation out of the sum and count it separately, so the state that survives
+	/// is exact and eviction restores it exactly.
+	///
+	/// Infinities are counted the same way, against contract §3.6's default of leaving them
+	/// alone, because they break this specific computation rather than merely ordering oddly:
+	/// `+infinity - +infinity` is `nan`, so an infinity in a running sum degrades into
+	/// permanent contamination on eviction exactly as a `nan` does.
 	public func movingAverage(window: Int) -> TimeSeries<T> {
 		guard window > 0 && window <= count else {
 			return TimeSeries(periods: [], values: [], metadata: metadata)
@@ -385,18 +450,32 @@ extension TimeSeries {
 		// Optimized sliding window approach: maintain running sum
 		var windowSum = T.zero
 		var windowCount = 0
+		// Counted rather than summed. See **Contaminated input** — the eviction step cannot
+		// subtract a non-finite value back out, so one is kept out of `windowSum` entirely and
+		// tracked here instead; the count falls back to zero as the window passes, which is
+		// what makes recovery exact rather than approximate.
+		var windowNonFinite = 0
 
 		// Initialize the first window
 		for i in 0..<window {
 			if i < periods.count, let value = self[periods[i]] {
-				windowSum = windowSum + value
+				if value.isFinite {
+					windowSum = windowSum + value
+				} else {
+					windowNonFinite += 1
+				}
 				windowCount += 1
 			}
 		}
 
 		// First window result
 		if windowCount == window, windowSpansNoGap(endingAt: window - 1, window: window, runStarts: runStarts) {
-			let average = windowSum / T(window)
+			let average: T
+			if windowNonFinite > 0 {
+				average = T.nan
+			} else {
+				average = windowSum / T(window)
+			}
 			resultPeriods.append(periods[window - 1])
 			resultValues.append(average)
 		}
@@ -405,19 +484,32 @@ extension TimeSeries {
 		for i in window..<periods.count {
 			// Remove the leftmost value from the window
 			if let oldValue = self[periods[i - window]] {
-				windowSum = windowSum - oldValue
+				if oldValue.isFinite {
+					windowSum = windowSum - oldValue
+				} else {
+					windowNonFinite -= 1
+				}
 				windowCount -= 1
 			}
 
 			// Add the new rightmost value to the window
 			if let newValue = self[periods[i]] {
-				windowSum = windowSum + newValue
+				if newValue.isFinite {
+					windowSum = windowSum + newValue
+				} else {
+					windowNonFinite += 1
+				}
 				windowCount += 1
 			}
 
 			// Only add result if we have a full window
 			if windowCount == window, windowSpansNoGap(endingAt: i, window: window, runStarts: runStarts) {
-				let average = windowSum / T(window)
+				let average: T
+				if windowNonFinite > 0 {
+					average = T.nan
+				} else {
+					average = windowSum / T(window)
+				}
 				resultPeriods.append(periods[i])
 				resultValues.append(average)
 			}
@@ -442,6 +534,29 @@ extension TimeSeries {
 	/// )
 	/// let ema = revenue.exponentialMovingAverage(alpha: 0.3)
 	/// ```
+	///
+	/// ## Contaminated input
+	/// A non-finite observation is **not smoothed in**. Its own period is reported as `.nan`,
+	/// the smoothing state from before it is preserved untouched, and the next finite
+	/// observation smooths from that state — so recovery is at the **very next period**, and
+	/// the values from there on are bit-identical to smoothing the same series with the bad
+	/// observation removed. Output still carries one entry per period.
+	///
+	/// Measured before that was true: the recursion feeds its own output back in, so one `nan`
+	/// pinned `ema` at `nan` for the entire remainder of the series — a caller was told every
+	/// month after the bad one was unusable, not just the month that was. There is nothing to
+	/// subtract back out of an exponential average, which is why the fix has to be at the point
+	/// the observation is folded in rather than at the point it is emitted.
+	///
+	/// The screen is on `isFinite` rather than on `isNaN` alone, matching
+	/// ``AsyncDoubleExponentialSmoothingSequence``: an infinite state degrades into `nan` on the
+	/// next step anyway, because `alpha * inf + (1 - alpha) * inf` is finite for no `alpha` and
+	/// any later subtraction of like signs is `inf - inf`. Screening it here keeps the recovery
+	/// guarantee true for both.
+	///
+	/// This says nothing about `alpha` itself, which is the caller's parameter rather than the
+	/// caller's data: a non-finite `alpha` contaminates every period after the first and keeps
+	/// doing so, which is a visibly wrong answer to a visibly wrong argument, not a silent one.
 	public func exponentialMovingAverage(alpha: T) -> TimeSeries<T> {
 		guard !isEmpty else {
 			return TimeSeries(periods: [], values: [], metadata: metadata)
@@ -449,19 +564,42 @@ extension TimeSeries {
 
 		var resultPeriods: [Period] = []
 		var resultValues: [T] = []
-		var ema: T = T.zero
+		// `nil` until the first usable observation, rather than a `T.zero` seed. The seed was
+		// only ever correct because the first period always resolves; stating "no state yet"
+		// directly is what lets a leading contaminated period be skipped and the *second*
+		// period seed the average, instead of the second period being smoothed against a zero
+		// nobody observed.
+		var ema: T? = nil
 
-		for (index, period) in periods.enumerated() {
+		for period in periods {
 			guard let value = self[period] else { continue }
 
-			if index == 0 {
-				ema = value  // Initialize with first value
-			} else {
-				ema = alpha * value + (T(1) - alpha) * ema
+			// Measured before this guard: `ema` is its own input, so one non-finite observation
+			// made every later period `nan` too — the caller was told the whole tail of the
+			// series was unusable rather than the single period that was, and no amount of
+			// later clean data could clear it. An unusable observation is no evidence about the
+			// level, so it is not folded into the state; the state from before it survives, the
+			// next finite observation smooths from there, and this period is still emitted —
+			// marked `.nan` — so the result keeps one entry per period (contract §3.5) rather
+			// than handing back the previous average as though it had been re-measured.
+			guard value.isFinite else {
+				resultPeriods.append(period)
+				resultValues.append(T.nan)
+				continue
 			}
 
+			let smoothed: T
+			if let previous = ema {
+				let weighted: T = alpha * value
+				let carried: T = (T(1) - alpha) * previous
+				smoothed = weighted + carried
+			} else {
+				smoothed = value  // Initialize with the first usable observation
+			}
+
+			ema = smoothed
 			resultPeriods.append(period)
-			resultValues.append(ema)
+			resultValues.append(smoothed)
 		}
 
 		return TimeSeries(periods: resultPeriods, values: resultValues, metadata: metadata)
@@ -480,6 +618,14 @@ extension TimeSeries {
 	///
 	/// let ytd = monthlyRevenue.cumulative()  // Year-to-date
 	/// ```
+	///
+	/// ## Contaminated input
+	/// A non-finite observation contaminates its own period **and every period after it**, and
+	/// that is correct rather than a defect of the kind ``exponentialMovingAverage(alpha:)`` and
+	/// ``movingAverage(window:)`` carry. A running total genuinely contains every observation
+	/// that preceded it; if one of them is unusable then the total is unusable, permanently and
+	/// by definition. The two window operators recover because an observation eventually leaves
+	/// their window — nothing ever leaves a cumulative sum, so there is no recovery to owe.
 	public func cumulative() -> TimeSeries<T> {
 		guard !isEmpty else {
 			return TimeSeries(periods: [], values: [], metadata: metadata)
@@ -491,6 +637,8 @@ extension TimeSeries {
 
 		for period in periods {
 			guard let value = self[period] else { continue }
+			// No screen here, deliberately — see **Contaminated input**. Propagating is the
+			// answer, not the problem.
 			sum = sum + value
 			resultPeriods.append(period)
 			resultValues.append(sum)
@@ -503,8 +651,11 @@ extension TimeSeries {
 
 	/// Calculates period-over-period differences.
 	///
-	/// - Parameter lag: The number of periods to look back (default: 1).
-	/// - Returns: A time series of differences.
+	/// - Parameter lag: The number of periods to look back (default: 1). A `lag` outside
+	///   `0...count` yields an empty series rather than trapping.
+	/// - Returns: A time series of differences, one entry for every period from index `lag`
+	///   onward. A difference involving a non-finite observation is `.nan` at that period and
+	///   at that period only — subtraction is not a recursion, so nothing carries forward.
 	///
 	/// ## Example
 	/// ```swift
@@ -517,6 +668,15 @@ extension TimeSeries {
 	/// ```
 	public func diff(lag: Int = 1) -> TimeSeries<T> {
 		guard !isEmpty else {
+			return TimeSeries(periods: [], values: [], metadata: metadata)
+		}
+
+		// The same trap ``growthRate(lag:)`` carries this guard for: a negative `lag` indexes
+		// before the start of `periods` and a `lag` past the end forms an inverted range, and
+		// each stops the process rather than answering. `lag == 0` is deliberately still
+		// admitted — it means "difference from itself", it is zero everywhere, and that is a
+		// measurement rather than a fallback.
+		guard lag >= 0, lag <= periods.count else {
 			return TimeSeries(periods: [], values: [], metadata: metadata)
 		}
 
@@ -543,7 +703,9 @@ extension TimeSeries {
 	/// Percent change is calculated as ((current - previous) / previous).
 	///
 	/// - Parameter lag: The number of periods to look back (default: 1).
-	/// - Returns: A time series of percent changes.
+	/// - Returns: A time series of percent changes. This is ``growthRate(lag:)`` under another
+	///   name and inherits its contract exactly, including the `.nan` it reports for a zero
+	///   base and the one-entry-per-period length invariant that goes with it.
 	///
 	/// ## Example
 	/// ```swift
@@ -582,6 +744,12 @@ extension TimeSeries {
 	/// let rolling3Month = revenue.rollingSum(window: 3)
 	/// // 10 results: Mar 2024 through Dec 2024.
 	/// ```
+	///
+	/// ## Contaminated input
+	/// A window containing a non-finite observation reports `.nan`, and the next window that
+	/// does not contain it reports a real total — see ``movingAverage(window:)``'s
+	/// **Contaminated input** for the mechanism, which is the same running sum and the same
+	/// impossibility of subtracting a `nan` back out of it.
 	public func rollingSum(window: Int) -> TimeSeries<T> {
 		guard window > 0 && window <= count else {
 			return TimeSeries(periods: [], values: [], metadata: metadata)
@@ -594,39 +762,66 @@ extension TimeSeries {
 		// Optimized sliding window approach: maintain running sum
 		var windowSum = T.zero
 		var windowCount = 0
+		// Counted rather than summed, for the reason given in ``movingAverage(window:)``: an
+		// eviction cannot subtract a non-finite value back out, so one never enters the sum.
+		var windowNonFinite = 0
 
 		// Initialize the first window
 		for i in 0..<window {
 			if i < periods.count, let value = self[periods[i]] {
-				windowSum = windowSum + value
+				if value.isFinite {
+					windowSum = windowSum + value
+				} else {
+					windowNonFinite += 1
+				}
 				windowCount += 1
 			}
 		}
 
 		// First window result
 		if windowCount == window, windowSpansNoGap(endingAt: window - 1, window: window, runStarts: runStarts) {
+			let total: T
+			if windowNonFinite > 0 {
+				total = T.nan
+			} else {
+				total = windowSum
+			}
 			resultPeriods.append(periods[window - 1])
-			resultValues.append(windowSum)
+			resultValues.append(total)
 		}
 
 		// Slide the window for remaining positions
 		for i in window..<periods.count {
 			// Remove the leftmost value from the window
 			if let oldValue = self[periods[i - window]] {
-				windowSum = windowSum - oldValue
+				if oldValue.isFinite {
+					windowSum = windowSum - oldValue
+				} else {
+					windowNonFinite -= 1
+				}
 				windowCount -= 1
 			}
 
 			// Add the new rightmost value to the window
 			if let newValue = self[periods[i]] {
-				windowSum = windowSum + newValue
+				if newValue.isFinite {
+					windowSum = windowSum + newValue
+				} else {
+					windowNonFinite += 1
+				}
 				windowCount += 1
 			}
 
 			// Only add result if we have a full window
 			if windowCount == window, windowSpansNoGap(endingAt: i, window: window, runStarts: runStarts) {
+				let total: T
+				if windowNonFinite > 0 {
+					total = T.nan
+				} else {
+					total = windowSum
+				}
 				resultPeriods.append(periods[i])
-				resultValues.append(windowSum)
+				resultValues.append(total)
 			}
 		}
 
@@ -654,6 +849,20 @@ extension TimeSeries {
 	/// let rollingMin = revenue.rollingMin(window: 3)
 	/// // 10 results: Mar 2024 through Dec 2024.
 	/// ```
+	///
+	/// ## Contaminated input
+	/// A window containing a non-finite observation reports `.nan`; the window recomputes from
+	/// scratch, so the next window that excludes it reports a real minimum.
+	///
+	/// This one is not a recursion defect — it is a silent drop. `Swift.min(a, b)` is
+	/// `b < a ? b : a`, and every comparison against `nan` is false, so a `nan` arriving
+	/// **after** the first observation is discarded and the window reports the minimum of the
+	/// observations that happened to be usable, labelled as the minimum of `window` of them.
+	/// A `nan` arriving **first** seeds `minValue` and then survives every later comparison, so
+	/// the same contamination in the same window gave `nan` or a plausible finite extremum
+	/// depending only on where in the window it landed. Contract §4 forbids the first of those
+	/// — a value dropped from an aggregation because it matched no branch — and the two
+	/// disagreeing is worse than either.
 	public func rollingMin(window: Int) -> TimeSeries<T> {
 		guard window > 0 && window <= count else {
 			return TimeSeries(periods: [], values: [], metadata: metadata)
@@ -669,21 +878,35 @@ extension TimeSeries {
 
 			var minValue: T? = nil
 			var validCount = 0
+			var windowHasNonFinite = false
 
 			// Find minimum in current window
 			for j in (i - window + 1)...i {
 				if let value = self[periods[j]] {
+					validCount += 1
+					// Recorded rather than compared. See **Contaminated input**: handing this
+					// to `Swift.min` reports the minimum of the *rest* of the window under the
+					// window's own label, or not, depending on its position.
+					guard value.isFinite else {
+						windowHasNonFinite = true
+						continue
+					}
 					if let currentMin = minValue {
 						minValue = Swift.min(currentMin, value)
 					} else {
 						minValue = value
 					}
-					validCount += 1
 				}
 			}
 
-			// Only add result if we have a full window
-			if validCount == window, let min = minValue {
+			// Only add result if we have a full window. A short window is not reported at all:
+			// an extremum over fewer periods than the label claims is the most plausible wrong
+			// answer this file can produce, since it is a real number in the right range.
+			guard validCount == window else { continue }
+			if windowHasNonFinite {
+				resultPeriods.append(periods[i])
+				resultValues.append(T.nan)
+			} else if let min = minValue {
 				resultPeriods.append(periods[i])
 				resultValues.append(min)
 			}
@@ -713,6 +936,11 @@ extension TimeSeries {
 	/// let rollingMax = revenue.rollingMax(window: 3)
 	/// // 10 results: Mar 2024 through Dec 2024.
 	/// ```
+	///
+	/// ## Contaminated input
+	/// A window containing a non-finite observation reports `.nan`, and the next window that
+	/// excludes it reports a real maximum — see ``rollingMin(window:)``'s **Contaminated
+	/// input**, which describes the same position-dependent silent drop in `Swift.max`.
 	public func rollingMax(window: Int) -> TimeSeries<T> {
 		guard window > 0 && window <= count else {
 			return TimeSeries(periods: [], values: [], metadata: metadata)
@@ -728,21 +956,35 @@ extension TimeSeries {
 
 			var maxValue: T? = nil
 			var validCount = 0
+			var windowHasNonFinite = false
 
 			// Find maximum in current window
 			for j in (i - window + 1)...i {
 				if let value = self[periods[j]] {
+					validCount += 1
+					// Recorded rather than compared, for the reason given in
+					// ``rollingMin(window:)``: `Swift.max` discards it and reports the maximum
+					// of the rest of the window under the window's own label.
+					guard value.isFinite else {
+						windowHasNonFinite = true
+						continue
+					}
 					if let currentMax = maxValue {
 						maxValue = Swift.max(currentMax, value)
 					} else {
 						maxValue = value
 					}
-					validCount += 1
 				}
 			}
 
-			// Only add result if we have a full window
-			if validCount == window, let max = maxValue {
+			// Only add result if we have a full window. A short window is not reported at all:
+			// an extremum over fewer periods than the label claims is the most plausible wrong
+			// answer this file can produce, since it is a real number in the right range.
+			guard validCount == window else { continue }
+			if windowHasNonFinite {
+				resultPeriods.append(periods[i])
+				resultValues.append(T.nan)
+			} else if let max = maxValue {
 				resultPeriods.append(periods[i])
 				resultValues.append(max)
 			}

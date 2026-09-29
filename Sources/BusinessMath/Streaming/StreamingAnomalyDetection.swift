@@ -159,6 +159,17 @@ public struct OutlierDetection {
     /// - Z-score: Number of standard deviations from mean
     /// - IQR: Distance beyond IQR bounds
     /// - MAD: Median absolute deviations from median
+    ///
+    /// The score is `.nan` when it could not be measured — during the window's warm-up, before
+    /// enough observations have arrived to establish a baseline, or when the baseline itself is
+    /// contaminated. `.nan` is **not** a low score: it is the absence of one. Anything ranking
+    /// or thresholding these values should test `score.isNaN` first, since every comparison
+    /// against `nan` is false and `isOutlier` is correspondingly `false` — "not evaluated",
+    /// not "evaluated and found normal".
+    ///
+    /// The score is `.infinity` when the window has no spread at all and the value departs
+    /// from it — the first move of a flat metric, which is unbounded in units of a dispersion
+    /// that is zero.
     public let score: Double
 
     /// Whether this value is classified as an outlier.
@@ -330,14 +341,29 @@ public struct CompositeAnomalyScore {
 
     /// The aggregated anomaly score from all methods (0.0 to 1.0).
     ///
-    /// Higher scores indicate stronger evidence of anomaly. Typically computed as
-    /// the average or weighted average of individual method scores, normalized to 0-1 range.
+    /// Higher scores indicate stronger evidence of anomaly. Computed as the mean of the
+    /// individual method scores, normalized to the 0-1 range.
+    ///
+    /// **The mean is taken over the methods that could be evaluated, divided by that count.**
+    /// A method whose baseline is unusable contributes nothing rather than vetoing the ones
+    /// that still see: a 1,000,000 spike on which IQR and MAD both score 1.0 is reported at
+    /// 1.0 even when the z-score component has gone blind. The composite is `.nan` only when
+    /// *every* component is unevaluable — including during the window's warm-up, so the first
+    /// `window - 1` observations of a stream are `.nan` rather than `0.0`.
+    ///
+    /// `.nan` is the absence of a score, not a low one. Test `score.isNaN` before ranking or
+    /// thresholding.
     public let score: Double
 
     /// Individual anomaly scores from each detection method.
     ///
     /// Maps method names (e.g., "z-score", "iqr", "mad") to their respective scores,
     /// enabling detailed analysis of which methods flagged the anomaly.
+    ///
+    /// Every requested method appears here on every observation. A method that could not be
+    /// evaluated is present with a value of `.nan` rather than being omitted — the dictionary
+    /// is what a caller reads to see which method saw what, and one that silently loses a key
+    /// cannot distinguish "this method was blind" from "this method was never asked for".
     public let methodScores: [String: Double]
 
     /// The position in the stream where this value occurred.
@@ -381,6 +407,17 @@ extension AsyncSequence where Element == Double {
     }
 
     /// Detect outliers using various statistical methods
+    ///
+    /// One result is emitted per input element. Until the window holds enough observations to
+    /// establish a baseline — two for z-score and MAD, four for IQR — the emitted
+    /// ``OutlierDetection/score`` is `.nan` and ``OutlierDetection/isOutlier`` is `false`,
+    /// meaning "not yet evaluable" rather than "checked and normal".
+    ///
+    /// - Important: A `.nan` score cannot be ordered. Every comparison against a NaN is false,
+    ///   so `max(by:)` or `sorted()` over the raw scores is not a strict weak ordering and its
+    ///   result is unspecified — valid elements can come back out of order. Filter the
+    ///   unevaluable scores out before ranking: `scores.filter { !$0.score.isNaN }`.
+    ///
     /// - Parameters:
     ///   - method: Outlier detection method to use
     ///   - window: Size of rolling window for statistics
@@ -403,6 +440,17 @@ extension AsyncSequence where Element == Double {
     }
 
     /// Calculate composite anomaly score using multiple methods
+    ///
+    /// The composite is the mean of the methods that could be evaluated, over the count that
+    /// remained — a blind component is excluded rather than allowed to suppress the ones that
+    /// still see. ``CompositeAnomalyScore/score`` is `.nan` only when every component is
+    /// unevaluable, which includes the window's warm-up and an empty `methods` array.
+    ///
+    /// - Important: A `.nan` score cannot be ordered. Every comparison against a NaN is false,
+    ///   so `max(by:)` or `sorted()` over the raw scores is not a strict weak ordering and its
+    ///   result is unspecified — valid elements can come back out of order. Filter the
+    ///   unevaluable scores out before ranking: `scores.filter { !$0.score.isNaN }`.
+    ///
     /// - Parameters:
     ///   - window: Size of rolling window
     ///   - methods: Array of detection methods to combine
@@ -795,8 +843,13 @@ public struct AsyncOutlierDetectionSequence<Base: AsyncSequence>: AsyncSequence 
         }
 
         private func detectWithZScore(value: Double, threshold: Double) -> OutlierDetection {
+            // Before this guard a stream's first observation was reported with `score: 0.0` —
+            // "exactly on the mean, perfectly normal" — when what had actually happened is
+            // that no mean existed yet. `.nan` says "not yet evaluable", and since every
+            // comparison against `nan` is false it leaves `isOutlier` false, which is the
+            // right reading of a warm-up window: not "we checked and it was fine".
             guard buffer.count >= 2 else {
-                return OutlierDetection(value: value, score: 0.0, isOutlier: false, method: "z-score", index: index)
+                return OutlierDetection(value: value, score: .nan, isOutlier: false, method: "z-score", index: index)
             }
 
             let mean = buffer.reduce(0.0, +) / Double(buffer.count) // fp-safety:disable — guarded by buffer.count >= 2
@@ -810,11 +863,22 @@ public struct AsyncOutlierDetectionSequence<Base: AsyncSequence>: AsyncSequence 
         }
 
         private func detectWithIQR(value: Double, multiplier: Double) -> OutlierDetection {
-            guard buffer.count >= 4 else {
-                return OutlierDetection(value: value, score: 0.0, isOutlier: false, method: "iqr", index: index)
+            // `sorted()` on a collection holding a `nan` is unspecified, and it does not fail
+            // loudly: `[3,1,nan,2,5,4]` comes back `[1,3,nan,2,4,5]`, with the *valid*
+            // elements out of order. The quartile indices below would then be read off a
+            // sequence that is not sorted, so `q1` and `q3` — and the bounds a value is
+            // declared an outlier against — would be finite, plausible and wrong. Order only
+            // what can be ordered.
+            let usable = buffer.filter { $0.isFinite }
+            // Fewer than four ordered observations make the quartile indices meaningless.
+            // Answering `score: 0.0, isOutlier: false` there told the caller the value had
+            // been checked against a spread and found unremarkable, when no spread had been
+            // measured at all.
+            guard usable.count >= 4 else {
+                return OutlierDetection(value: value, score: .nan, isOutlier: false, method: "iqr", index: index)
             }
 
-            let sorted = buffer.sorted()
+            let sorted = usable.sorted()
             let q1Index = sorted.count / 4
             let q3Index = 3 * sorted.count / 4
             let q1 = sorted[q1Index]
@@ -832,13 +896,19 @@ public struct AsyncOutlierDetectionSequence<Base: AsyncSequence>: AsyncSequence 
         }
 
         private func detectWithMAD(value: Double, threshold: Double) -> OutlierDetection {
-            guard buffer.count >= 2 else {
-                return OutlierDetection(value: value, score: 0.0, isOutlier: false, method: "mad", index: index)
+            // Same reason as `detectWithIQR`: both medians below come out of a sort, so the
+            // window is reduced to its orderable elements once, here.
+            let usable = buffer.filter { $0.isFinite }
+            // With a single observation the median is that observation, the MAD is zero, and
+            // every value scored against it came back `0.0` — "perfectly normal" reported from
+            // a baseline of one reading. Warm-up is not a verdict.
+            guard usable.count >= 2 else {
+                return OutlierDetection(value: value, score: .nan, isOutlier: false, method: "mad", index: index)
             }
 
             // Median Absolute Deviation
-            let median = calculateMedian(buffer)
-            let deviations = buffer.map { abs($0 - median) }
+            let median = calculateMedian(usable)
+            let deviations = usable.map { abs($0 - median) }
             let mad = calculateMedian(deviations)
 
             // Modified Z-score: M_i = 0.6745 * (x_i - median) / MAD
@@ -849,9 +919,12 @@ public struct AsyncOutlierDetectionSequence<Base: AsyncSequence>: AsyncSequence 
         }
 
         private func calculateMedian(_ values: [Double]) -> Double {
-            let sorted = values.sorted()
+            let sorted = values.filter { $0.isFinite }.sorted()
             let count = sorted.count
-            if count == 0 { return 0.0 }
+            // Unreachable behind `detectWithMAD`'s count guard today, but `0.0` is a measured
+            // centre: it would put the median of nothing at the origin and have every later
+            // deviation measured from there. A future caller gets `.nan` instead.
+            guard count > 0 else { return .nan }
             if count % 2 == 0 {
                 return (sorted[count / 2 - 1] + sorted[count / 2]) / 2.0
             } else {
@@ -1395,8 +1468,9 @@ public struct AsyncCompositeAnomalySequence<Base: AsyncSequence>: AsyncSequence 
     /// Iterator for the composite anomaly detection sequence.
     ///
     /// Maintains a rolling window for baseline statistics and computes scores from multiple
-    /// detection methods. Averages the method scores and normalizes to [0, 1] range to
-    /// produce the final composite score.
+    /// detection methods. Averages the method scores that could be evaluated — dividing by
+    /// that count, not by the number of methods requested — and normalizes to the [0, 1]
+    /// range to produce the final composite score.
     public struct Iterator: AsyncIteratorProtocol {
         private var baseIterator: Base.AsyncIterator
         private let window: Int
@@ -1412,9 +1486,10 @@ public struct AsyncCompositeAnomalySequence<Base: AsyncSequence>: AsyncSequence 
 
         /// Advances to the next composite anomaly score.
         ///
-        /// Computes anomaly scores using each specified detection method, averages them,
-        /// and normalizes to produce a composite score. Individual method scores are
-        /// preserved for diagnostics and explainability.
+        /// Computes anomaly scores using each specified detection method, averages the ones
+        /// that could be evaluated, and normalizes to produce a composite score. Individual
+        /// method scores are preserved for diagnostics and explainability, with an
+        /// unevaluable method present as `.nan` rather than omitted.
         ///
         /// - Returns: The next composite anomaly score, or `nil` if the base sequence is exhausted.
         /// - Throws: Rethrows any error from the base sequence.
@@ -1429,7 +1504,19 @@ public struct AsyncCompositeAnomalySequence<Base: AsyncSequence>: AsyncSequence 
             }
 
             var methodScores: [String: Double] = [:]
-            var totalScore = 0.0
+            // Partial evidence: the composite is the mean of the components that could be
+            // evaluated, over the count that remained — not over `methods.count`.
+            //
+            // The probe that decided this measured a 1,000,000 spike after a contaminated
+            // observation: IQR and MAD both scored it 1.0 while the z-score component was
+            // blind, because the contaminated datum had poisoned the window's mean. An
+            // all-or-nothing rule — one unevaluable component makes the composite `.nan` —
+            // would have suppressed a real 1,000,000 spike on which two of the three methods
+            // agreed completely. That is the "detector goes quiet" failure this whole campaign
+            // exists to remove, so a blind component is dropped from the mean rather than
+            // being allowed to veto the two that saw it.
+            var evidenceTotal = 0.0
+            var evidenceCount = 0
 
             for method in methods {
                 let score: Double
@@ -1444,11 +1531,33 @@ public struct AsyncCompositeAnomalySequence<Base: AsyncSequence>: AsyncSequence 
                     score = calculateMADScore(value: value)
                     methodScores["mad"] = score
                 }
-                totalScore += score
+                // `.nan` is the only score carrying no evidence. `.infinity` carries the most
+                // there is — a real deviation measured against a window with no spread — and
+                // is deliberately kept in the sum, where it saturates to exactly 1.0 below.
+                // Screening on `isFinite` here would discard it along with the NaNs and undo
+                // the flat-window fix documented on `dispersionScaledScore`.
+                if !score.isNaN {
+                    evidenceTotal += score
+                    evidenceCount += 1
+                }
             }
 
-            // Normalize composite score to 0-1 range
-            let compositeScore = methods.isEmpty ? 0.0 : Swift.min(1.0, totalScore / Double(methods.count) / 3.0) // fp-safety:disable — guarded by methods.isEmpty check
+            // An unevaluable component keeps its key in `methodScores` as `.nan` rather than
+            // being omitted: a caller reads that dictionary to see which method flagged what,
+            // and a silently shorter dictionary is the same defect as a filter that drops a
+            // row without saying so.
+            //
+            // Normalize the surviving evidence to the 0-1 range. `Swift.min(1.0, .nan)`
+            // returns `1.0`, so a NaN reaching the clamp would be published as *maximum*
+            // anomaly; the `evidenceCount` branch and the `isNaN` check keep it away from
+            // there, and `.nan` — "nothing here could be scored" — is emitted directly.
+            let compositeScore: Double
+            if evidenceCount == 0 {
+                compositeScore = .nan
+            } else {
+                let meanScore = evidenceTotal / Double(evidenceCount) // fp-safety:disable — guarded by evidenceCount == 0 above
+                compositeScore = meanScore.isNaN ? .nan : Swift.min(1.0, meanScore / 3.0)
+            }
 
             let result = CompositeAnomalyScore(
                 value: value,
@@ -1462,7 +1571,16 @@ public struct AsyncCompositeAnomalySequence<Base: AsyncSequence>: AsyncSequence 
         }
 
         private func calculateZScore(value: Double) -> Double {
-            guard buffer.count >= 2 else { return 0.0 }
+            // A single observation has no spread to be unusual against, so the caller used to
+            // be told `0.0` — "perfectly normal" — about every stream's very first value, on
+            // no evidence whatsoever. Warm-up is "not yet evaluable", which is `.nan`.
+            //
+            // The window is deliberately *not* screened for contamination here. A poisoned
+            // mean makes this component blind, and it says so with `.nan`; the composite then
+            // carries the verdict on the components that can still see. Filtering the window
+            // instead would have this method report a confident number computed from a subset
+            // it presents as the whole window.
+            guard buffer.count >= 2 else { return .nan }
             let mean = buffer.reduce(0.0, +) / Double(buffer.count) // fp-safety:disable — guarded by buffer.count >= 2
             let variance = buffer.map { pow($0 - mean, 2) }.reduce(0.0, +) / Double(buffer.count - 1) // fp-safety:disable — guarded by buffer.count >= 2
             let stdDev = sqrt(variance)
@@ -1470,8 +1588,18 @@ public struct AsyncCompositeAnomalySequence<Base: AsyncSequence>: AsyncSequence 
         }
 
         private func calculateIQRScore(value: Double) -> Double {
-            guard buffer.count >= 4 else { return 0.0 }
-            let sorted = buffer.sorted()
+            // `sorted()` on a collection holding a `nan` is unspecified — `[3,1,nan,2,5,4]`
+            // comes back `[1,3,nan,2,4,5]`, with *valid* elements out of order. Indexing
+            // quartiles out of that does not produce a NaN the caller can see; it produces a
+            // confidently wrong finite `q1` and `q3`, and an anomaly score scaled by an IQR
+            // that was never the interquartile range of anything. Sort only what can be
+            // ordered.
+            let usable = buffer.filter { $0.isFinite }
+            // Fewer than four ordered observations leave the quartile indices meaningless, and
+            // answering `0.0` there told the caller the value sat comfortably inside a spread
+            // that had not been measured. Warm-up declines to answer.
+            guard usable.count >= 4 else { return .nan }
+            let sorted = usable.sorted()
             let q1 = sorted[sorted.count / 4]
             let q3 = sorted[3 * sorted.count / 4]
             let iqr = q3 - q1
@@ -1480,17 +1608,26 @@ public struct AsyncCompositeAnomalySequence<Base: AsyncSequence>: AsyncSequence 
         }
 
         private func calculateMADScore(value: Double) -> Double {
-            guard buffer.count >= 2 else { return 0.0 }
-            let median = calculateMedian(buffer)
-            let deviations = buffer.map { abs($0 - median) }
+            // Same reason as `calculateIQRScore`: both medians below are taken from a sort, so
+            // the window is reduced to its orderable elements once, here, and the deviations
+            // are then measured against a median that means what it says.
+            let usable = buffer.filter { $0.isFinite }
+            // One observation is its own median, giving a zero MAD and a zero score for
+            // everything — "perfectly normal" before any baseline exists. Warm-up is `.nan`.
+            guard usable.count >= 2 else { return .nan }
+            let median = calculateMedian(usable)
+            let deviations = usable.map { abs($0 - median) }
             let mad = calculateMedian(deviations)
             return dispersionScaledScore(deviation: 0.6745 * abs(value - median), dispersion: mad)
         }
 
         private func calculateMedian(_ values: [Double]) -> Double {
-            let sorted = values.sorted()
+            let sorted = values.filter { $0.isFinite }.sorted()
             let count = sorted.count
-            if count == 0 { return 0.0 }
+            // Unreachable behind the callers' count guards today, but `0.0` is a measured
+            // centre — it would place the median of nothing at the origin, and every later
+            // deviation would be measured from there. A future caller gets `.nan` instead.
+            guard count > 0 else { return .nan }
             if count % 2 == 0 {
                 return (sorted[count / 2 - 1] + sorted[count / 2]) / 2.0
             } else {
@@ -1520,12 +1657,35 @@ public struct AsyncCompositeAnomalySequence<Base: AsyncSequence>: AsyncSequence 
 /// with `min(1.0, total / count / 3.0)`, so an infinity saturates there at exactly 1.0
 /// rather than escaping into a caller's arithmetic.
 ///
+/// ### Unmeasurable is not the same as flat
+///
+/// The `dispersion > 0` guard was doing two jobs and could not tell them apart. Every
+/// comparison against `nan` is false, so a `nan` deviation *and* a `nan` dispersion both
+/// failed `dispersion > 0` and then both failed `deviation > 0`, and the function returned
+/// `0` — the same "perfectly normal" verdict the flat-window fix was written to remove,
+/// reached this time for a value nobody could score at all. An infinite dispersion was the
+/// same defect wearing the opposite sign: it passes `dispersion > 0`, so any deviation
+/// divided by it came back as exactly `0`.
+///
+/// So contamination is now screened before the spread is inspected, and reported as `.nan`
+/// per §3.1 of the contaminated-input contract. `deviation` is screened for `nan` only, not
+/// for finiteness: an infinite deviation against a real spread is a genuine, orderable
+/// "unboundedly far from the centre" — it is what makes an infinite observation trip
+/// `isOutlier = score > threshold` — and screening it would put the detector back to silence
+/// on the most extreme reading a stream can carry.
+///
 /// - Parameters:
 ///   - deviation: Non-negative distance of the value from the window's centre.
 ///   - dispersion: Non-negative spread of the window.
 /// - Returns: `deviation / dispersion`; `.infinity` when the window has no spread but the
-///   value deviates from it, and `0` when neither does.
+///   value deviates from it; `0` when neither does; and `.nan` when the deviation is `nan`
+///   or the dispersion is not finite, meaning no score could be measured.
 private func dispersionScaledScore(deviation: Double, dispersion: Double) -> Double {
+    // Without this the caller is told `0` — "this value sits exactly on the centre of its
+    // window" — about a value whose distance from that centre, or whose window's spread, was
+    // never measurable. `.nan` declines to answer instead; the composite scorer excludes it
+    // from the mean rather than averaging a fiction into the headline number.
+    guard !deviation.isNaN, dispersion.isFinite else { return .nan }
     guard dispersion > 0 else { return deviation > 0 ? .infinity : 0 }
     return deviation / dispersion
 }

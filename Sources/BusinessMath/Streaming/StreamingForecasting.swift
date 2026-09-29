@@ -380,6 +380,12 @@ extension AsyncSequence where Element == ForecastPair {
 /// - **alpha = 0.5**: Balanced smoothing
 /// - **alpha = 0.7 to 0.9**: Fast response, less smooth, good for volatile data
 ///
+/// ## Contaminated Input
+/// A non-finite observation is not smoothed in. Its position yields `nan`, the smoothing
+/// state from before it is preserved, and the next finite observation smooths from that
+/// state — so the operator recovers on the very next element rather than staying
+/// contaminated for the rest of the stream. Output length is still one element per input.
+///
 /// - SeeAlso: ``AsyncDoubleExponentialSmoothingSequence``
 public struct AsyncSimpleExponentialSmoothingSequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
     /// Yields smoothed forecast values.
@@ -420,6 +426,30 @@ public struct AsyncSimpleExponentialSmoothingSequence<Base: AsyncSequence>: Asyn
         public mutating func next() async throws -> Double? {
             guard let value = try await baseIterator.next() else {
                 return nil
+            }
+
+            // The recursion feeds its own output back in, so a single unusable observation
+            // pins the forecast at `nan` for the rest of the stream. Measured on the same
+            // 17-point series that motivated the sibling fix in
+            // ``AsyncDoubleExponentialSmoothingSequence``, one `nan` at index 8: 9 of 17
+            // outputs contaminated, the last one included — the caller was told every
+            // forecast after the bad datum was unusable, not just the one that was. If the
+            // bad datum is the *first* observation it is worse still, because it becomes the
+            // initial forecast and every later output is `nan`.
+            //
+            // An unusable observation says nothing about the level, so it is not folded into
+            // the state; the state from before it survives and the next clean observation
+            // smooths from there, so recovery is at the very next element. The position is
+            // still marked `nan` rather than dropped, keeping one output per input (contract
+            // §3.5) and refusing to hand back the previous forecast as though it had been
+            // re-measured. Infinities are screened too, against contract §3.6's default,
+            // because they genuinely break this computation: the update is a convex
+            // combination, so an infinite forecast is absorbing — measured on the same
+            // series with `infinity` at index 8, every output from there to the end is
+            // `infinity` — and at `alpha == 1` the surviving `(1 - alpha) * infinity` term
+            // is `0 * infinity`, which is `nan`.
+            guard value.isFinite else {
+                return .nan
             }
 
             if let currentForecast = forecast {
@@ -589,6 +619,24 @@ public struct AsyncDoubleExponentialSmoothingSequence<Base: AsyncSequence>: Asyn
 /// - **beta**: Trend smoothing (0.1-0.2 typical)
 /// - **gamma**: Seasonal smoothing (0.1-0.3 typical)
 /// - **seasonLength**: Number of periods in one seasonal cycle (e.g., 12 for monthly, 7 for daily)
+///
+/// ## Contaminated Input
+/// A non-finite observation is not smoothed in. Its position yields a forecast whose `level`
+/// and `trend` are both `nan` and whose `seasonalFactors` are the factors as they stood
+/// before it; all three components of the state are preserved, and the next finite
+/// observation resumes from them — so the operator recovers on the very next element rather
+/// than staying contaminated for the rest of the stream. Output length is still one element
+/// per input.
+///
+/// The unusable observation still **consumes its seasonal slot**. Holt-Winters indexes the
+/// seasonal array by position in the stream, so dropping the slot would rotate every later
+/// observation onto the wrong season for the rest of the stream — a permanent error of
+/// exactly the kind this behaviour exists to prevent. During the initialization window the
+/// same rule applies: an unusable observation occupies its slot, the initial level is the
+/// mean of the observations in the window that are usable, and the slot it occupies keeps
+/// the neutral factor `1.0`, which is what "no seasonal information for this slot" means
+/// here. If no observation in the initialization window is usable, the first finite
+/// observation after it initializes the level instead of the stream ending there.
 public struct AsyncTripleExponentialSmoothingSequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
     /// Yields forecast objects containing level, trend, and seasonal components.
     public typealias Element = TripleExponentialForecast
@@ -653,21 +701,60 @@ public struct AsyncTripleExponentialSmoothingSequence<Base: AsyncSequence>: Asyn
                 return nil
             }
 
+            // `seasonLength` is not validated at the call site, and a season of length zero
+            // has no seasonal array to index — `currentIndex % 0` traps. This sequence has
+            // always ended immediately in that case rather than trapping, because the level
+            // could never be initialized, and it still does: the caller is told the stream
+            // produced nothing, which is what it has always been told, rather than losing
+            // the process to a division by zero.
+            guard seasonLength > 0 else {
+                return nil
+            }
+
             // Collect initial season for initialization
             if initializationBuffer.count < seasonLength {
+                // An unusable observation still occupies its place in the initialization
+                // window. Buffer position `i` *is* seasonal slot `i`, so skipping it would
+                // hand slot `i` to the next observation and rotate every later observation
+                // onto the wrong season for the rest of the stream.
                 initializationBuffer.append(value)
 
                 if initializationBuffer.count == seasonLength {
-                    // Initialize level, trend, and seasonal factors
-                    level = initializationBuffer.reduce(0.0, +) / Double(seasonLength) // fp-safety:disable — seasonLength >= 1 (struct init parameter)
-                    trend = 0.0
+                    // Initialize level, trend, and seasonal factors.
+                    //
+                    // The mean and the factors are taken over the usable observations only.
+                    // Averaging in an unusable one made the initial level `nan`, and
+                    // `nan != 0.0` is *true* — every comparison against `nan` answers no, so
+                    // `!=` answers yes — so the guard below let the factor loop run and
+                    // divide all `seasonLength` factors by that `nan`. Measured with one
+                    // `nan` at index 1 of a four-long season: the entire seasonal array was
+                    // `nan` from the first emitted forecast onward and never recovered, so
+                    // the caller was told the series had no measurable seasonality at all.
+                    let usable: [Double] = initializationBuffer.filter { $0.isFinite }
+                    if !usable.isEmpty {
+                        level = usable.reduce(0.0, +) / Double(usable.count) // fp-safety:disable — usable is non-empty, guarded on the line above
+                        trend = 0.0
 
-                    // Initialize seasonal factors
-                    if let initialLevel = level, initialLevel != 0.0 {
-                        for (i, val) in initializationBuffer.enumerated() {
-                            seasonalFactors[i] = val / initialLevel
+                        // Initialize seasonal factors. A slot whose observation was unusable
+                        // keeps the constructor's neutral 1.0: no seasonal information was
+                        // measured for it, and 1.0 is the multiplicative identity, so the
+                        // slot is carried unadjusted until an observation lands on it.
+                        if let initialLevel = level, initialLevel != 0.0 {
+                            for (i, val) in initializationBuffer.enumerated() where val.isFinite {
+                                seasonalFactors[i] = val / initialLevel
+                            }
                         }
                     }
+                }
+
+                // The state is preserved, but this position had no usable observation, so it
+                // is marked rather than answered with the level and trend of its neighbours.
+                guard value.isFinite else {
+                    return TripleExponentialForecast(
+                        level: .nan,
+                        trend: .nan,
+                        seasonalFactors: seasonalFactors
+                    )
                 }
 
                 return TripleExponentialForecast(
@@ -677,8 +764,51 @@ public struct AsyncTripleExponentialSmoothingSequence<Base: AsyncSequence>: Asyn
                 )
             }
 
+            // All three recursions feed their own output back in, and the seasonal array is a
+            // per-slot accumulator on top of that, so a single unusable observation is
+            // permanent three times over. Measured on a 48-point four-season series with one
+            // `nan` at index 17: `level` and `trend` were `nan` for 31 of 48 outputs, first
+            // at 17 and last at 47 — the final element. Worse, the seasonal array went `nan`
+            // in the contaminated slot immediately and, because the `nan` level then divided
+            // into every following slot, in *all four* slots by index 20, where it stayed to
+            // the end. That is the failure that let a genuine 50x spike 24 observations later
+            // pass unremarked in the sibling detector: `abs(999 - nan) > threshold` is false.
+            //
+            // An unusable observation says nothing about the level, the rate of change, or
+            // the season, so it is folded into none of them; the state from before it
+            // survives and the next clean observation resumes from there, so recovery is at
+            // the very next element. `currentIndex` still advances, because the slot belongs
+            // to the position rather than to the observation — see the type's DocC. The
+            // position is marked `nan` rather than dropped, keeping one output per input
+            // (contract §3.5); the `seasonalFactors` it reports are the preserved ones, so
+            // the caller can see the seasonal state survived, and `forecast(steps:)` is still
+            // `nan` there because the level and trend it multiplies are. Infinities are
+            // screened too, against contract §3.6's default, because they genuinely break
+            // this computation: an infinite level makes the next trend `beta * (inf - inf)`,
+            // which is `nan`, so an infinity degrades into permanent contamination anyway.
+            guard value.isFinite else {
+                currentIndex += 1
+                return TripleExponentialForecast(
+                    level: .nan,
+                    trend: .nan,
+                    seasonalFactors: seasonalFactors
+                )
+            }
+
             guard let currentLevel = level, let currentTrend = trend else {
-                return nil
+                // No observation in the initialization window was usable, so there is still
+                // nothing to smooth from. Returning `nil` here would end the stream at this
+                // point, telling the caller the data had run out when it had not and handing
+                // back a silently truncated result; instead this, the first usable
+                // observation, initializes the level exactly as the window would have.
+                level = value
+                trend = 0.0
+                currentIndex += 1
+                return TripleExponentialForecast(
+                    level: value,
+                    trend: 0.0,
+                    seasonalFactors: seasonalFactors
+                )
             }
 
             let seasonIndex = currentIndex % seasonLength

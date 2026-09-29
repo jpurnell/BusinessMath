@@ -68,8 +68,26 @@ public struct PeriodSequence: Sequence, Sendable {
     ///   - start: First month (inclusive).
     ///   - end: Last month (inclusive).
     /// - Returns: A sequence of monthly periods from start through end.
+    ///
+    /// - Precondition: `end` must not precede `start`.
     public static func monthly(from start: Period, through end: Period) -> PeriodSequence {
-        PeriodSequence(Array(start...end))
+        // A mismatch of period types is diagnosed by `PeriodRange` itself, and better than
+        // this could; `Period` orders type-first, so testing `start <= end` alone would
+        // report a quarterly-to-monthly range as reversed — a wrong diagnosis, sending the
+        // caller after a problem they do not have.
+        let runsBackwards: Bool = start.type == end.type && end < start
+
+        // Otherwise the caller is told nothing at all: `PeriodRangeIterator` terminates only
+        // on `current == end` and steps forward, so a range that starts after it ends never
+        // reaches its terminator and `Array(_:)` grows until the process dies. A reversed
+        // range is a caller error, and saying so is the one answer that is not a hang.
+        guard !runsBackwards else {
+            preconditionFailure("""
+                PeriodSequence.monthly requires end (\(end.label)) not to precede start \
+                (\(start.label)). A reversed range has no periods to walk.
+                """)
+        }
+        return PeriodSequence(Array(start...end))
     }
 
     /// Generate quarterly periods for a date range.
@@ -80,6 +98,8 @@ public struct PeriodSequence: Sequence, Sendable {
     ///   - throughYear: End year.
     ///   - throughQuarter: End quarter (1-4).
     /// - Returns: A sequence of quarterly periods.
+    ///
+    /// - Precondition: The through-quarter must not precede the from-quarter.
     public static func quarterly(
         fromYear: Int,
         fromQuarter: Int,
@@ -88,6 +108,14 @@ public struct PeriodSequence: Sequence, Sendable {
     ) -> PeriodSequence {
         let start = Period.quarter(year: fromYear, quarter: fromQuarter)
         let end = Period.quarter(year: throughYear, quarter: throughQuarter)
+        // Same reason as `monthly(from:through:)`: without this the caller gets a walk that
+        // never terminates rather than a diagnosis of the reversed range they asked for.
+        guard start <= end else {
+            preconditionFailure("""
+                PeriodSequence.quarterly requires \(throughYear)-Q\(throughQuarter) not to \
+                precede \(fromYear)-Q\(fromQuarter). A reversed range has no periods to walk.
+                """)
+        }
         return PeriodSequence(Array(start...end))
     }
 
@@ -99,6 +127,8 @@ public struct PeriodSequence: Sequence, Sendable {
     ///   - throughYear: End year.
     ///   - throughHalf: End half (1-2).
     /// - Returns: A sequence of semiannual periods.
+    ///
+    /// - Precondition: The through-half must not precede the from-half.
     public static func semiannual(
         fromYear: Int,
         fromHalf: Int,
@@ -107,6 +137,14 @@ public struct PeriodSequence: Sequence, Sendable {
     ) -> PeriodSequence {
         let start = Period.semiannual(year: fromYear, half: fromHalf)
         let end = Period.semiannual(year: throughYear, half: throughHalf)
+        // Same reason as `monthly(from:through:)`: without this the caller gets a walk that
+        // never terminates rather than a diagnosis of the reversed range they asked for.
+        guard start <= end else {
+            preconditionFailure("""
+                PeriodSequence.semiannual requires \(throughYear)-H\(throughHalf) not to \
+                precede \(fromYear)-H\(fromHalf). A reversed range has no periods to walk.
+                """)
+        }
         return PeriodSequence(Array(start...end))
     }
 
@@ -116,7 +154,17 @@ public struct PeriodSequence: Sequence, Sendable {
     ///   - startYear: First year (inclusive).
     ///   - endYear: Last year (inclusive).
     /// - Returns: A sequence of annual periods.
+    ///
+    /// - Precondition: `endYear` must not precede `startYear`.
     public static func annual(from startYear: Int, through endYear: Int) -> PeriodSequence {
+        // Same reason as `monthly(from:through:)`: without this the caller gets a walk that
+        // never terminates rather than a diagnosis of the reversed range they asked for.
+        guard startYear <= endYear else {
+            preconditionFailure("""
+                PeriodSequence.annual requires endYear (\(endYear)) not to precede startYear \
+                (\(startYear)). A reversed range has no periods to walk.
+                """)
+        }
         let start = Period.year(startYear)
         let end = Period.year(endYear)
         return PeriodSequence(Array(start...end))
@@ -126,14 +174,48 @@ public struct PeriodSequence: Sequence, Sendable {
 
     /// Aggregate a time series into coarser periods.
     ///
-    /// Groups values from the source time series into target periods and
-    /// applies the specified aggregation method.
+    /// This is a convenience spelling of ``TimeSeries/aggregate(to:method:)`` and forwards
+    /// to it unchanged. It performs no grouping, no coverage test and no reduction of its
+    /// own, so the two spellings cannot disagree about the same input.
+    ///
+    /// That is the whole point of the forwarding. This function used to be a **second,
+    /// independent implementation** of the same rule, and the two drifted: the method
+    /// emitted only the target periods its data covered end to end, while this one emitted
+    /// a quarter built from two months as though it were whole, substituted `0` for six
+    /// different "no value" conditions, dropped an unscoreable observation out of `.min`
+    /// and `.max`, discarded the caller's metadata, and answered `.custom` with the source
+    /// period rather than with nothing. Which answer a caller received depended on which
+    /// type they happened to reach for. One rule now has one implementation.
+    ///
+    /// The behaviour this inherits, in summary — the method's own documentation is the
+    /// specification:
+    ///
+    /// - A target period is emitted **only where the source covers it end to end**. A
+    ///   quarter built from two of its three months is left out rather than reported as
+    ///   though it were whole. Use ``TimeSeries/fillMissing(with:over:)``,
+    ///   ``TimeSeries/fillForward(over:)``, ``TimeSeries/fillBackward(over:)`` or
+    ///   ``TimeSeries/interpolate(over:)`` to say in your own code what an unmeasured
+    ///   period is worth, and the bucket becomes answerable.
+    /// - Coverage is checked for monthly, quarterly and semiannual sources. A **daily**
+    ///   source is exempt — weekends and holidays make a sparse calendar the norm, not a
+    ///   gap — as are sub-daily sources, a source no finer than the target, and a bucket
+    ///   holding more than one source granularity, none of which have a whole-number
+    ///   tiling to count against.
+    /// - A bucket containing a `nan` aggregates to `nan` under `.sum`, `.average`, `.min`
+    ///   and `.max`. `.first` and `.last` answer for the one observation they name.
+    /// - Supported targets are `.quarterly`, `.semiannual` and `.annual`. Any other target
+    ///   — including `.custom`, which names one specific interval rather than a repeating
+    ///   bucket — yields an empty series.
+    /// - The source's ``TimeSeries/metadata`` is carried to the result; its
+    ///   ``TimeSeries/labels`` deliberately are not, because the result's periods did not
+    ///   exist in the source and "March" is not a name for Q1.
     ///
     /// - Parameters:
     ///   - timeSeries: The finer-grained time series to aggregate.
     ///   - targetGranularity: The coarser period type (e.g., `.quarterly` from monthly).
     ///   - method: How to combine values within each target period.
-    /// - Returns: A new time series at the target granularity.
+    /// - Returns: A new time series at the target granularity, containing only the periods
+    ///   the source covers.
     ///
     /// ## Example
     ///
@@ -153,70 +235,9 @@ public struct PeriodSequence: Sequence, Sendable {
         to targetGranularity: PeriodType,
         method: AggregationMethod
     ) -> TimeSeries<T> where T: Codable {
-        // Group source periods into target periods
-        var groups: [Period: [(period: Period, value: T)]] = [:]
-
-        for sourcePeriod in timeSeries.periods {
-            guard let value = timeSeries[sourcePeriod] else { continue }
-            let targetPeriod = mapToTargetPeriod(sourcePeriod, target: targetGranularity)
-            groups[targetPeriod, default: []].append((sourcePeriod, value))
-        }
-
-        // Apply aggregation method to each group
-        var resultValues: [Period: T] = [:]
-        for (targetPeriod, entries) in groups {
-            guard !entries.isEmpty else { continue }
-            let values = entries.map(\.value)
-
-            switch method {
-            case .sum:
-                resultValues[targetPeriod] = values.reduce(T.zero, +)
-            case .average:
-                let sum = values.reduce(T.zero, +)
-                resultValues[targetPeriod] = sum / T(values.count)
-            case .first:
-                let sorted = entries.sorted { $0.period < $1.period }
-                resultValues[targetPeriod] = sorted.first?.value ?? T.zero
-            case .last:
-                let sorted = entries.sorted { $0.period < $1.period }
-                resultValues[targetPeriod] = sorted.last?.value ?? T.zero
-            case .min:
-                resultValues[targetPeriod] = values.min() ?? T.zero
-            case .max:
-                resultValues[targetPeriod] = values.max() ?? T.zero
-            }
-        }
-
-        return TimeSeries(data: resultValues)
-    }
-
-    /// Maps a source period to its containing target period.
-    private static func mapToTargetPeriod(_ source: Period, target: PeriodType) -> Period {
-        // `gregorianUTC`, not `Calendar(identifier: .gregorian)`. The latter looks fixed
-        // and is not: it carries `TimeZone.current`, so a period beginning at UTC midnight
-        // decomposes to the previous day west of Greenwich — and 1 January then reports
-        // month 12, putting January's value in the *previous* year's Q4. Measured: the
-        // monthly-to-quarterly sum lost 1000 of its 6000.
-        let calendar = gregorianUTC
-        let componentSet: Set<Calendar.Component> = [.year, .month]
-        let components = calendar.dateComponents(componentSet, from: source.date)
-        let year = components.year ?? 2000
-        let month = components.month ?? 1
-
-        switch target {
-        case .quarterly:
-            let quarter = (month - 1) / 3 + 1
-            return Period.quarter(year: year, quarter: quarter)
-        case .semiannual:
-            let half = (month - 1) / 6 + 1
-            return Period.semiannual(year: year, half: half)
-        case .annual:
-            return Period.year(year)
-        default:
-            // Includes `.custom`: an arbitrary range is not a bucket other periods
-            // can be sorted into, so the source period stands unchanged.
-            return source
-        }
+        // Forwarding, not delegating-then-adjusting. Any post-processing here would be the
+        // start of a second rule, which is exactly the defect this replaced.
+        timeSeries.aggregate(to: targetGranularity, method: method)
     }
 }
 

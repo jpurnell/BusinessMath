@@ -299,14 +299,20 @@ public struct ConsolidatedStatements<T: Real & Sendable>: Sendable where T: Coda
 			storage[entity.id]?[period]?[keyPath: keyPath]
 		}
 
+		return Self.cohortMedian(values)
+	}
+
+	/// Median of a cohort of peer figures, or `nil` if the cohort is empty.
+	///
+	/// `FinancialPeriodSummary` divides its margins through by a revenue it has already
+	/// established is non-zero, and `nan == T(0)` is false, so a contaminated revenue takes
+	/// the dividing branch and a `nan` margin reaches this array. `sorted()` is then
+	/// unspecified — the *valid* peers come back out of order — and `sorted[mid]` returns an
+	/// arbitrary entity's figure as the cohort median. `nil` already means "no entities", so
+	/// an unusable cohort says `nan` instead: a different answer from "nobody reported".
+	private static func cohortMedian(_ values: [T]) -> T? {
 		guard !values.isEmpty else { return nil }
 
-		// `FinancialPeriodSummary` guards its margins with `if revenue != T(0)`, and
-		// `nan != 0` is *true*, so a contaminated revenue divides through to a `nan` margin and
-		// reaches this array. `sorted()` is then unspecified — the *valid* peers come back out
-		// of order — and `sorted[mid]` returns an arbitrary entity's figure as the cohort
-		// median. `nil` already means "no entities", so an unusable cohort says `nan` instead:
-		// a different answer from "nobody reported".
 		guard values.allSatisfy({ $0.isFinite }) else { return T.nan }
 
 		let sorted = values.sorted()
@@ -317,6 +323,35 @@ public struct ConsolidatedStatements<T: Real & Sendable>: Sendable where T: Coda
 		} else {
 			return sorted[mid]
 		}
+	}
+
+	/// Calculate the median of an **optional** metric across entities for a period.
+	///
+	/// Six of ``FinancialPeriodSummary``'s ratios are `T?`, because their divisor can be zero
+	/// at a period the statements fully cover — a company with no current liabilities has no
+	/// current ratio. An entity whose metric is `nil` is left out of the cohort rather than
+	/// entered into it as a zero. Entering it would pull a peer median toward the bottom of
+	/// the scale using the company with the strongest position on it.
+	///
+	/// - Parameters:
+	///   - period: The period to analyze
+	///   - keyPath: Key path to an optional metric (e.g., `\.currentRatio`)
+	///   - entities: Optional array of entities to include (defaults to all)
+	/// - Returns: The median over the entities that reported a value, or `nil` when none did
+	///   — which says "this ratio is defined for nobody here", not any number.
+	public func median(
+		for period: Period,
+		_ keyPath: KeyPath<FinancialPeriodSummary<T>, T?>,
+		entities: [Entity]? = nil
+	) -> T? {
+		let targetEntities = entities ?? self.entities
+
+		let values: [T] = targetEntities.compactMap { entity in
+			guard let summary = storage[entity.id]?[period] else { return nil }
+			return summary[keyPath: keyPath]
+		}
+
+		return Self.cohortMedian(values)
 	}
 
 	/// Calculate average (mean) metric value across entities for a period.
@@ -335,6 +370,36 @@ public struct ConsolidatedStatements<T: Real & Sendable>: Sendable where T: Coda
 
 		let values = targetEntities.compactMap { entity -> T? in
 			storage[entity.id]?[period]?[keyPath: keyPath]
+		}
+
+		guard !values.isEmpty else { return nil }
+
+		let sum = values.reduce(T.zero, +)
+		return sum / T(values.count)
+	}
+
+	/// Calculate the average of an **optional** metric across entities for a period.
+	///
+	/// An entity whose metric is `nil` is not in the cohort and is not in the divisor either.
+	/// Averaging it in as a zero would report a peer group's liquidity as worse because one
+	/// member of it owes nothing short-term; dividing by a count that includes it would do
+	/// the same thing more quietly.
+	///
+	/// - Parameters:
+	///   - period: The period to analyze
+	///   - keyPath: Key path to an optional metric (e.g., `\.equityRatio`)
+	///   - entities: Optional array of entities to include (defaults to all)
+	/// - Returns: The mean over the entities that reported a value, or `nil` when none did.
+	public func average(
+		for period: Period,
+		_ keyPath: KeyPath<FinancialPeriodSummary<T>, T?>,
+		entities: [Entity]? = nil
+	) -> T? {
+		let targetEntities = entities ?? self.entities
+
+		let values: [T] = targetEntities.compactMap { entity in
+			guard let summary = storage[entity.id]?[period] else { return nil }
+			return summary[keyPath: keyPath]
 		}
 
 		guard !values.isEmpty else { return nil }
@@ -376,6 +441,41 @@ public struct ConsolidatedStatements<T: Real & Sendable>: Sendable where T: Coda
 		// Written with two `>` comparisons rather than an equality test so no floating-point
 		// `==` is involved: NaN metrics compare false in both directions and fall through to
 		// the id, which keeps this a valid strict weak ordering.
+		return pairs.sorted { lhs, rhs in
+			if lhs.1 > rhs.1 { return true }
+			if rhs.1 > lhs.1 { return false }
+			return lhs.0.id < rhs.0.id
+		}
+	}
+
+	/// Rank entities by an **optional** metric for a period.
+	///
+	/// Entities whose metric is `nil` are **omitted from the ranking**, not placed at either
+	/// end of it. A company with no current liabilities has no current ratio: ranking it last
+	/// says its liquidity is the worst in the cohort, ranking it first says it is the best,
+	/// and both are readings of a quantity that does not exist. The returned array is
+	/// therefore shorter than the entity list whenever the ratio is undefined for someone —
+	/// check `count` rather than indexing positionally against `entities`.
+	///
+	/// - Parameters:
+	///   - period: The period to analyze
+	///   - keyPath: Key path to an optional metric for ranking
+	///   - entities: Optional array of entities to include (defaults to all)
+	/// - Returns: `(Entity, value)` pairs, highest first, for the entities that reported a value
+	public func ranked(
+		for period: Period,
+		by keyPath: KeyPath<FinancialPeriodSummary<T>, T?>,
+		entities: [Entity]? = nil
+	) -> [(Entity, T)] {
+		let targetEntities = entities ?? self.entities
+
+		let pairs: [(Entity, T)] = targetEntities.compactMap { entity in
+			guard let summary = storage[entity.id]?[period] else { return nil }
+			guard let value = summary[keyPath: keyPath] else { return nil }
+			return (entity, value)
+		}
+
+		// Ties break on entity id, for the reason given on the non-optional overload above.
 		return pairs.sorted { lhs, rhs in
 			if lhs.1 > rhs.1 { return true }
 			if rhs.1 > lhs.1 { return false }

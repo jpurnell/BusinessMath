@@ -26,7 +26,10 @@ struct DenseMatrixAccessorTests {
     /// is part of the claim, and `==` would also call two NaN streams unequal while reporting
     /// the property as broken.
     private func agree(_ lhs: [Double], _ rhs: [Double]) -> Bool {
-        lhs.count == rhs.count && zip(lhs, rhs).allSatisfy { $0.isEqual(to: $1) }
+        // `isEqual(to:)` is IEEE equality, so `nan.isEqual(to: .nan)` is **false**. This sweep
+    // deliberately marks unevaluable positions with `.nan`, so two NaNs in the same slot
+    // are an agreement, not a mismatch — without this a marked position can never match.
+    lhs.count == rhs.count && zip(lhs, rhs).allSatisfy { $0.isEqual(to: $1) || ($0.isNaN && $1.isNaN) }
     }
 
     private func agree(_ lhs: [[Double]], _ rhs: [[Double]]) -> Bool {

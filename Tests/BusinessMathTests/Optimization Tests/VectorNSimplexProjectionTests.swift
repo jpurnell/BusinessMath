@@ -40,7 +40,10 @@ struct VectorNSimplexProjectionTests {
     /// arrays — the count is part of the claim, and `==` would also call a NaN stream equal
     /// to nothing.
     private func agree(_ lhs: [Double], _ rhs: [Double]) -> Bool {
-        lhs.count == rhs.count && zip(lhs, rhs).allSatisfy { $0.isEqual(to: $1) }
+        // `isEqual(to:)` is IEEE equality, so `nan.isEqual(to: .nan)` is **false**. This sweep
+    // deliberately marks unevaluable positions with `.nan`, so two NaNs in the same slot
+    // are an agreement, not a mismatch — without this a marked position can never match.
+    lhs.count == rhs.count && zip(lhs, rhs).allSatisfy { $0.isEqual(to: $1) || ($0.isNaN && $1.isNaN) }
     }
 
     /// The closest point of the simplex to `input`, found on a grid. Used to check the

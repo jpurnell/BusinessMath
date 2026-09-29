@@ -46,8 +46,37 @@ import Numerics
 /// // Access specific metrics
 /// print("Revenue: $\(summary.revenue)")
 /// print("ROE: \(summary.roe * 100)%")
-/// print("Debt/Equity: \(summary.debtToEquityRatio)x")
+///
+/// // Ratios whose divisor can legitimately be zero are optional. A company with no
+/// // equity has no debt-to-equity ratio — that is not a ratio of zero, which would
+/// // read as "unlevered" for the most levered balance sheet there is.
+/// if let leverage = summary.debtToEquityRatio {
+///     print("Debt/Equity: \(leverage)x")
+/// } else {
+///     print("Debt/Equity: not applicable (no equity)")
+/// }
 /// ```
+///
+/// ## Periods the statements do not cover
+///
+/// The initialiser ``init(entity:period:incomeStatement:balanceSheet:cashFlowStatement:marketData:operationalMetrics:)``
+/// **throws** for a period its statements have no figures at. It does not return a summary
+/// of zeros: a zero revenue, a zero asset base and a zero equity balance are readings, and
+/// downstream they are readings that rank and threshold.
+///
+/// ## Source compatibility
+///
+/// Widening ``currentRatio``, ``quickRatio``, ``cashRatio``, ``debtToEquityRatio``,
+/// ``debtToAssetsRatio`` and ``equityRatio`` from `T` to `T?` is **source-breaking**, and it
+/// is taken here because the window for it is open and closing. The repository is on an
+/// active pre-release line, and SPM excludes pre-releases from `from:` version ranges, so a
+/// break reaches only callers who name an alpha exactly. Once 3.0.0 goes final the same
+/// change would reach every consumer on `swift package update`, and the six fields would
+/// have to keep reporting `0` for a ratio that does not exist.
+///
+/// Every existing call site already spelled the initialiser `try`, so making it actually
+/// throw is not a break at all — only a promise the signature had been making since it was
+/// written.
 public struct FinancialPeriodSummary<T: Real & Sendable>: Codable, Sendable where T: Codable {
 	/// The entity this summary belongs to
 	public let entity: Entity
@@ -96,6 +125,11 @@ public struct FinancialPeriodSummary<T: Real & Sendable>: Codable, Sendable wher
 	/// - Higher is better
 	/// - Typical range: 20%-80% depending on industry
 	/// - Compares favorably across companies
+	///
+	/// ## No Revenue
+	///
+	/// `nan` when revenue is zero: there is no denominator, so there is no margin.
+	/// Zero would read as an exact breakeven, which is a measurement, not an absence.
 	public let grossMargin: T
 
 	/// Operating profit margin as a percentage of revenue.
@@ -107,6 +141,11 @@ public struct FinancialPeriodSummary<T: Real & Sendable>: Codable, Sendable wher
 	/// - Higher is better
 	/// - Typical range: 5%-30% depending on industry
 	/// - Indicates operational efficiency
+	///
+	/// ## No Revenue
+	///
+	/// `nan` when revenue is zero: there is no denominator, so there is no margin.
+	/// Zero would read as an exact breakeven, which is a measurement, not an absence.
 	public let operatingMargin: T
 
 	/// Net profit margin as a percentage of revenue.
@@ -118,6 +157,11 @@ public struct FinancialPeriodSummary<T: Real & Sendable>: Codable, Sendable wher
 	/// - Higher is better
 	/// - Typical range: 5%-25% depending on industry
 	/// - Includes impact of financing and tax strategies
+	///
+	/// ## No Revenue
+	///
+	/// `nan` when revenue is zero: there is no denominator, so there is no margin.
+	/// Zero would read as an exact breakeven, which is a measurement, not an absence.
 	public let netMargin: T
 
 	// MARK: - Balance Sheet Metrics
@@ -289,16 +333,18 @@ public struct FinancialPeriodSummary<T: Real & Sendable>: Codable, Sendable wher
 	///
 	/// ## Undefined Periods
 	///
-	/// This is a non-optional snapshot, so a ratio that has no value for the period —
-	/// ``BalanceSheet/currentRatio`` omits periods with no current liabilities, because
-	/// there is nothing to cover — is recorded here as `0`. That is a lossy boundary,
-	/// not a reading: it does not mean the company could cover nothing. Take the ratio
-	/// from ``BalanceSheet/currentRatio`` directly, where absence is representable, if
-	/// the distinction matters.
+	/// `nil` means the ratio is **not defined**, not that it is zero and not that the data
+	/// is missing. ``BalanceSheet/currentRatio`` omits periods with no current liabilities,
+	/// because there is nothing to cover — so a debt-free company reports `nil` here for a
+	/// period its balance sheet fully covers. Recording that as `0` said the strongest
+	/// short-term position was the weakest, and failed every minimum-coverage threshold.
+	///
+	/// A period the statements do not cover never reaches this property: the initialiser
+	/// throws instead.
 	///
 	/// ## SeeAlso
 	/// - ``BalanceSheet/currentRatio``
-	public let currentRatio: T
+	public let currentRatio: T?
 
 	/// Quick ratio (acid-test ratio).
 	///
@@ -310,9 +356,14 @@ public struct FinancialPeriodSummary<T: Real & Sendable>: Codable, Sendable wher
 	/// - < 1.0: May struggle to meet short-term obligations
 	/// - Typical healthy range: 1.0 - 2.0
 	///
+	/// ## Undefined Periods
+	///
+	/// `nil` means the ratio is not defined — no current liabilities, so nothing to cover.
+	/// A period the statements do not cover throws from the initialiser instead.
+	///
 	/// ## SeeAlso
 	/// - ``BalanceSheet/quickRatio``
-	public let quickRatio: T
+	public let quickRatio: T?
 
 	/// Cash ratio.
 	///
@@ -324,9 +375,14 @@ public struct FinancialPeriodSummary<T: Real & Sendable>: Codable, Sendable wher
 	/// - But too high may indicate inefficient cash use
 	/// - Typical range: 0.2 - 0.5
 	///
+	/// ## Undefined Periods
+	///
+	/// `nil` means the ratio is not defined — no current liabilities, so nothing to cover.
+	/// A period the statements do not cover throws from the initialiser instead.
+	///
 	/// ## SeeAlso
 	/// - ``BalanceSheet/cashRatio``
-	public let cashRatio: T
+	public let cashRatio: T?
 
 	// MARK: - Leverage Ratios
 
@@ -342,13 +398,16 @@ public struct FinancialPeriodSummary<T: Real & Sendable>: Codable, Sendable wher
 	///
 	/// ## Undefined Periods
 	///
-	/// ``BalanceSheet/debtToEquity`` omits periods with no equity, where leverage is
-	/// unbounded rather than zero. This non-optional snapshot records that as `0`; read
-	/// the balance sheet series directly if the distinction matters.
+	/// `nil` means the ratio is not defined. ``BalanceSheet/debtToEquity`` omits periods
+	/// with no equity, where leverage is unbounded rather than zero — a company financed
+	/// entirely by debt is the last one that should read as unlevered, which is what the
+	/// `0` recorded here previously said.
+	///
+	/// A period the statements do not cover throws from the initialiser instead.
 	///
 	/// ## SeeAlso
 	/// - ``BalanceSheet/debtToEquity``
-	public let debtToEquityRatio: T
+	public let debtToEquityRatio: T?
 
 	/// Debt-to-assets ratio.
 	///
@@ -360,9 +419,14 @@ public struct FinancialPeriodSummary<T: Real & Sendable>: Codable, Sendable wher
 	/// - > 0.5: More than half of assets are debt-financed
 	/// - Higher values indicate greater financial risk
 	///
+	/// ## Undefined Periods
+	///
+	/// `nil` means the ratio is not defined — no assets, so no composition to take a
+	/// proportion of. A period the statements do not cover throws from the initialiser.
+	///
 	/// ## SeeAlso
 	/// - ``BalanceSheet/debtRatio``
-	public let debtToAssetsRatio: T
+	public let debtToAssetsRatio: T?
 
 	/// Equity ratio.
 	///
@@ -374,9 +438,14 @@ public struct FinancialPeriodSummary<T: Real & Sendable>: Codable, Sendable wher
 	/// - Typical range: 0.3 - 0.7
 	/// - Should sum with debt-to-assets to approximately 1.0
 	///
+	/// ## Undefined Periods
+	///
+	/// `nil` means the ratio is not defined — no assets, so no composition to take a
+	/// proportion of. A period the statements do not cover throws from the initialiser.
+	///
 	/// ## SeeAlso
 	/// - ``BalanceSheet/equityRatio``
-	public let equityRatio: T
+	public let equityRatio: T?
 
 	// MARK: - Efficiency Ratios (Optional)
 
@@ -442,6 +511,11 @@ public struct FinancialPeriodSummary<T: Real & Sendable>: Codable, Sendable wher
 	///
 	/// ## Note
 	/// Used by rating agencies and lenders for credit analysis.
+	///
+	/// ## No EBITDA
+	///
+	/// `nan` when EBITDA is zero. A leverage of `0.0x` reads as the strongest credit
+	/// on every lender's scale, and a company with no earnings is the weakest.
 	public let debtToEBITDARatio: T
 
 	/// Net debt-to-EBITDA ratio.
@@ -453,6 +527,11 @@ public struct FinancialPeriodSummary<T: Real & Sendable>: Codable, Sendable wher
 	/// - Lower values indicate stronger credit position
 	/// - Can be negative if company has net cash position
 	/// - More precise than gross debt-to-EBITDA
+	///
+	/// ## No EBITDA
+	///
+	/// `nan` when EBITDA is zero. A leverage of `0.0x` reads as the strongest credit
+	/// on every lender's scale, and a company with no earnings is the weakest.
 	public let netDebtToEBITDARatio: T
 
 	/// Interest coverage ratio.
@@ -594,6 +673,23 @@ public struct FinancialPeriodSummary<T: Real & Sendable>: Codable, Sendable wher
 	public let operationalMetrics: OperationalMetrics<T>?
 
 	/// Create a comprehensive financial summary for a period.
+	///
+	/// Every figure in the summary is read at `period`. A period the supplied statements do
+	/// not cover has no figures, so no summary is built for it — see
+	/// ``FinancialPeriodSummary`` for why a summary of zeros was worse than no summary.
+	///
+	/// - Parameters:
+	///   - entity: The company this summary describes.
+	///   - period: The period to summarise. Must be covered by both statements.
+	///   - incomeStatement: Income statement covering `period`.
+	///   - balanceSheet: Balance sheet covering `period`.
+	///   - cashFlowStatement: Optional cash flow statement; its five figures stay `nil`
+	///     when it is absent, and when it is present but does not cover `period`.
+	///   - marketData: Optional price and share-count series for the valuation metrics.
+	///   - operationalMetrics: Optional company-specific metrics, stored as supplied.
+	///
+	/// - Throws: ``BusinessMathError/missingData(account:period:)`` when either statement
+	///   has no figure for `period`. The error names the first account that was missing.
 	public init(
 		entity: Entity,
 		period: Period,
@@ -608,32 +704,45 @@ public struct FinancialPeriodSummary<T: Real & Sendable>: Codable, Sendable wher
 		self.operationalMetrics = operationalMetrics
 
 		// Income Statement
-		self.revenue = incomeStatement.totalRevenue[period] ?? T(0)
-		self.grossProfit = incomeStatement.grossProfit[period] ?? T(0)
-		self.operatingIncome = incomeStatement.operatingIncome[period] ?? T(0)
-		self.ebitda = incomeStatement.ebitda[period] ?? T(0)
-		self.netIncome = incomeStatement.netIncome[period] ?? T(0)
+		//
+		// Each of these was `?? T(0)`, which answered a lookup outside the statements with a
+		// measured zero. See `requiredFigure` below for what the caller was being told.
+		self.revenue = try requiredFigure(incomeStatement.totalRevenue, at: period, account: "totalRevenue")
+		self.grossProfit = try requiredFigure(incomeStatement.grossProfit, at: period, account: "grossProfit")
+		self.operatingIncome = try requiredFigure(incomeStatement.operatingIncome, at: period, account: "operatingIncome")
+		self.ebitda = try requiredFigure(incomeStatement.ebitda, at: period, account: "ebitda")
+		self.netIncome = try requiredFigure(incomeStatement.netIncome, at: period, account: "netIncome")
 
 		// Margins
-		if revenue != T(0) {
+		//
+		// Revenue is the denominator of all three, so a period with no revenue has no margin.
+		// The caller would otherwise have been told `0` — "this business ran at exactly
+		// breakeven" — which a peer table ranks mid-pack rather than skips. Contract §3.1:
+		// a value that cannot be computed and has nowhere else to go is `nan`.
+		//
+		// The test is `== T(0)` rather than the `!= T(0)` it replaced because every
+		// comparison against `nan` is false. `!=` answered *true* for a contaminated
+		// revenue and divided through, which happened to be right; `==` answers *false* for
+		// it and divides through for the same reason, which is right on purpose.
+		if revenue == T(0) {
+			self.grossMargin = T.nan
+			self.operatingMargin = T.nan
+			self.netMargin = T.nan
+		} else {
 			self.grossMargin = grossProfit / revenue
 			self.operatingMargin = operatingIncome / revenue
 			self.netMargin = netIncome / revenue
-		} else {
-			self.grossMargin = T(0)
-			self.operatingMargin = T(0)
-			self.netMargin = T(0)
 		}
 
 		// Balance Sheet
-		self.totalAssets = balanceSheet.totalAssets[period] ?? T(0)
-		self.currentAssets = balanceSheet.currentAssets[period] ?? T(0)
-		self.totalLiabilities = balanceSheet.totalLiabilities[period] ?? T(0)
-		self.currentLiabilities = balanceSheet.currentLiabilities[period] ?? T(0)
-		self.totalEquity = balanceSheet.totalEquity[period] ?? T(0)
+		self.totalAssets = try requiredFigure(balanceSheet.totalAssets, at: period, account: "totalAssets")
+		self.currentAssets = try requiredFigure(balanceSheet.currentAssets, at: period, account: "currentAssets")
+		self.totalLiabilities = try requiredFigure(balanceSheet.totalLiabilities, at: period, account: "totalLiabilities")
+		self.currentLiabilities = try requiredFigure(balanceSheet.currentLiabilities, at: period, account: "currentLiabilities")
+		self.totalEquity = try requiredFigure(balanceSheet.totalEquity, at: period, account: "totalEquity")
 		self.workingCapital = currentAssets - currentLiabilities
-		self.cash = balanceSheet.cashAndEquivalents[period] ?? T(0)
-		self.debt = balanceSheet.interestBearingDebt[period] ?? T(0)
+		self.cash = try requiredFigure(balanceSheet.cashAndEquivalents, at: period, account: "cashAndEquivalents")
+		self.debt = try requiredFigure(balanceSheet.interestBearingDebt, at: period, account: "interestBearingDebt")
 		self.netDebt = debt - cash
 
 		// Cash Flow Statement (optional)
@@ -652,20 +761,35 @@ public struct FinancialPeriodSummary<T: Real & Sendable>: Codable, Sendable wher
 		}
 
 		// Profitability Ratios
+		//
+		// Both series are `netIncome / averageTimeSeries(balance)`, and `/` on a `TimeSeries`
+		// keeps the periods present in both operands — it does not drop a zero divisor, which
+		// comes back as an infinity and is a legitimate reading (contract §3.6). So `nil` here
+		// means the period is uncovered, the same condition the roll-ups above throw on, and
+		// the same answer is owed: a return on assets of `0` says the assets earned nothing.
 		let roaSeries = returnOnAssets(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
 		let roeSeries = returnOnEquity(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
-		self.roa = roaSeries[period] ?? T(0)
-		self.roe = roeSeries[period] ?? T(0)
+		self.roa = try requiredFigure(roaSeries, at: period, account: "returnOnAssets")
+		self.roe = try requiredFigure(roeSeries, at: period, account: "returnOnEquity")
 
-		// Liquidity Ratios
-		self.currentRatio = balanceSheet.currentRatio[period] ?? T(0)
-		self.quickRatio = balanceSheet.quickRatio[period] ?? T(0)
-		self.cashRatio = balanceSheet.cashRatio[period] ?? T(0)
-
-		// Leverage Ratios
-		self.debtToEquityRatio = balanceSheet.debtToEquity[period] ?? T(0)
-		self.debtToAssetsRatio = balanceSheet.debtRatio[period] ?? T(0)
-		self.equityRatio = balanceSheet.equityRatio[period] ?? T(0)
+		// Liquidity and Leverage Ratios
+		//
+		// These six are the one place in this initialiser where `nil` is an *answer*.
+		// `BalanceSheet.ratio(_:over:)` deliberately omits every period whose divisor is
+		// exactly zero, so a company with no current liabilities has no current ratio, and a
+		// company with no equity has no debt-to-equity ratio — at a period its balance sheet
+		// fully covers. The caller would otherwise have been told `0`: no coverage at all for
+		// the strongest short-term position on the books, and unlevered for the most levered.
+		//
+		// An uncovered period cannot reach here — the roll-ups above have already thrown —
+		// so `nil` below carries exactly one meaning, which is why widening these six to `T?`
+		// is not the blanket nil-to-throw that would have rejected the debt-free company.
+		self.currentRatio = balanceSheet.currentRatio[period]
+		self.quickRatio = balanceSheet.quickRatio[period]
+		self.cashRatio = balanceSheet.cashRatio[period]
+		self.debtToEquityRatio = balanceSheet.debtToEquity[period]
+		self.debtToAssetsRatio = balanceSheet.debtRatio[period]
+		self.equityRatio = balanceSheet.equityRatio[period]
 
 		// Efficiency Ratios (optional - may not have required accounts)
 		let assetTurnoverSeries = assetTurnover(incomeStatement: incomeStatement, balanceSheet: balanceSheet)
@@ -686,12 +810,17 @@ public struct FinancialPeriodSummary<T: Real & Sendable>: Codable, Sendable wher
 		}
 
 		// Credit Metrics
-		if ebitda != T(0) {
+		//
+		// Same shape as the margins, and the fallback pointed the same way: a company with no
+		// EBITDA was reported at a leverage of `0.0x`, which every lender's scale reads as the
+		// *best* credit in the book. It is the worst — there are no earnings to service the
+		// debt with. `nan` says so; contract §3.1.
+		if ebitda == T(0) {
+			self.debtToEBITDARatio = T.nan
+			self.netDebtToEBITDARatio = T.nan
+		} else {
 			self.debtToEBITDARatio = debt / ebitda
 			self.netDebtToEBITDARatio = netDebt / ebitda
-		} else {
-			self.debtToEBITDARatio = T(0)
-			self.netDebtToEBITDARatio = T(0)
 		}
 
 		// silent: interest coverage is optional — missing interest expense yields nil
@@ -757,6 +886,39 @@ public struct FinancialPeriodSummary<T: Real & Sendable>: Codable, Sendable wher
 			self.evToEBITDARatio = nil
 		}
 	}
+}
+
+// MARK: - Required period lookups
+
+/// Reads one statement figure at a period, or refuses to answer at all.
+///
+/// `TimeSeries` returns `nil` for a period it holds no value at, and the `?? T(0)` this
+/// replaces answered that lookup with a **measured zero** — revenue of nothing, assets of
+/// nothing, a balance sheet that balances because both sides are empty. None of those is a
+/// missing reading; each is a reading, and downstream each one ranks and thresholds. The
+/// measured case: `altmanZScore` scored a solvent, profitable company **0.00 — the distress
+/// zone, in its own documentation** — for a quarter one step outside the statements it was
+/// handed.
+///
+/// Without this guard the caller is told twenty figures, any number of them fabricated, with
+/// nothing in the value, the type or the documentation to say which. Contract §3.7: narrow
+/// the domain, do not fabricate the observation.
+///
+/// - Parameters:
+///   - series: The statement series to read.
+///   - period: The period being summarised.
+///   - account: Name of the figure, for the error message.
+/// - Returns: The value the series holds at `period`.
+/// - Throws: ``BusinessMathError/missingData(account:period:)`` when there is none.
+private func requiredFigure<T: Real & Sendable>(
+	_ series: TimeSeries<T>,
+	at period: Period,
+	account: String
+) throws -> T {
+	guard let figure = series[period] else {
+		throw BusinessMathError.missingData(account: account, period: period.label)
+	}
+	return figure
 }
 
 // MARK: - Market Data

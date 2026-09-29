@@ -330,7 +330,11 @@ struct ChesapeakeEnergyTests {
 			balanceSheet: balanceSheets[0]
 		)
 
-		#expect(q1Summary.currentRatio > 1.0, "Should have positive working capital")
+		// `currentRatio` is optional: a company with no current liabilities has none. This
+		// fixture has them, so `#require` asserts that the ratio is defined at all before
+		// the threshold is checked.
+		let currentRatio = try #require(q1Summary.currentRatio, "Q1 has current liabilities")
+		#expect(currentRatio > 1.0, "Should have positive working capital")
 		#expect(q1Summary.cash > 0)
 		#expect(q1Summary.workingCapital > 0)
 	}
@@ -431,8 +435,14 @@ struct ChesapeakeEnergyTests {
 		#expect(debtToEquity.count == 4)
 		#expect(debtToEBITDA.count == 4)
 
-		// Leverage should decrease over time as debt is paid down
-		#expect(debtToEquity[3] < debtToEquity[0], "Debt/Equity should decrease")
+		// Leverage should decrease over time as debt is paid down.
+		//
+		// `debtToEquityTrend` is `[T?]` since the ratio became optional: a quarter with no
+		// equity has no leverage ratio. Chesapeake has equity in every quarter of this
+		// fixture, so `#require` asserts that as well as unwrapping it.
+		let deQ1 = try #require(debtToEquity[0], "Q1 equity is non-zero, so D/E is defined")
+		let deQ4 = try #require(debtToEquity[3], "Q4 equity is non-zero, so D/E is defined")
+		#expect(deQ4 < deQ1, "Debt/Equity should decrease")
 		#expect(debtToEBITDA[3] < debtToEBITDA[0], "Debt/EBITDA should decrease")
 	}
 

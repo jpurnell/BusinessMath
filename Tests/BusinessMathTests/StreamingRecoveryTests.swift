@@ -14,7 +14,10 @@ import Foundation
 /// `==` on `[Double]` is wrong twice over here: it answers `false` for two `nan`s that are
 /// both the intended output, and it hides which position disagreed.
 private func agree(_ lhs: [Double], _ rhs: [Double]) -> Bool {
-    lhs.count == rhs.count && zip(lhs, rhs).allSatisfy { $0.isEqual(to: $1) }
+    // `isEqual(to:)` is IEEE equality, so `nan.isEqual(to: .nan)` is **false**. This sweep
+    // deliberately marks unevaluable positions with `.nan`, so two NaNs in the same slot
+    // are an agreement, not a mismatch — without this a marked position can never match.
+    lhs.count == rhs.count && zip(lhs, rhs).allSatisfy { $0.isEqual(to: $1) || ($0.isNaN && $1.isNaN) }
 }
 
 /// Eight usable observations, one `nan`, eight more usable — the Phase 3 probe's input.

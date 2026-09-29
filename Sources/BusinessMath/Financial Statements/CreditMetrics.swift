@@ -39,13 +39,16 @@ import Numerics
 /// )
 ///
 /// let currentPeriod = Period.quarter(year: 2025, quarter: 1)
-/// if (zScore[currentPeriod] ?? 0) > 2.99 {
+/// // The lookup is optional because a period the statements do not cover has no Z-Score.
+/// // `?? 0` here would report 0.00 — documented below as the distress zone — for a company
+/// // that was merely not asked about.
+/// if let z = zScore[currentPeriod], z > 2.99 {
 ///     print("Safe zone: Low bankruptcy risk")
 /// }
 ///
 /// // Calculate Piotroski F-Score
 /// let priorPeriod = Period.quarter(year: 2024, quarter: 4)
-/// let score = piotroskiScore(
+/// let score = try piotroskiScore(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet,
 ///     cashFlowStatement: cashFlowStatement,
@@ -88,7 +91,7 @@ import Numerics
 /// let currentPeriod = Period.documentationQuarters[1]
 /// let priorPeriod = Period.documentationQuarters[0]
 ///
-/// let score = piotroskiScore(
+/// let score = try piotroskiScore(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet,
 ///     cashFlowStatement: cashFlowStatement,
@@ -221,7 +224,11 @@ public struct PiotroskiScore {
 ///     marketPrice: marketPrice,
 ///     sharesOutstanding: sharesOutstanding
 /// )
-/// let zForPeriod = (zScores[period] ?? 0)
+/// // Optional for the same reason: the time-series overload emits only the periods its
+/// // operands share, so a period outside them is absent rather than zero.
+/// if let zForPeriod = zScores[period] {
+///     print("Z = \(zForPeriod)")
+/// }
 /// ```
 ///
 /// - Parameters:
@@ -378,6 +385,36 @@ public func altmanZScore<T: Real>(
 	return term1 + term2 + term3 + term4 + term5
 }
 
+// MARK: - Statement Coverage
+
+/// Reads one aggregated statement figure for one period, refusing rather than fabricating when
+/// the statements do not cover that period.
+///
+/// A `nil` from one of these subscripts has exactly one meaning. Every aggregated accessor on
+/// `IncomeStatement`, `BalanceSheet` and `CashFlowStatement` routes through
+/// `FinancialStatementHelpers.aggregateAccounts`, which returns a **zero-filled** series over the
+/// statement's own periods when no account carries the role being summed. So "this company has no
+/// long-term debt" already arrives as a measured `0` at every covered period, and the only way a
+/// lookup comes back empty is that the period was never filed. That is not a figure of zero; it
+/// is the absence of a statement, and `?? T(0)` reported it as the former.
+///
+/// - Parameters:
+///   - series: The aggregated series to read.
+///   - period: The period being asked about.
+///   - account: Name of the figure, carried into the thrown diagnostic.
+/// - Returns: The figure the statements report for `period`.
+/// - Throws: ``BusinessMathError/missingData(account:period:)`` when `period` is not covered.
+private func requiredFigure<T: Real & Sendable>(
+	_ series: TimeSeries<T>,
+	_ period: Period,
+	_ account: String
+) throws -> T {
+	guard let value = series[period] else {
+		throw BusinessMathError.missingData(account: account, period: period.label)
+	}
+	return value
+}
+
 // MARK: - Piotroski F-Score
 
 /// Piotroski F-Score - 9-point fundamental strength assessment.
@@ -425,7 +462,7 @@ public func altmanZScore<T: Real>(
 /// let currentPeriod = Period.quarter(year: 2025, quarter: 1)
 /// let priorPeriod = Period.quarter(year: 2024, quarter: 4)
 ///
-/// let score = piotroskiScore(
+/// let score = try piotroskiScore(
 ///     incomeStatement: incomeStatement,
 ///     balanceSheet: balanceSheet,
 ///     cashFlowStatement: cashFlowStatement,
@@ -455,30 +492,62 @@ public func altmanZScore<T: Real>(
 ///   - period: Current period to evaluate
 ///   - priorPeriod: Prior period for year-over-year comparisons
 /// - Returns: PiotroskiScore with total score, component scores, and individual signals
+/// - Throws: ``BusinessMathError/missingData(account:period:)`` when either `period` or
+///   `priorPeriod` falls outside the periods the statements cover. Six of the nine signals
+///   compare the two periods against each other, so a score computed without one of them is not
+///   a weaker answer — it is a different company's answer.
 public func piotroskiScore<T: Real>(
 	incomeStatement: IncomeStatement<T>,
 	balanceSheet: BalanceSheet<T>,
 	cashFlowStatement: CashFlowStatement<T>,
 	period: Period,
 	priorPeriod: Period
-) -> PiotroskiScore {
+) throws -> PiotroskiScore {
+	// Every one of the nineteen reads below used to end in `?? T(0)`. Six of the nine signals
+	// compare this period against the prior one, so an uncovered prior period did not weaken the
+	// answer — it scored a *different company*, one whose prior quarter reported nothing at all.
+	// Against a baseline of zero, "did the margin improve?", "did the return on assets improve?"
+	// and "did asset turnover improve?" are all answered yes, and the points are awarded. The
+	// damage is per-signal rather than uniform: `noNewEquity` goes the other way, because the
+	// whole of equity then looks newly issued.
+	//
+	// Measured on the deteriorating company in `CreditMetricsCoverageTests`, whose prior quarter
+	// was refiled as literal zeros to reproduce exactly what these fallbacks claimed to read:
+	// **4 points against its real prior quarter, 7 against the fabricated one** — across the
+	// "F >= 7: strong fundamentals (buy signal for value investors)" threshold this file
+	// documents above, for a company worsening on every comparative signal it has.
+	//
+	// This is the `altmanZScore` defect above, one rung worse. There the fabricated zero produced
+	// a single wrong number; here it produces a wrong number that moves in the direction of
+	// confidence. Neither can be detected after the fact: `PiotroskiScore.totalScore` is an `Int`
+	// with no room for "not answerable", and its `signals` DocC promises all nine keys are always
+	// present. So the domain is narrowed instead — contract §3.7 — and the function refuses.
+	// Refusing is not the same as inventing a result case, which §3.4 forbids.
 	var signals: [String: Bool] = [:]
 
 	// MARK: Profitability Signals (4 points max)
 
+	let netIncomeSeries = incomeStatement.netIncome
+
 	// 1. Positive net income
-	let netIncome = incomeStatement.netIncome[period] ?? T(0)
+	let netIncome = try requiredFigure(netIncomeSeries, period, "netIncome")
 	signals["positiveNetIncome"] = netIncome > T(0)
 
 	// 2. Positive operating cash flow
-	let operatingCashFlow = cashFlowStatement.operatingCashFlow[period] ?? T(0)
+	let operatingCashFlow = try requiredFigure(cashFlowStatement.operatingCashFlow, period, "operatingCashFlow")
 	signals["positiveOperatingCashFlow"] = operatingCashFlow > T(0)
 
 	// 3. Increasing ROA
-	let totalAssetsCurrent = balanceSheet.totalAssets[period] ?? T(0)
-	let totalAssetsPrior = balanceSheet.totalAssets[priorPeriod] ?? T(0)
+	let totalAssetsSeries = balanceSheet.totalAssets
+	let totalAssetsCurrent = try requiredFigure(totalAssetsSeries, period, "totalAssets")
+	let totalAssetsPrior = try requiredFigure(totalAssetsSeries, priorPeriod, "totalAssets")
+	let netIncomePrior = try requiredFigure(netIncomeSeries, priorPeriod, "netIncome")
+	// A company with no assets has no return on them, and zero is the right fallback here rather
+	// than a sentinel: it sits at the *unfavourable* end of the ROA scale, which is where a firm
+	// that owns nothing belongs, and it withholds the improvement point instead of awarding it.
+	// This mirrors `altmanZScore`'s `totalAssets == 0` guard above, which is correct for the same
+	// reason. Contrast the current-ratio fallback below: textually the same shape, opposite sense.
 	let roaCurrent = totalAssetsCurrent != T(0) ? netIncome / totalAssetsCurrent : T(0)
-	let netIncomePrior = incomeStatement.netIncome[priorPeriod] ?? T(0)
 	let roaPrior = totalAssetsPrior != T(0) ? netIncomePrior / totalAssetsPrior : T(0)
 	signals["increasingROA"] = roaCurrent > roaPrior
 
@@ -489,30 +558,62 @@ public func piotroskiScore<T: Real>(
 
 	// 5. Decreasing long-term debt
 	let ltDebt = balanceSheet.longTermDebt
-	let ltDebtCurrent = ltDebt[period] ?? T(0)
-	let ltDebtPrior = ltDebt[priorPeriod] ?? T(0)
-	// If no debt in either period, count as positive (no increase)
+	let ltDebtCurrent = try requiredFigure(ltDebt, period, "longTermDebt")
+	let ltDebtPrior = try requiredFigure(ltDebt, priorPeriod, "longTermDebt")
+	// If no debt in either period, count as positive (no increase). A debt-free company reports a
+	// genuine, measured 0 at every covered period — `aggregateAccounts` zero-fills when no account
+	// carries the role — so this arm is now reached on real figures rather than on absent ones.
 	signals["decreasingDebt"] = ltDebtCurrent <= ltDebtPrior
 
 	// 6. Increasing current ratio
-	let currentAssetsCurrent = balanceSheet.currentAssets[period] ?? T(0)
-	let currentLiabilitiesCurrent = balanceSheet.currentLiabilities[period] ?? T(0)
-	let currentRatioCurrent = currentLiabilitiesCurrent != T(0) ? currentAssetsCurrent / currentLiabilitiesCurrent : T(0)
+	let currentAssetsSeries = balanceSheet.currentAssets
+	let currentLiabilitiesSeries = balanceSheet.currentLiabilities
+	let currentAssetsCurrent = try requiredFigure(currentAssetsSeries, period, "currentAssets")
+	let currentLiabilitiesCurrent = try requiredFigure(currentLiabilitiesSeries, period, "currentLiabilities")
+	let currentAssetsPrior = try requiredFigure(currentAssetsSeries, priorPeriod, "currentAssets")
+	let currentLiabilitiesPrior = try requiredFigure(currentLiabilitiesSeries, priorPeriod, "currentLiabilities")
 
-	let currentAssetsPrior = balanceSheet.currentAssets[priorPeriod] ?? T(0)
-	let currentLiabilitiesPrior = balanceSheet.currentLiabilities[priorPeriod] ?? T(0)
-	let currentRatioPrior = currentLiabilitiesPrior != T(0) ? currentAssetsPrior / currentLiabilitiesPrior : T(0)
+	// This pair used to read `currentLiabilities != 0 ? assets / liabilities : T(0)`, which put the
+	// *strongest* liquidity position at the bottom of the scale. Zero current liabilities means
+	// every short-term obligation is settled; the ratio it produces is unbounded, not zero. A
+	// company that paid off its payables between the two periods went from a finite ratio to 0,
+	// so `increasingCurrentRatio` read false and it *lost* the liquidity point for becoming
+	// liquid. This is the same wrong-end-of-the-scale error `altmanZScore`'s component D carried
+	// for `totalLiabilities == 0`, four lines from a guard that was correct, and it is repaired
+	// the same way: diverge to infinity when there is something to divide, and contribute nothing
+	// when the numerator is zero too (0/0 says nothing about liquidity either way).
+	let currentRatioCurrent: T
+	if currentLiabilitiesCurrent != T(0) {
+		currentRatioCurrent = currentAssetsCurrent / currentLiabilitiesCurrent
+	} else if currentAssetsCurrent > T(0) {
+		currentRatioCurrent = T.infinity
+	} else {
+		currentRatioCurrent = T(0)
+	}
 
+	let currentRatioPrior: T
+	if currentLiabilitiesPrior != T(0) {
+		currentRatioPrior = currentAssetsPrior / currentLiabilitiesPrior
+	} else if currentAssetsPrior > T(0) {
+		currentRatioPrior = T.infinity
+	} else {
+		currentRatioPrior = T(0)
+	}
+
+	// Two unbounded ratios compare equal, so a company with no current liabilities in either
+	// period does not improve and does not earn the point — which is the truth about it.
 	signals["increasingCurrentRatio"] = currentRatioCurrent > currentRatioPrior
 
 	// 7. No new equity issuance
-	let totalEquityCurrent = balanceSheet.totalEquity[period] ?? T(0)
-	let totalEquityPrior = balanceSheet.totalEquity[priorPeriod] ?? T(0)
+	let totalEquitySeries = balanceSheet.totalEquity
+	let totalEquityCurrent = try requiredFigure(totalEquitySeries, period, "totalEquity")
+	let totalEquityPrior = try requiredFigure(totalEquitySeries, priorPeriod, "totalEquity")
 
 	// Check if common stock increased (proxy for new issuance)
 	// More sophisticated: check if equity increased beyond retained earnings
-	let retainedEarningsCurrent = balanceSheet.retainedEarnings[period] ?? T(0)
-	let retainedEarningsPrior = balanceSheet.retainedEarnings[priorPeriod] ?? T(0)
+	let retainedEarningsSeries = balanceSheet.retainedEarnings
+	let retainedEarningsCurrent = try requiredFigure(retainedEarningsSeries, period, "retainedEarnings")
+	let retainedEarningsPrior = try requiredFigure(retainedEarningsSeries, priorPeriod, "retainedEarnings")
 	let retainedEarningsChange = retainedEarningsCurrent - retainedEarningsPrior
 	let equityChange = totalEquityCurrent - totalEquityPrior
 
@@ -522,17 +623,24 @@ public func piotroskiScore<T: Real>(
 	// MARK: Operating Efficiency Signals (2 points max)
 
 	// 8. Increasing gross margin
-	let grossProfitCurrent = incomeStatement.grossProfit[period] ?? T(0)
-	let revenueCurrent = incomeStatement.totalRevenue[period] ?? T(0)
-	let grossMarginCurrent = revenueCurrent != T(0) ? grossProfitCurrent / revenueCurrent : T(0)
+	let grossProfitSeries = incomeStatement.grossProfit
+	let revenueSeries = incomeStatement.totalRevenue
+	let grossProfitCurrent = try requiredFigure(grossProfitSeries, period, "grossProfit")
+	let revenueCurrent = try requiredFigure(revenueSeries, period, "totalRevenue")
+	let grossProfitPrior = try requiredFigure(grossProfitSeries, priorPeriod, "grossProfit")
+	let revenuePrior = try requiredFigure(revenueSeries, priorPeriod, "totalRevenue")
 
-	let grossProfitPrior = incomeStatement.grossProfit[priorPeriod] ?? T(0)
-	let revenuePrior = incomeStatement.totalRevenue[priorPeriod] ?? T(0)
+	// Zero revenue leaves gross margin undefined, and zero is the correct fallback for the same
+	// reason as ROA above: it is the bottom of a margin scale, so a company that sold nothing is
+	// denied the improvement point rather than handed it.
+	let grossMarginCurrent = revenueCurrent != T(0) ? grossProfitCurrent / revenueCurrent : T(0)
 	let grossMarginPrior = revenuePrior != T(0) ? grossProfitPrior / revenuePrior : T(0)
 
 	signals["increasingGrossMargin"] = grossMarginCurrent > grossMarginPrior
 
 	// 9. Increasing asset turnover
+	// Same reading of a zero asset base as ROA: no assets means no turnover to improve on, and
+	// zero is the unfavourable end of this scale.
 	let assetTurnoverCurrent = totalAssetsCurrent != T(0) ? revenueCurrent / totalAssetsCurrent : T(0)
 	let assetTurnoverPrior = totalAssetsPrior != T(0) ? revenuePrior / totalAssetsPrior : T(0)
 	signals["increasingAssetTurnover"] = assetTurnoverCurrent > assetTurnoverPrior
@@ -545,6 +653,9 @@ public func piotroskiScore<T: Real>(
 		"increasingROA",
 		"qualityEarnings"
 	]
+	// The `?? false` fallbacks below are unreachable: each of the nine keys is assigned
+	// unconditionally above, and the lists here are literals of those same nine names. They are a
+	// dictionary default over a closed key set rather than a substitute for a measurement.
 	let profitability = profitabilitySignals.filter { signals[$0] ?? false }.count
 
 	let leverageSignals = [
@@ -582,14 +693,16 @@ public func piotroskiScore<T: Real>(
 ///   - period: Current period being analyzed
 ///   - priorPeriod: Prior period for comparison
 /// - Returns: Piotroski F-Score (0-9) with breakdown by category
+/// - Throws: ``BusinessMathError/missingData(account:period:)`` when either period falls outside
+///   the periods the statements cover, exactly as the function this forwards to.
 public func piotroskiFScore<T: Real>(
 	incomeStatement: IncomeStatement<T>,
 	balanceSheet: BalanceSheet<T>,
 	cashFlowStatement: CashFlowStatement<T>,
 	period: Period,
 	priorPeriod: Period
-) -> PiotroskiScore {
-	return piotroskiScore(
+) throws -> PiotroskiScore {
+	return try piotroskiScore(
 		incomeStatement: incomeStatement,
 		balanceSheet: balanceSheet,
 		cashFlowStatement: cashFlowStatement,
