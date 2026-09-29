@@ -261,7 +261,10 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 	/// It works independently of `TimeSeries` and does not set `lastPeriod` or `metadata`.
 	///
 	/// - Parameter values: Array of numeric values to fit.
-	/// - Throws: ``TrendModelError/insufficientData(required:provided:)`` if fewer than 2 values provided.
+	/// - Throws: ``TrendModelError/insufficientData(required:provided:)`` if fewer than 2 values provided,
+	///           or ``BusinessMathError/dataQuality(message:context:)`` if any value is not finite.
+	///           A `nan` propagates through the regression without raising, leaving a model that
+	///           reports itself fitted and projects only `nan`.
 	///
 	/// ## Important
 	///
@@ -279,6 +282,24 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 	public mutating func fit(values: [T]) throws {
 		guard values.count >= 2 else {
 			throw TrendModelError.insufficientData(required: 2, provided: values.count)
+		}
+
+		// `slope` and `intercept` are pure arithmetic, so a `nan` observation propagates through
+		// them without throwing and the fit "succeeds" with both coefficients `nan`. They are
+		// then stored as non-nil, so `slopeValue` and `interceptValue` both answer a value,
+		// `summary` prints an equation instead of "Not fitted", and only `projectValues` gives
+		// the game away. Measured: `fit(values: [100, .nan, 120, 130])` returned normally and
+		// `projectValues(steps: 3)` then returned [nan, nan, nan] — the caller holds a forecast
+		// object that reports itself fitted and cannot forecast.
+		//
+		// Refusing here rather than marking the object follows `ExponentialTrend` and
+		// `LogisticTrend` in this file, which already throw for observations they cannot use.
+		// A half-built model whose every answer is `nan` has no state worth handing back.
+		guard values.allSatisfy({ $0.isFinite }) else {
+			throw BusinessMathError.dataQuality(
+				message: "Linear trend fitting requires finite observations",
+				context: ["invalid_count": "\(values.filter { !$0.isFinite }.count)"]
+			)
 		}
 
 		// Create x values as sequential indices
@@ -306,7 +327,8 @@ public struct LinearTrend<T: Real & Sendable>: TrendModel, Sendable {
 	/// for generating time-indexed projections.
 	///
 	/// - Parameter timeSeries: Time series data to fit.
-	/// - Throws: ``TrendModelError/insufficientData(required:provided:)`` if fewer than 2 data points.
+	/// - Throws: ``TrendModelError/insufficientData(required:provided:)`` if fewer than 2 data points,
+	///           or ``BusinessMathError/dataQuality(message:context:)`` if any value is not finite.
 	///
 	/// ## Example
 	///
@@ -723,7 +745,10 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 	///
 	/// - Parameter values: Array of numeric values to fit (requires at least 2 points, all positive values).
 	/// - Throws: ``TrendModelError/insufficientData(required:provided:)`` if fewer than 2 data points,
-	///           or ``TrendModelError/invalidData(_:)`` if any values are ≤ 0
+	///           ``BusinessMathError/dataQuality(message:context:)`` if any value is not finite,
+	///           or ``TrendModelError/invalidData(_:)`` if any values are ≤ 0.
+	///           The two are deliberately distinct: a non-finite observation is missing data,
+	///           not a sign problem, and the caller's fix differs.
 	///
 	/// ## Important
 	///
@@ -739,6 +764,22 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 	public mutating func fit(values: [T]) throws {
 		guard values.count >= 2 else {
 			throw TrendModelError.insufficientData(required: 2, provided: values.count)
+		}
+
+		// Every comparison against `nan` is false, so `nan > T.zero` failed the positivity guard
+		// below and a missing observation was reported as
+		// "Exponential trend requires all positive values" — the identical error, with the
+		// identical message, that a genuinely negative observation produces. Measured:
+		// `fit(values: [1000, .nan, 1323])` and `fit(values: [1000, -1150, 1323])` threw
+		// `TrendModelError.invalidData` with byte-identical strings, so the error could not
+		// route a fix and sent the caller hunting for a sign problem in data that has none.
+		// An infinity fails the same way from the other side: it passes `> T.zero`, and
+		// `log(inf)` then makes both coefficients `nan` with no error at all.
+		guard values.allSatisfy({ $0.isFinite }) else {
+			throw BusinessMathError.dataQuality(
+				message: "Exponential trend fitting requires finite observations",
+				context: ["invalid_count": "\(values.filter { !$0.isFinite }.count)"]
+			)
 		}
 
 		// Check for non-positive values
@@ -775,7 +816,10 @@ public struct ExponentialTrend<T: Real & Sendable>: TrendModel, Sendable {
 	///
 	/// - Parameter timeSeries: Historical data to fit (requires at least 2 points, all positive values).
 	/// - Throws: ``TrendModelError/insufficientData(required:provided:)`` if fewer than 2 data points,
-	///           or ``TrendModelError/invalidData(_:)`` if any values are ≤ 0
+	///           ``BusinessMathError/dataQuality(message:context:)`` if any value is not finite,
+	///           or ``TrendModelError/invalidData(_:)`` if any values are ≤ 0.
+	///           The two are deliberately distinct: a non-finite observation is missing data,
+	///           not a sign problem, and the caller's fix differs.
 	///
 	/// ## Example
 	/// ```swift
@@ -1103,6 +1147,7 @@ public struct LogisticTrend<T: Real & Sendable>: TrendModel, Sendable {
 	///
 	/// - Parameter values: Array of numeric values to fit (requires at least 3 points, all positive and below capacity).
 	/// - Throws: ``TrendModelError/insufficientData(required:provided:)`` if fewer than 3 data points,
+	///           ``BusinessMathError/dataQuality(message:context:)`` if any value is not finite,
 	///           or ``TrendModelError/invalidData(_:)`` if any values are ≤ 0 or ≥ capacity
 	///
 	/// ## Important
@@ -1119,6 +1164,19 @@ public struct LogisticTrend<T: Real & Sendable>: TrendModel, Sendable {
 	public mutating func fit(values: [T]) throws {
 		guard values.count >= 3 else {
 			throw TrendModelError.insufficientData(required: 3, provided: values.count)
+		}
+
+		// The same wrong diagnosis as `ExponentialTrend`: `nan > T.zero` and `nan < capacity` are
+		// both false, so a missing observation was reported as
+		// "Logistic trend requires positive values below capacity" — sending the caller to
+		// check a saturation ceiling their data never approached. Not on the probe's list; the
+		// guard is the same shape as the one it did measure, four hundred lines down the same
+		// file.
+		guard values.allSatisfy({ $0.isFinite }) else {
+			throw BusinessMathError.dataQuality(
+				message: "Logistic trend fitting requires finite observations",
+				context: ["invalid_count": "\(values.filter { !$0.isFinite }.count)"]
+			)
 		}
 
 		// Check that all values are positive and below capacity
@@ -1182,6 +1240,7 @@ public struct LogisticTrend<T: Real & Sendable>: TrendModel, Sendable {
 	///
 	/// - Parameter timeSeries: Historical data to fit (requires at least 3 points, all positive and below capacity).
 	/// - Throws: ``TrendModelError/insufficientData(required:provided:)`` if fewer than 3 data points,
+	///           ``BusinessMathError/dataQuality(message:context:)`` if any value is not finite,
 	///           or ``TrendModelError/invalidData(_:)`` if any values are ≤ 0 or ≥ capacity
 	///
 	/// ## Example

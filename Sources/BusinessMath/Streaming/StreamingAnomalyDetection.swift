@@ -605,6 +605,16 @@ public struct AsyncEWMASequence<Base: AsyncSequence>: AsyncSequence where Base.E
         /// estimates process standard deviation from observed values, and computes control
         /// limits based on the EWMA distribution: target ± L × σ × √(λ/(2-λ)).
         ///
+        /// ## Non-finite observations
+        ///
+        /// An observation that is not finite is reported and then discarded rather than charted:
+        /// the signal at that index carries `ewma == .nan` and `isOutOfControl == false`, and the
+        /// value enters neither the EWMA recursion nor the sample used to estimate σ. The chart
+        /// therefore resumes from the last statistic it could compute, and a shift arriving after
+        /// a bad reading is still signalled. Control limits are unaffected, since they are
+        /// computed from the evaluable observations only. One signal is emitted per input value
+        /// either way.
+        ///
         /// - Returns: The next EWMA signal, or `nil` if the base sequence is exhausted.
         /// - Throws: Rethrows any error from the base sequence.
         public mutating func next() async throws -> EWMASignal? {
@@ -612,13 +622,22 @@ public struct AsyncEWMASequence<Base: AsyncSequence>: AsyncSequence where Base.E
                 return nil
             }
 
-            values.append(value)
+            // Without this test the caller is told, for the rest of the stream, that a process
+            // which has left its control limits is still in control. A single non-finite
+            // observation enters both accumulators — the EWMA recursion and the sample used
+            // for sigma — and neither can be subtracted back out, so `ewma < lcl || ewma > ucl`
+            // is a comparison against NaN and therefore false at every later index.
+            let isEvaluable = value.isFinite
 
-            // Update EWMA: Z_t = λ * X_t + (1-λ) * Z_{t-1}
-            if let currentEWMA = ewma {
-                ewma = lambda * value + (1.0 - lambda) * currentEWMA
-            } else {
-                ewma = value
+            if isEvaluable {
+                values.append(value)
+
+                // Update EWMA: Z_t = λ * X_t + (1-λ) * Z_{t-1}
+                if let currentEWMA = ewma {
+                    ewma = lambda * value + (1.0 - lambda) * currentEWMA
+                } else {
+                    ewma = value
+                }
             }
 
             // Estimate process standard deviation
@@ -636,13 +655,22 @@ public struct AsyncEWMASequence<Base: AsyncSequence>: AsyncSequence where Base.E
             let ucl = target + limitFactor
             let lcl = target - limitFactor
 
-            guard let currentEWMAValue = ewma else {
-                return nil
+            // Returning nil here would tell the caller the stream had ended, one signal short of
+            // the input it supplied, whenever the very first observation is the unevaluable one.
+            let reportedEWMA: Double
+            let isOutOfControl: Bool
+            if isEvaluable, let currentEWMAValue = ewma {
+                reportedEWMA = currentEWMAValue
+                isOutOfControl = currentEWMAValue < lcl || currentEWMAValue > ucl
+            } else {
+                // NaN, not the retained EWMA: the chart has no statistic at this index, and
+                // reporting the previous one would claim a measurement that was never taken.
+                reportedEWMA = .nan
+                isOutOfControl = false
             }
-            let isOutOfControl = currentEWMAValue < lcl || currentEWMAValue > ucl
 
             let signal = EWMASignal(
-                ewma: currentEWMAValue,
+                ewma: reportedEWMA,
                 upperControlLimit: ucl,
                 lowerControlLimit: lcl,
                 isOutOfControl: isOutOfControl,
@@ -865,6 +893,16 @@ public struct AsyncOutlierDetectionSequence<Base: AsyncSequence>: AsyncSequence 
 /// 2. Recursively splitting the resulting segments
 /// 3. Stopping when no significant improvements are found
 ///
+/// ## Non-finite observations
+///
+/// A non-finite observation is excluded from the mean and cost of every segment it falls in,
+/// while the indices of the series are left untouched — so a reported `index` is still an index
+/// into the values the caller supplied, and `leftMean`/`rightMean` are the levels of the
+/// observations that could be evaluated. A candidate split is skipped when either side holds
+/// fewer evaluable observations than `minSegmentSize`. Detection elsewhere in the series is
+/// therefore unaffected: a level shift after a bad reading is still reported, with a cost
+/// reduction reduced by whatever the missing observation would have contributed.
+///
 /// - SeeAlso: ``Breakpoint``, ``BreakpointMethod``
 public struct AsyncBreakpointDetectionSequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
     /// Yields detected breakpoints.
@@ -1017,38 +1055,78 @@ public struct AsyncBreakpointDetectionSequence<Base: AsyncSequence>: AsyncSequen
                 return nil
             }
 
-            let segment = Array(values[start..<end])
-            let segmentMean = segment.reduce(0.0, +) / Double(segment.count) // fp-safety:disable — guarded by end - start >= 2 * minSize
-            let totalCost = segment.map { pow($0 - segmentMean, 2) }.reduce(0.0, +)
+            // Scoring the whole segment including a non-finite observation would report "there is
+            // no structural break anywhere in this series" — not "none near the bad datum". The
+            // baseline cost would be NaN, every `costReduction > maxCostReduction` false, and the
+            // detector would return an empty result for a series with an unmistakable level shift.
+            guard let total = segmentCost(of: values, start..<end, minimumFinite: 2) else {
+                return nil
+            }
 
             var bestBreakpoint: Breakpoint?
             var maxCostReduction = 0.0
 
             for i in (start + minSize)..<(end - minSize) {
-                let left = Array(values[start..<i])
-                let right = Array(values[i..<end])
+                // Scoring a split whose side has fewer evaluable observations than `minSize` would
+                // hand the caller a `leftMean`/`rightMean` computed from one or two survivors and
+                // labelled as the level of a segment `minSize` long. On finite input every value
+                // is evaluable, so this never rejects a split the caller could otherwise have had.
+                guard let left = segmentCost(of: values, start..<i, minimumFinite: minSize),
+                      let right = segmentCost(of: values, i..<end, minimumFinite: minSize) else {
+                    continue
+                }
 
-                let leftMean = left.reduce(0.0, +) / Double(left.count) // fp-safety:disable — left.count >= minSize
-                let rightMean = right.reduce(0.0, +) / Double(right.count) // fp-safety:disable — right.count >= minSize
-
-                let leftCost = left.map { pow($0 - leftMean, 2) }.reduce(0.0, +)
-                let rightCost = right.map { pow($0 - rightMean, 2) }.reduce(0.0, +)
-                let splitCost = leftCost + rightCost
-
-                let costReduction = totalCost - splitCost
+                let splitCost = left.cost + right.cost
+                let costReduction = total.cost - splitCost
 
                 if costReduction > maxCostReduction {
                     maxCostReduction = costReduction
                     bestBreakpoint = Breakpoint(
                         index: i,
                         costReduction: costReduction,
-                        leftMean: leftMean,
-                        rightMean: rightMean
+                        leftMean: left.mean,
+                        rightMean: right.mean
                     )
                 }
             }
 
             return bestBreakpoint
+        }
+
+        /// Mean and within-segment squared-error cost over the evaluable observations of a range.
+        ///
+        /// Non-finite observations contribute to neither the mean nor the cost. They are not
+        /// replaced by a substitute value and the range's index bounds are unchanged, so a
+        /// breakpoint index remains an index into the caller's original series.
+        ///
+        /// - Parameters:
+        ///   - values: The buffered series.
+        ///   - range: The half-open index range to score.
+        ///   - minimumFinite: The number of evaluable observations the range must contain.
+        /// - Returns: The mean and cost over the evaluable observations, or `nil` when the range
+        ///   holds fewer than `minimumFinite` of them.
+        private func segmentCost(of values: [Double], _ range: Range<Int>, minimumFinite: Int) -> (mean: Double, cost: Double)? {
+            var sum = 0.0
+            var finiteCount = 0
+            for i in range where values[i].isFinite {
+                sum += values[i]
+                finiteCount += 1
+            }
+
+            // A mean over zero evaluable observations is 0/0; reporting the NaN as a segment level
+            // would put a fabricated number into `leftMean`/`rightMean` for a caller to compare.
+            guard finiteCount >= Swift.max(1, minimumFinite) else {
+                return nil
+            }
+
+            let mean = sum / Double(finiteCount) // fp-safety:disable — guarded by finiteCount >= 1 immediately above
+
+            var cost = 0.0
+            for i in range where values[i].isFinite {
+                cost += pow(values[i] - mean, 2)
+            }
+
+            return (mean, cost)
         }
     }
 }
@@ -1085,6 +1163,15 @@ public struct AsyncBreakpointDetectionSequence<Base: AsyncSequence>: AsyncSequen
 /// ## Requirements
 /// - Needs at least 2 complete periods (2×period observations) to begin detecting anomalies
 /// - Works best with stable seasonal patterns; adapts as more cycles are observed
+///
+/// ## Non-finite observations
+///
+/// A non-finite observation does not enter its slot's baseline, so the slot keeps a usable mean
+/// and standard deviation and continues to flag genuine departures in later cycles. The result
+/// emitted at the bad index itself, and at any index whose slot baseline cannot be evaluated,
+/// carries `deviation == .nan` and `isAnomaly == false` — "not compared", as distinct from the
+/// `0.0` that would mean "compared, and found exactly on pattern". One result is emitted per
+/// input value.
 ///
 /// - SeeAlso: ``SeasonalAnomaly``
 public struct AsyncSeasonalAnomalySequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
@@ -1161,7 +1248,15 @@ public struct AsyncSeasonalAnomalySequence<Base: AsyncSequence>: AsyncSequence w
                 // Handle case where seasonal values are perfectly constant (stdDev = 0)
                 let deviation: Double
                 let isAnomaly: Bool
-                if stdDev > 0 {
+                if !expectedValue.isFinite || !stdDev.isFinite || !value.isFinite {
+                    // Without this branch an unevaluable baseline falls through to the
+                    // zero-standard-deviation arm below, where `abs(value - NaN) > 0.1` is false,
+                    // and the caller is told a value that could not be compared to anything sat
+                    // exactly on its seasonal pattern. `.nan` says the comparison did not happen;
+                    // `0.0` would say it happened and found perfect agreement.
+                    deviation = .nan
+                    isAnomaly = false
+                } else if stdDev > 0 {
                     deviation = abs(value - expectedValue) / stdDev
                     isAnomaly = deviation > threshold
                 } else {
@@ -1200,17 +1295,37 @@ public struct AsyncSeasonalAnomalySequence<Base: AsyncSequence>: AsyncSequence w
                 var seasonalValues: [Double] = []
                 var idx = seasonIndex
                 while idx < buffer.count {
-                    seasonalValues.append(buffer[idx])
+                    // Admitting a non-finite observation here would tell the caller, for every
+                    // later cycle, that nothing unusual happened in this slot. One such value
+                    // makes this slot's mean and standard deviation NaN permanently — the buffer
+                    // is never trimmed, so the baseline can never be recomputed without it — and
+                    // a genuine spike measured against a NaN baseline is not an anomaly.
+                    if buffer[idx].isFinite {
+                        seasonalValues.append(buffer[idx])
+                    }
                     idx += period
                 }
 
-                if !seasonalValues.isEmpty {
+                if seasonalValues.isEmpty {
+                    // The retained mean would otherwise stand as this slot's expected value: 0.0
+                    // on the first cycle, which reads as a measured baseline of zero rather than
+                    // as a slot that has never been observed.
+                    seasonalMeans[seasonIndex] = .nan
+                    seasonalStdDevs[seasonIndex] = .nan
+                } else {
                     let mean = seasonalValues.reduce(0.0, +) / Double(seasonalValues.count) // fp-safety:disable — guarded by !seasonalValues.isEmpty
                     seasonalMeans[seasonIndex] = mean
 
                     if seasonalValues.count >= 2 {
                         let variance = seasonalValues.map { pow($0 - mean, 2) }.reduce(0.0, +) / Double(seasonalValues.count - 1) // fp-safety:disable — guarded by seasonalValues.count >= 2
                         seasonalStdDevs[seasonIndex] = sqrt(variance)
+                    } else {
+                        // A retained `0.0` here would be read below as "this slot is perfectly
+                        // constant", so any departure of 0.1 or more from a single observation
+                        // would be reported as an anomaly. One observation supports no dispersion
+                        // estimate at all. Detection requires two full periods, so on finite input
+                        // every slot already holds at least two observations and this never fires.
+                        seasonalStdDevs[seasonIndex] = .nan
                     }
                 }
             }

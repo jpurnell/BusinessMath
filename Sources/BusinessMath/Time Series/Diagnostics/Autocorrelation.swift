@@ -21,6 +21,10 @@ public extension TimeSeries where T: BinaryFloatingPoint {
     /// `adjusted=False`). `maxLag` is clamped to `n−1`. A constant series (zero
     /// variance) returns all zeros rather than NaN; an empty/one-point series returns `[]`.
     ///
+    /// A series containing a non-finite observation returns all `nan`, one per requested
+    /// lag: the estimator cannot be evaluated, and the length invariant callers index
+    /// against is preserved rather than the answer being shortened or faked.
+    ///
     /// - Parameter maxLag: The largest lag to compute.
     /// - Returns: Autocorrelations for lags `1...min(maxLag, n−1)`.
     func autocorrelation(maxLag: Int) -> [T] {
@@ -28,6 +32,22 @@ public extension TimeSeries where T: BinaryFloatingPoint {
         let n = y.count
         guard n >= 2, maxLag >= 1 else { return [] }
         let lags = Swift.min(maxLag, n - 1)
+
+        // `mean` returns `nan` for a contaminated series, so every element of `dev` is `nan`
+        // and so is `gamma0` — and `gamma0 > T.zero` is false for a `nan`, which sent
+        // contamination out through the zero-variance door below. That door answers all
+        // zeros, and zero is not a neutral autocorrelation: it is the exact reading of white
+        // noise. So a series that could not be evaluated was certified as carrying no
+        // structure at all, at every lag, and the two callers in this directory inherited it:
+        // `ljungBox` squared those zeros into Q = 0, p-value = 1.0 — the strongest available
+        // "these residuals are white noise, the model left nothing on the table" — and
+        // `dominantSeasonLength` found no lag above its band and reported no seasonality.
+        // Per contract §3.5 the unusable lags are marked rather than the array being
+        // shortened or a constant substituted; an infinity is screened with the `nan`
+        // because `inf - inf` in `dev` makes one.
+        guard y.allSatisfy({ $0.isFinite }) else {
+            return Array(repeating: T.nan, count: lags)
+        }
 
         let ybar = mean(y)
         let dev = y.map { $0 - ybar }
@@ -52,6 +72,12 @@ public extension TimeSeries where T: BinaryFloatingPoint {
     ///
     /// PACF at lag `k` is the correlation between `yₜ` and `yₜ₋ₖ` after removing the
     /// linear effect of the intermediate lags. By construction PACF(1) == ACF(1).
+    ///
+    /// A series containing a non-finite observation returns all `nan`, inherited from
+    /// ``autocorrelation(maxLag:)``: the recursion's `denominator != T.zero` test is *true*
+    /// for a `nan` denominator, so the division is taken and the `nan` propagates to every
+    /// lag rather than being diverted into the zero fallback that guards a genuinely
+    /// singular recursion.
     ///
     /// - Parameter maxLag: The largest lag to compute.
     /// - Returns: Partial autocorrelations for lags `1...min(maxLag, n−1)`.
@@ -97,6 +123,15 @@ public extension TimeSeries where T: BinaryFloatingPoint {
     /// the band (no detectable seasonality) — callers then fall back to a non-seasonal
     /// season length of 1. This is purely advisory: it *suggests*, it does not override
     /// an explicit season length supplied elsewhere.
+    ///
+    /// `nil` is **conflated**: it means both "no lag clears the white-noise band" and "the
+    /// series could not be evaluated". A contaminated series gives an all-`nan` ACF, and
+    /// `nan > band` is false for every lag, so nothing is nominated. `Int?` has no room to
+    /// distinguish the two and widening it is source-breaking, so per contract §3.3 the
+    /// conflation is documented rather than fixed in passing. Both callers —
+    /// ``detectedSeasonLength(maxLag:)`` and the MASE scale in `RollingOriginBacktest` —
+    /// fall back to a non-seasonal length of `1`, which is the same fallback they take for
+    /// a genuinely aseasonal series, so neither is handed a wrong number.
     ///
     /// - Parameter maxLag: The largest candidate period to consider.
     /// - Returns: The suggested season length, or `nil` if none is detectable.

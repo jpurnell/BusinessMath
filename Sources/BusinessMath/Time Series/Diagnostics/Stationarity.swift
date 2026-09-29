@@ -54,13 +54,36 @@ public extension TimeSeries where T: BinaryFloatingPoint {
     ///
     /// - Parameter lag: Number of lagged differences; `nil` uses the Schwert default.
     /// - Returns: A ``StationarityTestResult`` (H0 = non-stationary).
-    /// - Throws: ``ForecastError/insufficientData(required:got:)`` for short series.
+    /// - Throws: ``ForecastError/insufficientData(required:got:)`` for short series;
+    ///   ``BusinessMathError/dataQuality(message:context:)`` when the series contains a
+    ///   non-finite observation. ``StationarityTestResult/isStationary`` is a `Bool` and
+    ///   ``StationarityTestResult/recommendation`` is an instruction, so there is no value
+    ///   either can take that means "not answerable".
     func augmentedDickeyFuller(lag: Int? = nil) throws -> StationarityTestResult<T> {
         let y = valuesArray.map { Double($0) }
         let n = y.count
         let p = Self.resolveLag(lag, n: n, base: 12.0)
         guard n >= p + 4 else {
             throw ForecastError.insufficientData(required: p + 4, got: n)
+        }
+        // A `Bool` has no `nan`. Whatever produced it, `isStationary` reads as a definite
+        // verdict, and `recommendation` compounds it by telling the caller to difference the
+        // series — or not to. Neither can be hedged, so the test declines instead.
+        //
+        // What the caller was told before this guard is not that verdict but a wrong
+        // diagnosis. One non-finite observation makes every `diffs` entry that touches it
+        // non-finite, so the dependent vector's variance is `nan`, and `nan > 1e-15` is
+        // false inside `multipleLinearRegression` — it throws `RegressionError.noVariance`,
+        // "y has no variance (all values approximately equal)", about a differenced series
+        // that varies perfectly well. The reader is sent after a constant column that is not
+        // there. Past that, `seBeta` would be `nan`, `nan > 0` is false, and the next guard
+        // blames a "degenerate ADF regression (zero standard error)" for the same reason.
+        guard y.allSatisfy({ $0.isFinite }) else {
+            throw BusinessMathError.dataQuality(
+                message: "The ADF test requires finite observations; a non-finite value has no lagged difference",
+                context: ["invalid_count": "\(y.filter { !$0.isFinite }.count)",
+                          "observations": "\(n)"]
+            )
         }
 
         // Δy_t = α + β·y_{t-1} + Σ γ_i·Δy_{t-i} + ε_t, for t = p+1 … n-1.
@@ -104,11 +127,28 @@ public extension TimeSeries where T: BinaryFloatingPoint {
     ///   - regression: `.level` (default) or `.trend` deterministic component.
     ///   - lag: Bartlett-window lag for the long-run variance; `nil` uses `⌊4·(n/100)^{1/4}⌋`.
     /// - Returns: A ``StationarityTestResult`` (H0 = stationary).
-    /// - Throws: ``ForecastError/insufficientData(required:got:)`` for short series.
+    /// - Throws: ``ForecastError/insufficientData(required:got:)`` for short series;
+    ///   ``BusinessMathError/dataQuality(message:context:)`` when the series contains a
+    ///   non-finite observation, for the reason given on ``augmentedDickeyFuller(lag:)`` —
+    ///   the verdict and its recommendation have no "not answerable" value between them.
     func kpss(regression: KPSSRegression = .level, lag: Int? = nil) throws -> StationarityTestResult<T> {
         let y = valuesArray.map { Double($0) }
         let n = y.count
         guard n >= 8 else { throw ForecastError.insufficientData(required: 8, got: n) }
+        // The same reasoning as ADF above, and the same wrong diagnosis without this guard.
+        // One non-finite observation makes the sample mean non-finite, so every residual is,
+        // and so is the Bartlett long-run variance; `nan > 0` is false, so `.level` reports a
+        // "degenerate KPSS long-run variance" for a series whose variance is fine, while
+        // `.trend` gets there sooner and blames `RegressionError.noVariance`. The two
+        // deterministic components therefore accuse the data of two different things, and
+        // neither is the thing that is actually wrong with it.
+        guard y.allSatisfy({ $0.isFinite }) else {
+            throw BusinessMathError.dataQuality(
+                message: "The KPSS test requires finite observations; a non-finite value has no partial sum",
+                context: ["invalid_count": "\(y.filter { !$0.isFinite }.count)",
+                          "observations": "\(n)"]
+            )
+        }
         let L = Self.resolveLag(lag, n: n, base: 4.0)
 
         // Residuals from the deterministic component.

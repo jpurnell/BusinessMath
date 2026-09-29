@@ -40,17 +40,43 @@ import Numerics
 ///     print("Model 1 is more accurate")
 /// }
 /// ```
+/// ## When the comparison cannot be scored
+///
+/// Every metric here is a **ranking key** — the whole point of the type is that a caller
+/// compares two of them and keeps the better model. So the one thing it must never do is
+/// report a good score for a comparison that did not happen.
+///
+/// The invariant is: **the three metrics never disagree about whether the comparison
+/// succeeded.** If the overlapping observations contain anything non-finite, or the two series
+/// do not overlap at all, ``rmse``, ``mae`` and ``mape`` are *all* `.nan`.
+///
+/// Measured before that was true: one `nan` actual gave `rmse = nan` and `mape = 0.0` in the
+/// same returned value — the best score MAPE can take, from an explicit `isNaN ? 0` rewrite —
+/// so a model ranked on MAPE won on data that could not be scored while the same object
+/// admitted, in the next field, that it could not be scored.
+///
+/// ``mape`` alone may still be `.nan` while the other two are finite, and that is a different
+/// statement: MAPE divides by the actual, so it is undefined when *every* overlapping actual
+/// is zero. There the comparison did succeed and RMSE and MAE are real measurements; it is
+/// MAPE's own domain that is empty. The same rewrite used to report that case as `0.0` too —
+/// a perfect forecast of a series nobody could express a percentage error against.
 public struct ForecastErrorMetrics<T: Real & Sendable & Codable>: Sendable where T: BinaryFloatingPoint {
 	/// Root Mean Squared Error - sqrt(mean((actual - forecast)²))
 	///
 	/// RMSE penalizes larger errors more heavily due to squaring.
 	/// Lower values indicate better forecast accuracy.
+	///
+	/// `.nan` when the comparison could not be scored at all — see the type's
+	/// **When the comparison cannot be scored**.
 	public let rmse: T
 
 	/// Mean Absolute Error - mean(|actual - forecast|)
 	///
 	/// MAE represents the average magnitude of errors.
 	/// Lower values indicate better forecast accuracy.
+	///
+	/// `.nan` when the comparison could not be scored at all — see the type's
+	/// **When the comparison cannot be scored**.
 	public let mae: T
 
 	/// Mean Absolute Percentage Error - mean(|actual - forecast| / |actual|)
@@ -58,11 +84,19 @@ public struct ForecastErrorMetrics<T: Real & Sendable & Codable>: Sendable where
 	/// MAPE expresses error as a percentage, making it scale-independent.
 	/// Lower values indicate better forecast accuracy.
 	/// Note: Excludes periods where actual value is zero to avoid division by zero.
+	///
+	/// `.nan` either when the comparison could not be scored at all — in which case ``rmse``
+	/// and ``mae`` are `.nan` too — or when every overlapping actual was zero, leaving MAPE's
+	/// domain empty while RMSE and MAE remain genuine measurements. It is never `0` except as
+	/// a measured perfect forecast.
 	public let mape: T
 
 	/// Number of periods included in the error calculation
 	///
-	/// Only periods present in both actual and forecast series are counted.
+	/// Only periods present in both actual and forecast series are counted. This counts the
+	/// overlap itself, so it stays truthful when the metrics are `.nan`: `count = 4` with
+	/// three `.nan` metrics says four periods lined up and none of them could be scored,
+	/// which is a different fact from `count = 0`.
 	public let count: Int
 
 	/// Creates forecast error metrics.
@@ -148,26 +182,33 @@ extension TimeSeries {
 	/// - Parameters:
 	///   - start: The starting period.
 	///   - end: The ending period.
-	/// - Returns: The CAGR as a decimal (e.g., 0.10 for 10%).
+	/// - Returns: The CAGR as a decimal (e.g., 0.10 for 10%), `0` for a genuinely flat
+	///   trajectory, or `.nan` when the rate cannot be computed — either period absent from
+	///   the series, a non-positive or non-finite starting value, or a span that is not
+	///   strictly positive. Per §3.1 of the contaminated-input contract, the three
+	///   unanswerable cases share one answer, and none of them shares it with "no growth".
 	///
 	/// ## Example
 	/// ```swift
-	/// let periods = Period.documentationQuarters
-	/// let revenue = TimeSeries<Double>(
-	///     periods: (1...12).map { Period.month(year: 2024, month: $0) },
-	///     values: (1...12).map { 100.0 * Double($0) }
-	/// )
 	/// let jan2020 = Period.month(year: 2020, month: 1)
 	/// let jan2025 = Period.month(year: 2025, month: 1)
-	/// let cagr = revenue.cagr(from: jan2020, to: jan2025)
-	/// // Calculates CAGR over exactly 5.0 years
+	/// let revenue = TimeSeries<Double>(periods: [jan2020, jan2025], values: [100.0, 161.051])
+	///
+	/// let compound = revenue.cagr(from: jan2020, to: jan2025)
+	/// // ~0.10 — the span is 1,827 days, which the 365.25-day mean year reads as 5.00 years.
+	///
+	/// let jan2030 = Period.month(year: 2030, month: 1)
+	/// let unanswerable = revenue.cagr(from: jan2020, to: jan2030)
+	/// // .nan — the series does not cover Jan 2030, so there is no rate to report.
 	/// ```
 	public func cagr(from start: Period, to end: Period) -> T {
-		guard let startValue = self[start],
-			  let endValue = self[end],
-			  startValue > T.zero else {
-			return T.zero
-		}
+		// Measured before this guard: an absent `start` or `end` period returned `0.0`, and so
+		// did a `nan` start value (`nan > 0` is false, like every comparison against nan), and
+		// so did a genuinely flat series. "No such period", "cannot be computed" and "grew 0%
+		// a year" were one byte-identical answer, and a caller ranking divisions by CAGR put
+		// the one whose statements it was simply missing level with the one that stood still.
+		// §3.7: narrow the domain, do not fabricate the observation.
+		guard let startValue = self[start], let endValue = self[end] else { return T.nan }
 
 		// Calculate exact fractional years from period start dates
 		// Using startDate for both provides intuitive period-to-period calculations
@@ -186,13 +227,12 @@ extension TimeSeries {
 		let daysPerYear = T(365) + T(1) / T(4)
 		let years = days / daysPerYear
 
-		guard years > T.zero else { return T.zero }
-
-		let ratio = endValue / startValue
-		let exponent = T(1) / years
-		let growth = T.pow(ratio, exponent) - T(1)
-
-		return growth
+		// Delegating rather than repeating the formula is the fix for the second half of this
+		// defect: the free function and this method disagreed on the same bad input — one
+		// returned `+infinity` where the other returned `0` — because each screened its
+		// arguments in its own way. There is now one screen, and it lives at the formula.
+		// The module qualifier is load-bearing: unqualified `cagr` resolves to this method.
+		return BusinessMath.cagr(beginningValue: startValue, endingValue: endValue, years: years)
 	}
 
 	// MARK: - Forecast Evaluation
@@ -249,8 +289,11 @@ extension TimeSeries {
 	/// - Excludes periods where actual value is zero
 	///
 	/// ## Notes
-	/// - If series have no overlapping periods, returns NaN or 0 for all metrics with count = 0
-	/// - MAPE calculation skips periods where actual value is zero to avoid division by zero
+	/// - If the series have no overlapping periods, every metric is `.nan` with `count = 0`
+	/// - If any overlapping observation is non-finite, every metric is `.nan` and `count`
+	///   still reports the size of the overlap
+	/// - MAPE calculation skips periods where actual value is zero to avoid division by zero,
+	///   and is `.nan` — not `0` — when that leaves nothing to average
 	/// - RMSE ≥ MAE always (equality only when all errors are identical)
 	public func forecastError(against forecast: TimeSeries<T>) -> ForecastErrorMetrics<T> where T: BinaryFloatingPoint {
 		var actualValues: [T] = []
@@ -263,16 +306,32 @@ extension TimeSeries {
 			forecastValues.append(forecastValue)
 		}
 
+		// Measured before this guard: two series with no period in common returned
+		// `rmse = 0, mae = 0, mape = 0` — three perfect scores for a comparison that never
+		// took place, and the model that overlapped nothing beat every model that did.
 		guard !actualValues.isEmpty else {
-			return ForecastErrorMetrics(rmse: T.zero, mae: T.zero, mape: T.zero, count: 0)
+			return ForecastErrorMetrics(rmse: T.nan, mae: T.nan, mape: T.nan, count: 0)
 		}
 
-		let mapeValue = mape(actualValues, forecastValues)
+		// Measured before this guard: a single `nan` actual returned `rmse = nan` alongside
+		// `mape = 0.0` — one field of one value admitting the failure while the next denied
+		// it with the best score MAPE can take. The cause was an explicit `isNaN ? .zero`
+		// rewrite on `mape` only, which is gone; screening the pairs here is what makes the
+		// three agree rather than leaving it to how each formula happens to propagate. An
+		// infinite observation is screened for the same reason: it sends RMSE and MAE to
+		// `+infinity` (a ranked, comparable score) while MAPE divides it out to `nan`.
+		let pairsAreScoreable = actualValues.allSatisfy { $0.isFinite } && forecastValues.allSatisfy { $0.isFinite }
+		guard pairsAreScoreable else {
+			return ForecastErrorMetrics(rmse: T.nan, mae: T.nan, mape: T.nan, count: actualValues.count)
+		}
 
+		// `mape` is passed through unmodified. It is `.nan` when every actual was zero, which
+		// is MAPE's domain being empty rather than the comparison failing — RMSE and MAE are
+		// real measurements there, and the type's DocC says so.
 		return ForecastErrorMetrics(
 			rmse: rmse(actualValues, forecastValues),
 			mae: mae(actualValues, forecastValues),
-			mape: mapeValue.isNaN ? T.zero : mapeValue,
+			mape: mape(actualValues, forecastValues),
 			count: actualValues.count
 		)
 	}
@@ -281,18 +340,39 @@ extension TimeSeries {
 
 	/// Calculates a simple moving average.
 	///
+	/// The window is `window` *periods* wide, not `window` observations wide. A window that
+	/// spans a period the series does not contain is **omitted from the result** rather than
+	/// closed up over the hole — see **Gaps in the period index** below.
+	///
 	/// - Parameter window: The number of periods in the moving window.
-	/// - Returns: A time series of moving averages.
+	/// - Returns: A time series of moving averages, defined only on the periods that end a
+	///   complete, uninterrupted run of `window` periods.
 	///
 	/// ## Example
 	/// ```swift
-	/// let periods = Period.documentationQuarters
 	/// let revenue = TimeSeries<Double>(
 	///     periods: (1...12).map { Period.month(year: 2024, month: $0) },
 	///     values: (1...12).map { 100.0 * Double($0) }
 	/// )
 	/// let smoothed = revenue.movingAverage(window: 3)
+	/// // 10 results: Mar 2024 through Dec 2024.
 	/// ```
+	///
+	/// ## Gaps in the period index
+	/// A `TimeSeries` is keyed by period, so a month that was never recorded is simply absent
+	/// from ``TimeSeries/periods`` — there is no hole to step over, only a shorter list.
+	/// Measured on Jan, Feb, Apr, May with `window: 3`, the previous implementation averaged
+	/// **Feb + Apr + May and labelled the answer May**: a three-month average of two months
+	/// and a skipped one, reported with the same shape and the same label as a complete one.
+	///
+	/// Following ``TimeSeries/zip(with:_:)``, the fix narrows the domain instead of fabricating
+	/// the missing observation: May has no three-period average, so the result does not
+	/// contain May. `count` is what a caller checks, and it now tells the truth.
+	///
+	/// Adjacency is decided by ``Period/nextIfSteppable()``. Where it cannot be decided — a
+	/// ``PeriodType/custom`` range has no defined successor, and two periods of different
+	/// types have no common step — the periods are treated as adjacent, so an irregular
+	/// series keeps exactly the behaviour it has always had rather than silently emptying.
 	public func movingAverage(window: Int) -> TimeSeries<T> {
 		guard window > 0 && window <= count else {
 			return TimeSeries(periods: [], values: [], metadata: metadata)
@@ -300,6 +380,7 @@ extension TimeSeries {
 
 		var resultPeriods: [Period] = []
 		var resultValues: [T] = []
+		let runStarts = contiguousRunStarts()
 
 		// Optimized sliding window approach: maintain running sum
 		var windowSum = T.zero
@@ -314,7 +395,7 @@ extension TimeSeries {
 		}
 
 		// First window result
-		if windowCount == window {
+		if windowCount == window, windowSpansNoGap(endingAt: window - 1, window: window, runStarts: runStarts) {
 			let average = windowSum / T(window)
 			resultPeriods.append(periods[window - 1])
 			resultValues.append(average)
@@ -335,7 +416,7 @@ extension TimeSeries {
 			}
 
 			// Only add result if we have a full window
-			if windowCount == window {
+			if windowCount == window, windowSpansNoGap(endingAt: i, window: window, runStarts: runStarts) {
 				let average = windowSum / T(window)
 				resultPeriods.append(periods[i])
 				resultValues.append(average)
@@ -482,17 +563,24 @@ extension TimeSeries {
 
 	/// Calculates a rolling sum over a fixed window.
 	///
+	/// The window is `window` *periods* wide, and a window spanning a period the series does
+	/// not contain is omitted from the result — the same rule ``movingAverage(window:)``
+	/// follows, and for a sum the stakes are higher: a trailing-twelve-months total built from
+	/// eleven months is otherwise returned with the same shape, the same label and no
+	/// diagnostic, and the missing month reads as a month of zero.
+	///
 	/// - Parameter window: The number of periods in the rolling window.
-	/// - Returns: A time series of rolling sums.
+	/// - Returns: A time series of rolling sums, defined only on the periods that end a
+	///   complete, uninterrupted run of `window` periods.
 	///
 	/// ## Example
 	/// ```swift
-	/// let periods = Period.documentationQuarters
 	/// let revenue = TimeSeries<Double>(
 	///     periods: (1...12).map { Period.month(year: 2024, month: $0) },
 	///     values: (1...12).map { 100.0 * Double($0) }
 	/// )
 	/// let rolling3Month = revenue.rollingSum(window: 3)
+	/// // 10 results: Mar 2024 through Dec 2024.
 	/// ```
 	public func rollingSum(window: Int) -> TimeSeries<T> {
 		guard window > 0 && window <= count else {
@@ -501,6 +589,7 @@ extension TimeSeries {
 
 		var resultPeriods: [Period] = []
 		var resultValues: [T] = []
+		let runStarts = contiguousRunStarts()
 
 		// Optimized sliding window approach: maintain running sum
 		var windowSum = T.zero
@@ -515,7 +604,7 @@ extension TimeSeries {
 		}
 
 		// First window result
-		if windowCount == window {
+		if windowCount == window, windowSpansNoGap(endingAt: window - 1, window: window, runStarts: runStarts) {
 			resultPeriods.append(periods[window - 1])
 			resultValues.append(windowSum)
 		}
@@ -535,7 +624,7 @@ extension TimeSeries {
 			}
 
 			// Only add result if we have a full window
-			if windowCount == window {
+			if windowCount == window, windowSpansNoGap(endingAt: i, window: window, runStarts: runStarts) {
 				resultPeriods.append(periods[i])
 				resultValues.append(windowSum)
 			}
@@ -546,17 +635,24 @@ extension TimeSeries {
 
 	/// Calculates a rolling minimum over a fixed window.
 	///
+	/// The window is `window` *periods* wide, and a window spanning a period the series does
+	/// not contain is omitted from the result — the same rule ``movingAverage(window:)``
+	/// follows. An extremum is the one statistic a gap can leave looking entirely plausible:
+	/// the minimum of two months is a real number in the right range, and nothing in the
+	/// result would have said it was not the minimum of three.
+	///
 	/// - Parameter window: The number of periods in the rolling window.
-	/// - Returns: A time series of rolling minimums.
+	/// - Returns: A time series of rolling minimums, defined only on the periods that end a
+	///   complete, uninterrupted run of `window` periods.
 	///
 	/// ## Example
 	/// ```swift
-	/// let periods = Period.documentationQuarters
 	/// let revenue = TimeSeries<Double>(
 	///     periods: (1...12).map { Period.month(year: 2024, month: $0) },
 	///     values: (1...12).map { 100.0 * Double($0) }
 	/// )
 	/// let rollingMin = revenue.rollingMin(window: 3)
+	/// // 10 results: Mar 2024 through Dec 2024.
 	/// ```
 	public func rollingMin(window: Int) -> TimeSeries<T> {
 		guard window > 0 && window <= count else {
@@ -565,9 +661,12 @@ extension TimeSeries {
 
 		var resultPeriods: [Period] = []
 		var resultValues: [T] = []
+		let runStarts = contiguousRunStarts()
 
 		// Optimized: iterate over indices directly without creating arrays
 		for i in (window - 1)..<periods.count {
+			guard windowSpansNoGap(endingAt: i, window: window, runStarts: runStarts) else { continue }
+
 			var minValue: T? = nil
 			var validCount = 0
 
@@ -595,17 +694,24 @@ extension TimeSeries {
 
 	/// Calculates a rolling maximum over a fixed window.
 	///
+	/// The window is `window` *periods* wide, and a window spanning a period the series does
+	/// not contain is omitted from the result — the same rule ``movingAverage(window:)``
+	/// follows. An extremum is the one statistic a gap can leave looking entirely plausible:
+	/// the maximum of two months is a real number in the right range, and nothing in the
+	/// result would have said it was not the maximum of three.
+	///
 	/// - Parameter window: The number of periods in the rolling window.
-	/// - Returns: A time series of rolling maximums.
+	/// - Returns: A time series of rolling maximums, defined only on the periods that end a
+	///   complete, uninterrupted run of `window` periods.
 	///
 	/// ## Example
 	/// ```swift
-	/// let periods = Period.documentationQuarters
 	/// let revenue = TimeSeries<Double>(
 	///     periods: (1...12).map { Period.month(year: 2024, month: $0) },
 	///     values: (1...12).map { 100.0 * Double($0) }
 	/// )
 	/// let rollingMax = revenue.rollingMax(window: 3)
+	/// // 10 results: Mar 2024 through Dec 2024.
 	/// ```
 	public func rollingMax(window: Int) -> TimeSeries<T> {
 		guard window > 0 && window <= count else {
@@ -614,9 +720,12 @@ extension TimeSeries {
 
 		var resultPeriods: [Period] = []
 		var resultValues: [T] = []
+		let runStarts = contiguousRunStarts()
 
 		// Optimized: iterate over indices directly without creating arrays
 		for i in (window - 1)..<periods.count {
+			guard windowSpansNoGap(endingAt: i, window: window, runStarts: runStarts) else { continue }
+
 			var maxValue: T? = nil
 			var validCount = 0
 
@@ -640,5 +749,51 @@ extension TimeSeries {
 		}
 
 		return TimeSeries(periods: resultPeriods, values: resultValues, metadata: metadata)
+	}
+}
+
+// MARK: - Window Contiguity
+
+extension TimeSeries {
+
+	/// For each position in ``TimeSeries/periods``, the position at which its run of
+	/// consecutive periods begins.
+	///
+	/// A window of `w` periods ending at `i` covers no gap exactly when its run began at or
+	/// before `i - w + 1`, which makes the check `O(1)` per window and the whole scan `O(n)`.
+	///
+	/// - Returns: An array parallel to ``TimeSeries/periods``; `[0, 0, 2, 2]` means the series
+	///   has a break between its second and third periods.
+	fileprivate func contiguousRunStarts() -> [Int] {
+		var starts = [Int](repeating: 0, count: periods.count)
+		guard periods.count > 1 else { return starts }
+
+		for i in 1..<periods.count {
+			let adjacent = TimeSeries.periodsAreAdjacent(periods[i - 1], periods[i])
+			starts[i] = adjacent ? starts[i - 1] : i
+		}
+		return starts
+	}
+
+	/// Whether the `window` periods ending at `index` are consecutive with no period missing
+	/// between them.
+	fileprivate func windowSpansNoGap(endingAt index: Int, window: Int, runStarts: [Int]) -> Bool {
+		guard index >= 0, index < runStarts.count else { return false }
+		let firstIndex = index - window + 1
+		guard firstIndex >= 0 else { return false }
+		return runStarts[index] <= firstIndex
+	}
+
+	/// Whether `later` is the period immediately following `earlier`.
+	///
+	/// Answers `true` whenever adjacency cannot be decided — a ``PeriodType/custom`` range has
+	/// no defined successor, and two periods of different types have no common step. That
+	/// direction is deliberate: the alternative would silently empty the result of every
+	/// window operation on an irregular series, which is a far larger change than the gap
+	/// defect this check exists to fix, and it would be just as unannounced.
+	fileprivate static func periodsAreAdjacent(_ earlier: Period, _ later: Period) -> Bool {
+		guard earlier.type == later.type else { return true }
+		guard let following = earlier.nextIfSteppable() else { return true }
+		return following == later
 	}
 }

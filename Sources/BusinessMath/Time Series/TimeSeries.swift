@@ -128,6 +128,14 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 	/// If duplicate periods are provided, the last value for each period is kept.
 	/// Periods are automatically sorted in ascending chronological order.
 	///
+	/// - Important: The series is a dictionary keyed by period, so a repeated period does
+	///   **not** produce two points. Twelve periods and twelve values containing one repeat
+	///   yield a series whose `count` is eleven, and nothing in the result says which
+	///   observation was overwritten. This initializer keeps that behaviour because it
+	///   documents it and because narrowing it would be source-breaking; use
+	///   ``init(validating:values:metadata:labels:)`` for data whose periods you have not
+	///   already established are unique — it throws rather than collapsing them.
+	///
 	/// - Parameters:
 	///   - periods: The periods for this time series.
 	///   - values: The values corresponding to each period.
@@ -191,7 +199,10 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 	///   - metadata: Optional metadata describing the time series.
 	///   - labels: Optional array of labels (must have same count as periods if provided).
 	/// - Throws:
-	///   - ``BusinessMathError/mismatchedDimensions(message:expected:actual:)`` if array counts don't match
+	///   - ``BusinessMathError/mismatchedDimensions(message:expected:actual:)`` if array counts don't match,
+	///     or if `periods` contains a repeat — a repeated period would be absorbed by the
+	///     keying and the series would come back shorter than the arrays supplied, with
+	///     `expected` carrying the count handed in and `actual` the count of distinct periods
 	///   - ``BusinessMathError/invalidInput(message:value:expectedRange:)`` if periods or values are empty
 	///
 	/// ## Example
@@ -225,6 +236,23 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 				message: "Periods and values must have same length",
 				expected: String(periods.count),
 				actual: String(values.count)
+			)
+		}
+
+		// Validate that no period is repeated.
+		//
+		// Without this the repeat is absorbed silently: the later value overwrites the
+		// earlier one, the series comes back shorter than the arrays that were handed in,
+		// and a caller reading `count` is told there were fewer observations than they
+		// supplied — with no way to learn which one was discarded. Count agreement between
+		// `periods` and `values` is checked above and does not catch it, because both arrays
+		// are the length the caller intended; it is the keys that are not.
+		let distinctPeriods = Set(periods)
+		guard distinctPeriods.count == periods.count else {
+			throw BusinessMathError.mismatchedDimensions(
+				message: "Periods must be unique; a repeated period keeps only its last value and shortens the series",
+				expected: String(periods.count),
+				actual: String(distinctPeriods.count)
 			)
 		}
 
@@ -274,6 +302,17 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 	/// - Parameter period: The period to look up.
 	/// - Returns: The value for the period, or nil if not found.
 	///
+	/// - Important: `nil` means *this series does not cover that period*, and it cannot say
+	///   which kind of absence it is. ``periods`` is derived from the value keys and
+	///   `Period` sorts type-first, so `periods.first` and `periods.last` do not bound a
+	///   span: a hole in the middle, a period before the data starts and a period after it
+	///   ends all return `nil` alike. Per the contaminated-input contract §3.3 the
+	///   signature is left as it is — an `Optional` cannot carry the distinction and
+	///   widening it would be source-breaking — so the conflation is stated rather than
+	///   papered over. The rule that follows from it is §3.7: narrow the domain, do not
+	///   fabricate the observation. A caller aggregating across periods should leave an
+	///   uncovered one out of the result, not substitute a value for it.
+	///
 	/// ## Example
 	/// ```swift
 	/// let ts = TimeSeries(periods: Period.documentationQuarters, values: [100, 110, 120, 130])
@@ -292,6 +331,15 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 	///   - period: The period to look up.
 	///   - defaultValue: The default value to return if the period is not found.
 	/// - Returns: The value for the period, or the default value.
+	///
+	/// - Warning: The default is an assertion about the world, not a fallback. `ts[period,
+	///   default: 0]` states that the period was measured and the measurement was zero; it
+	///   does not decline to answer. `altmanZScore` scored a solvent, profitable company
+	///   0.00 — "Distress Zone (High bankruptcy risk within 2 years)", in its own
+	///   documentation — for a quarter that was simply outside the statements the caller had
+	///   supplied. Use this subscript where the default is the genuine value of an absent
+	///   period (an unpaid dividend really is zero); elsewhere use ``subscript(_:)`` and let
+	///   the absence propagate.
 	///
 	/// ## Example
 	/// ```swift
@@ -364,6 +412,13 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 	///   - start: The starting period (inclusive).
 	///   - end: The ending period (inclusive).
 	/// - Returns: A new time series containing only the specified range.
+	///
+	/// - Note: The result contains the periods the series actually holds inside the bounds,
+	///   which may be fewer than the bounds span — this is the §3.7 rule, and the same
+	///   behaviour as ``zip(with:_:)``. `count` is therefore a statement about the data, not
+	///   about the range: a twelve-month request over a series missing one month returns
+	///   eleven points. Comparison is on `Period`'s own ordering, which is type-first, so a
+	///   `start` and `end` of a different period type from the series will not bracket it.
 	///
 	/// ## Example
 	/// ```swift

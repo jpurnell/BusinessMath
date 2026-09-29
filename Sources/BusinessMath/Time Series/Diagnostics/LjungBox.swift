@@ -47,9 +47,13 @@ public extension TimeSeries where T: BinaryFloatingPoint {
     ///   - fittedParameters: Model parameters to subtract from the dof (e.g. `p+q` for
     ///     an ARIMA model). Defaults to `0` (testing a raw series).
     /// - Returns: A ``LjungBoxResult`` with the statistic and χ² p-value.
-    /// - Throws: ``ForecastError`` when `lags < 1`, `dof ≤ 0`, or the series is too short.
+    /// - Throws: ``ForecastError`` when `lags < 1`, `dof ≤ 0`, or the series is too short;
+    ///   ``BusinessMathError/dataQuality(message:context:)`` when the series contains a
+    ///   non-finite observation, because there is no `Q` to report and a `LjungBoxResult`
+    ///   has no way to say so.
     func ljungBox(lags: Int, fittedParameters: Int = 0) throws -> LjungBoxResult<T> {
-        let n = valuesArray.count
+        let values = valuesArray
+        let n = values.count
         guard lags >= 1 else {
             throw ForecastError.invalidParameter("lags must be ≥ 1")
         }
@@ -59,6 +63,23 @@ public extension TimeSeries where T: BinaryFloatingPoint {
         }
         guard n >= lags + 2 else {
             throw ForecastError.insufficientData(required: lags + 2, got: n)
+        }
+        // This is the test a caller runs to ask "did my model leave signal on the table?",
+        // so its failure mode is a clean bill of health. Before the ACF was fixed, a
+        // contaminated series produced an all-zero ACF, and zeros square to `Q = 0`,
+        // `chiSquaredCDF(0, df) = 0`, `pValue = 1.0` — the strongest possible "these
+        // residuals are indistinguishable from white noise", and `rejectsWhiteNoise(alpha:)`
+        // answering `false` for every alpha. With the ACF now `nan`, `Q` is `nan` and
+        // `chiSquaredCDF` refuses it through `guard x >= T.zero` — a throw, but reported as
+        // "Chi-squared statistic must be non-negative", which sends the reader after a
+        // negative statistic that does not exist. Contract §3.2: this function throws, so it
+        // names the actual problem.
+        guard values.allSatisfy({ $0.isFinite }) else {
+            throw BusinessMathError.dataQuality(
+                message: "Ljung–Box requires finite observations; a non-finite value has no autocorrelation",
+                context: ["invalid_count": "\(values.filter { !$0.isFinite }.count)",
+                          "observations": "\(n)"]
+            )
         }
 
         let acf = autocorrelation(maxLag: lags)

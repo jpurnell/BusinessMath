@@ -135,6 +135,10 @@ public struct TimeSeriesDecomposition<T: Real & Sendable>: Sendable {
 	///
 	/// For multiplicative: `Residual = Original / (Trend × Seasonal)`
 	/// For additive: `Residual = Original - Trend - Seasonal`
+	///
+	/// Positions where the trend is undefined — the ends of the series, where the centred
+	/// moving average has no full window — carry `nan` under both methods. They are not
+	/// perfectly-explained observations and must be screened out before ranking or averaging.
 	public let residual: TimeSeries<T>
 
 	/// The decomposition method used (additive or multiplicative).
@@ -178,7 +182,10 @@ public struct TimeSeriesDecomposition<T: Real & Sendable>: Sendable {
 ///   - values: Array of numeric values representing the time series
 ///   - periodsPerYear: Number of periods in one seasonal cycle (e.g., 4 for quarterly, 12 for monthly)
 /// - Returns: Array of seasonal indices, one per season
-/// - Throws: `SeasonalityError` if insufficient data or invalid parameters
+/// - Throws: `SeasonalityError` if insufficient data or invalid parameters, or
+///   ``BusinessMathError/dataQuality(message:context:)`` if any observation is not finite.
+///   A single `nan` is smeared across the whole moving-average window that contains it, so
+///   there is no one season that could be marked instead.
 ///
 /// ## Example
 ///
@@ -212,6 +219,32 @@ public func seasonalIndices<T: Real & Sendable>(
 		throw SeasonalityError.insufficientData(
 			required: periodsPerYear * 2,
 			provided: values.count
+		)
+	}
+
+	// A `nan` observation is absorbed by the centred moving average, so the trend is `nan`
+	// across the whole window around it and every ratio in that window is dropped from the
+	// seasonal average below with no diagnostic. Measured on the quarterly series
+	// [100, 105, 110, 165, 110, 115, 120, 180] with index 3 replaced by `nan`: every season
+	// loses all of its ratios, the `ratios.isEmpty` fallback fabricates `T(1)` four times, and
+	// the caller is returned [1.0, 1.0, 1.0, 1.0] — "this business has no seasonal pattern at
+	// all" — normalised to a sum of exactly 4, which is the invariant a caller would check.
+	// The clean answer for that series is [0.8697, 0.8913, 0.9075, 1.3315].
+	//
+	// On the twelve-quarter series the failure is quieter and worse. With index 5
+	// contaminated the indices move from [0.8705, 0.8912, 0.9068, 1.3315] to
+	// [0.9537, 0.8670, 0.8816, 1.2978] — Q1 overstated by 9.6%, the Q4 peak understated by
+	// 2.5% — still summing to 4, still not flagged, and every figure deseasonalised with them
+	// inherits the error.
+	//
+	// This refuses rather than marking one season (contract §3.5). The result has one entry
+	// per season, not one per observation, and a single contaminated observation corrupts
+	// every season sharing a moving-average window with it, so there is no one position that
+	// marking would honestly identify.
+	guard values.allSatisfy({ $0.isFinite }) else {
+		throw BusinessMathError.dataQuality(
+			message: "Seasonal indices require finite observations",
+			context: ["invalid_count": "\(values.filter { !$0.isFinite }.count)"]
 		)
 	}
 
@@ -259,7 +292,8 @@ public func seasonalIndices<T: Real & Sendable>(
 ///   - timeSeries: The time series data to analyze
 ///   - periodsPerYear: Number of periods in one seasonal cycle (e.g., 4 for quarterly, 12 for monthly)
 /// - Returns: Array of seasonal indices, one per season
-/// - Throws: `SeasonalityError` if insufficient data or invalid parameters
+/// - Throws: `SeasonalityError` if insufficient data or invalid parameters, or
+///   ``BusinessMathError/dataQuality(message:context:)`` if any observation is not finite
 ///
 /// ## Examples
 ///
@@ -520,7 +554,17 @@ public func applySeasonal<T: Real & Sendable>(
 ///   - periodsPerYear: Number of periods in one seasonal cycle
 ///   - method: Decomposition method (additive or multiplicative)
 /// - Returns: `TimeSeriesDecomposition` containing trend, seasonal, and residual components
-/// - Throws: `SeasonalityError` if insufficient data or invalid parameters
+/// - Throws: `SeasonalityError` if insufficient data or invalid parameters, or
+///   ``BusinessMathError/dataQuality(message:context:)`` if any observation is not finite
+///   (propagated from `seasonalIndices(timeSeries:periodsPerYear:)`)
+///
+/// ## Undefined residuals at the ends of the series
+///
+/// The trend is a centred moving average, so it is undefined for roughly `periodsPerYear / 2`
+/// positions at each end. Both methods report the residual there as `nan` rather than as a
+/// value: additive because `value - nan - seasonal` propagates, multiplicative because a
+/// residual of `1` would claim a perfect fit at a position with no trend estimate. Screen with
+/// `isNaN` before ranking or averaging residuals.
 ///
 /// ## Examples
 ///
@@ -634,11 +678,29 @@ public func decomposeTimeSeries<T: Real & Sendable>(
 
 			// Residual = Original / (Trend × Seasonal)
 			let trendSeasonal = trendValues[i] * indices[seasonIndex]
+
+			// The `T(1)` that used to sit in the `else` arm was not a neutral residual. In a
+			// multiplicative decomposition a residual of exactly 1 states that trend x seasonal
+			// reproduces this observation perfectly, which is the single most favourable thing
+			// the model can say about a point.
+			//
+			// It fired on clean data, because the centred moving average is undefined at the
+			// ends of the series. Measured on
+			// [100, 105, 110, 165, 110, 115, 120, 180, 120, 125, 130, 195] at
+			// periodsPerYear = 4, the residuals at indices 0, 1, 2 and 11 came back as exactly
+			// 1.0 while the eight interior residuals ran 1.0194 to 1.0228 — a flawless fit
+			// claimed at the four positions with no trend estimate at all, and a caller ranking
+			// periods by |residual - 1| to find the worst-explained quarter is handed those
+			// four as the four best.
+			//
+			// The additive branch above already answers `nan` at exactly those positions,
+			// because `value - nan - seasonal` propagates. This brings the multiplicative
+			// branch into line with its sibling rather than inventing a policy for it.
 			let residual: T
-			if trendSeasonal != T.zero && !trendSeasonal.isNaN {
+			if !trendSeasonal.isNaN && trendSeasonal != T.zero {
 				residual = values[i] / trendSeasonal
 			} else {
-				residual = T(1)  // Neutral multiplicative residual
+				residual = T.nan
 			}
 			residualValues.append(residual)
 		}

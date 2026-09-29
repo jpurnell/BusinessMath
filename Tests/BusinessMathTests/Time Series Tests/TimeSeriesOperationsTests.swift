@@ -291,11 +291,17 @@ struct TimeSeriesOperationsTests {
 		let q1 = Period.quarter(year: 2025, quarter: 1)
 		let q2 = Period.quarter(year: 2025, quarter: 2)
 
-		#expect(quarterly.count == 2)
+		// Q1 is covered end to end and is answered. Q2 holds April alone, so it is not
+		// answerable and is left out.
+		//
+		// This assertion previously read `count == 2` with `quarterly[q2] == 400.0` and the
+		// comment "Apr only (incomplete quarter)" — it was pinning the fabricated answer, a
+		// third of a quarter presented under the whole quarter's label and its whole
+		// quarter's shape. See `PartialPeriodAggregationTests`.
+		#expect(quarterly.count == 1)
 		let measured0 = try #require(quarterly[q1])
 		#expect(abs(measured0 - 600.0) < 1e-6)  // Jan + Feb + Mar
-		let measured1 = try #require(quarterly[q2])
-		#expect(abs(measured1 - 400.0) < 1e-6)  // Apr only (incomplete quarter)
+		#expect(quarterly[q2] == nil)
 	}
 
 	@Test("aggregate monthly to quarterly using average")

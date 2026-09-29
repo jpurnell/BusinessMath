@@ -460,6 +460,13 @@ public struct AsyncSimpleExponentialSmoothingSequence<Base: AsyncSequence>: Asyn
 /// - **alpha**: Level smoothing (0.1-0.3 for stable data, 0.5-0.9 for volatile data)
 /// - **beta**: Trend smoothing (typically 0.1-0.2 for slow trend changes)
 ///
+/// ## Contaminated Input
+/// A non-finite observation is not smoothed in. Its position yields a forecast whose `level`
+/// and `trend` are both `nan`, the smoothing state from before it is preserved, and the next
+/// finite observation resumes from that state — so the operator recovers on the very next
+/// element rather than staying contaminated for the rest of the stream. Output length is
+/// still one element per input.
+///
 /// - SeeAlso: ``AsyncTripleExponentialSmoothingSequence``
 public struct AsyncDoubleExponentialSmoothingSequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
     /// Yields forecast objects containing level and trend components.
@@ -506,6 +513,23 @@ public struct AsyncDoubleExponentialSmoothingSequence<Base: AsyncSequence>: Asyn
         public mutating func next() async throws -> DoubleExponentialForecast? {
             guard let value = try await baseIterator.next() else {
                 return nil
+            }
+
+            // Both recursions feed their own output back in, so a single unusable observation
+            // pins level *and* trend at `nan` for the rest of the stream. Measured on a
+            // 17-point series with one `nan` at index 8: 9 of 17 outputs contaminated, the
+            // last one included — the caller was told every forecast after the bad datum was
+            // unusable, not just the one that was. An unusable observation says nothing about
+            // the level or the rate of change, so it is not folded into the state; the state
+            // from before it survives and the next clean observation smooths from there, so
+            // recovery is at the very next element. The position is still marked `nan` rather
+            // than dropped, keeping one output per input (contract §3.5) and refusing to hand
+            // back the previous level as though it had been re-measured. Infinities are
+            // screened too, against contract §3.6's default, because they genuinely break
+            // this computation: an infinite level makes the next trend `beta * (inf - inf)`,
+            // which is `nan`, so an infinity degrades into permanent contamination anyway.
+            guard value.isFinite else {
+                return DoubleExponentialForecast(level: .nan, trend: .nan)
             }
 
             if let currentLevel = level, let currentTrend = trend {
@@ -1034,6 +1058,13 @@ public struct AsyncChangePointDetectionSequence<Base: AsyncSequence>: AsyncSeque
 /// - Compare multiple forecasting methods
 /// - Detect when forecast accuracy degrades (trigger model retraining)
 /// - Track error metrics over different time periods
+///
+/// ## Contaminated Input
+/// A pair whose `actual` or `forecast` is not finite cannot be scored. Its position yields
+/// `mae`, `rmse` and `mape` all `nan`, it is excluded from the running totals and from the
+/// denominator, and the next scoreable pair reports cumulative metrics over the pairs that
+/// could be scored — so the operator recovers on the very next element. Output length is
+/// still one element per input.
 public struct AsyncForecastErrorSequence<Base: AsyncSequence>: AsyncSequence where Base.Element == ForecastPair {
     /// Yields cumulative forecast error metrics.
     public typealias Element = StreamingForecastError
@@ -1072,6 +1103,29 @@ public struct AsyncForecastErrorSequence<Base: AsyncSequence>: AsyncSequence whe
         public mutating func next() async throws -> StreamingForecastError? {
             guard let pair = try await baseIterator.next() else {
                 return nil
+            }
+
+            // The three accumulators are cumulative and never evicted, so one unusable pair
+            // pins `mae`, `rmse` and `mape` at `nan` for the rest of the stream. Measured on
+            // an 18-pair series with one contaminated pair at index 8: 10 of 18 outputs
+            // contaminated for each metric, the last one included — the caller was told the
+            // model's whole accuracy record was unreadable because of one bad row.
+            //
+            // Both fields have to be screened, and they fail by different routes. A `nan`
+            // `forecast` makes `error` unusable and poisons all three sums. A `nan` `actual`
+            // does that *and* passes the `actual != 0` test below — every comparison against
+            // `nan` is false, so `!=` answers true — poisoning `mape` a second way. An
+            // infinite field is screened for the same reason `nan` is: `inf - inf` is `nan`,
+            // so an infinity breaks this computation rather than merely widening it.
+            //
+            // A pair that cannot be scored is not an observation of accuracy, so it is kept
+            // out of the running totals *and* out of `count` — averaging it in as a zero
+            // would report perfect agreement (contract §4), and counting it while dropping
+            // its term would understate every later metric. The position is still marked
+            // `nan` rather than omitted, so the drop is announced where it happened
+            // (contract §3.5) instead of reaching the caller as a silently shorter record.
+            guard pair.actual.isFinite, pair.forecast.isFinite else {
+                return StreamingForecastError(mae: .nan, rmse: .nan, mape: .nan)
             }
 
             count += 1

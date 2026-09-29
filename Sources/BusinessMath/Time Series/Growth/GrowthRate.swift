@@ -113,8 +113,10 @@ public func growthRate<T: Real>(from: T, to: T) throws -> T {
 /// - Parameters:
 ///   - beginningValue: The initial value at the start of the period.
 ///   - endingValue: The final value at the end of the period.
-///   - years: The number of years between beginning and ending values.
-/// - Returns: The annualized growth rate as a decimal.
+///   - years: The number of years between beginning and ending values. Must be finite
+///     and strictly positive.
+/// - Returns: The annualized growth rate as a decimal, or `.nan` when the rate cannot be
+///   computed — see **Important Notes** for the exact set of inputs that produce it.
 ///
 /// ## Examples
 ///
@@ -153,18 +155,28 @@ public func growthRate<T: Real>(from: T, to: T) throws -> T {
 /// - Industry standard for reporting returns
 ///
 /// ## Important Notes
-/// - Returns 0 if ending value equals beginning value
-/// - Returns NaN or infinity if years is zero
+/// - Returns `0` if ending value equals beginning value — a genuinely flat trajectory
+///   really did grow at 0% per year, and this is the one case where zero is a measurement.
+/// - Returns `.nan` when the rate cannot be computed at all: a `years` that is zero,
+///   negative or non-finite, and a `beginningValue` that is zero, negative, `nan` or
+///   infinite. See the guard comments for what each of those used to answer instead.
 /// - Negative CAGR indicates decline
 /// - Can be applied to any metric (revenue, users, etc.)
+/// - ``TimeSeries/cagr(from:to:)`` delegates here, so the two spellings cannot drift apart.
 public func cagr<T: Real>(beginningValue: T, endingValue: T, years: T) -> T {
-	guard years != T.zero else {
-		return T.infinity
-	}
+	// Measured before this guard: `years == 0` returned `+infinity` and `years == .infinity`
+	// returned `0` — "grew infinitely fast" and "did not grow at all" for two forms of the
+	// same missing span. A negative `years` was not screened at all and returned a plausible
+	// finite rate for a window that runs backwards. None of the three is a measurement.
+	guard years.isFinite, years > T.zero else { return T.nan }
 
-	guard beginningValue != T.zero else {
-		return T.infinity
-	}
+	// Measured before this guard: `beginningValue == 0` returned `+infinity` regardless of
+	// where the series ended, so 0 -> 100 and 0 -> -100 were both reported as unbounded
+	// *growth*; and an infinite beginning value made the ratio `0`, so `pow(0, 1/y) - 1`
+	// returned exactly `-1.0` — "lost 100% a year" — for a value nobody observed. A `nan`
+	// beginning value passed `!= 0` (every comparison against nan is false) and propagated,
+	// which was already right; it is stated here instead of relied upon.
+	guard beginningValue.isFinite, beginningValue > T.zero else { return T.nan }
 
 	if endingValue == beginningValue {
 		return T.zero

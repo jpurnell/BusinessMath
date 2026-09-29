@@ -230,6 +230,12 @@ extension AsyncSequence where Element == Double {
 /// ## Parameter Guidance
 /// - **window**: Window size (5-20 for smoothing, 50-200 for long-term trends)
 ///
+/// ## Contaminated Input
+/// A window holding a `nan` reports `nan`. Recovery is exact and independent of window size:
+/// output element `k` covers inputs `k ... k + window - 1`, so a `nan` at input index `i`
+/// contaminates outputs `i - window + 1 ... i` and output `i + 1` is clean again — the same
+/// footprint ``AsyncRollingStatisticsSequence`` already had.
+///
 /// - SeeAlso: ``AsyncCumulativeMeanSequence``, ``AsyncEMASequence``
 public struct AsyncRollingMeanSequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
     /// Yields rolling mean values.
@@ -259,7 +265,12 @@ public struct AsyncRollingMeanSequence<Base: AsyncSequence>: AsyncSequence where
     /// sum and updates it by adding the new value and subtracting the evicted value on each
     /// slide, rather than recomputing from the full buffer.
     ///
-    /// - Complexity: O(1) per element after initial window fill.
+    /// When a non-finite observation is in flight the accumulator is bypassed and the window
+    /// sum is recomputed directly, which costs O(window) for as long as the bad datum is in
+    /// the window and restores the O(1) path the moment it leaves.
+    ///
+    /// - Complexity: O(1) per element after initial window fill; O(window) while the window
+    ///   holds a non-finite observation.
     public struct Iterator: AsyncIteratorProtocol {
         private var baseIterator: Base.AsyncIterator
         private let window: Int
@@ -297,7 +308,22 @@ public struct AsyncRollingMeanSequence<Base: AsyncSequence>: AsyncSequence where
                 isComplete = true
                 return nil
             }
-            let mean = runningSum / Double(buffer.count)
+            // `runningSum -= evicted` cannot subtract a `nan` back out, so once a non-finite
+            // observation has entered the accumulator it stays non-finite for the rest of the
+            // stream. Measured on a 17-point series with one `nan` at index 8: 9 of 14 outputs
+            // were `nan` and the *last* one still was, so the caller was told every window to
+            // the end of the stream was unusable — while the recomputing sibling
+            // `rollingStatistics` marked only the 4 windows that actually held the bad datum.
+            // Recompute from the window whenever the accumulator shows the damage, and adopt
+            // the recomputed value as soon as the window itself is clean again.
+            let mean: Double
+            if runningSum.isFinite {
+                mean = runningSum / Double(buffer.count)
+            } else {
+                let windowSum: Double = buffer.reduce(0.0, +)
+                if windowSum.isFinite { runningSum = windowSum }
+                mean = windowSum / Double(buffer.count)
+            }
 
             // Try to slide window for next iteration
             if let nextValue = try await baseIterator.next() {
@@ -417,6 +443,13 @@ public struct AsyncCumulativeMeanSequence<Base: AsyncSequence>: AsyncSequence wh
 /// Uses Welford's algorithm for numerical stability, avoiding catastrophic cancellation
 /// errors that can occur with the naïve two-pass formula.
 ///
+/// ## Contaminated Input
+/// A window holding a `nan` reports `nan`. Recovery is exact and independent of window size:
+/// output element `k` covers inputs `k ... k + window - 1`, so a `nan` at input index `i`
+/// contaminates outputs `i - window + 1 ... i` and output `i + 1` is clean again — the same
+/// footprint ``AsyncRollingStatisticsSequence`` already had. ``AsyncRollingStdDevSequence``
+/// inherits this, being the square root of this sequence.
+///
 /// - SeeAlso: ``AsyncRollingStdDevSequence``, ``AsyncRollingStatisticsSequence``
 public struct AsyncRollingVarianceSequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
     /// Yields rolling variance values.
@@ -446,7 +479,12 @@ public struct AsyncRollingVarianceSequence<Base: AsyncSequence>: AsyncSequence w
     /// Maintains running mean and M2 (sum of squared deviations) and updates them
     /// incrementally when adding or removing a value from the window.
     ///
-    /// - Complexity: O(1) per element after initial window fill.
+    /// When a non-finite observation is in flight the incremental state is rebuilt from the
+    /// window, which costs O(window) for as long as the bad datum is in the window and
+    /// restores the O(1) path the moment it leaves.
+    ///
+    /// - Complexity: O(1) per element after initial window fill; O(window) while the window
+    ///   holds a non-finite observation.
     public struct Iterator: AsyncIteratorProtocol {
         private var baseIterator: Base.AsyncIterator
         private let window: Int
@@ -487,10 +525,32 @@ public struct AsyncRollingVarianceSequence<Base: AsyncSequence>: AsyncSequence w
             // Compute variance — sample variance with (n-1) denominator
             let n = buffer.count
             let variance: Double
-            if n > 1 {
-                variance = runningM2 / Double(n - 1) // fp-safety:disable — guarded by n > 1
+            // The reverse-Welford slide subtracts the evicted value's contribution, and a
+            // `nan` cannot be subtracted back out: `runningMean` and `runningM2` stay
+            // non-finite for the rest of the stream once one has passed through them.
+            // Measured on a 17-point series with one `nan` at index 8: 9 of 14 outputs were
+            // `nan` including the last, so the caller was told the spread of every later
+            // window was unknowable — while the recomputing sibling `rollingStatistics`
+            // marked only the 4 windows that held the bad datum. Rebuild the Welford state
+            // from the window whenever it shows the damage, and adopt the rebuilt state as
+            // soon as the window itself is clean again.
+            if runningMean.isFinite, runningM2.isFinite {
+                if n > 1 {
+                    variance = runningM2 / Double(n - 1) // fp-safety:disable — guarded by n > 1
+                } else {
+                    variance = 0.0
+                }
             } else {
-                variance = 0.0
+                let rebuilt = welfordState(buffer)
+                if rebuilt.mean.isFinite, rebuilt.m2.isFinite {
+                    runningMean = rebuilt.mean
+                    runningM2 = rebuilt.m2
+                }
+                if n > 1 {
+                    variance = rebuilt.m2 / Double(n - 1) // fp-safety:disable — guarded by n > 1
+                } else {
+                    variance = 0.0
+                }
             }
 
             // Try to slide window for next iteration
@@ -662,8 +722,17 @@ public struct AsyncRollingMinSequence<Base: AsyncSequence>: AsyncSequence where 
                 buffer.append(value)
             }
 
-            // Calculate min
-            let min = buffer.min() ?? 0.0
+            // `Sequence.min()` walks the window with `<`, and every comparison against `nan`
+            // is false, so a `nan` anywhere but the first slot is stepped over and the window
+            // reports a finite minimum for observations it could not order. Measured on
+            // `rollingStatistics`, the same code: of the four windows holding one `nan`, three
+            // returned a finite `min` while `mean` in the *same* struct was `nan`. The caller
+            // would have been told the floor of the window was known when one of its values
+            // was not. The empty-window fallback is `nan` for the same reason — there is no
+            // minimum of nothing, and `0` is a number a caller would rank or threshold.
+            // Infinities are left alone (contract §3.6): they order correctly.
+            let hasUnorderable: Bool = buffer.contains { $0.isNaN }
+            let min: Double = hasUnorderable ? Double.nan : (buffer.min() ?? Double.nan)
 
             // Try to slide window for next iteration
             if let nextValue = try await baseIterator.next() {
@@ -755,8 +824,17 @@ public struct AsyncRollingMaxSequence<Base: AsyncSequence>: AsyncSequence where 
                 buffer.append(value)
             }
 
-            // Calculate max
-            let max = buffer.max() ?? 0.0
+            // `Sequence.max()` walks the window with `<`, and every comparison against `nan`
+            // is false, so a `nan` anywhere but the first slot is stepped over and the window
+            // reports a finite maximum for observations it could not order. Measured on
+            // `rollingStatistics`, the same code: of the four windows holding one `nan`, three
+            // returned a finite `max` while `mean` in the *same* struct was `nan`. The caller
+            // would have been told the ceiling of the window was known when one of its values
+            // was not. The empty-window fallback is `nan` for the same reason — there is no
+            // maximum of nothing, and `0` is a number a caller would rank or threshold.
+            // Infinities are left alone (contract §3.6): they order correctly.
+            let hasUnorderable: Bool = buffer.contains { $0.isNaN }
+            let max: Double = hasUnorderable ? Double.nan : (buffer.max() ?? Double.nan)
 
             // Try to slide window for next iteration
             if let nextValue = try await baseIterator.next() {
@@ -860,8 +938,21 @@ public struct AsyncRollingSumSequence<Base: AsyncSequence>: AsyncSequence where 
                 runningSum += value
             }
 
-            // Return running sum — O(1)
-            let sum = runningSum
+            // `runningSum -= evicted` cannot subtract a `nan` back out, so once a non-finite
+            // observation has entered the accumulator it stays non-finite for the rest of the
+            // stream — the same mechanism measured on `rollingMean`, where 9 of 14 outputs
+            // including the last were `nan` for a single bad datum. Without this the caller
+            // would be told every window total after the bad datum was unusable too.
+            // Recompute from the window whenever the accumulator shows the damage, and adopt
+            // the recomputed value as soon as the window itself is clean again.
+            let sum: Double
+            if runningSum.isFinite {
+                sum = runningSum
+            } else {
+                let windowSum: Double = buffer.reduce(0.0, +)
+                if windowSum.isFinite { runningSum = windowSum }
+                sum = windowSum
+            }
 
             // Try to slide window for next iteration
             if let nextValue = try await baseIterator.next() {
@@ -1095,6 +1186,13 @@ public struct AsyncEMASequence<Base: AsyncSequence>: AsyncSequence where Base.El
 /// precision loss that can occur with naive two-pass formulas. All statistics are
 /// computed in a single pass over the window.
 ///
+/// ## Contaminated Input
+/// A window holding a `nan` reports `nan` in **every** field of ``RollingStats`` that depends
+/// on the values — `mean`, `variance`, `stdDev`, `min`, `max` and `sum`. `min` and `max`
+/// formerly reported a finite extremum for such a window unless the `nan` happened to sit in
+/// the first slot, because `Sequence.min()`/`max()` compare with `<` and every comparison
+/// against `nan` is false. Recovery is at output `i + 1` for a `nan` at input index `i`.
+///
 /// - SeeAlso: ``RollingStats``, ``AsyncCumulativeStatisticsSequence``
 public struct AsyncRollingStatisticsSequence<Base: AsyncSequence>: AsyncSequence where Base.Element == Double {
     /// Yields comprehensive rolling statistics.
@@ -1182,8 +1280,17 @@ public struct AsyncRollingStatisticsSequence<Base: AsyncSequence>: AsyncSequence
             let variance = count > 1 ? m2 / Double(count - 1) : 0.0 // fp-safety:disable — guarded by count > 1
             let stdDev = sqrt(variance)
 
-            let min = values.min() ?? 0.0
-            let max = values.max() ?? 0.0
+            // `min()`/`max()` walk the window with `<`, and every comparison against `nan` is
+            // false, so a `nan` anywhere but the first slot is stepped over. Measured on a
+            // 17-point series with one `nan` at index 8: `mean` reported `nan` for all four
+            // windows that held it, while `min` and `max` reported it for **one** — windows
+            // 5, 6 and 7 handed back a finite extremum for a window whose mean this same
+            // struct admitted it could not compute. One field of `RollingStats` denying what
+            // another admits is the defect; the extremum of a window containing an unorderable
+            // observation is not known. Infinities are left alone (contract §3.6).
+            let hasUnorderable: Bool = values.contains { $0.isNaN }
+            let min: Double = hasUnorderable ? Double.nan : (values.min() ?? Double.nan)
+            let max: Double = hasUnorderable ? Double.nan : (values.max() ?? Double.nan)
 
             return RollingStats(
                 mean: mean,
@@ -1506,7 +1613,22 @@ public struct AsyncRollingSuccessiveDifferenceRMSSequence<Base: AsyncSequence>: 
                 isComplete = true
                 return nil
             }
-            let meanSquaredDiff = sumOfSquaredDiffs / Double(squaredDiffs.count)
+            // `sumOfSquaredDiffs -= evicted` cannot subtract a `nan` back out, so once a
+            // non-finite successive difference has entered the accumulator it stays
+            // non-finite for the rest of the stream — the same mechanism measured on
+            // `rollingMean`, where 9 of 14 outputs including the last were `nan` for a single
+            // bad datum. Without this the caller would be told every later window's
+            // variability was unmeasurable. Recompute from the window whenever the
+            // accumulator shows the damage, and adopt the recomputed value as soon as the
+            // window itself is clean again.
+            let meanSquaredDiff: Double
+            if sumOfSquaredDiffs.isFinite {
+                meanSquaredDiff = sumOfSquaredDiffs / Double(squaredDiffs.count)
+            } else {
+                let windowSum: Double = squaredDiffs.reduce(0.0, +)
+                if windowSum.isFinite { sumOfSquaredDiffs = windowSum }
+                meanSquaredDiff = windowSum / Double(squaredDiffs.count)
+            }
             let rmssd = meanSquaredDiff.squareRoot()
 
             // Try to slide window for next iteration
@@ -1730,4 +1852,32 @@ extension AsyncSequence where Element == Double {
     public func rollingThresholdExceedanceRate(window: Int, threshold: Double) -> AsyncRollingThresholdExceedanceRateSequence<Self> {
         AsyncRollingThresholdExceedanceRateSequence(base: self, window: window, threshold: threshold)
     }
+}
+
+// MARK: - Window Recomputation Helper
+
+/// Rebuilds Welford's running mean and M2 directly from a window's contents.
+///
+/// The incremental rolling operators slide by *subtracting* the evicted value's contribution.
+/// That is exact for finite values and impossible for a `nan`, which cannot be subtracted back
+/// out of an accumulator — so once one has passed through, the incremental state is unusable
+/// for the rest of the stream rather than only while the bad datum is in the window. This
+/// performs the same forward-only pass that `AsyncRollingStatisticsSequence` uses, so a window
+/// recovering from contamination reports exactly what the recomputing sibling would.
+///
+/// - Parameter values: The window's values, in order.
+/// - Returns: The mean of the values and M2, the sum of squared deviations from that mean.
+///   Both are `nan` when the window holds a `nan`, which is the intended signal.
+private func welfordState<S: Sequence>(_ values: S) -> (mean: Double, m2: Double) where S.Element == Double {
+    var runningMean = 0.0
+    var m2 = 0.0
+    var n = 0
+    for value in values {
+        n += 1
+        let delta = value - runningMean
+        runningMean += delta / Double(n) // fp-safety:disable — n incremented to >= 1 above
+        let delta2 = value - runningMean
+        m2 += delta * delta2
+    }
+    return (runningMean, m2)
 }
