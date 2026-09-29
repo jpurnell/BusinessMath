@@ -202,6 +202,7 @@ public struct DistributionMyerson: ContinuousDistribution, Sendable {
 	/// - Returns: The quantile. Exactly `low`, `mode` and `high` at the three
 	///   elicited probabilities.
 	public func quantile(_ p: Double) -> Double {
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
 		guard p > 0, p < 1 else { return p <= 0 ? -Double.infinity : Double.infinity }
 		let standard: Double = inverseNormalCDF(p: p, mean: 0, stdDev: 1)
 		guard standard.isFinite else { return standard > 0 ? Double.infinity : -Double.infinity }
@@ -256,10 +257,13 @@ public struct DistributionMyerson: ContinuousDistribution, Sendable {
 
 	/// The probability that a draw falls at or below `x`.
 	///
-	/// - Parameter x: Any finite value. Outside the support this returns 0 or 1
-	///   rather than failing.
-	/// - Returns: A probability in [0, 1].
+	/// - Parameter x: Any value. Outside the support this returns 0 or 1 rather than
+	///   failing, and an infinity is answered with the same limit; a `nan` is `nan`, not
+	///   the 0 the `isFinite` guard below used to give it.
+	/// - Returns: A probability in [0, 1], or `nan` for a `nan` `x` — see
+	///   ``ContinuousDistribution/cdf(_:)``.
 	public func cdf(_ x: Double) -> Double {
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
 		guard x.isFinite else { return x > 0 ? 1 : 0 }
 
 		if isSymmetric {

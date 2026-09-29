@@ -439,6 +439,15 @@ public struct SimulationResults: Sendable {
 	/// - More robust to outliers than Sturges
 	/// - Formula: bin_width = `2 × IQR / n^(1/3)`, bins = `ceil(range / bin_width)`
 	private func calculateOptimalBins() -> Int {
+		// Unreachable through `histogram(bins:)`, whose `!values.isEmpty` guard runs first and
+		// is this function's only caller. Kept so Sturges' conversion is total on its own
+		// terms rather than by relying on that ordering — `log2(0)` is `-infinity`,
+		// `ceil(-infinity + 1)` is `-infinity`, and `Int(_:)` on a `Double` **traps** there, so
+		// a second caller added later would not get a wrong bin count, it would take the
+		// process down. One is the floor this function already applies at its last line and
+		// already documents ("minimum of 1"), so returning it here changes no answer that was
+		// reachable before.
+		guard !values.isEmpty else { return 1 }
 		let n = Double(values.count)
 
 		// Sturges' Rule: ceil(log2(n) + 1)

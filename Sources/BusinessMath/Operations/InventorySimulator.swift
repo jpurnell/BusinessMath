@@ -73,7 +73,9 @@ public struct InventorySimulator: Sendable {
     ///   - leadTimeStdDev: The standard deviation of lead time. Defaults to 0 (fixed lead time).
     ///   - serviceLevel: The target cycle service level, strictly between 0 and 1.
     ///   - strategy: The demand sampling strategy. Defaults to `.empirical`.
-    ///   - iterations: The number of simulation paths to run. Defaults to 10,000.
+    ///   - iterations: The number of simulation paths to run. Defaults to 10,000. Must be at
+    ///     least 1: a reorder point is a percentile of the simulated paths, so zero of them
+    ///     is not a distribution to take one from.
     ///   - seed: An optional seed for reproducible results. When `nil`, uses system randomness.
     /// - Returns: An ``InventorySimulator/Result`` containing the simulated reorder point and supporting metrics.
     /// - Throws: ``OperationsError/insufficientData(required:got:)`` if `demandHistory` is empty.
@@ -82,6 +84,7 @@ public struct InventorySimulator: Sendable {
     ///   is not finite or lies outside `0 ... 100_000` periods. A lead time is both a
     ///   `Double`-to-`Int` conversion and the trip count of the inner sampling loop, so an
     ///   unscreened one is fatal twice over — see the guards below.
+    /// - Throws: ``OperationsError/invalidParameter(_:)`` if `iterations` is less than 1.
     public static func simulate(
         demandHistory: [Double],
         meanLeadTime: Double,
@@ -122,6 +125,24 @@ public struct InventorySimulator: Sendable {
         guard leadTimeStdDev >= 0, leadTimeStdDev <= maximumLeadTime else {
             throw OperationsError.invalidParameter(
                 "leadTimeStdDev must be finite and within 0 ... \(maximumLeadTime) periods"
+            )
+        }
+        // `iterations` had no guard at all, and it is fatal in two different ways — the same
+        // pair the lead-time parameters above were screened for. `iterations: 0` produces an
+        // empty `ddltValues`, so `sorted.count - 1` is `-1`, `max(0, min(-1, index))` clamps
+        // *up* to `0`, and `sorted[0]` on an empty array is `Index out of range`: the clamp
+        // written to make the subscript safe is exactly what makes it fatal, because it
+        // cannot express "there is no element to take". A negative `iterations` dies earlier
+        // and even more obscurely, inside `reserveCapacity`, before any of this code is
+        // reached. Neither told the caller anything — the process ended.
+        //
+        // Refused here rather than returned as a degenerate `Result`, because a reorder point
+        // is a percentile of the simulated distribution and zero paths is no distribution:
+        // any value this could hand back would be a service level nobody measured. The
+        // sibling guards throw for the same reason and this one matches them.
+        guard iterations > 0 else {
+            throw OperationsError.invalidParameter(
+                "iterations must be at least 1; got \(iterations)"
             )
         }
 

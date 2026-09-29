@@ -239,8 +239,9 @@ extension Array2D where T: Real {
     /// - n = number of judges (rows)
     /// - k = number of items (columns)
     ///
-    /// - Returns: The Kendall's W coefficient in range [0, 1].
-    ///   Returns 0 if there's insufficient data for calculation.
+    /// - Returns: The Kendall's W coefficient in range [0, 1], or `nan` when there is
+    ///   nothing to be concordant about — fewer than two columns, no rows, or a
+    ///   contaminated rank sum. Zero is reserved for a measured absence of agreement.
     ///
     /// - Complexity: O(rows × columns).
     ///
@@ -268,7 +269,12 @@ extension Array2D where T: Real {
     /// | 0.7     | Strong agreement |
     /// | 1.0     | Perfect agreement |
     public func kendallW() -> T {
-        guard columns > 1 else { return T(0) }
+        // No `columns > 1` guard here. It used to return `T(0)`, which the interpretation
+        // table above reads as "No agreement beyond chance" — a measured finding about
+        // judges who were never given two things to disagree about. The free
+        // ``kendallW(_:)`` and ``kendallWFromRankSums(rankSums:judges:items:)`` both answer
+        // `nan` for fewer than two items and document it; letting the delegate answer makes
+        // the three agree instead of making this one contradict them.
 
         // Collect rank sums for all columns
         var rankSums: [T] = []

@@ -185,9 +185,9 @@ struct GeometricDistributionTests {
 	}
 
 	@Test("Geometric distribution struct next() method")
-	func geometricStructNext() {
+	func geometricStructNext() throws {
 		let p = 0.25
-		let dist = DistributionGeometric(p)
+		let dist = try #require(DistributionGeometric(p))
 
 		// Seeded. The unseeded `next()` drew from the system RNG, which made this a
 		// genuine coin flip: on 2026-09-06 it failed CI on macos-26 at 0.3385 against
@@ -356,11 +356,11 @@ struct GeometricDistributionTests {
 	}
 
 	@Test("Geometric distribution struct stores probability parameter")
-	func geometricStructParameters() {
+	func geometricStructParameters() throws {
 		// Seeded: an unseeded draw made this assertion a coin flip. See geometricStructNext.
 		var rng = DeterministicRNG(seed: 10005)
 		let p = 0.35
-		let dist = DistributionGeometric(p)
+		let dist = try #require(DistributionGeometric(p))
 
 		let sampleCount = 2000
 		var samples: [Double] = []

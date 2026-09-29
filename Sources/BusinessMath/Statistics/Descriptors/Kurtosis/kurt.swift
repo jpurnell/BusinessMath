@@ -133,7 +133,12 @@ public func kurtosisS<T: Real>(_ values: [T]) -> T {
 ///   - Ensure that the `values` array is not empty and has sufficient values for meaningful calculation.
 ///   - Excel does not have a built-in formula for population kurtosis.
 public func kurtosisP<T: Real>(_ values: [T]) -> T {
-	guard !values.isEmpty else { return T(0) }
+	// The same objection as the `s > T(0)` guard below, arriving through a different door:
+	// an excess kurtosis of zero means *exactly normal-tailed*, and a sample with no
+	// observations in it has no tails to be normal. `varianceP` and `stdDevP`, which this
+	// function calls, already answer `nan` for an empty sample — they divide by `count` —
+	// so zero here was this function disagreeing with its own dependencies.
+	guard !values.isEmpty else { return T.nan }
 
 	let n = T(values.count)
 	let mean = average(values)

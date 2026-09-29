@@ -184,17 +184,43 @@ public struct MultiPeriodReport<T: Real & Sendable>: Codable, Sendable where T: 
 
 	/// Track gross margin across all periods.
 	///
-	/// - Returns: Array of gross margins for each period
+	/// - Returns: One entry per period, in period order. `.nan` where the period had no
+	///   revenue, so there is no margin to express — a margin of `0.0` would read as
+	///   "sold at cost", which is a trading result rather than an absence of trading.
+	///
+	/// > Important: Entries can be `.nan`, so this array is **not** safe to `sorted()`, `max()`,
+	/// > `min()` or `firstIndex(of:)`. Every comparison against `nan` is false, which leaves
+	/// > `sorted()` unspecified — it can reorder *valid* elements, not merely misplace the bad
+	/// > one — and makes a pairwise `a > b` answer `false` for "greater", "less" and "equal"
+	/// > alike. Filter with `isFinite` first, or compare with an explicit `isNaN` branch.
 	public func grossMarginTrend() -> [T] {
 		periodSummaries.map { $0.grossMargin }
 	}
 
 	/// Track operating margin across all periods.
+	///
+	/// - Returns: One entry per period, in period order. `.nan` where the period had no
+	///   revenue. See ``grossMarginTrend()``.
+	///
+	/// > Important: Entries can be `.nan`, so this array is **not** safe to `sorted()`, `max()`,
+	/// > `min()` or `firstIndex(of:)`. Every comparison against `nan` is false, which leaves
+	/// > `sorted()` unspecified — it can reorder *valid* elements, not merely misplace the bad
+	/// > one — and makes a pairwise `a > b` answer `false` for "greater", "less" and "equal"
+	/// > alike. Filter with `isFinite` first, or compare with an explicit `isNaN` branch.
 	public func operatingMarginTrend() -> [T] {
 		periodSummaries.map { $0.operatingMargin }
 	}
 
 	/// Track net margin across all periods.
+	///
+	/// - Returns: One entry per period, in period order. `.nan` where the period had no
+	///   revenue. See ``grossMarginTrend()``.
+	///
+	/// > Important: Entries can be `.nan`, so this array is **not** safe to `sorted()`, `max()`,
+	/// > `min()` or `firstIndex(of:)`. Every comparison against `nan` is false, which leaves
+	/// > `sorted()` unspecified — it can reorder *valid* elements, not merely misplace the bad
+	/// > one — and makes a pairwise `a > b` answer `false` for "greater", "less" and "equal"
+	/// > alike. Filter with `isFinite` first, or compare with an explicit `isNaN` branch.
 	public func netMarginTrend() -> [T] {
 		periodSummaries.map { $0.netMargin }
 	}
@@ -229,6 +255,16 @@ public struct MultiPeriodReport<T: Real & Sendable>: Codable, Sendable where T: 
 	}
 
 	/// Track debt-to-EBITDA ratio across all periods.
+	///
+	/// - Returns: One entry per period, in period order. `.nan` where the period had no
+	///   EBITDA. A leverage of `0.0x` is the strongest credit on every lender's scale and a
+	///   company with no earnings is the weakest, so the absent figure must not be a zero.
+	///
+	/// > Important: Entries can be `.nan`, so this array is **not** safe to `sorted()`, `max()`,
+	/// > `min()` or `firstIndex(of:)`. Every comparison against `nan` is false, which leaves
+	/// > `sorted()` unspecified — it can reorder *valid* elements, not merely misplace the bad
+	/// > one — and makes a pairwise `a > b` answer `false` for "greater", "less" and "equal"
+	/// > alike. Filter with `isFinite` first, or compare with an explicit `isNaN` branch.
 	public func debtToEBITDATrend() -> [T] {
 		periodSummaries.map { $0.debtToEBITDARatio }
 	}

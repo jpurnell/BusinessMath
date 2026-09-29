@@ -276,7 +276,9 @@ public struct HazardRateCurve<T: Real & BinaryFloatingPoint & Sendable>: Sendabl
 ///   - tenors: Array of CDS maturities in years
 ///   - cdsSpreads: Array of market CDS spreads (as decimals)
 ///   - recoveryRate: Expected recovery rate (default: 0.40)
-/// - Returns: Calibrated hazard rate curve
+/// - Returns: Calibrated hazard rate curve. If any tenor is `nan` the curve is returned at full
+///   length with every hazard rate marked `nan`: a `nan` tenor makes the sort that orders the
+///   quotes unspecified, so no rate on the curve can be attributed to a tenor. See the guard.
 public func bootstrapCreditCurve<T: Real & BinaryFloatingPoint & Sendable>(
     tenors: [T],
     cdsSpreads: [T],
@@ -291,6 +293,28 @@ public func bootstrapCreditCurve<T: Real & BinaryFloatingPoint & Sendable>(
         let periods = [Period.year(2024)]
         let rates = [T.zero]
         return HazardRateCurve(hazardRates: TimeSeries(periods: periods, values: rates))
+    }
+
+    // Screen the sort key before sorting on it. `$0.0 < $1.0` is false in both directions for
+    // a NaN tenor, so the predicate stops being a strict weak ordering and `sorted` becomes
+    // **unspecified** — not a crash and not an empty result, but *valid* pairs returned out of
+    // order (contract §2: `[3,1,nan,2,5,4].sorted()` gives `[1,3,nan,2,4,5]`). The periods are
+    // then assigned by position, `Period.year(baseYear + i)`, so each surviving hazard rate is
+    // filed against the wrong tenor and the whole term structure comes back scrambled with
+    // every value finite. Nothing downstream can detect it.
+    //
+    // The damage is not local to the bad quote, so the answer cannot be either: with the order
+    // untrustworthy, no rate on the curve is attributable to a tenor. The curve is returned at
+    // full length with every rate marked (§3.5), which makes `survivalProbability`,
+    // `defaultProbability` and `cdsSpread` all answer `nan` — the behaviour those three already
+    // document for a contaminated curve.
+    //
+    // Infinities are left alone (§3.6): they order correctly, and `cdsSpread` already refuses
+    // a non-finite maturity on its own terms.
+    guard tenors.allSatisfy({ !$0.isNaN }) else {
+        let markedPeriods: [Period] = (0..<tenors.count).map { Period.year(2024 + $0) }
+        let markedRates: [T] = Array(repeating: T.nan, count: tenors.count)
+        return HazardRateCurve(hazardRates: TimeSeries(periods: markedPeriods, values: markedRates))
     }
 
     // Sort by tenor

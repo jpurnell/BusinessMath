@@ -217,9 +217,11 @@ extension ScenarioSensitivityAnalysis {
 		return inputValues.count
 	}
 
-	/// The range of output values (max - min).
+	/// The range of output values (max - min), or `nan` when no outputs were measured.
 	///
-	/// Useful for ranking sensitivities by their impact on the output.
+	/// Useful for ranking sensitivities by their impact on the output. `0` means the driver
+	/// was varied and the output did not move; `nan` means the driver was never measured,
+	/// which is not the same finding and must not sort alongside it.
 	///
 	/// ## Example
 	/// ```swift
@@ -233,9 +235,14 @@ extension ScenarioSensitivityAnalysis {
 	/// }
 	/// ```
 	public var outputRange: Double {
+		// This returned `0.0`, and on the scale this property is documented to be read on —
+		// ranking drivers by impact — `0` is the strongest statement available: this driver
+		// does not move the output at all. It is the answer a modeller uses to drop a driver
+		// from the analysis. An empty `outputValues` earns none of that; it means the
+		// sensitivity was never run.
 		guard let min = outputValues.min(),
 			  let max = outputValues.max() else {
-			return 0.0
+			return Double.nan
 		}
 		return max - min
 	}
@@ -980,6 +987,13 @@ public func runTornadoAnalysis(
 
 	// Rank inputs by impact (descending)
 	let rankedInputs = inputDrivers.sorted { input1, input2 in
+		// Triaged and kept. These defaults are unreachable: the loop above throws
+		// `invalidDriver` rather than skipping, so every name in `inputDrivers` has an
+		// `impacts` entry by the time the sort runs. They also must not become `nan` —
+		// every comparison against a NaN is false, so a `nan` impact would make this
+		// predicate stop being a strict weak ordering and `sorted(by:)` would reorder the
+		// *valid* bars around it, which is the failure mode `NaNContaminatedSampleTests`
+		// documents for `Array.sorted()`.
 		let impact1 = impacts[input1] ?? 0.0
 		let impact2 = impacts[input2] ?? 0.0
 		return impact1 > impact2

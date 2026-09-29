@@ -65,9 +65,30 @@ public func skew<T: Real>(_ values:[T], _ pop: Population = .sample) -> T {
 ///   - Ensure that the `values` array contains at least three elements to perform the sample skewness calculation as the formula relies on having a sufficient sample size.
 ///   - Sample Skewness – This is the Excel default.
 public func skewS<T: Real>(_ values: [T]) -> T {
+    // The bias correction below divides by `(n - 1)(n - 2)`, so fewer than three observations
+    // cannot support a sample skewness, and Excel's SKEW answers #DIV/0! for all of them.
+    //
+    // Only the empty case actually returned a number: `adjustment = 0 / ((0-1)(0-2)) = 0` over
+    // an empty sum of `0`, so it answered **0** — "perfectly symmetric, no tail either way" —
+    // for a sample with no shape at all. One and two observations already reached `nan`, but by
+    // accident rather than by decision: the denominator is `0` there, so `adjustment` is
+    // `infinity`, and `infinity * 0` is `nan` only because any two points are symmetric about
+    // their own mean and the standardised sum is therefore exactly zero. A guard states the
+    // condition instead of relying on that coincidence. `kurtosisS` carries the same guard one
+    // directory over, where the correction divides by `(n - 2)(n - 3)`.
+    guard values.count >= 3 else { return T.nan }
+
     let n = T(values.count)
     let mean = average(values)
     let s: T = stdDev(values)
+
+    // Two undefined cases arrive through this one comparison, and `nan` answers both. A
+    // constant series has no dispersion, so the third standardised moment is 0/0; and `s` is
+    // itself `nan` for a contaminated sample, which fails `> 0` because every comparison
+    // against a NaN is false. Without this, `T.pow(0/0, 3)` reached the sum and the caller was
+    // told the series is symmetric rather than that it cannot be described.
+    guard s > T(0) else { return T.nan }
+
     let x = values.map({T.pow((($0 - mean) / s), 3) }).reduce(0, +)
     let denominator: T = (n - T(1)) * (n - T(2))
     let adjustment: T = n / denominator
@@ -101,9 +122,21 @@ public func skewS<T: Real>(_ values: [T]) -> T {
 ///   - Ensure that the `values` array is not empty, as the computations rely on knowing the count and having valid values to compute statistical measures.
 ///   - Excel does not have a formula for population Skew
 public func skewP<T: Real>(_ values: [T]) -> T {
+    // A population with no members has no shape to describe. This reached `nan` already, but
+    // only by `infinity * 0` — `(1/0)` times an empty sum — which is the right answer by
+    // accident rather than by decision, and one refactor away from becoming `0`. `varianceP`
+    // and `stdDevP`, which this function calls, answer `nan` here for the same reason.
+    guard !values.isEmpty else { return T.nan }
+
     let n = T(values.count)
     let µ = average(values)
     let s = stdDevP(values)
+
+    // A constant population is perfectly symmetric in the ordinary sense, but its standardised
+    // moment is 0/0 — there is no scale to standardise by — so the shape is undefined rather
+    // than zero. Same comparison, same two cases, as `skewS` above: a `nan` `s` fails `> 0` too.
+    guard s > T(0) else { return T.nan }
+
     let x = values.map({T.pow((($0 - µ) / s), 3)}).reduce(0, +)
     return (T(1) / n) * x
 }

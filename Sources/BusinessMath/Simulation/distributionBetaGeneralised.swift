@@ -94,8 +94,10 @@ public struct DistributionBetaGeneralised: ContinuousDistribution, Sendable {
 	/// The probability that a draw falls at or below `x`.
 	///
 	/// - Parameter x: Any value; outside `[min, max]` this returns 0 or 1.
-	/// - Returns: A probability in [0, 1].
+	/// - Returns: A probability in [0, 1], or `nan` for a `nan` `x` — see
+	///   ``ContinuousDistribution/cdf(_:)``.
 	public func cdf(_ x: Double) -> Double {
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
 		guard x > min else { return 0 }
 		guard x < max else { return 1 }
 		let offset: Double = x - min
@@ -105,8 +107,9 @@ public struct DistributionBetaGeneralised: ContinuousDistribution, Sendable {
 	/// The value below which a draw falls with probability `p`.
 	///
 	/// - Parameter p: A probability in the open interval (0, 1).
-	/// - Returns: The quantile, inside `[min, max]`.
+	/// - Returns: The quantile, inside `[min, max]`; `nan` for a `nan` `p`.
 	public func quantile(_ p: Double) -> Double {
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
 		guard p > 0 else { return min }
 		guard p < 1 else { return max }
 		let unit: Double = beta.quantile(p)
@@ -224,12 +227,19 @@ public struct DistributionBetaSubjective: ContinuousDistribution, Sendable {
 	/// The probability that a draw falls at or below `x`.
 	///
 	/// - Parameter x: Any value; outside `[min, max]` this returns 0 or 1.
-	/// - Returns: A probability in [0, 1].
-	public func cdf(_ x: Double) -> Double { scaled.cdf(x) }
+	/// - Returns: A probability in [0, 1], or `nan` for a `nan` `x` — see
+	///   ``ContinuousDistribution/cdf(_:)``.
+	public func cdf(_ x: Double) -> Double {
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
+		return scaled.cdf(x)
+	}
 
 	/// The value below which a draw falls with probability `p`.
 	///
 	/// - Parameter p: A probability in the open interval (0, 1).
-	/// - Returns: The quantile, inside `[min, max]`.
-	public func quantile(_ p: Double) -> Double { scaled.quantile(p) }
+	/// - Returns: The quantile, inside `[min, max]`; `nan` for a `nan` `p`.
+	public func quantile(_ p: Double) -> Double {
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
+		return scaled.quantile(p)
+	}
 }

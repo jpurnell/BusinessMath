@@ -102,6 +102,7 @@ public struct DistributionJohnsonSB: ContinuousDistribution, Sendable {
 
 	/// P(X ≤ x), zero at or below `min` and one at or above `max`.
 	public func cdf(_ x: Double) -> Double {
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
 		guard x > min else { return 0 }
 		guard x < max else { return 1 }
 		let y: Double = (x - min) * inverseWidth
@@ -120,6 +121,7 @@ public struct DistributionJohnsonSB: ContinuousDistribution, Sendable {
 	/// - Parameter p: A probability. Values at or outside the endpoints clamp to the
 	///   bounds, which are finite here.
 	public func quantile(_ p: Double) -> Double {
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
 		guard p > 0 else { return min }
 		guard p < 1 else { return max }
 		let z: Double = inverseNormalCDF(p: p)
@@ -210,6 +212,7 @@ public struct DistributionJohnsonSU: ContinuousDistribution, Sendable {
 
 	/// P(X ≤ x).
 	public func cdf(_ x: Double) -> Double {
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
 		let y: Double = (x - location) * inverseScale
 		let z: Double = shape1 + shape2 * Foundation.asinh(y)
 		return normalCDF(x: z)
@@ -220,6 +223,7 @@ public struct DistributionJohnsonSU: ContinuousDistribution, Sendable {
 	/// - Parameter p: A probability in (0, 1). The support is unbounded, so the
 	///   endpoints return ∓infinity.
 	public func quantile(_ p: Double) -> Double {
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
 		guard p > 0 else { return -.infinity }
 		guard p < 1 else { return .infinity }
 		let z: Double = inverseNormalCDF(p: p)
@@ -308,6 +312,7 @@ public struct DistributionFatigueLife: ContinuousDistribution, Sendable {
 
 	/// P(X ≤ x), zero at or below `location`.
 	public func cdf(_ x: Double) -> Double {
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
 		guard x > location else { return 0 }
 		let y: Double = (x - location) * inverseScale
 		let root: Double = y.squareRoot()
@@ -321,6 +326,7 @@ public struct DistributionFatigueLife: ContinuousDistribution, Sendable {
 	/// - Parameter p: A probability in (0, 1). At or below zero the answer is
 	///   `location`; at or above one it is infinite.
 	public func quantile(_ p: Double) -> Double {
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
 		guard p > 0 else { return location }
 		guard p < 1 else { return .infinity }
 		let z: Double = inverseNormalCDF(p: p)

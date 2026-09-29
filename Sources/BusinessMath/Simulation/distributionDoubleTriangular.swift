@@ -125,6 +125,7 @@ public struct DistributionDoubleTriangular: ContinuousDistribution, Sendable {
 
 	/// P(X ≤ x), zero below the support and one above it.
 	public func cdf(_ x: Double) -> Double {
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
 		guard x > min else { return 0 }
 		guard x < max else { return 1 }
 
@@ -142,6 +143,7 @@ public struct DistributionDoubleTriangular: ContinuousDistribution, Sendable {
 	/// - Parameter pr: A probability. Values at or outside the endpoints clamp to the
 	///   support, which is finite here.
 	public func quantile(_ pr: Double) -> Double {
+		guard !pr.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
 		guard pr > 0 else { return min }
 		guard pr < 1 else { return max }
 

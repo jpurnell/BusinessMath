@@ -53,6 +53,25 @@ public struct CalibrationCurve<T: Real & Sendable>: Sendable {
 	///
 	/// A proper scoring rule: it is minimised only by the true probabilities, so unlike
 	/// accuracy it cannot be improved by shading predictions toward the majority class.
+	///
+	/// ## It requires probabilities, and ``points`` does not
+	///
+	/// ``ClassifierEvaluation`` deliberately admits any finite score, because a raw margin
+	/// or a log-odds is only ever *ordered* and the discrimination statistics need nothing
+	/// more. The reliability curve survives that: a bucket's predicted rate is whatever the
+	/// model claimed, whether or not the claim was a probability.
+	///
+	/// This number does not. `mean((p − y)²)` is a squared distance from zero or one, so on
+	/// an unbounded score it is not a Brier score but a large squared residual, and past
+	/// about `1.3e154` it overflows to `+infinity`.
+	///
+	/// That infinity is left as it is rather than converted to `nan`. It is arithmetically
+	/// honest — the squared residual genuinely exceeds the representable range — and it sits
+	/// at the **worst** end of a loss scale, so a caller ranking models by it puts the
+	/// offending model last, which is the one place the value cannot flatter. A `nan` would
+	/// be strictly worse here: `nan` compares false against everything, so it would make the
+	/// ranking itself unspecified rather than merely extreme. Read the infinity as the
+	/// signal that the scores were never probabilities, and calibrate them first.
 	public let brierScore: T
 
 	/// Creates a curve.

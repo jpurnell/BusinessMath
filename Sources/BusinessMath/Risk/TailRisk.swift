@@ -54,7 +54,9 @@ public struct TailRisk {
 	/// - Parameters:
 	///   - values: Array of return values.
 	///   - confidenceLevel: Confidence level (default: 0.95).
-	/// - Returns: Tail risk ratio (>=  1.0).
+	/// - Returns: Tail risk ratio (>= 1.0); `infinity` when the value at risk is zero but
+	///   the expected shortfall is not; `nan` when there is no ratio to take, because the
+	///   sample is empty, contains `nan`, or has both a zero threshold and a zero shortfall.
 	///
 	/// ## Example
 	///
@@ -69,12 +71,20 @@ public struct TailRisk {
 		let varValue = ValueAtRisk.calculate(values: values, confidenceLevel: confidenceLevel)
 		let cvarValue = ConditionalValueAtRisk.calculate(values: values, confidenceLevel: confidenceLevel)
 
-		if varValue != T(0) {
-			let ratio = cvarValue / varValue
-			return ratio < T(0) ? -ratio : ratio
-		} else {
-			return T(1)
-		}
+		// This used to branch on `varValue != T(0)` and answer `T(1)` otherwise. `1` is the
+		// floor of this ratio's documented range and means "the average loss in the tail is
+		// no worse than the threshold itself" — the most benign shape a tail can have. It was
+		// being reported for a zero value at risk, where the ratio does not exist at all, and
+		// it was the answer an empty sample reached too, because `ValueAtRisk` used to answer
+		// `0` for one.
+		//
+		// The branch is gone rather than rewritten because IEEE division already
+		// distinguishes the three cases the branch flattened: a zero shortfall over a zero
+		// threshold is `nan`, a real shortfall over a zero threshold is `-infinity` (whose
+		// magnitude, below, is `infinity`), and a `nan` from either input propagates. The
+		// comparison also fails for `nan`, so the magnitude step leaves it untouched.
+		let ratio = cvarValue / varValue
+		return ratio < T(0) ? -ratio : ratio
 	}
 
 	// MARK: - TimeSeries Convenience Methods

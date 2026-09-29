@@ -166,7 +166,9 @@ public struct ClassifierEvaluation<T: Real & Sendable & BinaryFloatingPoint>: Se
 	///
 	/// - Parameter buckets: How many intervals to divide `[0, 1]` into. Fewer than one
 	///   yields an empty curve with the Brier score still computed.
-	/// - Returns: The occupied buckets and the Brier score.
+	/// - Returns: The occupied buckets and the Brier score. The curve is meaningful for any
+	///   finite scores; the Brier score requires them to be probabilities, and overflows to
+	///   `+infinity` for unbounded ones — see ``CalibrationCurve/brierScore``.
 	public func calibration(buckets: Int) -> CalibrationCurve<T> {
 		var squaredError: T = T.zero
 		for (score, outcome) in zip(scores, outcomes) {

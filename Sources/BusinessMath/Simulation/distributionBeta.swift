@@ -277,14 +277,16 @@ extension DistributionBeta: ContinuousDistribution {
 
 	/// P(X ≤ x) = I_x(α, β), the regularized incomplete beta.
 	public func cdf(_ x: Double) -> Double {
-		totalizedResult { try regularizedIncompleteBeta(x: x, a: alpha, b: beta) }
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
+		return totalizedResult { try regularizedIncompleteBeta(x: x, a: alpha, b: beta) }
 	}
 
 	/// The value at which the CDF equals `p`.
 	///
 	/// Root-found, through ``inverseRegularizedIncompleteBeta(p:a:b:)``.
 	public func quantile(_ p: Double) -> Double {
-		totalizedResult { try inverseRegularizedIncompleteBeta(p: p, a: alpha, b: beta) }
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
+		return totalizedResult { try inverseRegularizedIncompleteBeta(p: p, a: alpha, b: beta) }
 	}
 
 	// Keeps its own `next(using:)`: a ratio of two gamma variates, each of which is

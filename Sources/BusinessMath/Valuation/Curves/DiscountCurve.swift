@@ -172,8 +172,17 @@ public struct DiscountCurve: Sendable {
     /// - Parameter tenor: Time in years.
     /// - Returns: Continuously compounded zero rate.
     public func zeroRate(at tenor: Double) -> Double {
+        // `nan > 1e-15` is false, so an unusable tenor took the `tenor == 0` branch below and
+        // came back with the curve's *short rate* — a real, finite, plausible quote for a point
+        // nobody can ask about. `discountFactor(at:)` already refuses the same tenor; this makes
+        // the three accessors agree about the argument as well as about the curve.
+        guard !tenor.isNaN else { return Double.nan }
         guard tenor > 1e-15 else {
             // Return the short rate: zero rate at the first tenor, or 0
+            // The `0.0` is not a fabricated observation and is left alone: `discountFactor(at:)`
+            // answers `1.0` for every tenor on an empty curve — no discounting — and a flat
+            // `DF = 1` curve has a zero rate everywhere. The two accessors agree, and
+            // `DiscountCurveTests.emptyCurve` pins the pair.
             guard let firstT = tenors.first, firstT > 0,
                   let firstDF = discountFactors.first else { return 0.0 }
             return -log(firstDF) / firstT
@@ -204,6 +213,11 @@ public struct DiscountCurve: Sendable {
     /// - Returns: Forward rate between `t1` and `t2`.
     public func forwardRate(from t1: Double, to t2: Double) -> Double {
         let interval = t2 - t1
+        // `abs(nan) > 1e-15` is false, so `forwardRate(from: 1, to: .nan)` fell into the
+        // "the two tenors coincide" branch and returned the zero rate at `t1` — a finite
+        // forward rate over an interval that does not exist. The same fact that put the
+        // contaminated *curve* into this file's header note, applied to the argument.
+        guard !t1.isNaN, !t2.isNaN else { return Double.nan }
         guard abs(interval) > 1e-15 else {
             return zeroRate(at: t1)
         }

@@ -29,6 +29,12 @@ import Numerics
 ///   // result should be the cumulative probability of x = 2 for the exponential distribution with rate parameter λ = 0.5
 
 public func exponentialCDF<T: Real>(_ x: T, λ: T) -> T {
+	// A `nan` rate propagates through the arithmetic below and comes out `nan`, which is
+	// right. A `nan` argument used to fail `x >= 0` and come out **0** — `P(X ≤ x) = 0`,
+	// and therefore a survival probability of exactly 1 for the reliability caller who takes
+	// the complement: "nothing has failed yet" from a time it could not read. Same input,
+	// two answers, decided by which parameter was contaminated.
+	guard !x.isNaN else { return T.nan }
 	guard x >= 0 else { return 0 }
 	// `1 - exp(-λx)` loses every significant digit for small λx, where the
 	// exponential is within an ulp of 1: at λx = 4e-9 the naive form is wrong in the

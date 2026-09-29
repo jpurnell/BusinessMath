@@ -77,6 +77,7 @@ public struct DistributionErlang: ContinuousDistribution, Sendable {
 
 	/// P(X ≤ x), zero at or below the origin.
 	public func cdf(_ x: Double) -> Double {
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
 		guard x > 0 else { return 0 }
 		return regularizedLowerIncompleteGamma(a: shape, x: x * inverseScale)
 	}
@@ -86,6 +87,7 @@ public struct DistributionErlang: ContinuousDistribution, Sendable {
 	/// - Parameter p: A probability in (0, 1). At or below zero the answer is zero, the
 	///   lower bound of the support; at or above one it is infinite.
 	public func quantile(_ p: Double) -> Double {
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
 		guard p > 0 else { return 0 }
 		guard p < 1 else { return .infinity }
 		// `ContinuousDistribution` declares `quantile` non-throwing, so an error has to
@@ -165,6 +167,7 @@ public struct DistributionPearson5: ContinuousDistribution, Sendable {
 
 	/// P(X ≤ x), zero at or below the origin.
 	public func cdf(_ x: Double) -> Double {
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
 		guard x > 0 else { return 0 }
 		return regularizedUpperIncompleteGamma(a: alpha, x: beta / x)
 	}
@@ -174,6 +177,7 @@ public struct DistributionPearson5: ContinuousDistribution, Sendable {
 	/// - Parameter p: A probability in (0, 1). At or below zero the answer is zero; at
 	///   or above one it is infinite.
 	public func quantile(_ p: Double) -> Double {
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
 		guard p > 0 else { return 0 }
 		guard p < 1 else { return .infinity }
 		// Inverting `Q(α, β/x) = p` means solving `P(α, β/x) = 1 − p`, so the inverse of
@@ -263,6 +267,7 @@ public struct DistributionPearson6: ContinuousDistribution, Sendable {
 
 	/// P(X ≤ x), zero at or below the origin.
 	public func cdf(_ x: Double) -> Double {
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
 		guard x > 0 else { return 0 }
 		let y: Double = x * inverseBeta
 		// `1 + y` exceeds one for any positive `y`, and `x > 0` was checked above.
@@ -281,6 +286,7 @@ public struct DistributionPearson6: ContinuousDistribution, Sendable {
 	/// - Parameter p: A probability in (0, 1). At or below zero the answer is zero; at
 	///   or above one it is infinite.
 	public func quantile(_ p: Double) -> Double {
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
 		guard p > 0 else { return 0 }
 		guard p < 1 else { return .infinity }
 		do {

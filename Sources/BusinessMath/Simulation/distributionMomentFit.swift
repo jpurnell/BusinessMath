@@ -202,8 +202,9 @@ public struct DistributionMomentFit: ContinuousDistribution, Sendable {
 	/// The value below which a draw falls with probability `p`.
 	///
 	/// - Parameter p: A probability in the open interval (0, 1).
-	/// - Returns: The quantile.
+	/// - Returns: The quantile; `nan` for a `nan` `p`.
 	public func quantile(_ p: Double) -> Double {
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
 		guard p > 0, p < 1 else { return p <= 0 ? -.infinity : .infinity }
 		// Reflection swaps the tails, so the mirrored fit is read from the opposite
 		// end of the probability scale.
@@ -241,9 +242,15 @@ public struct DistributionMomentFit: ContinuousDistribution, Sendable {
 
 	/// The probability that a draw falls at or below `x`.
 	///
-	/// - Parameter x: Any value.
-	/// - Returns: A probability in [0, 1].
+	/// - Parameter x: Any value, and the three kinds are answered differently. A finite
+	///   `x` outside the support is 0 or 1; `-infinity` is 0 and `+infinity` is 1, which
+	///   are the limits rather than a clamp; a `nan` is `nan`. The `isFinite` guard below
+	///   gets both infinities right and used to land a `nan` on `0` with them, which is the
+	///   one case it was not deciding.
+	/// - Returns: A probability in [0, 1], or `nan` for a `nan` `x` — see
+	///   ``ContinuousDistribution/cdf(_:)``.
 	public func cdf(_ x: Double) -> Double {
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
 		guard x.isFinite else { return x > 0 ? 1 : 0 }
 		guard scale > 0 else { return 0 }
 		let standardised: Double = (x - location) / scale

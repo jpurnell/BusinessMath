@@ -95,16 +95,60 @@ public protocol ContinuousDistribution<T>: SeedableDistribution {
 	/// including values outside the support, where it returns 0 or 1 rather than
 	/// failing.
 	///
-	/// - Parameter x: Any finite value.
-	/// - Returns: The probability that a draw falls at or below `x`.
+	/// ## The three answers outside the support
+	///
+	/// These are separate rules and a conformer must not collapse them into one guard.
+	///
+	/// - **A finite `x` below the support is `0`, above it `1`.** That is the clamping
+	///   promised above, and it is the reason a caller can plot across a range without
+	///   knowing where the support ends.
+	/// - **`cdf(-infinity)` is `0` and `cdf(+infinity)` is `1`.** Not clamping but the
+	///   limits themselves; an infinity is a perfectly well-ordered point on the line.
+	/// - **`cdf(nan)` is `nan`.** A NaN argument names no point on the line, so there is
+	///   no probability to report, and a conformer must say so rather than answer.
+	///
+	/// The third rule is stated because it was not being followed. Until
+	/// `v3.0.0-alpha.7` roughly forty of the forty-six conformers answered a NaN with
+	/// **`0`** — `P(X ≤ x) = 0`, the confident end of the scale, and a survival
+	/// probability of exactly `1` for the reliability caller who takes the complement.
+	/// Almost none of them meant to: `nan > min` is false like every other comparison
+	/// against a NaN, so the support guard caught it and the contaminated argument came
+	/// back as a definite answer through a branch written for something else. The
+	/// remainder — those whose arithmetic happened to propagate, and the four that
+	/// screened `isFinite` and so lumped a NaN in with an infinity — disagreed with
+	/// them, which made the *inconsistency* the defect rather than any single file.
+	///
+	/// The shape that satisfies all three is to screen `x.isNaN` first and let the
+	/// existing support and limit logic run untouched underneath. Screening `isFinite`
+	/// instead breaks the second rule.
+	///
+	/// - Parameter x: Any value. A NaN is answered with a NaN; an infinity is answered
+	///   with the limit.
+	/// - Returns: The probability that a draw falls at or below `x`, or `nan` if `x` is
+	///   `nan`.
 	func cdf(_ x: T) -> T
 
 	/// The value at which the CDF equals `p` — the inverse of `cdf(_:)`.
 	///
+	/// A `p` outside the open interval is clamped to the corresponding end of the
+	/// support, which for an unbounded support is an infinity. A **NaN `p` is answered
+	/// with `nan`**, for the reason given on ``cdf(_:)``: it is not a probability, so
+	/// there is no value it can be the quantile of, and clamping has no end to clamp to.
+	///
+	/// This was the worse half of the same defect. A NaN `p` used to draw six different
+	/// answers across the conformers — `nan`, the support minimum, the location
+	/// parameter, `0`, `-infinity` and `+infinity` — because `p > 0` and `p < 1` are
+	/// both false for a NaN and each file's guards happened to be ordered differently.
+	/// Two distributions could therefore place the same unreadable probability at
+	/// opposite ends of the real line.
+	///
+	/// The sampling path is unaffected: `next(using:)` draws from
+	/// `openUnitRandom(using:)`, which is strictly inside (0, 1) and never NaN.
+	///
 	/// - Parameter p: A probability in the **open** interval (0, 1). The endpoints
 	///   are excluded because they are infinite for any unbounded support, and a
 	///   caller that needs a bound should read the support directly.
-	/// - Returns: The `x` for which `cdf(x) == p`.
+	/// - Returns: The `x` for which `cdf(x) == p`, or `nan` if `p` is `nan`.
 	func quantile(_ p: T) -> T
 
 	/// The probability density at `x` — the derivative of `cdf(_:)`.

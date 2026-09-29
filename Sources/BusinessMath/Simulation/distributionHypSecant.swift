@@ -123,6 +123,7 @@ public struct DistributionHypSecant: ContinuousDistribution, Sendable {
 
 	/// P(X ≤ x).
 	public func cdf(_ x: Double) -> Double {
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
 		let exponent: Double = (x - loc) * inverseSpread
 		// `exp` overflows to infinity for an exponent past about 710, where `atan(∞)`
 		// is π/2 and the CDF is 1 — the correct limit, reached without a NaN.
@@ -136,6 +137,7 @@ public struct DistributionHypSecant: ContinuousDistribution, Sendable {
 	///   unbounded, so the endpoints are infinite; they return ∓`Double.infinity`
 	///   rather than a NaN, which is the honest answer to `quantile(0)`.
 	public func quantile(_ p: Double) -> Double {
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
 		guard p > 0 else { return -.infinity }
 		guard p < 1 else { return .infinity }
 		let angle: Double = p * piOverTwo

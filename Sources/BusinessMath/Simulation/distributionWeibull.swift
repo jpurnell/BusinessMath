@@ -204,6 +204,7 @@ extension DistributionWeibull: ContinuousDistribution {
 
 	/// P(X ≤ x) = 1 − exp(−(x/scale)^shape).
 	public func cdf(_ x: Double) -> Double {
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
 		guard shape > 0, scale > 0 else { return Double.nan }
 		guard x > 0 else { return 0 }
 		let ratio = x / scale
@@ -214,6 +215,7 @@ extension DistributionWeibull: ContinuousDistribution {
 
 	/// The value at which the CDF equals `p`: scale · (−ln(1 − p))^(1/shape).
 	public func quantile(_ p: Double) -> Double {
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
 		guard shape > 0, scale > 0 else { return Double.nan }
 		guard p < 1 else { return Double.infinity }
 		// log(onePlus: -p), not log(1 - p): for small p the subtraction rounds the

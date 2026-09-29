@@ -172,13 +172,19 @@ public struct IntegerProgramSpecification: Sendable {
     /// - Parameters:
     ///   - solution: The solution vector
     ///   - index: Variable index
-    /// - Returns: Fractional part (0 means integer, 0.5 is maximally fractional)
+    /// - Returns: Fractional part (0 means integer, 0.5 is maximally fractional), or `nan`
+    ///   when `index` is outside the solution.
     public func fractionality<V: VectorSpace>(
         _ solution: V,
         at index: Int
     ) -> Double where V.Scalar == Double {
         let values = solution.toArray()
-        guard index < values.count else { return 0.0 }
+        // `index >= 0` as well as the upper bound: the guard tested only one end, so a negative
+        // index fell through to `values[index]` and **trapped**. And `0.0` is the value that
+        // means "this variable is already integral, do not branch on it" — the branch-and-bound
+        // answer that ends the search — so an index the solution does not have read as a
+        // finished variable. Contract §3.1.
+        guard index >= 0, index < values.count else { return Double.nan }
         let value = values[index]
         let fractionalPart = abs(value - round(value))
         return min(fractionalPart, 1.0 - fractionalPart)

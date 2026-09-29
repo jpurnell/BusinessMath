@@ -81,16 +81,17 @@ struct QuantileConsistencyTests {
 		#expect(identical(simulation.percentileFromSorted(1.5, values: values), 40.0))
 	}
 
-	@Test("FinancialSimulation still returns zero for an empty sample")
+	@Test("FinancialSimulation refuses a percentile of an empty sample")
 	func financialSimulationEmptySample() {
-		// FinancialSimulation(projections: []) is publicly constructible, and
-		// this entry point has always answered 0 rather than NaN for it.
-		//
-		// The claim is "zero", not "positively signed zero" — the guard happens to
-		// return the literal `0.0` today, but a `-0.0` would answer the question the
-		// test is asking just as well, so this is IEEE equality rather than a bit
-		// comparison. What must not pass is NaN, which `==` rejects.
+		// This asserted `0.0`, on the grounds that the entry point "has always answered 0
+		// rather than NaN". It had, and that was the defect: `FinancialSimulation(projections:
+		// [])` is publicly constructible, and every caller inherited the zero — `percentile`,
+		// `valueAtRisk` (a 95% VaR of 0 reads as "no downside") and **both** bounds of
+		// `confidenceInterval`, which collapsed to `[0, 0]`: perfect certainty about a number
+		// nobody computed. `quantile(sorted:p:)` already answered `nan` for the same input, so
+		// the two disagreed.
 		let simulation = FinancialSimulation(projections: [])
-		#expect(exactlyEqual(simulation.percentileFromSorted(0.5, values: []), 0.0))
+		let answer = simulation.percentileFromSorted(0.5, values: [])
+		#expect(answer.isNaN, "got \(answer)")
 	}
 }

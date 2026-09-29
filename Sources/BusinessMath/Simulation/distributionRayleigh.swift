@@ -152,6 +152,7 @@ extension DistributionRayleigh: ContinuousDistribution {
 
     /// P(X ≤ x) = 1 − exp(−x² / 2σ²).
     public func cdf(_ x: Double) -> Double {
+        guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
         guard scale > 0 else { return Double.nan }
         guard x > 0 else { return 0 }
         let ratio = x / scale
@@ -162,6 +163,7 @@ extension DistributionRayleigh: ContinuousDistribution {
 
     /// The value at which the CDF equals `p`: σ·√(−2 ln(1 − p)).
     public func quantile(_ p: Double) -> Double {
+        guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
         guard scale > 0 else { return Double.nan }
         guard p < 1 else { return Double.infinity }
         // log(onePlus: -p), not log(1 - p): for small p the subtraction rounds the

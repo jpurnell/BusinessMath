@@ -185,6 +185,7 @@ public struct DistributionGeneral: ContinuousDistribution, Sendable {
 
 	/// P(X ≤ x). Quadratic within each segment, because the density is linear there.
 	public func cdf(_ x: Double) -> Double {
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
 		guard x > lower else { return 0 }
 		guard x < upper else { return 1 }
 
@@ -209,6 +210,7 @@ public struct DistributionGeneral: ContinuousDistribution, Sendable {
 	/// - Parameter p: A probability. Values at or outside the endpoints clamp to the
 	///   bounds, which are finite here.
 	public func quantile(_ p: Double) -> Double {
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
 		guard p > 0 else { return lower }
 		guard p < 1 else { return upper }
 

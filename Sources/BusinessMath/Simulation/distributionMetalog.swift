@@ -264,8 +264,9 @@ public struct DistributionMetalog: ContinuousDistribution, Sendable {
 	/// The value below which a draw falls with probability `p`.
 	///
 	/// - Parameter p: A probability in the open interval (0, 1).
-	/// - Returns: The quantile, inside the declared bounds.
+	/// - Returns: The quantile, inside the declared bounds; `nan` for a `nan` `p`.
 	public func quantile(_ p: Double) -> Double {
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
 		guard p > 0, p < 1 else {
 			return p <= 0 ? Self.lowerLimit(boundedness) : Self.upperLimit(boundedness)
 		}
@@ -310,9 +311,12 @@ public struct DistributionMetalog: ContinuousDistribution, Sendable {
 	/// No closed form exists, so this bisects on the quantile function, which the
 	/// initialiser has already established is increasing.
 	///
-	/// - Parameter x: Any value.
-	/// - Returns: A probability in [0, 1]; 0 or 1 outside the support.
+	/// - Parameter x: Any value. An infinity is answered with its limit, 0 or 1; a `nan`
+	///   is answered with `nan`, not with the 0 the `isFinite` guard below used to give it.
+	/// - Returns: A probability in [0, 1]; 0 or 1 outside the support, and `nan` for a
+	///   `nan` `x` — see ``ContinuousDistribution/cdf(_:)``.
 	public func cdf(_ x: Double) -> Double {
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
 		guard x.isFinite else { return x > 0 ? 1 : 0 }
 		if x <= Self.lowerLimit(boundedness) { return 0 }
 		if x >= Self.upperLimit(boundedness) { return 1 }

@@ -364,17 +364,33 @@ public struct LookbackPayoff: Payoff, Sendable {
     ///   - value: The underlying asset price at this time step.
     ///   - time: The time of the observation in years.
     public mutating func observe(value: Double, time: Double) {
+        // `value > runningMax` and `value < runningMin` are both false for a NaN, so a path
+        // made entirely of unusable prices left the extrema at their `±infinity` sentinels and
+        // `terminalValue` reported the *no observations* payoff of `0.0` — an out-of-the-money
+        // option, averaged into the Monte Carlo price as a real observation rather than as a
+        // path that could not be valued. Marking both extrema keeps the path poisoned for the
+        // rest of its life, which is the honest state: the extremum of a path containing an
+        // unknown price is unknown.
+        if value.isNaN {
+            runningMax = Double.nan
+            runningMin = Double.nan
+            return
+        }
         if value > runningMax { runningMax = value }
         if value < runningMin { runningMin = value }
     }
 
     /// Computes the lookback payoff using the path extremum.
     ///
-    /// Returns `0.0` if no observations were recorded.
+    /// Returns `0.0` if no observations were recorded, and `nan` if any observed price was
+    /// `nan` — see ``observe(value:time:)``.
     ///
     /// - Parameter finalSpot: The underlying price at expiry.
     /// - Returns: The floating-strike lookback payoff.
     public func terminalValue(finalSpot: Double) -> Double {
+        // Ahead of the sentinel test, because `nan > -.infinity` is false and a contaminated
+        // path would otherwise be answered with the empty path's zero.
+        guard !runningMax.isNaN, !runningMin.isNaN else { return Double.nan }
         guard runningMax > -.infinity, runningMin < .infinity else { return 0.0 }
         switch optionType {
         case .call:

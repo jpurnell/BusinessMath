@@ -140,8 +140,9 @@ extension TimeSeries {
 	/// - Parameter lag: The number of periods to look back (default: 1). A `lag` outside
 	///   `0...count` yields an empty series rather than trapping.
 	/// - Returns: A time series of growth rates carrying **one entry for every period from
-	///   index `lag` onward**. A period whose growth rate is undefined is marked `.nan`; it is
-	///   never omitted, so `count` is `periods.count - lag` for any series the lag supports.
+	///   index `lag` onward whose `lag`-predecessor is its calendar predecessor**. A period
+	///   whose growth rate is undefined is marked `.nan`; it is never omitted, so `count` is
+	///   `periods.count - lag` for a series with no gaps. See **Gaps in the period index**.
 	///
 	/// ## Example
 	/// ```swift
@@ -149,6 +150,33 @@ extension TimeSeries {
 	/// let revenue = TimeSeries(periods: months, values: [100, 110, 121])
 	/// let growth = revenue.growthRate(lag: 1)  // two entries: 0.10 and 0.10
 	/// ```
+	///
+	/// ## Gaps in the period index
+	/// A `TimeSeries` is keyed by period, so a month that was never recorded is simply absent
+	/// from ``TimeSeries/periods`` — there is no hole to step over, only a shorter list, and
+	/// `periods[i - lag]` is then the adjacent element of the *sorted list* rather than the
+	/// calendar predecessor. Measured on Jan, Feb, Apr, May with `lag: 1`, the previous
+	/// implementation computed `(Apr - Feb) / Feb` and **labelled it Apr**: two months of
+	/// growth reported at one month's label, with the same shape, the same `count` and the
+	/// same units as the genuine one-month rates either side of it. Annualising that series,
+	/// or comparing April's figure against the others, compounds a two-month move as though it
+	/// were one.
+	///
+	/// Following ``TimeSeries/zip(with:_:)`` and ``movingAverage(window:)``, the result narrows
+	/// instead: April has no one-period growth rate, so the result does not contain April.
+	///
+	/// **This is not the zero-base case below, and the two are deliberately answered
+	/// differently.** A zero base is an *observation*: both periods are present, the rate they
+	/// imply is genuinely undefined, and dropping it would shorten a result whose domain the
+	/// caller can enumerate — contract §3.5. A gap is the *absence* of the observation the rate
+	/// would be about, so there is no position to mark; that is contract §3.7, *narrow the
+	/// domain, do not fabricate the observation*, and this function's own `nil`-lookup branch
+	/// below already committed to omission for exactly that reason.
+	///
+	/// Adjacency is decided by ``Period/nextIfSteppable()``. Where it cannot be decided — a
+	/// ``PeriodType/custom`` range has no defined successor, and two periods of different types
+	/// have no common step — the periods are treated as adjacent, so an irregular series keeps
+	/// exactly the behaviour it has always had rather than silently emptying.
 	///
 	/// ## Growth from a zero base
 	/// Growth from a base of zero is **undefined, not infinite**. `0 -> 100` and `0 -> 1` are
@@ -185,10 +213,19 @@ extension TimeSeries {
 
 		var resultPeriods: [Period] = []
 		var resultValues: [T] = []
+		let runStarts = contiguousRunStarts()
 
 		for i in lag..<periods.count {
 			let currentPeriod = periods[i]
 			let previousPeriod = periods[i - lag]
+
+			// A `lag`-period rate needs `lag + 1` consecutive periods ending here. Without this
+			// the caller is told that April grew 8% in one month when the figure is two months
+			// of growth with March missing — see **Gaps in the period index**. `lag == 0` asks
+			// for a window of one, which no gap can break.
+			guard windowSpansNoGap(endingAt: i, window: lag + 1, runStarts: runStarts) else {
+				continue
+			}
 
 			// `periods` is derived from the value keys, so neither lookup can fail today. If one
 			// ever did, the period is one the data does not cover and there is no rate to
@@ -654,8 +691,18 @@ extension TimeSeries {
 	/// - Parameter lag: The number of periods to look back (default: 1). A `lag` outside
 	///   `0...count` yields an empty series rather than trapping.
 	/// - Returns: A time series of differences, one entry for every period from index `lag`
-	///   onward. A difference involving a non-finite observation is `.nan` at that period and
-	///   at that period only — subtraction is not a recursion, so nothing carries forward.
+	///   onward **whose `lag`-predecessor is its calendar predecessor**. A difference involving
+	///   a non-finite observation is `.nan` at that period and at that period only —
+	///   subtraction is not a recursion, so nothing carries forward.
+	///
+	/// ## Gaps in the period index
+	/// A period missing from the series is absent from ``TimeSeries/periods`` rather than
+	/// present and empty, so `periods[i - lag]` is the adjacent element of the *sorted list*
+	/// and not the calendar predecessor. On Jan, Feb, Apr, May with `lag: 1` the previous
+	/// implementation reported `Apr - Feb` **under April's label** — a two-month change carried
+	/// in a series of one-month changes, which any rate per unit time computed from it divides
+	/// by the wrong denominator. The period is therefore omitted rather than answered, which is
+	/// contract §3.7 and matches ``growthRate(lag:)`` and ``movingAverage(window:)``.
 	///
 	/// ## Example
 	/// ```swift
@@ -682,10 +729,19 @@ extension TimeSeries {
 
 		var resultPeriods: [Period] = []
 		var resultValues: [T] = []
+		let runStarts = contiguousRunStarts()
 
 		for i in lag..<periods.count {
 			let currentPeriod = periods[i]
 			let previousPeriod = periods[i - lag]
+
+			// See **Gaps in the period index**: without this the caller is handed a two-month
+			// change labelled as a one-month change, indistinguishable from the genuine
+			// one-month changes around it. `lag == 0` asks for a window of one, which no gap
+			// can break, so "difference from itself" is unaffected.
+			guard windowSpansNoGap(endingAt: i, window: lag + 1, runStarts: runStarts) else {
+				continue
+			}
 
 			if let currentValue = self[currentPeriod],
 			   let previousValue = self[previousPeriod] {
@@ -1033,7 +1089,11 @@ extension TimeSeries {
 	/// direction is deliberate: the alternative would silently empty the result of every
 	/// window operation on an irregular series, which is a far larger change than the gap
 	/// defect this check exists to fix, and it would be just as unannounced.
-	fileprivate static func periodsAreAdjacent(_ earlier: Period, _ later: Period) -> Bool {
+	///
+	/// Visible beyond this file because `averageTimeSeries` in the financial-statement layer
+	/// has the same defect over the same pair of indices and must answer it the same way. A
+	/// second copy of this rule is how two functions come to disagree about what a gap is.
+	internal static func periodsAreAdjacent(_ earlier: Period, _ later: Period) -> Bool {
 		guard earlier.type == later.type else { return true }
 		guard let following = earlier.nextIfSteppable() else { return true }
 		return following == later

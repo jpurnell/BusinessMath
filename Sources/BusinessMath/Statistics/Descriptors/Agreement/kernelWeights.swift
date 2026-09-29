@@ -67,6 +67,7 @@ private func evaluateKernel<T: Real>(_ u: T, kernel: KernelFunction) -> T {
 /// - Throws: `BusinessMathError.mismatchedDimensions` if arrays differ in length.
 /// - Throws: `BusinessMathError.invalidInput` if bandwidth is not positive.
 /// - Throws: `BusinessMathError.insufficientData` if arrays are empty.
+/// - Throws: `BusinessMathError.dataQuality` if either array holds a non-finite value.
 public func kernelWeights<T: Real>(
 	_ x: [T], _ y: [T],
 	target: T, bandwidth: T,
@@ -86,6 +87,19 @@ public func kernelWeights<T: Real>(
 		throw BusinessMathError.invalidInput(
 			message: "Bandwidth must be positive",
 			value: "\(bandwidth)", expectedRange: "(0, +inf)")
+	}
+	// Which answer a contaminated pair got depended on the kernel. Under `.gaussian` the
+	// `nan` propagated into the weight and on into whatever averaged it. Under the three
+	// compact kernels `abs(u) <= 1` is false for a `nan` exactly as it is for a distant
+	// point, so the pair was weighted **zero** — silently dropped from the weighted
+	// agreement, with the array still one weight per pair and nothing to show a pair had
+	// been discarded. ``selectBandwidth(_:method:)`` in this same file already refuses
+	// non-finite input; this is the other half of the pair that did not.
+	guard x.allSatisfy({ $0.isFinite }), y.allSatisfy({ $0.isFinite }) else {
+		let invalid = x.filter { !$0.isFinite }.count + y.filter { !$0.isFinite }.count
+		throw BusinessMathError.dataQuality(
+			message: "Kernel weights require finite observations",
+			context: ["invalid_count": "\(invalid)"])
 	}
 
 	return zip(x, y).map { xi, yi in

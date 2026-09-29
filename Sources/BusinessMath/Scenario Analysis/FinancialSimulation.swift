@@ -198,13 +198,22 @@ extension FinancialSimulation {
 
 	/// Helper to calculate percentile from pre-sorted values.
 	///
-	/// Delegates to ``quantile(sorted:p:)``. The one difference is the empty
-	/// case: a simulation with no projections answers `0`, as it always has,
-	/// rather than the `nan` the canonical quantile returns for no data.
+	/// Delegates to ``quantile(sorted:p:)``, including for the empty case: a simulation
+	/// with no projections has no order statistics and answers `nan`.
 	@usableFromInline
 	@inline(__always)
 	internal func percentileFromSorted(_ p: Double, values: [Double]) -> Double {
-		guard !values.isEmpty else { return 0.0 }
+		// There was a `guard !values.isEmpty else { return 0.0 }` here, and the comment
+		// above used to defend it on the grounds that it was "as it always has" been. What
+		// it actually did was report the currency amount zero — a break-even quarter, a
+		// project that neither made nor lost money — for a simulation that produced no
+		// projections at all. Every caller inherited that: ``percentile(_:metric:)``,
+		// ``valueAtRisk(_:metric:)`` (a 95% VaR of 0 reads as "no downside") and both bounds
+		// of ``confidenceInterval(_:metric:)``, which collapsed to the interval [0, 0] —
+		// perfect certainty about a number nobody computed.
+		//
+		// `quantile(sorted:p:)` already answers `nan` for no data, so there is nothing left
+		// for this helper to decide.
 		return quantile(sorted: values, p: p)
 	}
 
@@ -331,7 +340,14 @@ extension FinancialSimulation {
 		let rawTail = (sampleCount * tailFraction).rounded(.up)
 		let cappedTail = Swift.min(rawTail, sampleCount)
 		let tailSize = cappedTail > 0 ? Int(cappedTail) : 0
-		guard tailSize > 0 else { return sortedValues.first ?? 0.0 }
+		// `tailSize` is zero in two unrelated situations and the `??` used to blur them. A
+		// non-positive `tailFraction` (a confidence of 1 or more) asks for a vanishing tail,
+		// and the worst single observation is the right limit of that. No projections at all
+		// is a different thing entirely: `first` is `nil`, and the old `?? 0.0` reported an
+		// expected shortfall of zero — break-even, nothing at risk — for a simulation that
+		// never ran. That is the same claim `percentileFromSorted` used to make, and it is
+		// refused here for the same reason.
+		guard tailSize > 0 else { return sortedValues.first ?? Double.nan }
 
 		// Sum the worst outcomes (already sorted, so first tailSize elements)
 		// This is much faster than filter + reduce

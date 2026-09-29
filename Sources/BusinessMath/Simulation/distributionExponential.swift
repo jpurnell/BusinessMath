@@ -84,11 +84,13 @@ extension DistributionExponential: ContinuousDistribution {
 
 	/// P(X ≤ x) = 1 − e^(−λx), zero for negative `x`.
 	public func cdf(_ x: Double) -> Double {
-		exponentialCDF(x, λ: λ)
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
+		return exponentialCDF(x, λ: λ)
 	}
 
 	/// The value at which the CDF equals `p`: −ln(1 − p) / λ.
 	public func quantile(_ p: Double) -> Double {
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
 		guard λ > 0 else { return Double.nan }
 		guard p < 1 else { return Double.infinity }
 		// log(onePlus: -p), not log(1 - p): for small p the subtraction rounds the

@@ -21,7 +21,7 @@ struct DebtInstrumentTests {
             amortizationType: .levelPayment
         )
 
-        let schedule = instrument.schedule()
+        let schedule = try instrument.schedule()
 
         // First payment
         let firstPeriod = try #require(schedule.periods.first)
@@ -70,7 +70,7 @@ struct DebtInstrumentTests {
             amortizationType: .levelPayment
         )
 
-        let schedule = instrument.schedule()
+        let schedule = try instrument.schedule()
         let firstPeriod = try #require(schedule.periods.first)
         let actualPayment = try #require(schedule.payment[firstPeriod])
 
@@ -90,7 +90,7 @@ struct DebtInstrumentTests {
             amortizationType: .levelPayment
         )
 
-        let schedule = instrument.schedule()
+        let schedule = try instrument.schedule()
 
         // Sum all interest payments
         let totalInterest = try schedule.periods.reduce(0.0) { sum, period in
@@ -126,7 +126,7 @@ struct DebtInstrumentTests {
             amortizationType: .straightLine
         )
 
-        let schedule = instrument.schedule()
+        let schedule = try instrument.schedule()
 
         // All principal payments should be equal
         for period in schedule.periods {
@@ -146,7 +146,7 @@ struct DebtInstrumentTests {
             amortizationType: .straightLine
         )
 
-        let schedule = instrument.schedule()
+        let schedule = try instrument.schedule()
 
         // Interest should decline each period
         var previousInterest = Double.infinity
@@ -168,7 +168,7 @@ struct DebtInstrumentTests {
             amortizationType: .straightLine
         )
 
-        let schedule = instrument.schedule()
+        let schedule = try instrument.schedule()
 
         // Total payment (principal + interest) should decline
         var previousPayment = Double.infinity
@@ -193,7 +193,7 @@ struct DebtInstrumentTests {
             amortizationType: .bulletPayment
         )
 
-        let schedule = instrument.schedule()
+        let schedule = try instrument.schedule()
 
         // All periods except last should have zero principal payment
         for period in schedule.periods.dropLast() {
@@ -220,7 +220,7 @@ struct DebtInstrumentTests {
             amortizationType: .bulletPayment
         )
 
-        let schedule = instrument.schedule()
+        let schedule = try instrument.schedule()
 
         // Expected semi-annual interest: 200,000 * 0.05 * 0.5 = 5,000
         let expectedInterest = principal * annualRate * 0.5
@@ -244,7 +244,7 @@ struct DebtInstrumentTests {
             amortizationType: .bulletPayment
         )
 
-        let schedule = instrument.schedule()
+        let schedule = try instrument.schedule()
 
         // Ending balance should equal principal for all periods except last
         for period in schedule.periods.dropLast() {
@@ -272,7 +272,7 @@ struct DebtInstrumentTests {
             amortizationType: .custom(schedule: customPayments)
         )
 
-        let schedule = instrument.schedule()
+        let schedule = try instrument.schedule()
 
         // Payments should match custom schedule
         for (index, period) in schedule.periods.enumerated() {
@@ -293,7 +293,7 @@ struct DebtInstrumentTests {
             amortizationType: .custom(schedule: customPayments)
         )
 
-        let schedule = instrument.schedule()
+        let schedule = try instrument.schedule()
 
         // Final balance should be zero (or close)
         let lastPeriod = try #require(schedule.periods.last)
@@ -314,7 +314,7 @@ struct DebtInstrumentTests {
             amortizationType: .levelPayment
         )
 
-        let schedule = instrument.schedule()
+        let schedule = try instrument.schedule()
 
         // Should have 12 payments
         #expect(schedule.periods.count == 12)
@@ -331,7 +331,7 @@ struct DebtInstrumentTests {
             amortizationType: .levelPayment
         )
 
-        let schedule = instrument.schedule()
+        let schedule = try instrument.schedule()
 
         // Should have 8 payments
         #expect(schedule.periods.count == 8)
@@ -348,7 +348,7 @@ struct DebtInstrumentTests {
             amortizationType: .levelPayment
         )
 
-        let schedule = instrument.schedule()
+        let schedule = try instrument.schedule()
 
         // Should have 5 payments
         #expect(schedule.periods.count == 5)
@@ -367,7 +367,7 @@ struct DebtInstrumentTests {
             amortizationType: .levelPayment
         )
 
-        let schedule = instrument.schedule()
+        let schedule = try instrument.schedule()
 
         // Each ending balance should equal next beginning balance
         for i in 0..<(schedule.periods.count - 1) {
@@ -392,7 +392,7 @@ struct DebtInstrumentTests {
             amortizationType: .levelPayment
         )
 
-        let schedule = instrument.schedule()
+        let schedule = try instrument.schedule()
 
         for period in schedule.periods {
             let beginning = try #require(schedule.beginningBalance[period])
@@ -418,7 +418,7 @@ struct DebtInstrumentTests {
             amortizationType: .levelPayment
         )
 
-        let schedule = instrument.schedule()
+        let schedule = try instrument.schedule()
 
         // All interest should be zero
         for period in schedule.periods {
@@ -447,7 +447,7 @@ struct DebtInstrumentTests {
             amortizationType: .levelPayment
         )
 
-        let schedule = instrument.schedule()
+        let schedule = try instrument.schedule()
 
         // First payment should be mostly interest
         let firstPeriod = try #require(schedule.periods.first)
@@ -471,7 +471,7 @@ struct DebtInstrumentTests {
             amortizationType: .levelPayment
         )
 
-        let schedule = instrument.schedule()
+        let schedule = try instrument.schedule()
 
         #expect(schedule.periods.count == 1)
 
@@ -493,7 +493,7 @@ struct DebtInstrumentTests {
             amortizationType: .levelPayment
         )
 
-        let schedule = instrument.schedule()
+        let schedule = try instrument.schedule()
 
         #expect(schedule.periods.count == 1)
 
@@ -516,7 +516,7 @@ struct DebtInstrumentTests {
             amortizationType: .levelPayment
         )
 
-        let schedule = instrument.schedule()
+        let schedule = try instrument.schedule()
 
         // Should handle large numbers without overflow
         let totalPrincipal = try schedule.periods.reduce(0.0) { sum, period in
@@ -562,7 +562,7 @@ struct DebtInstrumentTests {
             amortizationType: .levelPayment
         )
 
-        let schedule = instrument.schedule()
+        let schedule = try instrument.schedule()
 
         // Calculate principal ratio (principal / payment) for each period
         var previousRatio = 0.0
@@ -588,7 +588,7 @@ struct DebtInstrumentTests {
 			amortizationType: .custom(schedule: [10_000, 10_000, 10_000, 10_000, 10_000]) // too small
 		)
 
-		let schedule = instrument.schedule()
+		let schedule = try instrument.schedule()
 		let lastPeriod = try #require(schedule.periods.last)
 		let finalBalance = try #require(schedule.endingBalance[lastPeriod])
 		#expect(finalBalance > 0, "Underpaying custom schedule should leave a positive residual balance")

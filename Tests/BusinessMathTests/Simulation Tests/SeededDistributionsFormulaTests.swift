@@ -106,8 +106,8 @@ struct SeededDistributionsFormulaTests {
 	// MARK: - Geometric
 
 	@Test("DistributionGeometric: same generator seed yields identical sample stream")
-	func geometricDeterministicStream() {
-		let dist = DistributionGeometric(0.3)
+	func geometricDeterministicStream() throws {
+		let dist = try #require(DistributionGeometric(0.3))
 		var g1 = SplitMix64(seed: 42)
 		var g2 = SplitMix64(seed: 42)
 		let s1 = (0..<50).map { _ in dist.next(using: &g1) }
@@ -116,8 +116,8 @@ struct SeededDistributionsFormulaTests {
 	}
 
 	@Test("DistributionGeometric: different seeds yield different streams")
-	func geometricSeedsDiverge() {
-		let dist = DistributionGeometric(0.3)
+	func geometricSeedsDiverge() throws {
+		let dist = try #require(DistributionGeometric(0.3))
 		var g1 = SplitMix64(seed: 1)
 		var g2 = SplitMix64(seed: 2)
 		let s1 = (0..<50).map { _ in dist.next(using: &g1) }
@@ -126,14 +126,14 @@ struct SeededDistributionsFormulaTests {
 	}
 
 	@Test("DistributionGeometric: seeded samples match analytic moments")
-	func geometricSeededMoments() {
+	func geometricSeededMoments() throws {
 		// This implementation uses the "number of trials until first success"
 		// convention (support {1, 2, 3, ...}): mean = 1/p, var = (1-p)/p².
 		let p = 0.3
 		let analyticMean = 1 / p
 		let analyticVariance = (1 - p) / (p * p)
 
-		let dist = DistributionGeometric(p)
+		let dist = try #require(DistributionGeometric(p))
 		var rng = SplitMix64(seed: 99)
 		let samples = (0..<20_000).map { _ in dist.next(using: &rng) }
 		// All samples must respect the support convention (X ≥ 1).

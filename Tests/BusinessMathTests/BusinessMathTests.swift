@@ -95,9 +95,17 @@ struct UnassortedTests {
 
 	@Test("Confidence interval from CI")
 	func testConfidenceIntervalCI() {
-		let result = confidenceInterval(ci: 0, values: [0])
-		#expect(result.low == 0)
-		#expect(result.high == 0)
+		// A single observation has no *estimable* spread — `stdDev` defaults to the sample
+		// estimator, which needs `n - 1` degrees of freedom. This used to collapse to
+		// `(0, 0)`: zero uncertainty about a population mean, from one data point. A
+		// genuinely constant sample of two or more still collapses, which is the control below.
+		let fromOneObservation = confidenceInterval(ci: 0, values: [0])
+		#expect(fromOneObservation.low.isNaN, "got \(fromOneObservation.low)")
+		#expect(fromOneObservation.high.isNaN, "got \(fromOneObservation.high)")
+
+		let fromAConstantSample = confidenceInterval(ci: 0.95, values: [7.0, 7.0, 7.0])
+		#expect(fromAConstantSample.low.isEqual(to: 7.0))
+		#expect(fromAConstantSample.high.isEqual(to: 7.0))
 	}
 
 	@Test("Normal PDF")

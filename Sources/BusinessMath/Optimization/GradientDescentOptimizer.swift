@@ -312,7 +312,15 @@ public struct GradientDescentOptimizer<T>: Optimizer where T: Real & Sendable & 
 		let backward = x - h
 		// Divide by the separation actually realised rather than the one requested.
 		let realisedSpan = forward - backward
-		guard realisedSpan != T(0) else { return T(0) }
+		// `T(0)` is the one answer the note above calls the worst available: a derivative of
+		// exactly zero, which the convergence test in `optimize` — `abs(gradient) < tolerance` —
+		// reads as a stationary point. The optimizer then reported `.converged` at iteration 0,
+		// from the caller's own starting guess, having moved nowhere. Reachable from the public
+		// initialiser with `stepSize: 0`, which makes `h` zero and collapses the span at every
+		// finite `x`. `.nan` instead: the slope is not measurable with this step, `abs(.nan) <
+		// tolerance` is false, and the run ends unconverged rather than falsely converged.
+		// Contract §3.1.
+		guard realisedSpan != T(0) else { return T.nan }
 		return (f(forward) - f(backward)) / realisedSpan
 	}
 

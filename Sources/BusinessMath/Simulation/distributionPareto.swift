@@ -208,6 +208,7 @@ extension DistributionPareto: ContinuousDistribution {
 	/// `scale` is the minimum of the support — Pareto's *x*ₘ — and `shape` is the
 	/// tail index α.
 	public func cdf(_ x: Double) -> Double {
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
 		guard scale > 0, shape > 0 else { return Double.nan }
 		guard x > scale else { return 0 }
 		// Just above the lower bound the power is within an ulp of 1, so the same
@@ -222,6 +223,7 @@ extension DistributionPareto: ContinuousDistribution {
 
 	/// The value at which the CDF equals `p`: scale / (1 − p)^(1/shape).
 	public func quantile(_ p: Double) -> Double {
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
 		guard scale > 0, shape > 0 else { return Double.nan }
 		guard p < 1 else { return Double.infinity }
 		let logComplement = Double.log(onePlus: -p)

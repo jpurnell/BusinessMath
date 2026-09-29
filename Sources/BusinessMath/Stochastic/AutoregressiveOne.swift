@@ -171,18 +171,30 @@ public struct AutoregressiveOne: StochasticProcess, Sendable {
 	/// The autocorrelation at a lag, `φ^k`.
 	///
 	/// - Parameter lag: The lag in periods, non-negative.
-	/// - Returns: The correlation between `Xₜ` and `Xₜ₊lag`.
+	/// - Returns: The correlation between `Xₜ` and `Xₜ₊lag`, or `nan` for a negative lag.
 	public func autocorrelation(lag: Int) -> Double {
-		guard lag >= 0 else { return 0 }
+		// `0` is a *measurement* here — "these two observations are uncorrelated", the middle of
+		// this function's range — and it was the answer to a question the function declines to
+		// take. The sibling that shares this contract —
+		// `AutoregressiveMovingAverage.autocorrelation(lag:)` — returns `nil` for the same
+		// argument; this one cannot, so it says `nan`. Contract §3.1.
+		guard lag >= 0 else { return Double.nan }
 		return Foundation.pow(persistence, Double(lag))
 	}
 
 	/// How long a shock takes to decay to half its size, in periods.
 	///
-	/// `ln(0.5)/ln(|φ|)`. Infinite for `φ = 0`, where a shock does not persist at all
-	/// and there is nothing to decay.
+	/// `ln(0.5)/ln(|φ|)`. **Zero** for `φ = 0`, where a shock does not persist at all and is
+	/// already gone by the next period — the limit of `ln(0.5)/ln|φ|` as `φ → 0`. Infinite for
+	/// `|φ| ≥ 1`, where a shock never halves. This paragraph read "Infinite for `φ = 0`" while
+	/// the code below returned zero for it; the code is the one that matches the formula.
 	public var halfLife: Double {
 		let magnitude: Double = abs(persistence)
+		// No contamination screen: the sole initialiser is failable and requires
+		// `persistence.isFinite && abs(persistence) < 1`, and the type has no other way in, so
+		// `magnitude` is a finite value in `[0, 1)`. That also makes the `.infinity` arm below
+		// unreachable; both guards are kept as the statement of the mathematics rather than as
+		// input validation. Recorded so this is not re-audited.
 		guard magnitude > 0 else { return 0 }
 		let logMagnitude: Double = Foundation.log(magnitude)
 		// The decay rate, positive exactly when |φ| < 1 — which is both the condition

@@ -391,6 +391,10 @@ struct DebtAndWaterfallCoverageTests {
         // balance sheet stopped a quarter early.
         #expect(result.actualValue.isNaN, "an uncovered balance sheet has no leverage to report")
         #expect(result.isCompliant == false, "missing data must not clear a leverage ceiling")
+        // …and it is not a breach either. `isCompliant == false` was the whole answer until
+        // `status` existed, so a lender reading this report was told a default had occurred
+        // when the truth was that a quarter of the balance sheet was missing.
+        #expect(result.status == .notAnswerable, "an untested covenant is not a breached one")
     }
 
     @Test("A maximum debt/EBITDA covenant still evaluates a covered period")
@@ -503,7 +507,7 @@ struct DebtAndWaterfallCoverageTests {
             paymentFrequency: .quarterly,
             amortizationType: .straightLine
         )
-        let schedule = loan.schedule()
+        let schedule = try loan.schedule()
 
         // The `?? 0.0` in the three totals is unreachable: every branch of `schedule()`
         // writes all five dictionaries for every element of `periods`, and the
@@ -550,7 +554,7 @@ struct DebtAndWaterfallCoverageTests {
             paymentFrequency: .annual,
             amortizationType: .bulletPayment
         )
-        let schedule = bond.schedule()
+        let schedule = try bond.schedule()
         let n: Int = schedule.periods.count
         #expect(n == 4, "four annual coupons")
 

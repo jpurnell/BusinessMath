@@ -7,6 +7,30 @@
 
 import Foundation
 
+// MARK: - The `DateComponents ?? 0` unwraps in this file are structurally dead
+//
+// Measured 2026-09-29, not reasoned about. `Calendar.dateComponents(_:from:)` and
+// `dateComponents(_:from:to:)` populate **every component in the requested set** and return
+// `nil` only for a component that was *not* requested. Probed against `.epoch`,
+// `.distantPast`, `.distantFuture`, `Date(timeIntervalSince1970: .nan)`, `±.infinity`,
+// `±1e300` and `.greatestFiniteMagnitude`: zero `nil`s in any requested field, in both the
+// absolute and the difference form. A component left out of the set came back `nil` as
+// expected, which is the control that proves the probe could detect one.
+//
+// Every one of the 74 `?? 0` unwraps across `Period.swift` (61), `PeriodArithmetic.swift` (9)
+// and `FiscalCalendar.swift` (4) was then attributed **by variable name** to the request set
+// of the `dateComponents` call that produced it, and every one names a component that set
+// contains. So none can fire, and the class that has been scoped three times in the
+// contaminated-input campaign is empty. Do not re-audit it; do not "fix" the fallbacks.
+//
+// What the probe did turn up is a **different** defect class, and it is not a `nil` problem:
+// a `Date` built from a non-finite `TimeInterval` does not fail, it *clamps*.
+// `Date(timeIntervalSince1970: .nan)` reports year **4713** (the Julian epoch) and
+// `+.infinity` reports year **506713**. The unwrap is irrelevant there because the component
+// is present; the wrong answer was manufactured when the `Date` was constructed. That belongs
+// to whoever screens `Date` construction, and it needs its own probe.
+
+
 // MARK: - MonthDay
 
 /// A simple representation of a month and day within a year.

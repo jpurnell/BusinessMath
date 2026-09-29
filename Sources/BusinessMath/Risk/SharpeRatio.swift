@@ -52,7 +52,9 @@ public struct SharpeRatio {
 	/// - Parameters:
 	///   - values: Array of return values.
 	///   - riskFreeRate: Risk-free rate for excess return calculation (default: 0).
-	/// - Returns: Sharpe ratio value.
+	/// - Returns: Sharpe ratio value, or `nan` when there are no returns to rate. A Sharpe
+	///   of `0` is reserved for its real meaning — a return that exactly matched the
+	///   risk-free rate — and is not used to stand in for "no data".
 	///
 	/// ## Example
 	///
@@ -64,7 +66,13 @@ public struct SharpeRatio {
 		values: [T],
 		riskFreeRate: T = T(0)
 	) -> T {
-		guard !values.isEmpty else { return T(0) }
+		// This returned `T(0)`, and on the scale a caller reads a Sharpe ratio on, `0` is a
+		// statement: the strategy earned exactly the risk-free rate for the risk it took.
+		// It sorts alongside real flat strategies and above every losing one, so an empty
+		// return series ranked ahead of anything that actually lost money. `mean` and
+		// `stdDev` both answer `nan` for an empty sample; this guard was the only thing
+		// stopping that from reaching the caller.
+		guard !values.isEmpty else { return T.nan }
 
 		let meanReturn = mean(values)
 		let standardDeviation = stdDev(values)

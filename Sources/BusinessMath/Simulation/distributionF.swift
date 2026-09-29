@@ -240,12 +240,14 @@ extension DistributionF: ContinuousDistribution {
 
 	/// P(X ≤ x) for this F distribution.
 	public func cdf(_ x: Double) -> Double {
-		totalizedResult { try fCDF(f: x, df1: df1, df2: df2) }
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
+		return totalizedResult { try fCDF(f: x, df1: df1, df2: df2) }
 	}
 
 	/// The value at which the CDF equals `p`.
 	public func quantile(_ p: Double) -> Double {
-		totalizedResult { try fQuantile(p: p, df1: df1, df2: df2) }
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
+		return totalizedResult { try fQuantile(p: p, df1: df1, df2: df2) }
 	}
 
 	// Keeps its own `next(using:)`: a ratio of two chi-squared variates.

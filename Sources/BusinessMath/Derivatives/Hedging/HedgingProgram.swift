@@ -203,6 +203,11 @@ public struct HedgingProgram<T: Real & Sendable>: Sendable where T: Codable {
 	/// after accounting for hedge settlements. Returns the spot price if
 	/// production is zero for a period (division safety).
 	///
+	/// The result covers only those periods present in **both** `spotPrices` and
+	/// `totalProduction`. A period whose production is not reported has no effective price —
+	/// it is left out rather than valued as though nothing were produced, which would report
+	/// the spot price unchanged and say the hedges did nothing.
+	///
 	/// - Parameters:
 	///   - spotPrices: A time series of observed spot prices by period.
 	///   - totalProduction: A time series of total production volumes by period.
@@ -217,8 +222,22 @@ public struct HedgingProgram<T: Real & Sendable>: Sendable where T: Codable {
 
 		for period in spotPrices.periods {
 			guard let spot = spotPrices[period] else { continue }
-			let settlementAmount = settlements[period] ?? .zero
-			let production = totalProduction[period] ?? .zero
+			// Unreachable, and written as a guard rather than `?? .zero` so it stays that way:
+			// `totalSettlements` emits a row for exactly those periods of `spotPrices` whose
+			// lookup succeeds, which is the condition the line above already imposed, and a
+			// `TimeSeries`' period list *is* its value dictionary's key set
+			// (`TimeSeries.swift`: `periods = values.keys.sorted()`). If `totalSettlements`
+			// ever narrows its output, this fails loudly instead of quietly reinstating a
+			// settlement of zero — "the hedges paid nothing" for a period never asked about.
+			guard let settlementAmount = settlements[period] else { continue }
+			// `totalProduction` is supplied independently of `spotPrices`, so a period quoted
+			// here need not be reported there. `?? .zero` took the `production == .zero` branch
+			// below and reported `effective = spot` — "hedging changed nothing this period" —
+			// for a period whose production is simply unknown, making an unreported period
+			// indistinguishable from a genuinely shut-in one. Narrowed rather than fabricated:
+			// contract §3.7, matching `coverageRatio(totalProduction:)` above, which already
+			// writes this exact lookup as `guard let production = ... else { continue }`.
+			guard let production = totalProduction[period] else { continue }
 
 			let effective: T
 			if production == .zero {

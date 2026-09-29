@@ -268,10 +268,41 @@ public struct CovenantComplianceResult {
     /// The covenant that was evaluated.
     public let covenant: FinancialCovenant
 
-    /// Whether the covenant requirement is satisfied.
+    /// Whether the covenant requirement is **affirmatively satisfied**.
+    ///
+    /// `false` covers two situations that a lender treats very differently — a measured breach
+    /// and a test that could not be run. Read ``status`` to tell them apart; this property is
+    /// deliberately conservative, so nothing is certified from data that is not there.
     public let isCompliant: Bool
 
+    /// Whether the covenant passed, failed, or could not be tested.
+    ///
+    /// ## Why a `Bool` was not enough
+    ///
+    /// `calculateMetric` answers `.nan` for a period the supplied statements do not cover
+    /// (contract §3.7 — *narrow the domain, do not fabricate the observation*). `nan >= x` and
+    /// `nan <= x` are both false, so ``isCompliant`` is `false` whichever way the covenant's
+    /// threshold points, which is the right *default* — a missing quarter can no longer clear a
+    /// ceiling the way `0.0` used to. But it says the wrong thing: it reads as **"we tested this
+    /// and you failed"** when the truth is **"we could not test this"**.
+    ///
+    /// That distinction is the difference between a default notice and a data request, and it
+    /// is not recoverable from the `Bool`. It is recoverable from ``actualValue``, which is
+    /// `.nan` in exactly that case, so this property is derived rather than stored separately
+    /// and cannot drift out of step with the number beside it.
+    ///
+    /// Added rather than replacing ``isCompliant``: every existing caller keeps compiling and
+    /// keeps its conservative verdict, and `[CovenantComplianceResult].violations` still
+    /// includes an untestable covenant, because a covenant nobody can test is something a
+    /// credit officer must look at rather than something to filter away.
+    public var status: CovenantStatus {
+        if actualValue.isNaN { return .notAnswerable }
+        return isCompliant ? .compliant : .breach
+    }
+
     /// The actual value of the metric (e.g., current ratio = 2.1).
+    ///
+    /// `.nan` when the metric could not be computed for this period — see ``status``.
     public let actualValue: Double
 
     /// The required threshold value (e.g., minimum = 1.5).
@@ -280,8 +311,8 @@ public struct CovenantComplianceResult {
     /// Create a covenant compliance result.
     /// - Parameters:
     ///   - covenant: The covenant being evaluated
-    ///   - isCompliant: Whether the covenant is satisfied
-    ///   - actualValue: The calculated metric value
+    ///   - isCompliant: Whether the covenant is affirmatively satisfied
+    ///   - actualValue: The calculated metric value, or `.nan` if it could not be computed
     ///   - requiredValue: The covenant's threshold value
     public init(covenant: FinancialCovenant, isCompliant: Bool, actualValue: Double, requiredValue: Double) {
         self.covenant = covenant
@@ -289,6 +320,24 @@ public struct CovenantComplianceResult {
         self.actualValue = actualValue
         self.requiredValue = requiredValue
     }
+}
+
+/// The three outcomes of testing one financial covenant.
+///
+/// A covenant test has always had three, but ``CovenantComplianceResult/isCompliant`` is a
+/// `Bool` and could only carry two. See ``CovenantComplianceResult/status``.
+public enum CovenantStatus: String, Sendable, Hashable, CaseIterable {
+    /// The metric was computed and satisfies the requirement.
+    case compliant
+
+    /// The metric was computed and does not satisfy the requirement.
+    case breach
+
+    /// The metric could not be computed, so the covenant was not tested.
+    ///
+    /// The usual cause is a `period` the supplied income statement and balance sheet do not
+    /// cover. This is **not** a breach: no figure was measured, and none is reported.
+    case notAnswerable
 }
 
 /// Monitors and checks compliance with financial covenants.
@@ -702,14 +751,36 @@ public func bs(
 
 @available(macOS 11.0, *)
 extension Array where Element == CovenantComplianceResult {
-    /// Returns true if all covenants are compliant
+    /// Returns true if every covenant was tested **and** passed.
+    ///
+    /// A covenant that could not be tested makes this `false`, deliberately: the alternative is
+    /// to certify a clean report from statements that did not cover the period.
     public var allCompliant: Bool {
         return allSatisfy { $0.isCompliant }
     }
 
-    /// Returns only the covenant violations (non-compliant results)
+    /// Returns every covenant that is not affirmatively compliant — measured breaches **and**
+    /// covenants that could not be tested.
+    ///
+    /// Both belong on the same exception report, which is why this is not narrowed to
+    /// ``breaches``: a covenant nobody could test is a thing a credit officer must chase, not a
+    /// thing to filter away. Use ``breaches`` and ``untestable`` to separate them.
     public var violations: [CovenantComplianceResult] {
         return filter { !$0.isCompliant }
+    }
+
+    /// Returns only the covenants whose metric was computed and **failed** the requirement.
+    public var breaches: [CovenantComplianceResult] {
+        return filter { $0.status == .breach }
+    }
+
+    /// Returns only the covenants whose metric could not be computed, so no test was performed.
+    ///
+    /// These are a data problem rather than a credit event — most often a `period` the supplied
+    /// statements do not cover. Reporting them as breaches was the conflation this exists to
+    /// end.
+    public var untestable: [CovenantComplianceResult] {
+        return filter { $0.status == .notAnswerable }
     }
 
     /// Returns only the compliant covenants
@@ -722,8 +793,14 @@ extension Array where Element == CovenantComplianceResult {
         var report = "Covenant Compliance Report\n"
         report += "===========================\n\n"
 
+        // The headline distinguishes the three outcomes because the reader's next action
+        // differs: a breach starts a cure period, an untestable covenant starts a request for
+        // the missing statements. Reporting the second as "VIOLATIONS DETECTED" sent a lender
+        // after a default that had not happened.
         if allCompliant {
             report += "Status: ALL COVENANTS COMPLIANT ✓\n\n"
+        } else if breaches.isEmpty {
+            report += "Status: NOT TESTED — INSUFFICIENT DATA ⚠️\n\n"
         } else {
             report += "Status: COVENANT VIOLATIONS DETECTED ⚠️\n\n"
         }
@@ -731,14 +808,24 @@ extension Array where Element == CovenantComplianceResult {
         report += "Summary:\n"
         report += "  Total Covenants: \(count)\n"
         report += "  Compliant: \(compliant.count)\n"
-        report += "  Violations: \(violations.count)\n\n"
+        report += "  Breaches: \(breaches.count)\n"
+        report += "  Not Testable: \(untestable.count)\n\n"
 
-        if !violations.isEmpty {
+        if !breaches.isEmpty {
             report += "VIOLATIONS:\n"
-            for (index, violation) in violations.enumerated() {
+            for (index, violation) in breaches.enumerated() {
                 report += "  \(index + 1). \(violation.covenant.name)\n"
                 report += "     Actual: \(violation.actualValue.number(2))\n"
                 report += "     Required: \(violation.requiredValue.number(2))\n"
+            }
+            report += "\n"
+        }
+
+        if !untestable.isEmpty {
+            report += "NOT TESTABLE (metric could not be computed for this period):\n"
+            for (index, result) in untestable.enumerated() {
+                report += "  \(index + 1). \(result.covenant.name)\n"
+                report += "     Required: \(result.requiredValue.number(2))\n"
             }
             report += "\n"
         }

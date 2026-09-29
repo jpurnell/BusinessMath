@@ -61,7 +61,16 @@ public func confidenceInterval<T: Real>(ci: T, values: [T]) -> (low: T, high: T)
     let m = mean(values)
     let sd = stdDev(values)
 
-    // Edge case: no variance means no uncertainty - interval collapses to the mean
+    // Two different questions used to arrive at the one comparison below, and only one of them
+    // is "no variance". `stdDev` defaults to the *sample* estimator, which needs `n - 1`
+    // degrees of freedom — so a single observation has no estimable spread at all, and before
+    // `varianceS` was corrected it reported `0`, fired this guard, and collapsed the interval
+    // to `(m, m)`: **zero uncertainty about a population mean, from one data point**. A
+    // contaminated sample arrives the same way, since every comparison against a NaN is false.
+    guard !sd.isNaN else { return (low: T.nan, high: T.nan) }
+
+    // A genuinely constant sample of two or more observations does have a spread, and it is
+    // exactly zero, so the interval really does collapse to the mean. That case is unchanged.
     if sd == 0 {
         return (low: m, high: m)
     }

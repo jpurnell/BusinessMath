@@ -164,6 +164,15 @@ public struct MertonModel<T: Real & Sendable>: Sendable {
         let marketDebt = debtValue()
         let riskFreeDebt = debtFaceValue * T.exp(-riskFreeRate * maturity)
 
+        // A spread of zero says the credit is riskless — the best position in any book that
+        // ranks or thresholds spreads. `nan > T.zero` is false, so an unusable asset value or
+        // volatility (which reaches here through `equityValue()`) fell into this guard and
+        // reported exactly that, while `defaultProbability()` on the same model propagates
+        // correctly: two accessors disagreeing about one firm. Contract §3.1.
+        guard !marketDebt.isNaN, !riskFreeDebt.isNaN else { return T.nan }
+        // The non-positive arm keeps its own meaning and is left alone: it is a distressed or
+        // inconsistent balance sheet, not contaminated input, and is flagged rather than
+        // changed here.
         guard marketDebt > T.zero && riskFreeDebt > T.zero else {
             return T.zero
         }

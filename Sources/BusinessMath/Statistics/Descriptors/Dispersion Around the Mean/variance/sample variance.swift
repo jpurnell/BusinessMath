@@ -40,12 +40,21 @@ import Numerics
 ///   ```
 ///
 /// - Important:
-///   - Ensure that the `values` array contains at least two elements to perform the sample variance calculation as the formula relies on degrees of freedom (n - 1).
-///   - Equivalent of Excel VAR(xx:xx)
+///   - Fewer than two values has **no sample variance**, and the function answers `nan` rather
+///     than a number. The divisor is `n - 1`, so one observation asks for `0/0` and an empty
+///     array for `0/0` as well; neither is zero dispersion, which is what a `0` would claim.
+///     Measured consequence of the old `0`: `stdDevS([x])` was `0`, so any t-statistic dividing
+///     by it came back `±infinity` — infinitely significant evidence from a single observation.
+///     `varianceP` already behaves this way for an empty array (it divides by `count`), and a
+///     *population* of one genuinely does have zero variance, which is why the two differ.
+///   - Equivalent of Excel VAR(xx:xx), which reports `#DIV/0!` for the same inputs.
 ///
 public func varianceS<T: Real>(_ values: [T]) -> T {
+	// `n - 1` degrees of freedom means one observation leaves none. Returning `0` here read as
+	// "these values do not vary" — the confident, unremarkable answer — for a sample that
+	// cannot be dispersed at all. See the `- Important:` note above for the measured effect.
 	guard values.count > 1 else {
-		return T(0)
+		return T.nan
 	}
 	let degreesOfFreedom = values.count - 1
 	return sumOfSquaredAvgDiff(values)/T(degreesOfFreedom)

@@ -176,12 +176,14 @@ extension DistributionLogNormal: ContinuousDistribution {
 	/// way; a binding must convert, and this is the side of that conversion the
 	/// mathematics lives on.
 	public func cdf(_ x: Double) -> Double {
-		logNormalCDF(x, mean: logMean, stdDev: logStdDev)
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
+		return logNormalCDF(x, mean: logMean, stdDev: logStdDev)
 	}
 
 	/// The value at which the CDF equals `p`: `exp` of the normal quantile.
 	public func quantile(_ p: Double) -> Double {
-		Double.exp(inverseNormalCDF(p: p, mean: logMean, stdDev: logStdDev))
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
+		return Double.exp(inverseNormalCDF(p: p, mean: logMean, stdDev: logStdDev))
 	}
 
 	// Keeps its own `next(using:)`: `exp` of a Box–Muller draw, two uniforms.

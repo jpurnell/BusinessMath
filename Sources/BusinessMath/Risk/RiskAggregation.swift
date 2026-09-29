@@ -185,8 +185,17 @@ public struct RiskAggregator<T: Real & Sendable> {
 		}
 
 		let portfolioVaR = aggregateVaR(individualVaRs: individualVaRs, correlations: correlations)
-		// If portfolioVaR is zero, derivative is undefined; return 0 to avoid NaN.
-		if portfolioVaR == 0 { return 0 }
+		// The old comment here conceded the whole case and then did the opposite of what it
+		// said: "derivative is undefined; return 0 to avoid NaN". A marginal VaR of 0 is not
+		// the absence of an answer, it is the claim that adding exposure to this entity
+		// leaves portfolio risk unchanged — the one result that makes a position look free
+		// to grow. Nothing about a zero portfolio VaR supports that: √(vᵀCv) has no gradient
+		// at the origin, and the directional derivative along any increasing direction is 1,
+		// not 0. `nan` is what "undefined" is spelled as in a non-throwing floating-point API.
+		//
+		// `> 0` rather than `!= 0` so that a `nan` portfolio VaR, from a `nan` in the
+		// exposure vector, is refused here too instead of falling through to the division.
+		guard portfolioVaR > 0 else { return T.nan }
 
 		// Compute (C v)_i
 		var Cv_i: T = 0
@@ -225,7 +234,12 @@ public struct RiskAggregator<T: Real & Sendable> {
 
 		let portfolioVaR = aggregateVaR(individualVaRs: v, correlations: correlations)
 		if portfolioVaR == 0 {
-			// All components are zero if portfolio VaR is zero
+			// Triaged and kept, unlike the superficially identical branch in `marginalVaR`.
+			// Euler allocation's contract is that the components sum to the portfolio VaR,
+			// and a vector of zeros satisfies that exactly when the total is zero: there is
+			// no risk to apportion, so no entity is being credited with less than its share.
+			// A marginal VaR is a *rate* and has no such identity to fall back on, which is
+			// why that one now refuses instead.
 			return [T](repeating: 0, count: n)
 		}
 

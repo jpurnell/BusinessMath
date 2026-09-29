@@ -85,6 +85,7 @@ public struct DistributionInverseGaussian: ContinuousDistribution, Sendable {
 
 	/// P(X ≤ x), zero at or below the origin.
 	public func cdf(_ x: Double) -> Double {
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
 		guard x > 0 else { return 0 }
 		let root: Double = (lambda / x).squareRoot()
 		let ratio: Double = x * inverseMu
@@ -103,6 +104,7 @@ public struct DistributionInverseGaussian: ContinuousDistribution, Sendable {
 	/// - Parameter p: A probability in (0, 1). At or below zero the answer is zero, the
 	///   lower bound of the support; at or above one it is infinite.
 	public func quantile(_ p: Double) -> Double {
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
 		guard p > 0 else { return 0 }
 		guard p < 1 else { return .infinity }
 

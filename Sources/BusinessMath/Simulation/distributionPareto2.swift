@@ -109,8 +109,10 @@ public struct DistributionPareto2: ContinuousDistribution, Sendable {
 	/// The probability that a draw falls at or below `x`.
 	///
 	/// - Parameter x: Any value; negative returns 0, since the support starts at zero.
-	/// - Returns: A probability in [0, 1].
+	/// - Returns: A probability in [0, 1], or `nan` for a `nan` `x` — see
+	///   ``ContinuousDistribution/cdf(_:)``.
 	public func cdf(_ x: Double) -> Double {
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
 		guard x > 0 else { return 0 }
 		guard x.isFinite else { return 1 }
 		let scaled: Double = x * inverseScale
@@ -124,8 +126,9 @@ public struct DistributionPareto2: ContinuousDistribution, Sendable {
 	/// The value below which a draw falls with probability `p`.
 	///
 	/// - Parameter p: A probability in the open interval (0, 1).
-	/// - Returns: The quantile, non-negative.
+	/// - Returns: The quantile, non-negative; `nan` for a `nan` `p`.
 	public func quantile(_ p: Double) -> Double {
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
 		guard p > 0 else { return 0 }
 		guard p < 1 else { return .infinity }
 		// Same cancellation, mirrored: `(1 − p)^(−1/q) − 1` for a small `p` is a small

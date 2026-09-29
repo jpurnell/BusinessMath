@@ -133,8 +133,8 @@ struct TrappingDistributionTests {
 	/// un-trapped arithmetic would have reached is 1, which is also what both siblings return
 	/// for a non-positive argument.
 	@Test("Geometric_NegativeInfinityQuantile_ReturnsSupportMinimum")
-	func geometricNegativeInfinityQuantileReturnsSupportMinimum() {
-		let distribution = DistributionGeometric(0.3)
+	func geometricNegativeInfinityQuantileReturnsSupportMinimum() throws {
+		let distribution = try #require(DistributionGeometric(0.3))
 		#expect(distribution.quantile(-Double.infinity) == 1)
 		#expect(distribution.quantile(-1e300) == 1)
 		#expect(distribution.quantile(0) == 1)
@@ -143,9 +143,17 @@ struct TrappingDistributionTests {
 	/// A `nan` argument fails `q > 0` — every comparison against `nan` is false — and lands on
 	/// the same support minimum `DistributionNegativeBinomial` and `DistributionLogarithmic`
 	/// give it.
+	///
+	/// This is now the **discrete exception**, not the module convention. Every continuous
+	/// `quantile` answers a `nan` probability with `nan` as of `v3.0.0-alpha.7`
+	/// (`DistributionNaNContractTests`), because a NaN is no probability and clamping has no
+	/// end to clamp to. `Int` has no `nan` to return, so the three discrete quantiles keep
+	/// their support minimum — a real count, indistinguishable from the answer to a genuine
+	/// `q` near zero. It is a limitation of the return type; a caller that needs to know must
+	/// screen `q` itself. Pinned here so the difference is deliberate rather than residual.
 	@Test("Geometric_NaNQuantile_ReturnsSupportMinimum")
-	func geometricNaNQuantileReturnsSupportMinimum() {
-		let distribution = DistributionGeometric(0.3)
+	func geometricNaNQuantileReturnsSupportMinimum() throws {
+		let distribution = try #require(DistributionGeometric(0.3))
 		#expect(distribution.quantile(Double.nan) == 1)
 	}
 
@@ -153,8 +161,8 @@ struct TrappingDistributionTests {
 	/// the 0.9 quantile is 4. Certainty is unreachable in finitely many trials, which the
 	/// existing `Int.max` answer records.
 	@Test("Geometric_CleanQuantiles_Unchanged")
-	func geometricCleanQuantilesUnchanged() {
-		let distribution = DistributionGeometric(0.5)
+	func geometricCleanQuantilesUnchanged() throws {
+		let distribution = try #require(DistributionGeometric(0.5))
 		#expect(distribution.quantile(0.9) == 4)
 		#expect(distribution.quantile(0.5) == 1)
 		#expect(distribution.quantile(1.0) == Int.max, "no finite trial count reaches certainty")
@@ -222,12 +230,15 @@ struct TrappingDistributionTests {
 		// The upper boundary seed is inside the documented domain and stays usable:
 		// `(1 − u)` is zero, so the second branch returns `high` exactly.
 		//
-		// The lower boundary is deliberately NOT asserted here. `u == 0` fails the
-		// `u > 0 && u < fc` condition and takes the *second* branch, returning
-		// `high − √((high − low)(high − base))` = 2.9289… rather than `low`. That is a
-		// separate defect in the same family — a condition that is correct while the value
-		// it produces is wrong — and it is out of scope for this trap fix, so pinning it
-		// either way would be writing down an answer nobody has decided.
+		// The lower boundary was left unasserted here when this file was written, because
+		// `u == 0` failed the `u > 0 && u < fc` condition, took the *second* branch and
+		// returned `high − √((high − low)(high − base))` = 2.9289… rather than `low` — a
+		// separate defect in the same family, and one nobody had decided. Phase 4 of the
+		// contaminated-input sweep decided it: the `u > 0` clause guarded nothing (`uSeed` is
+		// screened to [0, 1] three guards earlier) and excluded only exactly zero, so it was
+		// removed and F⁻¹(0) is now the lower bound, which is also what the Metal kernel has
+		// always computed. Asserted in `Phase4SimulationTests`, alongside the two mode
+		// placements where the old answer was even further off.
 		let atOne: Double = triangularDistribution(low: 0.0, high: 10.0, base: 5.0, 1.0)
 		#expect(atOne.isEqual(to: 10.0), "got \(atOne)")
 	}

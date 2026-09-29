@@ -173,23 +173,42 @@ struct ZeroTrendSeasonalityTests {
 		}
 	}
 
-	/// The two methods must agree, and they do — but not for the reason a reader might assume.
-	/// A textbook additive decomposition is perfectly well defined across a zero crossing,
-	/// because it never divides by the trend. This implementation refuses under `.additive`
-	/// because its additive seasonal component is not computed additively: it re-centres the
-	/// multiplicative indices (`index - mean(indices)`) and so inherits every ratio they were
-	/// built from. Computing a genuinely additive index would lift the restriction for that
-	/// method and change every additive result the function has ever returned, which is an API
-	/// decision rather than a guard.
-	@Test(
-		"Decompose_ZeroCrossingTrend_RefusesUnderBothMethods",
-		arguments: [DecompositionMethod.additive, DecompositionMethod.multiplicative]
-	)
-	func decomposeZeroCrossingTrendRefusesUnderBothMethods(method: DecompositionMethod) {
+	/// **Changed 2026-09-29.** The two methods used to agree here, and the earlier version of
+	/// this test was parameterised over both to assert that. They agreed for a reason that was
+	/// never about additive decomposition: the additive seasonal component was
+	/// ``seasonalIndices(values:periodsPerYear:)`` re-centred (`index - mean(indices)`), so it
+	/// inherited every ratio those indices were built from and was as undefined across a zero
+	/// crossing as they are.
+	///
+	/// That component is now the per-season mean of `value - trend`, which divides by nothing,
+	/// so `.additive` decomposes this series and recovers its planted offsets exactly —
+	/// `Phase4StatementsAndSeriesTests.additiveDecompositionAcrossZeroCrossingRecoversPlantedOffsets`
+	/// pins the numbers. The multiplicative refusal below is unchanged and is the one this file
+	/// exists for.
+	@Test("Decompose_ZeroCrossingTrend_StillRefusesUnderMultiplicative")
+	func decomposeZeroCrossingTrendStillRefusesUnderMultiplicative() {
 		let data = series(zeroCrossingTrend)
 		#expect(throws: SeasonalityError.self) {
-			_ = try decomposeTimeSeries(timeSeries: data, periodsPerYear: 4, method: method)
+			_ = try decomposeTimeSeries(timeSeries: data, periodsPerYear: 4, method: .multiplicative)
 		}
+	}
+
+	/// The other half of the same delta: the additive path no longer refuses, and this is where
+	/// a reader of this file finds out. `seasonalIndices` itself is untouched and still refuses
+	/// — see `zeroCrossingTrendRefusesRatherThanReportingAPattern` above — so the two are now
+	/// deliberately different, which is the thing most likely to be "tidied" back.
+	@Test("Decompose_ZeroCrossingTrend_NoLongerRefusesUnderAdditive")
+	func decomposeZeroCrossingTrendNoLongerRefusesUnderAdditive() throws {
+		let data = series(zeroCrossingTrend)
+		let decomposition = try decomposeTimeSeries(timeSeries: data, periodsPerYear: 4, method: .additive)
+		#expect(decomposition.seasonal.count == zeroCrossingTrend.count,
+				"one seasonal value per observation")
+
+		// The components sum to zero, which is the property that makes them additive indices
+		// rather than re-centred ratios.
+		let firstCycle: [Double] = Array(decomposition.seasonal.valuesArray[0..<4])
+		let cycleSum: Double = firstCycle.reduce(0.0, +)
+		#expect(abs(cycleSum) < 1e-9, "centred additive indices must sum to zero, got \(cycleSum)")
 	}
 
 	@Test(

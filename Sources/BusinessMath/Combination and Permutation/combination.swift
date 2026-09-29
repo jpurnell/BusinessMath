@@ -34,6 +34,11 @@ import Foundation
 /// - SeeAlso: ``combinationChecked(_:c:)``
 /// - SeeAlso: ``combinationDouble(_:c:)``
 public func combination(_ n: Int, c r: Int) -> Int {
+    // Triaged and kept. For `r > n` the zero is exact — there are no ways to choose more
+    // elements than the set holds. For negative `n` or `r` it is a sentinel, and a wrong
+    // one in principle; it stays only because `Int` has no value meaning "no answer" and
+    // ``combinationChecked(_:c:)`` throws for callers who need the distinction. The
+    // `Double` overloads, which do have `nan`, no longer conflate the two.
     guard n >= 0, r >= 0, r <= n else { return 0 }
     // Optimize: C(n, r) == C(n, n-r), use smaller r for efficiency
     let k = min(r, n - r)
@@ -108,14 +113,25 @@ public func combinationChecked(_ n: Int, c r: Int) throws -> Int {
 /// - Parameters:
 ///   - n: The total number of elements.
 ///   - r: The number of elements to choose.
-/// - Returns: The number of combinations as a Double.
+/// - Returns: The number of combinations as a Double; `0` when `r > n`, which is exact;
+///   `.nan` for negative `n` or `r`, where the count is undefined.
 ///
 /// ## Example
 /// ```swift
 /// let result = combinationDouble(100, c: 50)  // ~1.0e29
 /// ```
 public func combinationDouble(_ n: Int, c r: Int) -> Double {
-    guard n >= 0, r >= 0, r <= n else { return 0 }
+    // One guard used to cover both of the following, returning `0` for either. Only one of
+    // them is a count. `combination(_:c:)` has the same conflation and keeps it, because an
+    // `Int` has no value that means "no answer" and ``combinationChecked(_:c:)`` exists for
+    // callers who need the distinction — but this function returns `Double`, so nothing
+    // forces it to describe an undefined query as a quantity of zero arrangements.
+    guard n >= 0, r >= 0 else { return .nan }
+
+    // Exact, not a sentinel: there are genuinely zero ways to choose more elements than the
+    // set contains, which is why this one keeps its zero.
+    guard r <= n else { return 0 }
+
     if r == 0 || r == n { return 1 }
 
     // Use log-space to avoid overflow
@@ -131,9 +147,16 @@ public func combinationDouble(_ n: Int, c r: Int) -> Double {
 /// - Parameters:
 ///   - n: The total number of elements.
 ///   - r: The number of elements to choose.
-/// - Returns: The natural logarithm of C(n, r).
+/// - Returns: The natural logarithm of C(n, r); `-.infinity` when `r > n`, which is
+///   exactly ln(0); `.nan` for negative `n` or `r`, where the count is undefined.
 public func logCombination(_ n: Int, c r: Int) -> Double {
-    guard n >= 0, r >= 0, r <= n else { return -.infinity }
+    // Split for the same reason as ``combinationDouble(_:c:)``: `-.infinity` is the exact
+    // logarithm of the exact count zero, so it is the right answer for `r > n` and the
+    // wrong one for a query that has no count at all. Exponentiated, the old shared answer
+    // reported negative inputs as "zero ways" rather than as a question it could not take.
+    guard n >= 0, r >= 0 else { return .nan }
+    guard r <= n else { return -.infinity } // ln(0)
+
     if r == 0 || r == n { return 0 } // ln(1) = 0
 
     return logFactorial(n) - logFactorial(r) - logFactorial(n - r)

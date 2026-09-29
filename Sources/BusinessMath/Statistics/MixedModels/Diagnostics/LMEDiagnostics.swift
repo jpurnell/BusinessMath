@@ -143,8 +143,9 @@ public func qqNormalData<T: Real>(
 /// - Parameters:
 ///   - result: A fitted ``RandomInterceptResult``.
 ///   - grouping: The ``GroupingFactor`` used to fit the model.
-/// - Returns: An array of influence values, one per group.
-///   Returns an empty array if the denominator is not positive.
+/// - Returns: An array of influence values, one per group. Every group is reported: a
+///   group whose influence cannot be computed carries `nan` rather than being omitted,
+///   so the result stays indexable by group number.
 ///
 /// ```swift
 /// let X = try DenseMatrix([[25.0], [30.0], [35.0], [25.0], [30.0], [35.0]])
@@ -163,7 +164,16 @@ public func groupInfluence<T: Real>(
 	let totalVar = result.varianceRandom + result.varianceResidual
 	let p = T(result.fixedEffectsCount)
 	let denominator = p * totalVar
-	guard denominator > T.zero else { return [] }
+	// Two things arrive through this one comparison and neither is "no group is influential".
+	// A `nan` variance component — a diverged fit — fails `> 0` exactly as a zero one does,
+	// and the empty array this used to return is what a caller following the documented
+	// recipe ("flag groups where influence > 4 / groupCount") iterates over: nothing to flag,
+	// which reads as a clean model rather than an unusable one. An empty result also breaks
+	// the one-value-per-group invariant the caller indexes against. Report every group, and
+	// mark the ones that have no answer.
+	guard denominator > T.zero else {
+		return [T](repeating: T.nan, count: grouping.groupCount)
+	}
 
 	return (0..<grouping.groupCount).map { g in
 		let indices = grouping.groupIndices[g]
@@ -265,7 +275,8 @@ public func nakagawaR2<T: Real>(
 ///   - residuals: Residual values, one per observation.
 ///   - grouping: The ``GroupingFactor`` defining group membership.
 /// - Returns: The average lag-1 autocorrelation across groups.
-///   Returns zero if no groups have at least 2 observations.
+///   Returns zero if no groups have at least 2 observations, and `nan` if any residual is
+///   not finite — an unmeasurable series is not a series with no dependence in it.
 ///
 /// ```swift
 /// let X = try DenseMatrix([[25.0], [30.0], [35.0], [25.0], [30.0], [35.0]])
@@ -281,6 +292,16 @@ public func nakagawaR2<T: Real>(
 public func withinGroupAutocorrelation<T: Real>(
 	residuals: [T], grouping: GroupingFactor
 ) -> T where T: BinaryFloatingPoint {
+	// A `nan` residual makes this group's `denominator` `nan`, which fails `> 0` exactly as a
+	// constant group does — so the group was *skipped* rather than reported, and it vanished
+	// from the average with nothing to say it had. With every group contaminated the count
+	// fell to zero and the function returned `T.zero`, which its own documentation reads as
+	// "no temporal dependence within groups": the most reassuring thing a residual
+	// autocorrelation diagnostic can say, computed from residuals it could not measure at all.
+	// The `denominator > 0` skip below is right for a genuinely constant group and is left
+	// alone; this separates contamination from it.
+	guard residuals.allSatisfy({ $0.isFinite }) else { return T.nan }
+
 	var totalCorr = T.zero
 	var eligibleGroups = 0
 

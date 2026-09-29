@@ -350,7 +350,14 @@ public struct CreditCurve<T: Real> where T: Sendable {
         let periods = spreads.periods
 
         // Handle edge cases
-        guard !values.isEmpty else { return T(0) }
+        // A spread of zero says this name trades flat to the risk-free curve — the safest row
+        // on any screen that ranks or thresholds spreads — for a curve that carries no quotes
+        // at all. Contract §3.1.
+        guard !values.isEmpty else { return T.nan }
+        // Every comparison below is false for a NaN maturity, so the interpolation search fell
+        // through all three arms to the final `return values[values.count - 1]` and answered an
+        // unusable query with the longest-tenor quote, as a confident finite number.
+        guard !maturity.isNaN else { return T.nan }
         if values.count == 1 { return values[0] }
 
         // Convert periods to years for interpolation

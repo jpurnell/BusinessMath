@@ -136,7 +136,7 @@ struct DistributionRetrofitTests {
 
 	@Test("Geometric conforms, in the trial-count parameterisation")
 	func geometric() throws {
-		let distribution = DistributionGeometric(0.3)
+		let distribution = try #require(DistributionGeometric(0.3))
 
 		// The support starts at 1, not 0 — the trial the first success lands on.
 		#expect(distribution.pmf(0) == 0)

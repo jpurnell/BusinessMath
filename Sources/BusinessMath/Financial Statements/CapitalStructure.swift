@@ -299,8 +299,11 @@ public struct CapitalStructure {
     public var debtRatio: Double {
         // Zero leverage is the safest reading on any covenant or credit screen, so an
         // unvaluable capital structure reported as the most conservatively financed in
-        // the book. The identical guard in `equityRatio` below is *correct* — zero
-        // equity is the alarming end — and the two must not be tidied into agreement.
+        // the book. The identical `> 0` guard in `equityRatio` below stays as it is — the
+        // two must not be tidied into agreement, because a genuinely zero-capital firm is
+        // correctly `0.0` on both. What `equityRatio` was missing is this `isNaN` line,
+        // not that one: without it the pair disagreed about whether an answer exists at
+        // all, one returning `.nan` and the other a confident `0.0`.
         guard !totalValue.isNaN else { return Double.nan }
         guard totalValue > 0 else { return 0.0 }
         return debtValue / totalValue
@@ -308,6 +311,15 @@ public struct CapitalStructure {
 
     /// Proportion of financing from equity (E / (D+E))
     public var equityRatio: Double {
+        // The `> 0` guard below stays exactly as it is — see `debtRatio`, and do not tidy the
+        // two into agreement. What was missing is this *different* guard for a *different*
+        // condition. `nan > 0` is false, so an unvaluable capital structure fell through to
+        // `0.0` and reported **zero equity — financed entirely by debt**, the most alarming
+        // reading on any solvency screen, as a measurement. Its sibling `debtRatio` answered
+        // `.nan` for the same object in the same breath, so the pair contradicted each other:
+        // one said "unknown", the other said "certainly none", and their sum was neither 1 nor
+        // consistent. A genuinely zero-capital firm still gets `0.0` from the guard below.
+        guard !totalValue.isNaN else { return Double.nan }
         guard totalValue > 0 else { return 0.0 }
         return equityValue / totalValue
     }

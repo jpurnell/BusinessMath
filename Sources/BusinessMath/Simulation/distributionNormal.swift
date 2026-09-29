@@ -132,12 +132,14 @@ extension DistributionNormal: ContinuousDistribution {
 
 	/// P(X ≤ x) for this normal.
 	public func cdf(_ x: Double) -> Double {
-		normalCDF(x: x, mean: mean, stdDev: stdDev)
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
+		return normalCDF(x: x, mean: mean, stdDev: stdDev)
 	}
 
 	/// The value at which the CDF equals `p`.
 	public func quantile(_ p: Double) -> Double {
-		inverseNormalCDF(p: p, mean: mean, stdDev: stdDev)
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
+		return inverseNormalCDF(p: p, mean: mean, stdDev: stdDev)
 	}
 
 	// `next(using:)` is deliberately *not* inherited from the protocol. This type

@@ -64,7 +64,16 @@ public struct ConvergenceMetrics: Sendable, Codable {
 
     /// Calculate improvement from a previous metrics
     public func improvementFrom(_ previous: ConvergenceMetrics) -> Double {
-        guard previous.objectiveValue != 0 else { return 0 }
+        // A relative improvement needs a non-zero baseline. Returning `0` claimed "the
+        // objective did not move", and `ConvergenceDetector.hasConverged` reads a small average
+        // improvement as `improvementSmall` — so an objective that went from 0.0 to 5.0, an
+        // unbounded relative change in the wrong direction, was reported as converged. Only a
+        // baseline and a current value that are *both* exactly zero have genuinely not moved.
+        // `.nan` for the rest: `nan < improvementThreshold` is false, so the detector declines
+        // to call it converged instead of being told it did. Contract §3.1.
+        guard previous.objectiveValue != 0 else {
+            return objectiveValue == 0 ? 0 : Double.nan
+        }
         return abs((previous.objectiveValue - objectiveValue) / previous.objectiveValue)
     }
 

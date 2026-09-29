@@ -57,7 +57,9 @@ public struct ValueAtRisk {
 	/// - Parameters:
 	///   - values: Array of return values.
 	///   - confidenceLevel: Confidence level (e.g., 0.95 for 95%, 0.99 for 99%).
-	/// - Returns: VaR value (negative indicates loss threshold).
+	/// - Returns: VaR value (negative indicates loss threshold), or `nan` for a sample this
+	///   function cannot evaluate — one that is empty, or one containing `nan`. A VaR of
+	///   `0` is reserved for its real meaning, a threshold loss of nothing.
 	///
 	/// ## Example
 	///
@@ -69,7 +71,13 @@ public struct ValueAtRisk {
 		values: [T],
 		confidenceLevel: T
 	) -> T {
-		guard !values.isEmpty else { return T(0) }
+		// This returned `T(0)`, and on the scale a risk screen reads, a VaR of zero is the
+		// single most reassuring number available: at this confidence the portfolio loses
+		// nothing. A position with no return history was reported as riskless and sorted
+		// ahead of every position that had one. It was also inconsistent with the very next
+		// guard, which already refuses an unsortable sample — "no data" and "unusable data"
+		// are both input this function cannot evaluate, and only one of them said so.
+		guard !values.isEmpty else { return T.nan }
 
 		// A sample containing `nan` cannot be sorted, so there is no order statistic to
 		// interpolate between. Propagating `nan` matches `mean`, `median`, `stdDev` and

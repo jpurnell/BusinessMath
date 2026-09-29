@@ -87,6 +87,7 @@ public struct DistributionLogLogistic: ContinuousDistribution, Sendable {
 
 	/// P(X ≤ x), zero at or below `location`.
 	public func cdf(_ x: Double) -> Double {
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
 		guard x > location else { return 0 }
 		let standardised: Double = (x - location) * inverseScale
 		let raised: Double = Foundation.pow(standardised, -shape)
@@ -98,6 +99,7 @@ public struct DistributionLogLogistic: ContinuousDistribution, Sendable {
 	/// - Parameter p: A probability in (0, 1). At or below zero the answer is
 	///   `location`; at or above one it is infinite.
 	public func quantile(_ p: Double) -> Double {
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
 		guard p > 0 else { return location }
 		guard p < 1 else { return .infinity }
 		let odds: Double = p / (1 - p)
@@ -184,6 +186,7 @@ public struct DistributionReciprocal: ContinuousDistribution, Sendable {
 
 	/// P(X ≤ x), zero below the support and one above it.
 	public func cdf(_ x: Double) -> Double {
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
 		guard x > min else { return 0 }
 		guard x < max else { return 1 }
 		let position: Double = Foundation.log(x * inverseMin)
@@ -195,6 +198,7 @@ public struct DistributionReciprocal: ContinuousDistribution, Sendable {
 	/// - Parameter p: A probability. Values at or outside the endpoints clamp to the
 	///   bounds, which are finite here.
 	public func quantile(_ p: Double) -> Double {
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
 		guard p > 0 else { return min }
 		guard p < 1 else { return max }
 		return min * Foundation.exp(p * logRange)

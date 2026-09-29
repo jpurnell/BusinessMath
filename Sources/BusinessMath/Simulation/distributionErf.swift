@@ -74,12 +74,19 @@ public struct DistributionErf: ContinuousDistribution, Sendable {
 	/// The probability that a draw falls at or below `x`.
 	///
 	/// - Parameter x: Any value.
-	/// - Returns: A probability in [0, 1].
-	public func cdf(_ x: Double) -> Double { normal.cdf(x) }
+	/// - Returns: A probability in [0, 1], or `nan` for a `nan` `x` — see
+	///   ``ContinuousDistribution/cdf(_:)``.
+	public func cdf(_ x: Double) -> Double {
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
+		return normal.cdf(x)
+	}
 
 	/// The value below which a draw falls with probability `p`.
 	///
 	/// - Parameter p: A probability in the open interval (0, 1).
-	/// - Returns: The quantile.
-	public func quantile(_ p: Double) -> Double { normal.quantile(p) }
+	/// - Returns: The quantile; `nan` for a `nan` `p`.
+	public func quantile(_ p: Double) -> Double {
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
+		return normal.quantile(p)
+	}
 }

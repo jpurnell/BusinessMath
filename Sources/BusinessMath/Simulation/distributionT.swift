@@ -215,12 +215,14 @@ extension DistributionT: ContinuousDistribution {
 	/// than trapping if it somehow does — the same signal the free-function
 	/// distributions use for invalid input.
 	public func cdf(_ x: Double) -> Double {
-		totalizedResult { try tCDF(t: x, df: degreesOfFreedom) }
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
+		return totalizedResult { try tCDF(t: x, df: degreesOfFreedom) }
 	}
 
 	/// The value at which the CDF equals `p`.
 	public func quantile(_ p: Double) -> Double {
-		totalizedResult { try tQuantile(p: p, df: degreesOfFreedom) }
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
+		return totalizedResult { try tQuantile(p: p, df: degreesOfFreedom) }
 	}
 
 	// Keeps its own `next(using:)`: a *t* variate is a normal over the root of a

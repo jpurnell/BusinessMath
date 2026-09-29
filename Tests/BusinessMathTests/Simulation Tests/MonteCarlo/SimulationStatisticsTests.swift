@@ -144,10 +144,14 @@ struct SimulationStatisticsTests {
 		#expect(abs(stats.variance - 0.0) < 1e-10, "Variance should be 0 for single value")
 		#expect(stats.skewness.isNaN, "Skewness is undefined (NaN) when variance is 0")
 
-		// CI should collapse to the single value
+		// The CI does NOT collapse to the single value. `variance` and `stdDev` above are the
+		// *population* figures and are genuinely 0 for one observation, but a confidence
+		// interval estimates a population mean from a sample, and one observation supports no
+		// such estimate. Collapsing to (42, 42) claimed the population mean is exactly 42 with
+		// certainty. Same reasoning as the `skewness.isNaN` assertion six lines above.
 		let ci95 = stats.ci95
-		#expect(abs(ci95.low - 42.0) < 1e-10, "CI low should be exactly 42")
-		#expect(abs(ci95.high - 42.0) < 1e-10, "CI high should be exactly 42")
+		#expect(ci95.low.isNaN, "CI low should be NaN for a single observation; got \(ci95.low)")
+		#expect(ci95.high.isNaN, "CI high should be NaN for a single observation; got \(ci95.high)")
 	}
 
 	@Test("SimulationStatistics with all same values")

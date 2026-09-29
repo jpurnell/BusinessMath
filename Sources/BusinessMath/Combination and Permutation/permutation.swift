@@ -34,6 +34,9 @@ import Foundation
 /// - SeeAlso: ``permutationChecked(_:p:)``
 /// - SeeAlso: ``permutationDouble(_:p:)``
 public func permutation(_ n: Int, p r: Int) -> Int {
+    // Triaged and kept, for the reasons given on ``combination(_:c:)``: exact for `r > n`,
+    // a sentinel for negative inputs that `Int` gives no better alternative to, with
+    // ``permutationChecked(_:p:)`` available to throw instead.
     guard n >= 0, r >= 0, r <= n else { return 0 }
     if r == 0 { return 1 }
 
@@ -105,14 +108,23 @@ public func permutationChecked(_ n: Int, p r: Int) throws -> Int {
 /// - Parameters:
 ///   - n: The total number of elements.
 ///   - r: The number of elements to arrange.
-/// - Returns: The number of permutations as a Double.
+/// - Returns: The number of permutations as a Double; `0` when `r > n`, which is exact;
+///   `.nan` for negative `n` or `r`, where the count is undefined.
 ///
 /// ## Example
 /// ```swift
 /// let result = permutationDouble(100, p: 50)  // ~3.07e93
 /// ```
 public func permutationDouble(_ n: Int, p r: Int) -> Double {
-    guard n >= 0, r >= 0, r <= n else { return 0 }
+    // See ``combinationDouble(_:c:)``: an undefined query and a count of zero arrangements
+    // shared one guard and one answer. `permutation(_:p:)` keeps the conflation because an
+    // `Int` cannot express refusal and ``permutationChecked(_:p:)`` throws for callers who
+    // need it; this `Double` overload has no such excuse.
+    guard n >= 0, r >= 0 else { return .nan }
+
+    // Exact: there are zero ways to arrange more elements than the set contains.
+    guard r <= n else { return 0 }
+
     if r == 0 { return 1 }
 
     // Use log-space: ln(P(n,r)) = ln(n!) - ln((n-r)!)
@@ -128,9 +140,14 @@ public func permutationDouble(_ n: Int, p r: Int) -> Double {
 /// - Parameters:
 ///   - n: The total number of elements.
 ///   - r: The number of elements to arrange.
-/// - Returns: The natural logarithm of P(n, r).
+/// - Returns: The natural logarithm of P(n, r); `-.infinity` when `r > n`, which is
+///   exactly ln(0); `.nan` for negative `n` or `r`, where the count is undefined.
 public func logPermutation(_ n: Int, p r: Int) -> Double {
-    guard n >= 0, r >= 0, r <= n else { return -.infinity }
+    // See ``logCombination(_:c:)``: `-.infinity` is the exact logarithm of an exact zero
+    // and belongs to `r > n` alone, not to inputs that have no count to take a logarithm of.
+    guard n >= 0, r >= 0 else { return .nan }
+    guard r <= n else { return -.infinity } // ln(0)
+
     if r == 0 { return 0 } // ln(1) = 0
 
     return logFactorial(n) - logFactorial(n - r)

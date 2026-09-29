@@ -49,6 +49,10 @@ public let maxFactorialInt = 20
 ///   - ``combination(_:c:)``
 ///   - ``permutation(_:p:)``
 public func factorial(_ n: Int) -> Int {
+    // Triaged and kept. `0` is not a factorial of anything — every n! is at least 1 — so it
+    // reads as a sentinel rather than as a plausible count, and ``factorialChecked(_:)``
+    // throws for callers who need to be certain. It stays only because `Int` offers nothing
+    // better; ``factorialDouble(_:)`` and ``logFactorial(_:)`` answer `nan` here instead.
     guard n >= 0 else { return 0 }
     precondition(
         n <= maxFactorialInt,
@@ -101,14 +105,26 @@ public func factorialChecked(_ n: Int) throws -> Int {
 /// For n ≤ 170, computes exactly.
 ///
 /// - Parameter n: The number for which to compute the factorial.
-/// - Returns: The factorial as a Double, or `.infinity` for very large n.
+/// - Returns: The factorial as a Double, `.infinity` for very large n, or `.nan` for
+///   negative n, where the factorial is undefined.
 ///
 /// ## Example
 /// ```swift
 /// let result = factorialDouble(100)  // ~9.33e157
 /// ```
 public func factorialDouble(_ n: Int) -> Double {
-    guard n >= 0 else { return 0 }
+    // This returned `0`, and `0` is a number a factorial never takes: n! ≥ 1 for every n
+    // in the domain, so a caller reading `0` back was being handed an impossible count
+    // rather than a refusal. Unlike the `Int`-returning ``factorial(_:)``, whose zero is a
+    // sentinel only because ``factorialChecked(_:)`` exists to throw instead, this
+    // function returns `Double` and can simply say it has no answer.
+    //
+    // What makes it a defect rather than a convention: ``logFactorial(_:)`` answered the
+    // same question with `0` too — but `0` in log-space means n! = 1. The two functions
+    // disagreed about (-3)! by a factor of one over zero, which is how you can tell
+    // neither was reporting a considered value. Γ has a pole at every non-positive
+    // integer, so `nan` is the honest answer in both.
+    guard n >= 0 else { return .nan }
     guard n > 1 else { return 1 }
 
     // Double can represent up to about 170!
@@ -128,9 +144,14 @@ public func factorialDouble(_ n: Int) -> Double {
 /// This avoids overflow by working in log-space.
 ///
 /// - Parameter n: The number for which to compute ln(n!).
-/// - Returns: The natural logarithm of n!.
+/// - Returns: The natural logarithm of n!, or `.nan` for negative n, where the factorial
+///   — and so its logarithm — is undefined.
 public func logFactorial(_ n: Int) -> Double {
-    guard n >= 0 else { return 0 }
+    // See ``factorialDouble(_:)``. This returned `0`, which in log-space is not "no
+    // answer" but the definite claim that n! = 1 — the same value it reports for 0! and
+    // 1!, so `logFactorial(-3)` was indistinguishable from `logFactorial(1)`. Γ has a pole
+    // at every non-positive integer; there is no finite logarithm to report.
+    guard n >= 0 else { return .nan }
     guard n > 1 else { return 0 }  // ln(1) = 0
 
     // ln(n!) is ln Γ(n+1) exactly, and `logGamma` is correctly rounded.

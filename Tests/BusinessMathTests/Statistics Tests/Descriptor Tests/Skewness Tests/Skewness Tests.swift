@@ -98,22 +98,26 @@ struct SkewnessEmptyArrayTests {
 	func skewS_empty_array() {
 		let values: [Double] = []
 		let result = skewS(values)
-		#expect(result.isNaN || abs(result - 0.0) < 1e-6)
+		// Was `isNaN || abs(result) < 1e-6`, which no implementation can fail. It passed while
+		// this returned exactly 0 — "perfectly symmetric" for a sample with no shape.
+		#expect(result.isNaN, "got \(result)")
 	}
 
 	@Test("skewS handles single element")
 	func skewS_single_element() {
 		let values = [5.0]
 		let result = skewS(values)
-		// Single element has undefined skewness (stdDev = 0)
-		#expect(result.isNaN || abs(result - 0.0) < 1e-6)
+		// Single element has undefined skewness: the bias correction divides by (n-1)(n-2).
+		#expect(result.isNaN, "got \(result)")
 	}
 
 	@Test("skewS handles two elements")
 	func skewS_two_elements() {
 		let values = [1.0, 2.0]
 		let result = skewS(values)
-		// Two elements may have undefined skewness depending on implementation
-		#expect(result.isNaN || result.isFinite)
+		// Two points are always symmetric about their own mean, so this reached `nan` by
+		// coincidence before the guard and states it deliberately after. "May be undefined
+		// depending on implementation" admitted both answers and so asserted neither.
+		#expect(result.isNaN, "got \(result)")
 	}
 }

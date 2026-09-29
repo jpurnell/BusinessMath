@@ -91,8 +91,28 @@ public struct DistributionGeometric: DistributionRandom, Sendable {
 	let p: Double
 
 	/// Creates a geometric distribution generator.
-	/// - Parameter probabilityOfSuccess: Success probability per trial (0 < p ≤ 1)
-	public init(_ probabilityOfSuccess: Double) {
+	///
+	/// Failable since `v3.0.0-alpha.7`. It previously stored whatever it was handed, alone
+	/// among its family: ``DistributionNegativeBinomial/init(successes:p:)``,
+	/// `DistributionLogarithmic.init(_:)` and ``DistributionPoisson/init(lambda:)`` all
+	/// screen their parameter and return `nil`. The cost of the difference was not
+	/// theoretical — it was three separate invented answers further down this file, one per
+	/// method, because each had to decide for itself what an unusable `p` meant, and they
+	/// could not agree: `nan` from ``pmf(_:)`` and ``cdf(_:)``, `Int.max` from
+	/// ``quantile(_:)`` because `Int` has no `nan`, and a `0` before that which was outside
+	/// the distribution's own support. Screening once at the door is the only place where
+	/// one answer covers all of them.
+	///
+	/// This is source-breaking, and deliberately taken inside the `3.0.0` pre-release
+	/// window: SPM excludes pre-releases from `from:` ranges, so it reaches only a caller
+	/// naming an alpha exactly. After `3.0.0` it would have to wait for `4.0.0`.
+	///
+	/// - Parameter probabilityOfSuccess: Success probability per trial, in (0, 1]. A `p` of
+	///   exactly one is the degenerate distribution whose every draw is the first trial.
+	/// - Returns: `nil` if `p` is zero, negative, above one, infinite or `nan` — none of
+	///   which names a Bernoulli trial to count.
+	public init?(_ probabilityOfSuccess: Double) {
+		guard probabilityOfSuccess > 0, probabilityOfSuccess <= 1 else { return nil }
 		self.p = probabilityOfSuccess
 	}
 
@@ -130,8 +150,17 @@ extension DistributionGeometric: DiscreteDistribution {
 	/// on which the first success occurs, matching the sampler at the top of this
 	/// file. The failure-count form used by `scipy.stats.geom` shifted by one, and by
 	/// Frontline's `PsiGeometric`, is this minus one — a binding must not assume.
+	///
+	/// - Note: One guard per question, matching ``cdf(_:)`` below. An unusable `p` is
+	///   `nan`, not a density; a `k` below the support is a genuine zero. Both conditions
+	///   used to share a guard, so an invalid distribution reported every outcome as
+	///   *impossible* rather than as unanswerable, and a caller summing the mass got `0`
+	///   where `cdf(_:)` four lines down was already saying `nan`. Since `init(_:)` became
+	///   failable the first guard is unreachable, and is kept so this stays total on its own
+	///   terms rather than by relying on a screen in another declaration.
 	public func pmf(_ k: Int) -> Double {
-		guard p > 0, p <= 1, k >= 1 else { return 0 }
+		guard p > 0, p <= 1 else { return Double.nan } // unreachable: `init(_:)` refuses every `p` outside (0, 1]
+		guard k >= 1 else { return 0 }
 		if p == 1 { return k == 1 ? 1 : 0 }
 		let failures = Double(k - 1)
 		let survival = Double.pow(1 - p, failures)
@@ -140,7 +169,7 @@ extension DistributionGeometric: DiscreteDistribution {
 
 	/// P(X ≤ k) = 1 − (1 − p)^k.
 	public func cdf(_ k: Int) -> Double {
-		guard p > 0, p <= 1 else { return Double.nan }
+		guard p > 0, p <= 1 else { return Double.nan } // unreachable: `init(_:)` refuses every `p` outside (0, 1]
 		guard k >= 1 else { return 0 }
 		if p == 1 { return 1 }
 		let survival = Double.pow(1 - p, Double(k))
@@ -154,8 +183,28 @@ extension DistributionGeometric: DiscreteDistribution {
 	///   ``DistributionNegativeBinomial/quantile(_:)`` and
 	///   ``DistributionLogarithmic/quantile(_:)``. At or above one it is `Int.max`: no
 	///   finite count reaches certainty.
+	/// - Note: The `nan` case is a **limitation, not a preference**, and it is the one place
+	///   this type cannot follow ``ContinuousDistribution/quantile(_:)``, which answers an
+	///   unreadable probability with `nan` precisely so that it cannot be mistaken for a
+	///   count. `Int` has no `nan`. Every available answer is therefore a real trial count
+	///   that a caller can thresholds against, sum, or index with, and none of them carries
+	///   the information that the question was unanswerable. `1` is chosen because it is the
+	///   support minimum and because the two siblings already chose it — consistency inside
+	///   the family is worth more than a sentinel that is equally indistinguishable — but a
+	///   caller that needs to *know* must screen `q` before the call. ``cdf(_:)`` returning
+	///   `Double` has no such excuse and does return `nan`.
 	public func quantile(_ q: Double) -> Int {
-		guard p > 0, p <= 1 else { return 0 }
+		// This guard is on the stored parameter, not on `q`. It has been unreachable since
+		// `init(_:)` became failable and screened `p` the way all three siblings do; it is
+		// kept so the arithmetic below is total on its own terms.
+		//
+		// `Int.max` rather than the `0` it used to return, which was **outside this
+		// distribution's support**: the trial-count form starts at 1, so a caller
+		// thresholding or summing trial counts was told "the first success came before the
+		// first trial" — the favourable end of the scale — for a distribution in which
+		// success cannot occur at all. `Int.max` is the meaning the `complement > 0` guard
+		// below already uses: no finite count reaches this probability.
+		guard p > 0, p <= 1 else { return Int.max } // unreachable: `init(_:)` refuses every `p` outside (0, 1]
 		if p == 1 { return 1 }
 		// The guard both siblings open with and this one did not have. Without it a `q` of
 		// `-.infinity` makes `1 - q` infinite, which sails through the `complement > 0`

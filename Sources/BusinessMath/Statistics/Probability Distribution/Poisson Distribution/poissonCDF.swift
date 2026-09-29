@@ -24,6 +24,11 @@ import Numerics
 /// - Note: A degenerate Poisson (`µ = 0`) is the point mass at zero, so the CDF is `1` for every `k ≥ 0`. That case is written out rather than
 ///   summed, because the general term evaluates `pow(0, 0)`, which is `NaN` here rather than the `1` the limit requires.
 public func poissonCDF<T: Real>(_ x: T, µ: T) -> T {
+	// The rate guard below already answers `nan` for a rate it cannot read; this is the same
+	// input arriving through the argument, and it used to be answered `T(0)` — a definite
+	// `P(X ≤ x) = 0`, and a survival probability of exactly 1 for the caller who takes the
+	// complement. Taken before the support guard so that below-support still means zero mass.
+	guard !x.isNaN else { return T.nan }
 	guard x >= 0 else { return T(0) }
 	// A negative or NaN rate is not a Poisson; the sum would evaluate pow(negative, k),
 	// which is already NaN, so say so directly rather than by accident.
@@ -31,6 +36,11 @@ public func poissonCDF<T: Real>(_ x: T, µ: T) -> T {
 	// The degenerate distribution: all of the mass sits at zero, so the CDF is 1
 	// everywhere on the support. Taken before the sum can reach pow(0, 0).
 	guard µ > 0 else { return T(1) }
+	// `P(X ≤ +∞) = 1`, exactly — every Poisson outcome is below it. Stated rather than
+	// computed because `(+∞).rounded(.down)` is `+∞`, and the `while T(n) < floored` loop
+	// that follows would then never terminate: a hang, which is worse than a wrong answer
+	// because there is no value to inspect. Negative infinity is already below the support.
+	guard x.isFinite else { return T(1) }
 	// floor(x), the real one. This used to count up while `counter < x`, which
 	// overshoots by one at every exact integer: for x = 3 the loop ran to counter = 3,
 	// stopped, and took `floorInt - 1` = 2, so the sum ran k = 0...2 and the function

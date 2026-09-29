@@ -663,32 +663,66 @@ public func applySeasonal<T: Real & Sendable>(
 ///   - method: Decomposition method (additive or multiplicative)
 /// - Returns: `TimeSeriesDecomposition` containing trend, seasonal, and residual components
 /// - Throws: `SeasonalityError` if insufficient data or invalid parameters, or
-///   ``BusinessMathError/dataQuality(message:context:)`` if any observation is not finite
-///   (propagated from `seasonalIndices(timeSeries:periodsPerYear:)`), or
-///   `SeasonalityError.divisionByZero` if the trend passes through zero — **under either
-///   method**, for the reason below.
+///   ``BusinessMathError/dataQuality(message:context:)`` if any observation is not finite —
+///   under **either** method, or `SeasonalityError.divisionByZero` if the trend passes through
+///   zero — under `.multiplicative` **only**, for the reason below.
 ///
-/// ## A trend that passes through zero is refused under both methods
+/// ## A trend that passes through zero is refused under `.multiplicative` only
 ///
 /// A multiplicative decomposition genuinely has no meaning for such a series: `Value = Trend ×
 /// Seasonal` cannot describe a trend that is zero, and the residual `Value / (Trend ×
-/// Seasonal)` is unbounded at the crossing.
+/// Seasonal)` is unbounded at the crossing. ``seasonalIndices(values:periodsPerYear:)`` refuses
+/// it and that refusal is inherited here.
 ///
-/// A textbook *additive* decomposition would be well defined there — `Value = Trend + Seasonal
-/// + Residual` never divides by the trend, and a seasonal swing measured in the series' own
-/// units survives the sign change intact. This implementation nevertheless refuses, and the
-/// reason is worth stating plainly rather than hiding: its additive seasonal component is not
-/// computed additively. It is obtained by re-centring the *multiplicative* indices returned by
-/// ``seasonalIndices(timeSeries:periodsPerYear:)`` (`index - mean(indices)`), so it inherits
-/// every ratio those indices were built from. Given a zero-crossing trend it would be centring
-/// numbers that measure distance from the crossing, then subtracting them from values that
-/// carry units.
+/// A textbook *additive* decomposition is well defined there — `Value = Trend + Seasonal +
+/// Residual` never divides by the trend, and a seasonal swing measured in the series' own units
+/// survives the sign change intact. This function used to refuse it anyway, and the reason was
+/// that its additive seasonal component was not computed additively: it re-centred the
+/// *multiplicative* indices (`index - mean(indices)`), so it inherited every ratio those indices
+/// were built from, and a zero-crossing trend made those ratios meaningless.
 ///
-/// So the two methods agree here because they share the ratio computation, not because
-/// additive decomposition is undefined. Computing a genuinely additive index — the per-season
-/// mean of `value - trend`, centred to sum to zero — would lift this restriction for
-/// `.additive` and would change every additive result this function has ever returned. That is
-/// a deliberate API decision, not a guard to add in passing.
+/// ## What changed, and why it is a correctness fix rather than a preference
+///
+/// The seasonal component is now the per-season mean of `value - trend`, centred to sum to zero
+/// — classical additive decomposition, the same definition `statsmodels.tsa.seasonal_decompose`
+/// uses. The previous component was **dimensionless**: it was a ratio re-centred on zero, and it
+/// was then subtracted from values carrying units.
+///
+/// The size of that error scales with the level of the data, so it is unbounded rather than
+/// small. Measured on `[110, 130, 110, 110, 120, 140, 120, 120, 130, 150, 130, 130]` at
+/// `periodsPerYear: 4`, whose centred moving average is defined at indices 3…10 and runs
+/// 116.25, 118.75, 121.25, 123.75, 126.25, 128.75, 131.25, 133.75:
+///
+/// | season | this function, before | this function, now |
+/// |---|---|---|
+/// | Q1 | `-0.0092` | `-1.25` |
+/// | Q2 | `+0.1268` | `+16.25` |
+/// | Q3 | `-0.0478` | `-6.25` |
+/// | Q4 | `-0.0698` | `-8.75` |
+///
+/// Both columns are read off a run. The right-hand one is also derivable by hand: `value -
+/// trend` over those eight positions is −6.25, 1.25, 18.75, −3.75 repeating, the season means
+/// are 1.25, 18.75, −3.75, −6.25, and subtracting their mean of 2.5 centres them. Note that
+/// these are **not** the offsets one would name from the generating formula: a centred moving
+/// average smooths a step in the level, so part of that step is correctly attributed to the
+/// season carrying it. That is classical decomposition's behaviour, not an artefact.
+///
+/// The old figures are roughly **1/128th** of the effect actually present, and that ratio is
+/// simply the level of the series: scale every observation by ten and the new component scales
+/// by ten while the old one does not move at all. Because `Value = Trend + Seasonal + Residual`
+/// is closed by construction, the whole of the seasonal swing therefore landed in the
+/// **residual** — which is precisely what this function's own documented anomaly-detection
+/// example filters on, so every high season read as an anomaly.
+///
+/// The cleanest check is a series whose trend is exactly linear, because then the centred
+/// moving average reproduces it exactly and the components must come back as the planted
+/// offsets. `[-60, -45, -30, -5, -20, -5, 10, 35, 20, 35, 50, 75]` is a linear trend from −55
+/// to +55 carrying the fixed offsets `[-5, 0, +5, +20]`; the function now returns
+/// `[-10, -5, 0, +15]`, which is those offsets centred on their own mean of 5. It used to
+/// refuse that series outright, because its trend crosses zero.
+///
+/// Callers who stored or compared additive seasonal components from an earlier release must
+/// re-derive them; the old numbers are not on a scale anything can be converted from.
 ///
 /// ## Undefined residuals at the ends of the series
 ///
@@ -778,20 +812,24 @@ public func decomposeTimeSeries<T: Real & Sendable>(
 	// Step 1: Calculate trend using centered moving average
 	let trendValues = calculateCenteredMovingAverage(values: values, window: periodsPerYear)
 
-	// Step 2: Calculate seasonal indices
-	let indices = try seasonalIndices(timeSeries: timeSeries, periodsPerYear: periodsPerYear)
-
-	// Step 3: Calculate seasonal and residual components based on method
+	// Step 2: Calculate seasonal and residual components based on method
 	var seasonalValues: [T] = []
 	var residualValues: [T] = []
 
 	switch method {
 	case .additive:
-		// Seasonal = repeating pattern of indices adjusted for additive
-		// For additive, we need indices that sum to 0
-		let indexSum = indices.reduce(T.zero, +)
-		let indexAverage = indexSum / T(indices.count)
-		let additiveIndices = indices.map { $0 - indexAverage }
+		// The indices are computed additively rather than taken from
+		// `seasonalIndices`, which is multiplicative. See **What changed** above for the
+		// measurement: re-centring a ratio produced a component roughly 1/128th of the
+		// effect present in the documented fixture, with the error scaling with the level
+		// of the data. The zero-crossing refusal came in with those ratios and goes out
+		// with them; the finite-observation refusal does not, and is applied here rather
+		// than inherited.
+		let additiveIndices = try additiveSeasonalIndices(
+			values: values,
+			trend: trendValues,
+			periodsPerYear: periodsPerYear
+		)
 
 		for i in 0..<values.count {
 			let seasonIndex = i % periodsPerYear
@@ -803,6 +841,8 @@ public func decomposeTimeSeries<T: Real & Sendable>(
 		}
 
 	case .multiplicative:
+		let indices = try seasonalIndices(timeSeries: timeSeries, periodsPerYear: periodsPerYear)
+
 		// Seasonal = repeating pattern of indices
 		for i in 0..<values.count {
 			let seasonIndex = i % periodsPerYear
@@ -866,6 +906,87 @@ public func decomposeTimeSeries<T: Real & Sendable>(
 }
 
 // MARK: - Helper Functions
+
+/// Calculates the additive seasonal component: the per-season mean of `value - trend`,
+/// centred so the components sum to zero.
+///
+/// This is the classical additive decomposition's seasonal term, and it is deliberately **not**
+/// ``seasonalIndices(values:periodsPerYear:)`` re-centred. Those are multipliers; these carry
+/// the series' own units. The distinction is not cosmetic — see the measurement table on
+/// ``decomposeTimeSeries(timeSeries:periodsPerYear:method:)``.
+///
+/// Three things follow from the definition and are relied on by the tests:
+///
+/// - **It is exactly linear in the data.** Scale every observation by `k` and every component
+///   scales by `k`. The ratio form it replaced was scale-*invariant*, which is what made
+///   subtracting it from a value a units error rather than a rounding one.
+/// - **It does not care about the sign of the trend.** Nothing is divided by the trend, so a
+///   series whose trend crosses zero is decomposed normally. That is the whole reason
+///   `.additive` no longer inherits `SeasonalityError.divisionByZero`.
+/// - **The centring constant goes into the residual.** Subtracting the mean of the season
+///   means is what makes the components sum to zero; whatever common offset that removes
+///   reappears in `value - trend - seasonal`. `statsmodels.tsa.seasonal_decompose` does the
+///   same, and `Value = Trend + Seasonal + Residual` stays closed either way.
+///
+/// - Parameters:
+///   - values: The observations, in period order.
+///   - trend: The centred moving average, parallel to `values` and `nan` where undefined.
+///   - periodsPerYear: Number of periods in one seasonal cycle.
+/// - Returns: `periodsPerYear` seasonal offsets, summing to zero, in the series' own units.
+/// - Throws: ``BusinessMathError/dataQuality(message:context:)`` if any observation is not
+///   finite, or `SeasonalityError.insufficientData` if any season has no position at which the
+///   trend is defined.
+private func additiveSeasonalIndices<T: Real & Sendable>(
+	values: [T],
+	trend: [T],
+	periodsPerYear: Int
+) throws -> [T] {
+	// Refused rather than marked, for the reason given at length on
+	// `seasonalIndices(values:periodsPerYear:)`: one contaminated observation is absorbed by
+	// the centred moving average across its whole window, so it corrupts every season sharing
+	// that window and there is no single position marking could honestly identify. Without
+	// this guard the season means would simply be taken over the surviving positions and the
+	// caller would be handed a seasonal pattern with no indication that a quarter of it was
+	// never measured.
+	guard values.allSatisfy({ $0.isFinite }) else {
+		throw BusinessMathError.dataQuality(
+			message: "Additive decomposition requires finite observations",
+			context: ["invalid_count": "\(values.filter { !$0.isFinite }.count)"]
+		)
+	}
+
+	var seasonalDeviations: [[T]] = Array(repeating: [], count: periodsPerYear)
+
+	for i in 0..<values.count {
+		guard i < trend.count, !trend[i].isNaN else { continue }
+		let deviation: T = values[i] - trend[i]
+		seasonalDeviations[i % periodsPerYear].append(deviation)
+	}
+
+	var means: [T] = []
+	for deviations in seasonalDeviations {
+		// A season with no usable trend position has no measured effect, and `T.zero` here
+		// would not be silence — it is the exact statement "this season is neutral", which
+		// then shifts the centring constant and so moves *every other* season's reported
+		// offset too. The multiplicative sibling refuses the same geometry for the same
+		// reason; see its comment for why `periodsPerYear * 2 + 1` is the exact requirement.
+		guard !deviations.isEmpty else {
+			throw SeasonalityError.insufficientData(
+				required: periodsPerYear * 2 + 1,
+				provided: values.count
+			)
+		}
+		let total: T = deviations.reduce(T.zero, +)
+		let count: T = T(deviations.count)
+		means.append(total / count)
+	}
+
+	// Centre so the components sum to zero. `means.count` is `periodsPerYear`, which the
+	// caller has already guarded to be strictly positive, so this division is safe.
+	let meanSum: T = means.reduce(T.zero, +)
+	let meanOfMeans: T = meanSum / T(means.count)
+	return means.map { $0 - meanOfMeans }
+}
 
 /// Calculates a centered moving average for trend extraction.
 ///

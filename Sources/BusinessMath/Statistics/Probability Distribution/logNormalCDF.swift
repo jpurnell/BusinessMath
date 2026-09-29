@@ -102,6 +102,12 @@ import Numerics
 /// - ``distributionLogNormal(logMean:logStdDev:_:_:)``
 /// - ``normalCDF(x:mean:stdDev:)``
 public func logNormalCDF<T: Real>(_ x: T, mean μ: T = T(0), stdDev σ: T = T(1)) -> T {
+	// `nan > 0` is false, so a contaminated argument was answered by the support guard:
+	// `P(X ≤ x) = 0`, a definite cumulative probability at the bottom of the scale, from an
+	// `x` the function could not read. Contaminated `μ` or `σ` already propagate to `nan`
+	// through the transformation below, so only the argument was being fabricated.
+	guard !x.isNaN else { return T.nan }
+
 	// Lognormal is only defined for positive x
 	// P(X ≤ 0) = 0 for lognormal distribution
 	guard x > T.zero else {

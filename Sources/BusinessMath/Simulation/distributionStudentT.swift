@@ -91,9 +91,12 @@ public struct DistributionStudentT: ContinuousDistribution, Sendable {
 	/// ``tCDF(t:df:)`` already takes; the difference here is that `ν` never passes
 	/// through an `Int`.
 	///
-	/// - Parameter t: Any value.
-	/// - Returns: A probability in [0, 1].
+	/// - Parameter t: Any value. An infinity is answered with its limit, 0 or 1; a `nan`
+	///   is answered with `nan`, not with the 0 the `isFinite` guard below used to give it.
+	/// - Returns: A probability in [0, 1], or `nan` for a `nan` `t` — see
+	///   ``ContinuousDistribution/cdf(_:)``.
 	public func cdf(_ t: Double) -> Double {
+		guard !t.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
 		guard t.isFinite else { return t > 0 ? 1 : 0 }
 		if t == 0 { return 0.5 }
 		let squared: Double = t * t
@@ -118,8 +121,9 @@ public struct DistributionStudentT: ContinuousDistribution, Sendable {
 	/// that runs to infinity fast.
 	///
 	/// - Parameter p: A probability in the open interval (0, 1).
-	/// - Returns: The quantile; `±infinity` at the closed ends.
+	/// - Returns: The quantile; `±infinity` at the closed ends, `nan` for a `nan` `p`.
 	public func quantile(_ p: Double) -> Double {
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
 		guard p > 0, p < 1 else { return p <= 0 ? -.infinity : .infinity }
 		// Exact by intent: the median of a `t` is exactly zero, and this is the one
 		// probability where the beta inversion below would be handed `I⁻¹(1; a, b)`.

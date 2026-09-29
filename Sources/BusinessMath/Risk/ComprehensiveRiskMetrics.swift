@@ -79,21 +79,23 @@ public struct ComprehensiveRiskMetrics<T: Real & Sendable & BinaryFloatingPoint>
 	/// - Parameters:
 	///   - valuesArray: Array of return values.
 	///   - riskFreeRate: Risk-free rate for ratio calculations (default: 0).
+	///
+	/// - Note: Given no returns, every field is `nan`. Each metric reaches that on its own
+	///   terms; this initializer no longer substitutes a value for any of them.
 	public init(valuesArray: [T], riskFreeRate: T = T(0)) {
-		guard !valuesArray.isEmpty else {
-			// Edge case: no data
-			self.var95 = T(0)
-			self.var99 = T(0)
-			self.cvar95 = T(0)
-			self.maxDrawdown = T(0)
-			self.sharpeRatio = T(0)
-			self.sortinoRatio = T(0)
-			self.tailRisk = T(1)
-			self.skewness = T(0)
-			self.kurtosis = T(0)
-			return
-		}
-
+		// An empty array used to be answered here, in full, by a block labelled only
+		// "Edge case: no data" — VaR 0, VaR₉₉ 0, CVaR 0, drawdown 0, Sharpe 0, Sortino 0,
+		// tail risk 1, skew 0, kurtosis 0. Read as a report, which is exactly what
+		// `description` renders it as, that is a portfolio with no threshold loss, no
+		// shortfall, no peak it ever fell below, no excess return, symmetric returns and
+		// normal tails: the most reassuring risk profile expressible in these nine numbers,
+		// assembled from no observations.
+		//
+		// It also bypassed all eight types below, so fixing their empty-sample contracts
+		// individually would have changed nothing here — the aggregate was its own second
+		// implementation. Deleting the block is the fix: each metric now answers `nan` for
+		// an empty sample, and this type reports what they say.
+		//
 		// Calculate all metrics using focused types
 		self.var95 = ValueAtRisk.var95(values: valuesArray)
 		self.var99 = ValueAtRisk.var99(values: valuesArray)

@@ -265,4 +265,112 @@ struct DistributionPoissonTrapTests {
 		#expect(DistributionPoisson(lambda: Double.nan) == nil)
 		#expect(DistributionPoisson(lambda: Double.infinity) == nil)
 	}
+
+	// MARK: - The search that started at zero
+
+	/// The windowed search answers exactly what the definition asks for.
+	///
+	/// `quantile(p)` is *the smallest k with `cdf(k) >= p`*, so `cdf(_:)` is the oracle and it
+	/// is an independent one: it sums from zero through ``poissonCDF(_:µ:)``, while the search
+	/// now starts at twelve standard deviations below the mean. Asserting both sides of the
+	/// boundary — `cdf(k) >= p` and `cdf(k - 1) < p` — is what makes this an inversion rather
+	/// than a coincidence at one point.
+	///
+	/// A rate of 5000 is chosen because it is the smallest round rate on both sides of the
+	/// change: the window starts at 4111, so the skipped head is genuinely being skipped
+	/// (below 144 it is not, and the test would pass without exercising anything), and the
+	/// whole support is still small enough for the summing CDF to serve as the oracle.
+	/// Hoisted out of the `@Test` macro: it expands its argument into generic closures, and an
+	/// array literal that type-checks fine as a plain `let` has cost this project a CI run.
+	static let probeProbabilities: [Double] = [0.1, 0.5, 0.9]
+
+	@Test("The windowed search inverts the CDF exactly",
+		  arguments: DistributionPoissonTrapTests.probeProbabilities)
+	func windowedSearchInvertsTheCDF(probability: Double) throws {
+		let arrivals = try #require(DistributionPoisson(lambda: 5000.0))
+
+		let k: Int = arrivals.quantile(probability)
+		let atK: Double = arrivals.cdf(k)
+		let belowK: Double = arrivals.cdf(k - 1)
+
+		#expect(atK >= probability,
+				"quantile(\(probability)) = \(k), but cdf(\(k)) = \(atK) does not reach it")
+		// One literal, not a concatenation: `Comment` is ExpressibleByStringInterpolation, so it
+		// accepts a string *literal* but not a `String` expression such as `"a" + "b"`.
+		let predecessor: Int = k - 1
+		#expect(belowK < probability,
+				"quantile(\(probability)) = \(k) is not the smallest: cdf(\(predecessor)) = \(belowK) already reaches \(probability)")
+	}
+
+	/// A rate of ten billion answers, where it used to run ten billion times.
+	///
+	/// This is the assertion the repair exists for and the shape of it is unusual: the test
+	/// *completing* is half of it. The old search ran `for k in 0...ceiling` with the ceiling
+	/// just past the mean, so at this rate it evaluated `logGamma` ten billion times — minutes
+	/// at best — and at the 1e12 in the sweep report, hours. Every one of those iterations
+	/// added an exact `0.0`, because the mass that far below the mean underflows. The search
+	/// now spans twenty-two standard deviations around the mean, so the work is O(√λ): about
+	/// two million terms here, not ten billion.
+	///
+	/// The value is checked against the Cornish–Fisher expansion, which is the right oracle at
+	/// this rate for the same reason the search is affordable — a Poisson with λ = 1e10 is
+	/// normal to within a fraction of a count, its standardised skewness being 1e-5. `z` is
+	/// solved for rather than written down, so nothing here is a recalled constant.
+	///
+	/// The tolerance is 100 counts against a standard deviation of 100,000. It is loose in
+	/// absolute terms and very tight relative to every way this could go wrong: a search
+	/// starting shallower than about four standard deviations below the mean skips enough mass
+	/// to move the answer by more than 300 counts, and a search that failed to reach `p` at all
+	/// would return the ceiling, 100,000 counts out.
+	@Test("A rate of ten billion is answered from the mean outward")
+	func largeRateDoesNotWalkTheWholeSupport() throws {
+		let rate = 1e10
+		let arrivals = try #require(DistributionPoisson(lambda: rate))
+		let deviation: Double = rate.squareRoot()
+
+		let upperDecile: Int = arrivals.quantile(0.9)
+		let z: Double = inverseNormalCDF(p: 0.9, mean: 0, stdDev: 1)
+		// Cornish–Fisher to the skewness term: λ + z√λ + (z² − 1)/6.
+		let shifted: Double = z * deviation
+		let skewnessTerm: Double = (z * z - 1) / 6
+		let expected: Double = rate + shifted + skewnessTerm
+		let error: Double = abs(Double(upperDecile) - expected)
+		#expect(error < 100,
+				"quantile(0.9) = \(upperDecile) against \(expected), off by \(error)")
+
+		// Monotone across the scale, which a search that returned its ceiling would not be.
+		let lowerDecile: Int = arrivals.quantile(0.1)
+		let median: Int = arrivals.quantile(0.5)
+		#expect(lowerDecile < median, "\(lowerDecile) should sit below \(median)")
+		#expect(median < upperDecile, "\(median) should sit below \(upperDecile)")
+
+		// The median of a Poisson lies within one of its mean for a rate this large.
+		let medianError: Double = abs(Double(median) - rate)
+		#expect(medianError < 100, "the median \(median) is far from the mean \(rate)")
+	}
+
+	/// A probability at or above one still answers the documented ceiling, and answers it
+	/// without walking the support to find out that the mass never gets there.
+	@Test("Certainty answers the documented ceiling")
+	func certaintyAnswersTheCeiling() throws {
+		let rate = 1e10
+		let arrivals = try #require(DistributionPoisson(lambda: rate))
+		let deviation: Double = rate.squareRoot()
+		let spread: Double = 10.0 * deviation
+		let ceiling: Int = Int(rate + spread) + 40
+
+		let atOne: Int = arrivals.quantile(1.0)
+		#expect(atOne == ceiling, "got \(atOne) against \(ceiling)")
+		let aboveOne: Int = arrivals.quantile(2.0)
+		#expect(aboveOne == ceiling, "got \(aboveOne) against \(ceiling)")
+
+		// And the other end is unchanged: at or below zero, and for a NaN, the answer is the
+		// support minimum. `Int` has no `nan`, which is documented on the declaration.
+		let atZero: Int = arrivals.quantile(0.0)
+		#expect(atZero == 0, "got \(atZero)")
+		let belowZero: Int = arrivals.quantile(-1.0)
+		#expect(belowZero == 0, "got \(belowZero)")
+		let contaminated: Int = arrivals.quantile(Double.nan)
+		#expect(contaminated == 0, "got \(contaminated)")
+	}
 }

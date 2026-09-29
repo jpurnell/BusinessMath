@@ -28,7 +28,7 @@ import Foundation
 ///     amortizationType: .levelPayment
 /// )
 ///
-/// let schedule = mortgage.schedule()
+/// let schedule = try mortgage.schedule()
 /// print("Monthly payment: $\(schedule.payment[schedule.periods.first!]!)")
 /// print("Total interest: $\(schedule.totalInterest)")
 /// ```
@@ -91,10 +91,60 @@ public struct DebtInstrument {
     /// - Total payment
     ///
     /// - Returns: Complete amortization schedule
-    public func schedule() -> AmortizationSchedule {
+    /// - Throws: ``BusinessMathError/mismatchedDimensions(message:expected:actual:)`` when
+    ///   ``AmortizationType/custom(schedule:)`` carries a payment array whose length is not the
+    ///   number of periods between `startDate` and `maturityDate` at `paymentFrequency`. The
+    ///   other three amortization types cannot throw.
+    ///
+    /// ## Why this throws, and why only for `.custom`
+    ///
+    /// The period count is **derived** from the two dates and the frequency; the payment array
+    /// is **supplied**. When they disagree there is no rule that makes one of them right, and
+    /// the two failures were not symmetric:
+    ///
+    /// - A **shorter** array indexed past its end. That is a trap in a public method reachable
+    ///   from public input — the caller is told nothing at all, because the process stops.
+    /// - A **longer** array had its tail silently discarded, so payments the caller specified
+    ///   never appeared in `payment`, `totalPayments` was short by exactly those amounts, and
+    ///   the ending balance was correspondingly overstated. Nothing in the returned schedule
+    ///   said so.
+    ///
+    /// Neither could be answered by narrowing the schedule to the shorter of the two: that
+    /// fixes the trap and keeps the tail-drop, which is contract §4's "silently dropping a
+    /// value". Nor could the array be padded or truncated to fit — §4 again, since a fabricated
+    /// zero payment is a real instruction to pay nothing that period, and interest accrues on
+    /// it.
+    ///
+    /// The derived count is worth checking before you construct the instrument, because the
+    /// term is measured in whole payment periods: five annual payments need a `maturityDate`
+    /// five years after `startDate`, and a date a few days short of that yields four.
+    ///
+    /// This is a source-breaking change taken deliberately while the package is on a
+    /// pre-release line, where SPM's `from:` ranges exclude pre-releases and only a caller
+    /// naming an alpha exactly is affected. After `3.0.0` the trap would have been permanent.
+    public func schedule() throws -> AmortizationSchedule {
         let periods = generatePeriods()
         let periodicRate = interestRate / Double(paymentFrequency.periodsPerYear) // fp-safety:disable — periodsPerYear is a closed enum returning 12, 4, 2 or 1
         let numPayments = periods.count
+
+        // Screened here rather than at the `customPayments[index]` read, following the sweep's
+        // rule that the check belongs at the entry point: by the time the loop is running the
+        // running balance has already been advanced by payments from a schedule that was never
+        // valid, and a half-built `AmortizationSchedule` is harder to reason about than none.
+        if case .custom(let customPayments) = amortizationType,
+           customPayments.count != numPayments {
+            throw BusinessMathError.mismatchedDimensions(
+                message: """
+                A custom amortization schedule must carry exactly one payment per period. This \
+                instrument covers \(numPayments) \(paymentFrequency) period(s) between its start \
+                and maturity dates; the schedule supplied \(customPayments.count). A short \
+                schedule used to trap on the missing period and a long one had its tail dropped \
+                without notice.
+                """,
+                expected: "\(numPayments)",
+                actual: "\(customPayments.count)"
+            )
+        }
 
         // Pre-allocate dictionary capacity for better performance
         var beginningBalance: [Period: Double] = [:]
@@ -174,6 +224,8 @@ public struct DebtInstrument {
                 beginningBalance[period] = currentBalance
 
                 let interestCharge = currentBalance * periodicRate
+                // Safe: the guard at the top of this function refused any `.custom` schedule
+                // whose count differs from `periods.count`, and `index` runs over `periods`.
                 let totalPayment = customPayments[index]
                 let principalPaid = totalPayment - interestCharge
 
@@ -369,7 +421,7 @@ public enum AmortizationType {
 ///     amortizationType: .straightLine
 /// )
 ///
-/// let schedule = debtInstrument.schedule()
+/// let schedule = try debtInstrument.schedule()
 ///
 /// for period in schedule.periods {
 ///     print("Period: \(period)")

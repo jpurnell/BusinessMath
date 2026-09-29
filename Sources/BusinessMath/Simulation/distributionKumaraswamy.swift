@@ -125,6 +125,7 @@ public struct DistributionKumaraswamy: ContinuousDistribution, Sendable {
 
 	/// P(X ≤ x), zero below the support and one above it.
 	public func cdf(_ x: Double) -> Double {
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
 		guard x > min else { return 0 }
 		guard x < max else { return 1 }
 		let z: Double = (x - min) * inverseWidth
@@ -138,6 +139,7 @@ public struct DistributionKumaraswamy: ContinuousDistribution, Sendable {
 	///   clamped to the support, which is finite here, so unlike an unbounded
 	///   distribution there is a sensible answer to give.
 	public func quantile(_ p: Double) -> Double {
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
 		guard p > 0 else { return min }
 		guard p < 1 else { return max }
 		let complement: Double = 1 - p

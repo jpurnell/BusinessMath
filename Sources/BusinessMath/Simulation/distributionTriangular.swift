@@ -59,7 +59,21 @@ public func triangularDistribution<T: Real>(low a: T, high b: T, base c: T, _ uS
 	// Convert Double seed to type T with high precision (6 decimal places)
 	let uInt = Int(uSeed * 1_000_000)
 	let u = T(uInt) / T(1_000_000) // fp-safety:disable — constant 1_000_000
-    if u > 0 && u < fc {
+	// `u > 0` was the whole defect and it guarded nothing. `uSeed` is screened to [0, 1]
+	// three guards above, so `u` is never negative and the only value the extra clause
+	// excluded was exactly zero — which then fell to the `else` arm and returned
+	// `high − √((high−low)(high−base))`: **2.9289 for [0, 10] with a mode of 5**, where the
+	// inverse CDF at zero is the lower bound, 0. A plausible interior value, inside the
+	// support, with nothing to mark it wrong. Reachable twice over — `uSeed` is public and
+	// documented as accepting 0, and the quantisation on the line above sends every draw
+	// below 1e-6 to exactly zero, so an unseeded run hits it about once per million.
+	//
+	// Written as `u < fc` alone, both arms answer `a` at zero, which is why no third branch
+	// is needed: for `fc > 0` the first arm is `a + √0`; for `fc == 0` (the mode at the lower
+	// bound) the second arm is `b − √((b−a)²)` = `a`. It is also what the Metal kernel in
+	// `MonteCarloGPUDevice` has always computed — `u < fc ? … : …`, no `u > 0` — so this is
+	// the CPU catching up with the backend it is checked against, not a new convention.
+	if u < fc {
         let s = u * (b - a) * (c - a)
         return a + s.squareRoot()
     } else {
@@ -147,6 +161,7 @@ extension DistributionTriangular: ContinuousDistribution {
 	/// Two parabolic arcs meeting at the mode, where the CDF equals
 	/// `(base − low) / (high − low)`.
 	public func cdf(_ x: Double) -> Double {
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
 		let a = low, b = high, c = base
 		guard b > a, c >= a, c <= b else { return Double.nan }
 		if x <= a { return 0 }
@@ -184,6 +199,7 @@ extension DistributionTriangular: ContinuousDistribution {
 	/// and this one is the better of the two. The sampler keeps its quantisation so
 	/// that existing seeded streams are unchanged.
 	public func quantile(_ p: Double) -> Double {
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
 		let a = low, b = high, c = base
 		guard b > a, c >= a, c <= b else { return Double.nan }
 

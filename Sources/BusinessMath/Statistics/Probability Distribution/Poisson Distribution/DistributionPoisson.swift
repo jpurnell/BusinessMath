@@ -76,12 +76,41 @@ public struct DistributionPoisson: DiscreteDistribution, Sendable {
 
 	/// The smallest `k` for which `cdf(k) >= p`.
 	///
-	/// Accumulates the mass from zero rather than calling ``cdf(_:)`` per candidate,
+	/// Accumulates the mass term by term rather than calling ``cdf(_:)`` per candidate,
 	/// which would make the search quadratic. Monotone in `p` by construction, which
 	/// the protocol requires because quasi-random sampling inverts through here.
 	///
+	/// ## Why the sum does not start at zero
+	///
+	/// It used to, and that made the search **O(λ)** — for `lambda: 1e12` the loop ran a
+	/// million million times before reaching any count with mass on it. `init(lambda:)`
+	/// closed the trap that the same rate used to spring (`Int(_:)` above `Int.max`), so
+	/// what was left was not a crash but a hang, which is worse to diagnose: there is no
+	/// value to inspect and no error to catch.
+	///
+	/// Nothing was being *computed* in those iterations. `pmf(k)` for a `k` far below the
+	/// mean is `exp(k·ln λ − λ − ln Γ(k+1))`, which underflows to exactly zero long before
+	/// the mass becomes interesting — at λ = 1e12 every term below about `λ − 9√λ` is a
+	/// literal `0.0` being added to a running total. The loop now starts at
+	/// `firstCountWithRepresentableMass(_:)`, twelve standard deviations below the mean,
+	/// which is where those terms stop being zero. The cost becomes O(√λ) and the answers
+	/// below λ ≈ 144 are **unchanged**, because the start is clamped at zero there and the
+	/// loop is the one that was already running.
+	///
+	/// This is a bound on the neglected mass, not a performance cutoff: the head that is
+	/// skipped is smaller than the last bit of the answer, so no `p` a `Double` can hold
+	/// distinguishes the two sums. A cutoff would stop the search early and return a count
+	/// it had not justified; this starts it late and finishes it.
+	///
 	/// - Parameter p: A probability. Values at or below zero give `0`; values at or
 	///   above one give the largest `k` the search reaches.
+	/// - Note: A `p` that is `nan` also gives `0`, because `nan > 0` is false. That is the
+	///   one place this type cannot follow ``ContinuousDistribution/quantile(_:)``, which
+	///   answers an unreadable probability with `nan`: the return type is `Int` and `Int`
+	///   has no `nan` to return. `0` is this distribution's support minimum, matching what
+	///   ``DistributionGeometric/quantile(_:)`` does with its own, and it is a real count —
+	///   a caller cannot tell it from the answer to `p = 1e-300`. Prefer screening `p`
+	///   before the call; the type cannot do it for you.
 	public func quantile(_ p: Double) -> Int {
 		guard p > 0 else { return 0 }
 		// The degenerate distribution has every quantile at zero.
@@ -92,12 +121,44 @@ public struct DistributionPoisson: DiscreteDistribution, Sendable {
 		// bound costs nothing and guarantees termination for p >= 1.
 		let spread: Double = 10.0 * lambda.squareRoot()
 		let ceiling: Int = Int(lambda + spread) + 40
+		// The documented answer for a probability at or above one, reached without walking
+		// the whole support to discover that the mass never gets there.
+		guard p < 1 else { return ceiling }
 
+		let start: Int = Self.firstCountWithRepresentableMass(lambda)
 		var cumulative = 0.0
-		for k in 0...ceiling {
+		for k in start...ceiling {
 			cumulative += pmf(k)
 			if cumulative >= p { return k }
 		}
 		return ceiling
+	}
+
+	/// The lowest count whose mass can still change a `Double` running total.
+	///
+	/// Twelve standard deviations below the mean, with the same floor of forty the ceiling
+	/// uses so that a small rate is not clipped. Chernoff bounds the Poisson left tail by
+	/// `exp(-t²/2)` at `t` standard deviations, so twelve leaves at most `5e-32` below the
+	/// start — some `3e15` times smaller than the `1.1e-16` ulp of a probability near one,
+	/// and smaller again than the rounding already accumulated by the terms that are
+	/// summed. Twelve rather than the nine that bound alone would justify: the margin is
+	/// free, since the cost is O(√λ) either way.
+	///
+	/// - Parameter lambda: The rate. `init(lambda:)` has already established that it is
+	///   non-negative and no larger than 2^53.
+	/// - Returns: Zero for any rate below about 144, where the whole support is in range.
+	private static func firstCountWithRepresentableMass(_ lambda: Double) -> Int {
+		let deviations: Double = 12.0 * lambda.squareRoot()
+		let lowered: Double = lambda - deviations - 40
+
+		// The upper bound is redundant against `init(lambda:)`, which already refuses a rate
+		// above 2^53 — and `lowered` is strictly below `lambda`. It is stated here anyway so
+		// the conversion is total *on its own terms* rather than by relying on an invariant
+		// established in another function, which is the same reason
+		// `InventorySimulator.boundedLeadTimePeriods` carries its own bound. `Int(_:)` traps
+		// rather than answering, so the cost of the redundancy is one comparison and the cost
+		// of omitting it is the process.
+		guard lowered > 0, lowered < 0x1p53 else { return 0 }
+		return Int(lowered)
 	}
 }

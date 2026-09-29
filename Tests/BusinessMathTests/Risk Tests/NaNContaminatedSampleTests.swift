@@ -124,11 +124,19 @@ struct NaNContaminatedSampleTests {
         #expect(tail.isEqual(to: 0.6896551724137929))
     }
 
-    /// An empty sample keeps its documented answer of zero rather than becoming NaN — the
-    /// screen must distinguish "no data" from "unusable data".
-    @Test("EmptySample_StillReturnsZero")
-    func emptySampleStillReturnsZero() {
-        #expect(ValueAtRisk.var95(values: [Double]()).isEqual(to: 0.0))
-        #expect(ConditionalValueAtRisk.cvar95(values: [Double]()).isEqual(to: 0.0))
+    /// This test used to be `EmptySample_StillReturnsZero`, asserting `0.0` for both, and
+    /// justified on the grounds that "the screen must distinguish 'no data' from 'unusable
+    /// data'." The distinction is real, but zero was the wrong way to draw it: it is not a
+    /// third state, it is a *value on the same scale as the answer*, and at the reassuring
+    /// end of it — a VaR of zero says the portfolio loses nothing at 95%, a CVaR of zero
+    /// says the tail costs nothing. An empty sample sorted ahead of every real position.
+    ///
+    /// Both inputs are input these functions cannot evaluate, so both now say so. A caller
+    /// who needs to tell them apart tests `values.isEmpty`, which is free and unambiguous,
+    /// rather than reading a number that means something else.
+    @Test("EmptySample_IsNotANumber")
+    func emptySampleIsNotANumber() {
+        #expect(ValueAtRisk.var95(values: [Double]()).isNaN)
+        #expect(ConditionalValueAtRisk.cvar95(values: [Double]()).isNaN)
     }
 }

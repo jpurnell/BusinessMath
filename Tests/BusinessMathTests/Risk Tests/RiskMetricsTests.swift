@@ -416,17 +416,36 @@ struct RiskMetricsAdditionalTests {
 		#expect(metrics.maxDrawdown <= 1.0)
 	}
 
-	@Test("Max drawdown returns 0 for empty or single-value arrays")
+	/// This test used to be titled "Max drawdown returns 0 for empty or single-value arrays"
+	/// and asserted `0` for both. It was asserting the guard, not the mathematics.
+	///
+	/// The empty array has no equity curve, so it has no drawdown to report; `0` claimed the
+	/// strongest possible result, a portfolio that never once closed below a previous peak.
+	///
+	/// The single-value case was worse, because it was not a sentinel at all — one return is
+	/// one period of a curve starting at 1, and the drawdown is arithmetic the function can
+	/// do. `[0.05]` really is 0% (the curve only ever rose); `[-0.08]` is 8%, and the old
+	/// guard reported that loss as no loss. The two single-value cases below are what make
+	/// this test distinguish a computed zero from a fabricated one: an implementation that
+	/// still short-circuits on `count == 1` passes the first and fails the second.
+	@Test("Max drawdown refuses an empty array and computes a single return")
 	func maxDrawdownEdgeCases() throws {
-		// Empty array
+		// Empty array: no curve, no answer.
 		let empty: [Double] = []
-		let emptyDrawdown = MaxDrawdown.calculate(values: empty)
-		#expect(abs(emptyDrawdown - 0.0) < 1e-6)
+		#expect(MaxDrawdown.calculate(values: empty).isNaN)
 
-		// Single value
-		let single = [0.05]
-		let singleDrawdown = MaxDrawdown.calculate(values: single)
-		#expect(abs(singleDrawdown - 0.0) < 1e-6)
+		// A single gain never falls below the starting peak, so 0 here is measured.
+		let singleGain = [0.05]
+		let gainDrawdown = MaxDrawdown.calculate(values: singleGain)
+		#expect(abs(gainDrawdown - 0.0) < 1e-6)
+
+		// A single loss is a drawdown of exactly its own magnitude: the curve runs
+		// 1.0 -> 0.92, so (1.0 - 0.92) / 1.0 = 0.08.
+		let singleLoss = [-0.08]
+		let lossDrawdown = MaxDrawdown.calculate(values: singleLoss)
+		let expectedLossDrawdown: Double = (1.0 - (1.0 + -0.08)) / 1.0
+		#expect(abs(lossDrawdown - expectedLossDrawdown) < 1e-12)
+		#expect(lossDrawdown > 0.0)
 	}
 
 	@Test("Max drawdown handles sequence that recovers after bankruptcy")

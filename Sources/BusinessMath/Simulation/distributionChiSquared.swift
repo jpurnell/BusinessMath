@@ -325,6 +325,7 @@ extension DistributionChiSquared: ContinuousDistribution {
 	/// on a non-positive `df` and this method cannot propagate that — so the shorter
 	/// route has no error to discard in the first place.
 	public func cdf(_ x: Double) -> Double {
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
 		guard degreesOfFreedom > 0 else { return Double.nan }
 		guard x >= 0 else { return 0 }
 		let shape: Double = degreesOfFreedom / 2
@@ -333,6 +334,7 @@ extension DistributionChiSquared: ContinuousDistribution {
 
 	/// The value at which the CDF equals `p`: 2·P⁻¹(p, ν/2).
 	public func quantile(_ p: Double) -> Double {
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
 		let shape: Double = degreesOfFreedom / 2
 		let unitScale = totalizedResult {
 			try inverseRegularizedLowerIncompleteGamma(p: p, a: shape)

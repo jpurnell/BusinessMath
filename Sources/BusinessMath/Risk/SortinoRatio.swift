@@ -52,7 +52,9 @@ public struct SortinoRatio {
 	/// - Parameters:
 	///   - values: Array of return values.
 	///   - riskFreeRate: Minimum acceptable return (default: 0).
-	/// - Returns: Sortino ratio value.
+	/// - Returns: Sortino ratio value, or `nan` when there are no returns to rate. As with
+	///   ``SharpeRatio``, `0` keeps its real meaning — a return that exactly matched the
+	///   minimum acceptable return — and is not used to stand in for "no data".
 	///
 	/// ## Example
 	///
@@ -64,7 +66,14 @@ public struct SortinoRatio {
 		values: [T],
 		riskFreeRate: T = T(0)
 	) -> T {
-		guard !values.isEmpty else { return T(0) }
+		// See `SharpeRatio.calculate`: this returned `T(0)`, which on a Sortino scale reads
+		// as "earned exactly the minimum acceptable return" — a real, middling outcome that
+		// sorts above every strategy with genuine downside. Note that it also collided with
+		// the case reasoned about below: a series with *no downside periods at all* is the
+		// best outcome Sortino can describe and answers `±infinity`, so before this change
+		// "no data" and "no losses" were the two ends of the scale and only one of them was
+		// being told the truth.
+		guard !values.isEmpty else { return T.nan }
 
 		let meanReturn = mean(values)
 

@@ -80,6 +80,15 @@ public struct CommodityCollar<T: Real & Sendable>: Sendable where T: Codable {
 	/// - Parameter spotPrice: The observed spot price.
 	/// - Returns: The per-unit payoff. Positive means the hedge pays the producer.
 	public func payoff(spotPrice: T) -> T {
+		// Every comparison against a NaN is false, so an unobservable spot — or an unset
+		// strike — failed both tests and fell through to the `else`, reporting a per-unit
+		// payoff of `T.zero`: "the price printed inside the collar band, so the hedge neither
+		// paid nor cost anything". That is the one wrong answer that looks like a real
+		// observation, and it is the *middle* of this function's range, not an end of it. It
+		// then flows into `settlement`, `HedgingProgram.totalSettlements` and the effective
+		// realized price as a measured zero. Contract §3.1, and the "both arms skipped" row
+		// of §2.
+		guard !spotPrice.isNaN, !putStrike.isNaN, !callStrike.isNaN else { return T.nan }
 		if spotPrice < putStrike {
 			// Long put is in the money
 			return putStrike - spotPrice
@@ -191,6 +200,11 @@ public struct ThreeWayCollar<T: Real & Sendable>: Sendable where T: Codable {
 	/// - Parameter spotPrice: The observed spot price.
 	/// - Returns: The per-unit payoff. Positive means the hedge pays the producer.
 	public func payoff(spotPrice: T) -> T {
+		// No contamination guard needed, unlike ``CommodityCollar/payoff(spotPrice:)``: a NaN
+		// fails all three tests and lands in the final `else`, which *computes*
+		// `-(spotPrice - shortCallStrike)` rather than asserting a literal, so the NaN
+		// propagates. The two-strike collar's terminal arm was `return T.zero`, which is why
+		// only that one needed a guard. Recorded so this is not re-audited.
 		if spotPrice < shortPutStrike {
 			// Zone 1: Below short put — both puts in the money
 			// Long put pays: (longPutStrike - spotPrice)

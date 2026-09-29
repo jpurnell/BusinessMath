@@ -29,6 +29,11 @@ import Numerics
 ///   // result should be the probability density of x = 2 for the exponential distribution with rate parameter λ = 0.5
 
 public func exponentialPDF<T: Real>(_ x: T, λ: T) -> T {
+	// `nan >= 0` is false, so a contaminated argument took the below-the-support branch and
+	// was answered with a density of exactly zero — the value a likelihood multiplies to
+	// nothing and a log-likelihood turns into `-inf`, reported as a measurement. A `nan`
+	// rate, by contrast, already propagates through the arithmetic. Make the two agree.
+	guard !x.isNaN else { return T.nan }
 	guard x >= 0 else { return 0 }
 	return λ * T.exp(T(-1) * λ * x)
 }

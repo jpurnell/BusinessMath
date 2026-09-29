@@ -212,7 +212,8 @@ public struct HestonProcess: Sendable {
     ///   - riskFreeRate: Continuously compounded risk-free rate (r).
     ///   - timeToExpiry: Time to expiry in years (T).
     ///   - initialVariance: Initial variance (v₀).
-    /// - Returns: The European call option price. Returns zero for degenerate inputs.
+    /// - Returns: The European call option price. Zero for degenerate inputs — a non-positive
+    ///   spot, strike or expiry — and `nan` when any of the three is `nan`.
     public func europeanCallPrice(
         spot: Double,
         strike: Double,
@@ -220,6 +221,12 @@ public struct HestonProcess: Sendable {
         timeToExpiry: Double,
         initialVariance: Double
     ) -> Double {
+        // Contamination first, domain guard second, so neither reports the other's condition.
+        // A call price of zero is a worthless option: in a portfolio revaluation the position
+        // silently disappears, and `nan > 0` is false, so an unusable spot, strike or expiry
+        // produced exactly that. Contract §3.1. `initialVariance` is not screened here — it
+        // propagates arithmetically through `computeP`.
+        guard !spot.isNaN, !strike.isNaN, !timeToExpiry.isNaN else { return Double.nan }
         guard spot > 0, strike > 0, timeToExpiry > 0 else { return 0.0 }
 
         let p1 = computeP(

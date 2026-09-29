@@ -94,6 +94,7 @@ public struct DistributionBurr12: ContinuousDistribution, Sendable {
 
 	/// P(X ≤ x), zero at or below `location`.
 	public func cdf(_ x: Double) -> Double {
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
 		guard x > location else { return 0 }
 		let standardised: Double = (x - location) * inverseScale
 		let raised: Double = Foundation.pow(standardised, shape1)
@@ -116,6 +117,7 @@ public struct DistributionBurr12: ContinuousDistribution, Sendable {
 	/// - Parameter p: A probability in (0, 1). At or below zero the answer is
 	///   `location`; at or above one it is infinite.
 	public func quantile(_ p: Double) -> Double {
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
 		guard p > 0 else { return location }
 		guard p < 1 else { return .infinity }
 		let logComplement: Double = Foundation.log1p(-p)
@@ -216,6 +218,7 @@ public struct DistributionDagum: ContinuousDistribution, Sendable {
 
 	/// P(X ≤ x), zero at or below `location`.
 	public func cdf(_ x: Double) -> Double {
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
 		guard x > location else { return 0 }
 		let standardised: Double = (x - location) * inverseScale
 		let raised: Double = Foundation.pow(standardised, -shape1)
@@ -227,6 +230,7 @@ public struct DistributionDagum: ContinuousDistribution, Sendable {
 	/// - Parameter p: A probability in (0, 1). At or below zero the answer is
 	///   `location`; at or above one it is infinite.
 	public func quantile(_ p: Double) -> Double {
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
 		guard p > 0 else { return location }
 		guard p < 1 else { return .infinity }
 		// `expm1` for the same reason as ``DistributionBurr12/quantile(_:)``: as `p`

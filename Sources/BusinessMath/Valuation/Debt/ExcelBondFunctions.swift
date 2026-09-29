@@ -220,6 +220,13 @@ public func bondDuration<T: Real & BinaryFloatingPoint & Sendable>(
 		weighted += discounted * periodsAway
 	}
 
+	// Not a fabricated zero, and no contamination screen is needed: `present` cannot be NaN
+	// here. The entry guard `rate >= T.zero, yield >= T.zero` *throws* for a NaN, because
+	// `nan >= 0` is false — contract §3.2 arrived at by the same fact that causes the defect
+	// class elsewhere — and every term below is built from those two, a coupon count and
+	// `T.pow` of a value at least 1. What survives is the genuinely degenerate case where the
+	// discounted flows sum to zero (a zero-rate bond at an infinite yield), which has no
+	// duration to weight. Recorded so this is not re-audited.
 	guard present > T.zero else { return T.zero }
 	let inPeriods: T = weighted / present
 	return inPeriods / perYear

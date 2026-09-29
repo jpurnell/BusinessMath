@@ -66,10 +66,14 @@ public struct VolatilitySurface: Sendable {
     /// - Parameters:
     ///   - strike: The option strike price.
     ///   - expiry: Time to expiration in years.
-    /// - Returns: The interpolated implied volatility.
+    /// - Returns: The interpolated implied volatility, or `nan` when the surface carries no
+    ///   quotes or its grid does not match its own strike and expiry axes.
     public func impliedVol(strike: Double, expiry: Double) -> Double {
+        // A surface with no quotes has no volatility to report, and `0.0` is not a refusal:
+        // it prices every option at intrinsic value and sorts below every real quote.
+        // Contract §3.1.
         guard !strikes.isEmpty, !expiries.isEmpty, !vols.isEmpty else {
-            return 0.0
+            return Double.nan
         }
 
         // Find strike indices and weight
@@ -77,6 +81,15 @@ public struct VolatilitySurface: Sendable {
 
         // Find expiry indices and weight
         let (ei, ew) = interpolationIndices(value: expiry, in: expiries)
+
+        // `init` validates nothing, so `vols` need not be `expiries.count` rows of
+        // `strikes.count`. The indices above are into `strikes` and `expiries`; used against a
+        // ragged or short grid they index out of range and trap. A grid that does not match its
+        // own axes cannot be interpolated, so say so rather than crash.
+        guard ei.upper < vols.count,
+              si.upper < vols[ei.lower].count, si.upper < vols[ei.upper].count else {
+            return Double.nan
+        }
 
         // Bilinear interpolation
         let v00 = vols[ei.lower][si.lower]

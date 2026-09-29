@@ -137,6 +137,7 @@ extension DistributionLogistic: ContinuousDistribution {
 
 	/// P(X ≤ x) = 1 / (1 + exp(−(x − μ)/s)).
 	public func cdf(_ x: Double) -> Double {
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
 		let scale = logisticScale
 		guard scale > 0 else { return x < mean ? 0 : 1 }
 		let z = (x - mean) / scale
@@ -145,6 +146,7 @@ extension DistributionLogistic: ContinuousDistribution {
 
 	/// The value at which the CDF equals `p`: μ + s·ln(p / (1 − p)).
 	public func quantile(_ p: Double) -> Double {
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
 		let scale = logisticScale
 		guard scale > 0 else { return mean }
 		let complement = 1 - p

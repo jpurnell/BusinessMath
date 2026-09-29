@@ -66,8 +66,18 @@ public struct SABRParameters: Sendable {
     ///   - forward: The forward price of the underlying.
     ///   - strike: The option strike price. Must be positive.
     ///   - timeToExpiry: Time to expiration in years. Must be positive.
-    /// - Returns: The SABR-implied Black volatility.
+    /// - Returns: The SABR-implied Black volatility; `nan` when any argument or `alpha` is
+    ///   `nan`, and `0` for a non-positive forward, strike, expiry or `alpha`, which are
+    ///   outside the model's domain.
     public func impliedVol(forward: Double, strike: Double, timeToExpiry: Double) -> Double {
+        // Contamination is diverted before the domain guard so each keeps its own meaning —
+        // the same order as `JumpDiffusionProcess.step` and `CapitalAllocationOptimizer.roi`.
+        // A zero implied volatility is not a refusal: it prices every option at intrinsic value
+        // and sorts to the bottom of any volatility screen. `nan > 0` is false, so an unusable
+        // forward, strike, expiry or alpha was answered with exactly that. Contract §3.1.
+        guard !forward.isNaN, !strike.isNaN, !timeToExpiry.isNaN, !alpha.isNaN else {
+            return Double.nan
+        }
         guard forward > 0, strike > 0, timeToExpiry > 0, alpha > 0 else {
             return 0.0
         }

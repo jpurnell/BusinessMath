@@ -145,6 +145,36 @@ internal func validateXY<T: Real>(
     guard xs.count >= minimumPoints else {
         throw InterpolationError.insufficientPoints(required: minimumPoints, got: xs.count)
     }
+    // A non-finite abscissa passes both ordering checks below, because every comparison
+    // involving `nan` is false — `xs[i] < xs[i-1]` and `xs[i] == xs[i-1]` are both false at the
+    // bad knot *and* at the one after it. The result was not a `nan` answer but a silent
+    // constant function: with the `nan` at either end of `xs`, the in-range test in
+    // `extrapolatedValue` fails for every query, the clamp arm fires, and the interpolator
+    // returns `ys.last` — a finite, plausible number — at every point. Measured on
+    // `xs = [nan, 1, 2, 3, 4]`, `ys = [0, 1, 4, 9, 16]`: queries at 0.5, 2.5 and 3.5 all
+    // returned 16.0, with `xs.count` still reporting five knots. An interior `nan` misbrackets
+    // instead and is masked by returning `nan` from the wrong interval.
+    //
+    // `BusinessMathError.dataQuality` rather than an `InterpolationError` case: contract §3.2
+    // names it for contamination in a throwing path, and §3.4 forbids adding a case to a public
+    // enum, which would break an exhaustive `switch` in a consumer. Reusing `unsortedInputs`
+    // or `invalidParameter` would be §4's "reporting contamination through a guard written for
+    // a different condition" — it would send the caller sorting data that is already sorted.
+    //
+    // `ys` is deliberately **not** screened: a non-finite ordinate propagates to a `.nan`
+    // result, which is contract §3.1's contracted answer, and refusing it would be a different
+    // and much larger decision. How far one bad `ys` spreads is method-specific — one interval
+    // for `Linear`, the whole curve for `CubicSpline` and `BarycentricLagrange`.
+    if let badIndex = xs.firstIndex(where: { !$0.isFinite }) {
+        throw BusinessMathError.dataQuality(
+            message: "Interpolation requires finite x-coordinates; a non-finite knot passes "
+                + "every ordering check and yields a constant function rather than an error",
+            context: [
+                "first_invalid_index": "\(badIndex)",
+                "invalid_count": "\(xs.filter { !$0.isFinite }.count)"
+            ]
+        )
+    }
     if xs.count >= 2 {
         for i in 1..<xs.count {
             if xs[i] < xs[i - 1] {
@@ -183,7 +213,19 @@ internal func extrapolatedValue<T: Real & Sendable>(
     policy: ExtrapolationPolicy<T>
 ) -> T? {
     let n = xs.count
-    if n == 0 { return T(0) }
+    // Unreachable — every initializer routes through `validateXY` with `minimumPoints >= 1`.
+    // It answered `T(0)` before, which is the one shape this `Optional`-returning function must
+    // not use: `nil` already means "in range, fall through", so `.some(0)` claimed a *measured*
+    // zero at every query point. There is no reading in which the interpolant of no data is 0.
+    if n == 0 { return T.nan }
+    // `t` is the query, and `nan >= xs[0]` is false, so a contaminated query used to fail the
+    // in-range test, fall into the clamp arm, fail `t < xs[0]` as well, and take the **else**
+    // branch: `ys[n - 1]`. Measured on `xs = [0, 1, 2, 3, 4]`, `ys = [0, 1, 4, 9, 16]`, a query
+    // of `.nan` returned **16.0** — the last observation, which for a resampled series is the
+    // most recent known value and the one a caller is likeliest to trust, with nothing to
+    // distinguish it from a legitimate `interp(4.0)`. Contract §3.1. This guard sits in the one
+    // function all 21 interpolators in this directory call first.
+    if t.isNaN { return T.nan }
     if t >= xs[0] && t <= xs[n - 1] { return nil }
     switch policy {
     case .clamp:

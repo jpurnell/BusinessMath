@@ -324,6 +324,7 @@ extension DistributionGamma: ContinuousDistribution {
 	/// This type is rate-parameterised, so the scale handed to
 	/// ``gammaCDF(_:shape:scale:)`` is `1/λ`.
 	public func cdf(_ x: Double) -> Double {
+		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
 		guard rate > 0 else { return Double.nan }
 		return gammaCDF(x, shape: shape, scale: scale)
 	}
@@ -333,6 +334,7 @@ extension DistributionGamma: ContinuousDistribution {
 	/// Root-found, through ``inverseRegularizedLowerIncompleteGamma(p:a:)``, so it is
 	/// held to a relative rather than absolute tolerance in the conformance battery.
 	public func quantile(_ p: Double) -> Double {
+		guard !p.isNaN else { return Double.nan } // NaN in, NaN out — no probability, so no value. ``ContinuousDistribution/quantile(_:)``
 		guard rate > 0 else { return Double.nan }
 		return totalizedResult { try gammaQuantile(p: p, shape: shape, scale: scale) }
 	}

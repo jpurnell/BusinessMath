@@ -53,7 +53,8 @@ public struct ConditionalValueAtRisk {
 	/// - Parameters:
 	///   - values: Array of return values.
 	///   - confidenceLevel: Confidence level (e.g., 0.95 for 95%, 0.99 for 99%).
-	/// - Returns: CVaR value (negative indicates average loss in tail).
+	/// - Returns: CVaR value (negative indicates average loss in tail), or `nan` for a
+	///   sample this function cannot evaluate — one that is empty, or one containing `nan`.
 	///
 	/// ## Example
 	///
@@ -65,7 +66,12 @@ public struct ConditionalValueAtRisk {
 		values: [T],
 		confidenceLevel: T
 	) -> T {
-		guard !values.isEmpty else { return T(0) }
+		// See `ValueAtRisk.calculate`, which carried the identical guard: `T(0)` here claimed
+		// an average tail loss of nothing — the best expected shortfall a portfolio can have
+		// — from a sample with no tail and no observations. Refusing matches the `nan` guard
+		// immediately below, which already covers the other input this function cannot
+		// evaluate.
+		guard !values.isEmpty else { return T.nan }
 
 		// See `ValueAtRisk.calculate`: an unsortable sample has no order statistics, and a
 		// number here would depend on where the `nan` sat rather than on the data.

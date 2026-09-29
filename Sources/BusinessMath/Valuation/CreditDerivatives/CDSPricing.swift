@@ -126,8 +126,12 @@ public struct CDS<T: Real & Sendable>: Sendable where T: Sendable {
         let discountFactors = discountCurve.valuesArray
         let survival = survivalProbabilities.valuesArray
 
+        // A discount curve and a survival curve of different lengths are not two halves of one
+        // schedule, and this leg has no value to report. `T.zero` was not a refusal: it is the
+        // present value of a leg that pays nothing, and `parSpread` divides by exactly this
+        // number — a zero annuity there reads as protection being free. Contract §3.1.
         guard periods.count == survival.count else {
-            return T.zero
+            return T.nan
         }
 
         // Accrual period based on payment frequency
@@ -179,8 +183,10 @@ public struct CDS<T: Real & Sendable>: Sendable where T: Sendable {
         let discountFactors = discountCurve.valuesArray
         let survival = survivalProbabilities.valuesArray
 
+        // See ``premiumLegPV(discountCurve:survivalProbabilities:)``: mismatched curves are not
+        // a leg worth zero.
         guard periods.count == survival.count else {
-            return T.zero
+            return T.nan
         }
 
         let lossGivenDefault = T(1) - recoveryRate
@@ -262,6 +268,11 @@ public struct CDS<T: Real & Sendable>: Sendable where T: Sendable {
             survivalProbabilities: survivalCurve
         )
 
+        // `nan > T.zero` is false, so one bad discount factor or survival probability made the
+        // annuity unusable and this guard answered with a par spread of zero — protection on
+        // this name is free, the safest row on a credit screen. `CreditTermStructure.cdsSpread`
+        // already guards the same ratio this way; this is its sibling.
+        guard !premiumAnnuity.isNaN, !protectionPV.isNaN else { return T.nan }
         guard premiumAnnuity > T.zero else {
             return T.zero
         }

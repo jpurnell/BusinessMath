@@ -29,6 +29,8 @@ import Numerics
 /// - **Kurtosis = 0**: Normal distribution (mesokurtic)
 /// - **Kurtosis > 0**: Fat tails (leptokurtic) - more extreme events than normal
 /// - **Kurtosis < 0**: Thin tails (platykurtic) - fewer extreme events than normal
+/// - **Kurtosis = `nan`**: No answer — the sample is empty, constant, or contains `nan`.
+///   Distinct from `0`, which is the *claim* that the tails are exactly normal.
 ///
 /// ## Example: Tail Thickness
 ///
@@ -59,7 +61,9 @@ public struct Kurtosis {
 	/// Calculate excess kurtosis of a return distribution (delegates to canonical ``kurtosisP(_:)``).
 	///
 	/// - Parameter values: Array of return values.
-	/// - Returns: Excess kurtosis value (positive = fat tails, negative = thin tails).
+	/// - Returns: Excess kurtosis value (positive = fat tails, negative = thin tails),
+	///   or `nan` for any sample ``kurtosisP(_:)`` cannot evaluate — an empty sample, a
+	///   constant series, or one containing `nan`.
 	///
 	/// ## Example
 	///
@@ -70,9 +74,17 @@ public struct Kurtosis {
 	public static func calculate<T: Real & Sendable & BinaryFloatingPoint>(
 		values: [T]
 	) -> T {
-		guard !values.isEmpty else { return T(0) }
-
-		// Delegate to canonical population kurtosis implementation
+		// There was a `guard !values.isEmpty else { return T(0) }` here, and it made the
+		// delegation claimed above and in the type's documentation false. An empty sample
+		// never reached `kurtosisP` at all; it was answered here, with `0` — and `0` excess
+		// kurtosis is not "no answer", it is *exactly normal-tailed*, the specific and
+		// reassuring claim that the returns carry no more extreme-event risk than a Gaussian.
+		// A caller screening for fat tails read "this asset is fine" from no observations.
+		//
+		// `kurtosisP` now answers `nan` for an empty sample, so deleting the guard is the
+		// whole fix: the wrapper inherits the contract instead of quietly overriding it.
+		// Every other unevaluable case — a constant series, a `nan` in the sample — already
+		// arrived through the delegate, so this is also what makes the four of them agree.
 		return kurtosisP(values)
 	}
 

@@ -32,6 +32,12 @@ import Numerics
 ///
 public func binomialPMF<T: Real>(n: Int, k: Int, p: T) -> T {
     guard k >= 0, k <= n else { return T(0) }
+    // `nan >= 0` and `nan <= 1` are both false, so a contaminated success probability fell
+    // into the out-of-range branch and the function reported a probability of **exactly
+    // zero** — "this outcome cannot occur" — for a `p` it could not read at all. That is the
+    // definite end of the scale, and it is the value a likelihood sums and a decision
+    // thresholds. Separate the unreadable parameter from the invalid one.
+    guard !p.isNaN else { return T.nan }
     guard p >= 0, p <= 1 else { return T(0) }
 
     let coef = T(combination(n, c: k))
