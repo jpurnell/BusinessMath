@@ -220,6 +220,10 @@ public struct RetailModel: Sendable {
     /// - Returns: Number of times inventory turns over per year
     public func calculateInventoryTurnover() -> Double {
         let annualCOGS = calculateCOGS() * 12
+        // Turnover 0 is "stock that never moves", and `calculateDaysInventoryOutstanding`
+        // immediately turns it into an infinite DIO — a confident claim about a business
+        // whose inventory value could not be read at all.
+        guard !initialInventoryValue.isNaN, !annualCOGS.isNaN else { return .nan }
         guard initialInventoryValue > 0 else { return 0 }
         return annualCOGS / initialInventoryValue // fp-safety:disable — guarded above
     }
@@ -315,6 +319,9 @@ public struct RetailModel: Sendable {
     ///
     /// - Returns: Markup percentage
     public func calculateMarkup() -> Double {
+        // A markup of 0 is "sold at cost" — a real pricing decision, and one a margin
+        // screen reads as a deliberate loss-leader rather than as missing data.
+        guard !costOfGoodsSoldPercentage.isNaN else { return .nan }
         guard costOfGoodsSoldPercentage > 0 else { return 0 }
         return (1.0 - costOfGoodsSoldPercentage) / costOfGoodsSoldPercentage // fp-safety:disable — guarded above
     }
@@ -350,6 +357,10 @@ public struct RetailModel: Sendable {
     /// - Parameter squareFootage: Total square footage (for all stores if multi-location)
     /// - Returns: Monthly revenue per square foot
     public func calculateRevenuePerSquareFoot(squareFootage: Double) -> Double {
+        // Revenue per square foot is the metric retail sites are ranked and closed on.
+        // Zero is the bottom of that ranking, which is a claim about the store, not a
+        // refusal to make one.
+        guard !squareFootage.isNaN, !monthlyRevenue.isNaN else { return .nan }
         guard squareFootage > 0 else { return 0 }
         return monthlyRevenue / squareFootage // fp-safety:disable — guarded above
     }
@@ -364,6 +375,7 @@ public struct RetailModel: Sendable {
         // The single-argument overload above guards this exact divisor and returns 0; this one
         // did not, so a store entered with no floor area reported infinite revenue per square
         // foot rather than nothing.
+        guard !squareFootage.isNaN else { return .nan }
         guard squareFootage > 0 else { return 0 }
         guard let avgRevenue = averageStoreRevenue else {
             // Single-store model: use total revenue

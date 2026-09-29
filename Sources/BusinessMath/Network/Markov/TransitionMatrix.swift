@@ -143,9 +143,20 @@ public struct TransitionMatrix<T: Real & Sendable & BinaryFloatingPoint>: Sendab
 	/// - Parameters:
 	///   - from: The current state.
 	///   - to: The next state.
-	/// - Returns: The probability, or zero if either name is not a state.
+	/// - Returns: The probability, or `nan` if either name is not a state of this chain.
+	///
+	/// `T.zero` was the old answer for an unknown name, and zero is not "I have no answer"
+	/// on a probability scale — it is the confident claim that the move is **impossible**,
+	/// which is what a caller thresholding for reachability reads it as. A name the chain
+	/// has never heard of has no transition probability of any size. ``absorptionProbability(to:from:)``
+	/// one file over already refuses the same question, in its own words: "a question about
+	/// eventual absorption in a state the chain can leave again has no answer of this
+	/// shape". This is the `Double`-returning form of that refusal.
+	///
+	/// Unreachable from inside the module: every internal caller draws its names from
+	/// ``states``.
 	public func probability(from: String, to: String) -> T {
-		guard let row = position[from], let column = position[to] else { return T.zero }
+		guard let row = position[from], let column = position[to] else { return T.nan }
 		return rows[row][column]
 	}
 

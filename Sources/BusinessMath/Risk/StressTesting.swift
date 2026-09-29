@@ -193,20 +193,38 @@ public struct StressTestReport<T: Real & Sendable>: Sendable {
 		var report = "Stress Test Summary\n"
 		report += "===================\n\n"
 
-		for result in results.sorted(by: { $0.impact < $1.impact }) {
+		// Only the scenarios with an orderable impact are sorted. A `nan` impact makes this
+		// predicate stop being a strict weak ordering, and the report would then list the
+		// *valid* scenarios in an arbitrary order — a summary whose whole claim is "worst
+		// first". Unorderable scenarios keep their input order at the end, where their own
+		// `description` says what happened to them.
+		let orderable = results.filter { !$0.impact.isNaN }
+		let unorderable = results.filter { $0.impact.isNaN }
+		for result in orderable.sorted(by: { $0.impact < $1.impact }) + unorderable {
 			report += result.description + "\n\n"
 		}
 
 		return report
 	}
 
-	/// Worst-case scenario (lowest NPV).
+	/// Worst-case scenario (lowest NPV), or `nil`.
+	///
+	/// `nil` means the worst case cannot be named. That covers an empty report, and it now
+	/// also covers a report holding a scenario whose NPV is not a number: `min(by:)` seeds
+	/// with the first result and replaces it only when the predicate says so, and every
+	/// comparison against a `nan` is false — so an unvalued scenario is skipped everywhere
+	/// except slot zero, where it is returned *as* the worst case. Either way the caller was
+	/// handed a named scenario, described as the worst, chosen by where in the array the
+	/// unvalued one happened to sit. A stress report exists to be acted on at this end of it.
 	public var worstCase: ScenarioResult<T>? {
-		results.min(by: { $0.scenarioNPV < $1.scenarioNPV })
+		guard results.allSatisfy({ !$0.scenarioNPV.isNaN }) else { return nil }
+		return results.min(by: { $0.scenarioNPV < $1.scenarioNPV })
 	}
 
-	/// Best-case scenario (highest NPV).
+	/// Best-case scenario (highest NPV), or `nil` when the report is empty or holds a
+	/// scenario that could not be valued. Same mechanism as ``worstCase``.
 	public var bestCase: ScenarioResult<T>? {
-		results.max(by: { $0.scenarioNPV < $1.scenarioNPV })
+		guard results.allSatisfy({ !$0.scenarioNPV.isNaN }) else { return nil }
+		return results.max(by: { $0.scenarioNPV < $1.scenarioNPV })
 	}
 }

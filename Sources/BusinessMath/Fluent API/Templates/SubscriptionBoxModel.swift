@@ -181,6 +181,10 @@ public struct SubscriptionBoxModel: Sendable {
     ///
     /// - Returns: Gross margin percentage
     public func calculateGrossMarginPercentage() -> Double {
+        // A gross margin percentage of 0 is a box sold at exactly cost. It passes every
+        // `margin >= 0` screen, which is the wrong side of the line for a price nobody
+        // could read.
+        guard !monthlyBoxPrice.isNaN else { return .nan }
         guard monthlyBoxPrice > 0 else { return 0 }
         return calculateGrossMarginPerBox() / monthlyBoxPrice // fp-safety:disable — guarded above
     }

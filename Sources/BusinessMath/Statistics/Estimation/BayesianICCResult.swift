@@ -79,10 +79,19 @@ public struct BayesianICCResult<T: Real & Sendable>: Sendable, Equatable {
     /// Computes the posterior probability that the ICC exceeds a given threshold.
     ///
     /// - Parameter threshold: The ICC value to compare against.
-    /// - Returns: The proportion of posterior samples above `threshold`, in [0, 1].
+    /// - Returns: The proportion of posterior samples above `threshold`, in [0, 1], or `nan`
+    ///   when a sample — or `threshold` itself — cannot be compared. A chain that produced an
+    ///   unusable draw has no posterior probability to report, and `0` would read as
+    ///   "the ICC is confidently below the threshold".
     public func probabilityAbove(_ threshold: T) -> T {
         guard !iccSamples.isEmpty else { return T.zero }
         let count = iccSamples.filter { $0 > threshold }.count
+        let atOrBelow = iccSamples.filter { $0 <= threshold }.count
+        // Every comparison against a `nan` is false, so such a draw falls on neither side of
+        // the threshold and the proportion comes back biased toward zero — the reassuring
+        // end — with nothing to say a draw was dropped. The two counts partitioning the
+        // samples is the statement that every draw was placed somewhere.
+        guard count + atOrBelow == iccSamples.count else { return T.nan }
         return T(count) / T(iccSamples.count)
     }
 }

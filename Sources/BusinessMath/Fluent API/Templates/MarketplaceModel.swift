@@ -315,7 +315,10 @@ public struct MarketplaceModel: Sendable {
         let totalTransactions = calculateTotalTransactions(forMonth: month)
         let sellers = calculateSellers(forMonth: month)
         // No sellers, so nothing is being sold per seller. Ungarded this is
-        // `+infinity`, which then poisons any total or average built from it.
+        // `+infinity`, which then poisons any total or average built from it. A `nan`
+        // seller count is a third case and was taking the zero branch with it, reporting
+        // a measured zero for a marketplace nobody could count.
+        guard !sellers.isNaN, !totalTransactions.isNaN else { return .nan }
         guard sellers > 0 else { return 0 }
         return totalTransactions / sellers
     }
@@ -330,7 +333,9 @@ public struct MarketplaceModel: Sendable {
         let gmv = calculateGMV(forMonth: month)
         let sellers = calculateSellers(forMonth: month)
         // No sellers to average over. Unguarded this is `+infinity`, which reads as
-        // unbounded revenue per seller for a marketplace that has none.
+        // unbounded revenue per seller for a marketplace that has none. A `nan` count
+        // took the zero branch, which reads as a measured nothing.
+        guard !sellers.isNaN, !gmv.isNaN else { return .nan }
         guard sellers > 0 else { return 0 }
         return gmv / sellers
     }
@@ -353,6 +358,9 @@ public struct MarketplaceModel: Sendable {
         // threshold on. Unguarded, a marketplace with no sellers returns `+infinity`,
         // which satisfies "buyers per seller above 2 is healthy" — so the one
         // marketplace where nothing can be bought reads as the healthiest on the books.
+        // The other end matters too: a `nan` on either side was answering 0, which is the
+        // bottom of the same threshold rather than an absence from it.
+        guard !sellers.isNaN, !buyers.isNaN else { return .nan }
         guard sellers > 0 else { return 0 }
         return buyers / sellers
     }
@@ -364,7 +372,9 @@ public struct MarketplaceModel: Sendable {
         // The `let` binding guards absence, which is a different question from zero:
         // a snapshot that names its seller count as 0 passes this guard and divides
         // by it. Same `+infinity`, reached one step later.
-        guard let buyers = numberOfBuyers, let sellers = numberOfSellers, sellers > 0 else { return 0 }
+        guard let buyers = numberOfBuyers, let sellers = numberOfSellers else { return 0 }
+        guard !buyers.isNaN, !sellers.isNaN else { return .nan }
+        guard sellers > 0 else { return 0 }
         return buyers / sellers
     }
 

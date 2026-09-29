@@ -275,17 +275,30 @@ public struct ModelInspector: Sendable {
             issues.append("Model has costs but no revenue sources")
         }
 
-        // Check for negative revenue amounts
+        // Check for negative revenue amounts.
+        //
+        // The NaN arm comes first because `nan < 0` is false: an amount that is not a
+        // number matched no branch, `issues` stayed empty and `validateStructure()`
+        // reported `isValid == true` for a model whose every derived figure is NaN. It is
+        // reported as its own issue rather than folded into the negative-amount message,
+        // which would send a reader looking for a sign error that is not there.
         for (index, revenue) in model.revenueComponents.enumerated() {
-            if revenue.amount < 0 {
+            if revenue.amount.isNaN {
+                issues.append("Revenue component '\(revenue.name)' at index \(index) has an amount that is not a number")
+            } else if revenue.amount < 0 {
                 issues.append("Revenue component '\(revenue.name)' at index \(index) has negative amount: \(revenue.amount)")
             }
         }
 
-        // Check for invalid cost percentages
+        // Check for invalid cost percentages.
+        //
+        // `nan < 0` and `nan > 1` are both false, so a percentage that is not a number fell
+        // through both arms of the range test and the model was reported structurally sound.
         for (index, cost) in model.costComponents.enumerated() {
             if case .variable(let percentage) = cost.type {
-                if percentage < 0 || percentage > 1 {
+                if percentage.isNaN {
+                    issues.append("Variable cost '\(cost.name)' at index \(index) has a percentage that is not a number")
+                } else if percentage < 0 || percentage > 1 {
                     issues.append("Variable cost '\(cost.name)' at index \(index) has invalid percentage: \(percentage) (should be 0-1)")
                 }
             }

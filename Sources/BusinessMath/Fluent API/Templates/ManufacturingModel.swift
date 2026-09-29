@@ -128,7 +128,14 @@ public struct ManufacturingModel: Sendable {
     ///
     /// - Returns: Total cost per unit based on actualProduction, or 0 if not set
     public func calculateUnitCost() -> Double {
-        guard let production = actualProduction, production > 0 else { return 0 }
+        // `nan > 0` is false, so an unusable production figure took the same branch as a
+        // plant that made nothing and reported a unit cost of **0** — the cheapest possible
+        // value on a cost scale, and the one any "pick the lowest-cost configuration" sweep
+        // selects outright. `calculateUnitCost(atCapacityUtilization:)` already refuses this
+        // exact input; the two overloads disagreed about the same question.
+        guard let production = actualProduction else { return 0 }
+        guard !production.isNaN else { return .nan }
+        guard production > 0 else { return 0 }
         let overheadPerUnit = monthlyOverhead / production
         return variableCostPerUnit + overheadPerUnit
     }
@@ -200,6 +207,11 @@ public struct ManufacturingModel: Sendable {
     ///
     /// - Returns: Contribution margin ratio (percentage)
     public func calculateContributionMarginRatio() -> Double {
+        // A `nan` selling price is not a ratio of zero. Zero here reads as "this product
+        // contributes nothing towards fixed costs", a measurement, and it is what
+        // `calculateBreakEvenUnits` in this same file goes on to turn into an infinite
+        // break-even volume.
+        guard !sellingPricePerUnit.isNaN else { return .nan }
         guard sellingPricePerUnit > 0 else { return 0 }
         return calculateContributionMarginPerUnit() / sellingPricePerUnit // fp-safety:disable — guarded above
     }
@@ -241,6 +253,10 @@ public struct ManufacturingModel: Sendable {
     /// - Returns: Capacity utilization ratio (0.0 to 1.0+), or 0 if actualProduction is not set
     public func calculateCapacityUtilization() -> Double {
         guard let production = actualProduction else { return 0 }
+        // Utilisation of 0 is a real reading — an idle plant — so returning it for a
+        // capacity or a production figure nobody could compute puts an unusable model on
+        // the same axis as a measured one, at the end of it that reads as "shut down".
+        guard !production.isNaN, !productionCapacity.isNaN else { return .nan }
         guard productionCapacity > 0 else { return 0 }
         return production / productionCapacity // fp-safety:disable — guarded above
     }
@@ -252,6 +268,8 @@ public struct ManufacturingModel: Sendable {
     /// - Parameter actualProduction: Number of units actually produced
     /// - Returns: Capacity utilization ratio (0.0 to 1.0+)
     public func calculateCapacityUtilization(actualProduction: Double) -> Double {
+        // Same reading as the stored-production overload above: 0 means idle, not unknown.
+        guard !actualProduction.isNaN, !productionCapacity.isNaN else { return .nan }
         guard productionCapacity > 0 else { return 0 }
         return actualProduction / productionCapacity // fp-safety:disable — guarded above
     }
@@ -265,7 +283,12 @@ public struct ManufacturingModel: Sendable {
     /// - Parameter actualProduction: Number of units actually produced
     /// - Returns: Efficiency ratio, or 0 if no target is set
     public func calculateProductionEfficiency(actualProduction: Double) -> Double {
-        guard let target = targetProduction, target > 0 else { return 0 }
+        // The documented `0` for *no target set* is kept: a model that was never given a
+        // target genuinely has no efficiency to report against one. A `nan` target is a
+        // different thing and got the same answer, because `nan > 0` is false.
+        guard let target = targetProduction else { return 0 }
+        guard !target.isNaN, !actualProduction.isNaN else { return .nan }
+        guard target > 0 else { return 0 }
         return actualProduction / target // fp-safety:disable — guarded above
     }
 

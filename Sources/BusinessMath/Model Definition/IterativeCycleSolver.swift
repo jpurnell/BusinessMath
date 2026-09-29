@@ -303,7 +303,18 @@ struct IterativeCycleSolver<T: Real & Sendable & LosslessStringConvertible> {
 				magnitude = size
 				sign = delta > T(0) ? 1 : (delta < T(0) ? -1 : 0)
 			}
-			if size > settings.absoluteTolerance && size > settings.relativeTolerance * abs(new) {
+			// Written as "settled unless shown otherwise" rather than as the negation
+			// `size > absolute && size > relative * |new|`. For every finite value the two
+			// forms agree exactly. They part on a tolerance that is not a number: `size >
+			// nan` is false, so the old form read an unusable threshold as met, `moving`
+			// stayed empty, and `solve()` returned the first sweep as a settled fixed
+			// point. `IterationSettings` takes its tolerances from the caller and validates
+			// neither, so that is reachable — and a threshold nobody can compare against
+			// supports only one verdict, which is that nothing has been shown to settle.
+			let withinAbsolute: Bool = size <= settings.absoluteTolerance
+			let scaled: T = settings.relativeTolerance * abs(new)
+			let withinRelative: Bool = size <= scaled
+			if !(withinAbsolute || withinRelative) {
 				moving = true
 			}
 		}

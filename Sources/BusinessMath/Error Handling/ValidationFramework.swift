@@ -299,9 +299,24 @@ extension TimeSeries: Validatable where T: Real & Sendable {
         return gapIndices
     }
 
-    /// Detect outliers using IQR method
+    /// Detect outliers using IQR method.
+    ///
+    /// An observation that is not a finite number is reported on its own, and the IQR is not
+    /// computed at all. Two things went wrong here at once and each hid the other. `sorted()`
+    /// is unspecified on a sample holding a `nan`, so `q1` and `q3` — taken **by index** from
+    /// that array — came off an arbitrary permutation, and the bounds derived from them could
+    /// call a perfectly ordinary observation an outlier or miss a real one. And the filter at
+    /// the end asks `< lowerBound || > upperBound`, both false against a `nan`, so the single
+    /// most obviously unusual reading in the series was the one observation this detector
+    /// could never flag. The caller turns this into "review these observations", which is the
+    /// right instruction for an unreadable reading as much as for an extreme one.
     private func detectOutliersInSeries() -> [Int] {
         guard count > 3 else { return [] }
+
+        let unreadable: [Int] = valuesArray.enumerated()
+            .filter { !$0.element.isFinite }
+            .map { $0.offset }
+        guard unreadable.isEmpty else { return unreadable }
 
         let sortedValues = valuesArray.sorted()
         let q1Index = sortedValues.count / 4
@@ -349,8 +364,28 @@ extension FinancialModel: Validatable {
             ))
         }
 
-        // Check for negative values in revenue
+        // Check for non-finite values in revenue.
+        //
+        // `nan < 0` is false, so an amount that is not a number matched the negative test
+        // below and was reported as nothing at all. The `TimeSeries` conformance in this
+        // same file already reports a non-finite observation as `.error` — that is the
+        // sibling this follows, and the severity is taken from it rather than chosen: an
+        // amount nobody could compute is not a judgement call about sign.
         for (index, component) in revenueComponents.enumerated() {
+            guard component.amount.isFinite else {
+                warnings.append(CalculationWarning(
+                    severity: .error,
+                    type: .numericalIssue,
+                    message: "Revenue component '\(component.name)' has a value that is not finite",
+                    context: ["component": component.name, "index": String(index), "value": String(component.amount)],
+                    suggestions: [
+                        "Check the calculation that produced this amount for division by zero",
+                        "Replace the amount with a finite value"
+                    ]
+                ))
+                continue
+            }
+
             if component.amount < 0 {
                 warnings.append(CalculationWarning(
                     severity: .warning,

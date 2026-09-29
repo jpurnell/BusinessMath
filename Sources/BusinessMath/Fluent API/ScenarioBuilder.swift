@@ -585,11 +585,19 @@ extension ScenarioSet {
     }
 
     /// Get the range of values across all scenarios.
+    ///
+    /// `nil` means there are no scenarios. A scenario the metric could not evaluate gives
+    /// `(nan, nan)` instead — a different statement, and a deliberate one: `min()`/`max()`
+    /// order with `<`, every comparison against a `nan` is false, and the unevaluable scenario
+    /// was therefore skipped *unless it happened to sit in the first slot*, leaving a range
+    /// drawn across the scenarios that did evaluate and no way to tell how many did.
+    /// ``VectorN/range`` answers the same way for the same reason.
     public func range(_ getValue: (ScenarioConfig) -> Double) -> (min: Double, max: Double)? {
         let values = scenarios.map(getValue)
         guard let min = values.min(), let max = values.max() else {
             return nil
         }
+        guard values.allSatisfy({ !$0.isNaN }) else { return (Double.nan, Double.nan) }
         return (min, max)
     }
 }

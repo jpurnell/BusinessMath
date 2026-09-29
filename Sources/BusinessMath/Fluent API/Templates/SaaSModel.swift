@@ -88,6 +88,12 @@ public struct SaaSModel: Sendable {
 
     /// Initial customer count derived from MRR and ARPU
     private var initialCustomerCount: Double {
+        // This is the seed of the churn recurrence in `calculateCustomerCount(forMonth:)`,
+        // so a fabricated 0 does not stay put: the recurrence carries on from it and every
+        // projected month comes back finite and plausible, understating the business by
+        // exactly the customers the opening MRR represented. `nan > 0` is false, so an
+        // unreadable ARPU took the same branch as a free product.
+        guard !averageRevenuePerUser.isNaN, !initialMRR.isNaN else { return .nan }
         guard averageRevenuePerUser > 0 else { return 0 }
         return initialMRR / averageRevenuePerUser // fp-safety:disable — guarded above
     }

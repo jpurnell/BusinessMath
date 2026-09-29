@@ -196,7 +196,16 @@ extension BranchAndBoundSolver {
 				case .euclidean:
 					norm = sqrt(cut.coefficients.reduce(0.0) { $0 + $1 * $1 })
 				case .infinity:
-					norm = cut.coefficients.map { abs($0) }.max() ?? 0.0
+					// The `.euclidean` case four lines above reaches its norm with `reduce`,
+					// so a `nan` coefficient propagates and the guard below drops the cut.
+					// `max()` walks with `<`, every comparison against a `nan` is false, and
+					// the offending coefficient is skipped — so the same cut normalised
+					// cleanly under one norm and was thrown at the LP with `nan` coefficients
+					// under the other. Which norm a caller picked decided whether a cut with
+					// an unusable coefficient reached the solver.
+					let magnitudes = cut.coefficients.map { abs($0) }
+					let unusable: Bool = magnitudes.contains { $0.isNaN }
+					norm = unusable ? Double.nan : (magnitudes.max() ?? 0.0)
 				}
 
 				guard norm > cutCoefficientThreshold else { continue }

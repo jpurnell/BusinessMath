@@ -877,6 +877,12 @@ public struct BranchAndBoundSolver<V: VectorSpace> where V.Scalar == Double, V: 
         on incumbent: (solution: V, value: Double)?,
         minimize: Bool
     ) -> Bool {
+        // An objective nobody could evaluate does not improve on anything, including on nothing.
+        // The `guard let incumbent else { return true }` below adopts the first candidate
+        // unconditionally, so without this a NaN objective became the incumbent and every later
+        // comparison against it was false — leaving it there for the rest of the search and
+        // returning it as the optimum.
+        guard value.isFinite else { return false }
         guard let incumbent else { return true }
         return minimize ? value < incumbent.value : value > incumbent.value
     }

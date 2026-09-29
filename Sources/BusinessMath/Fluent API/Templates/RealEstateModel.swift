@@ -312,6 +312,10 @@ public struct RealEstateModel: Sendable {
     /// - Returns: After-tax cash flow for the year as a fraction of the initial investment.
     public func calculateCashOnCashReturn(year: Int) -> Double {
         let cashFlow = afterTaxCashFlow(year: year)
+        // Cash-on-cash of 0 is *broke even*, which clears every `return >= 0` screen and
+        // outranks every property that actually lost money. `nan > 0` is false, so a
+        // property whose equity could not be computed landed on that side of the line.
+        guard !initialInvestment.isNaN, !cashFlow.isNaN else { return .nan }
         guard initialInvestment > 0 else { return 0 }
         return cashFlow / initialInvestment // fp-safety:disable — guarded above
     }
@@ -407,6 +411,7 @@ public struct RealEstateModel: Sendable {
         let proceeds = saleProceeds(year: holdingPeriodYears, sellingCostsPercentage: sellingCostsPercentage)
         totalCashFlow += proceeds
 
+        guard !initialInvestment.isNaN, !totalCashFlow.isNaN else { return .nan }
         guard initialInvestment > 0 else { return 0 }
         return totalCashFlow / initialInvestment // fp-safety:disable — guarded above
     }
@@ -416,6 +421,10 @@ public struct RealEstateModel: Sendable {
     /// - Returns: Capitalization rate
     public func calculateCapRate() -> Double {
         let year1NOI = netOperatingIncome(year: 1)
+        // A cap rate of 0 is a property generating no income at all — the bottom of the
+        // one number this asset class is ranked on, reported for a purchase price that
+        // could not be read.
+        guard !purchasePrice.isNaN, !year1NOI.isNaN else { return .nan }
         guard purchasePrice > 0 else { return 0 }
         return year1NOI / purchasePrice // fp-safety:disable — guarded above
     }

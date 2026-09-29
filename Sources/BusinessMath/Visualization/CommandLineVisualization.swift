@@ -109,7 +109,13 @@ public func plotHistogram(_ histogram: [(range: Range<Double>, count: Int)]) -> 
 	// Configuration
 	let maxBarWidth = 50
 
-	// Determine decimal places based on value magnitude
+	// Determine decimal places based on value magnitude.
+	//
+	// Triaged and kept. `max()` would skip a `nan` upper bound, but the only thing this value
+	// decides is how many decimal places the axis labels carry — a `nan` bound falls through
+	// both thresholds below to two places, and the bin whose bound it is prints as `nan` in
+	// the label either way, which is the honest rendering. There is no ranking or selection
+	// downstream for a skipped value to distort.
 	let maxValue = histogram.map { $0.range.upperBound }.max() ?? 1.0
 	let decimalPlaces: Int
 	if maxValue > 1000 {

@@ -282,7 +282,16 @@ public actor ModelProfiler {
             operationStats.append(stats)
         }
 
-        // Sort results
+        // Sort results.
+        //
+        // Triaged, and left as it is. These four comparators would be unspecified on a `nan`
+        // — the *valid* operations would come back out of order, not just the offending one —
+        // but every quantity they order comes from `Duration.inSeconds` or a count, and a
+        // `Duration` cannot hold a `nan`. Worth saying out loud because this is the one place
+        // in this file where that fact meets the opposite decision: the `Percentiles.undefined`
+        // path deliberately makes every statistic `nan`, and those statistics travel in the
+        // same report. They are not what is sorted here, and if that ever changes, this is the
+        // block that needs the screen.
         switch sortBy {
         case .totalTime:
             operationStats.sort { $0.totalTime > $1.totalTime }

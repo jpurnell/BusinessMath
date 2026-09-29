@@ -717,6 +717,15 @@ public actor ModelDebugger {
     ///
     /// Identifies periods where accounts have missing or NaN values.
     ///
+    /// Both sides of the model are scanned. This used to walk only `revenueComponents` while
+    /// claiming "accounts", so a cost whose series carried a NaN came back as nothing missing
+    /// at all — an empty dictionary from a method whose entire purpose is to say where the
+    /// gaps are reads as "there are none", and the caller had no way to tell that half the
+    /// model was never looked at.
+    ///
+    /// A revenue and a cost component may carry the same name. Their periods are merged under
+    /// that one key rather than one silently replacing the other, so no gap is dropped.
+    ///
     /// - Parameter model: The model to analyze
     /// - Returns: Dictionary mapping account names to arrays of missing periods
     ///
@@ -743,7 +752,22 @@ public actor ModelDebugger {
                     }
                 }
                 if !missingPeriods.isEmpty {
-                    missing[component.name] = missingPeriods
+                    missing[component.name, default: []].append(contentsOf: missingPeriods)
+                }
+            }
+        }
+
+        // Check cost components, by the same test
+        for component in model.costComponents {
+            if let timeSeries = component.timeSeries {
+                var missingPeriods: [Period] = []
+                for (period, value) in zip(timeSeries.periods, timeSeries.valuesArray) {
+                    if value.isNaN || value.isInfinite {
+                        missingPeriods.append(period)
+                    }
+                }
+                if !missingPeriods.isEmpty {
+                    missing[component.name, default: []].append(contentsOf: missingPeriods)
                 }
             }
         }
@@ -1133,11 +1157,30 @@ public enum ValidationConstraint: Sendable {
     case maxValue(Double)
     case minValue(Double)
 
-    /// Validate a value against this constraint
+    /// Validate a value against this constraint.
+    ///
+    /// Every comparison involving NaN is false, so each of the comparison-based constraints
+    /// below used to return "no violation" for a value that is not a number:
+    /// `validate(value: .nan, name: "rate", constraints: [.range(0, 1)])` reported the value
+    /// as inside the range, and `isValid` came back `true`. The caller asked specifically
+    /// whether the value satisfied the constraint, so silence is the one answer that cannot
+    /// be right. Each test therefore names NaN explicitly, and reports the violation it
+    /// already had a message for — a NaN is not positive, is not non-negative, is not inside
+    /// any range, and is neither at most a maximum nor at least a minimum.
+    ///
+    /// Infinities are deliberately left to the ordinary comparisons: they order correctly, so
+    /// `+∞` legitimately passes `.positive` and legitimately fails `.maxValue`. `.nonZero` is
+    /// also left alone — a NaN genuinely is not zero, which is the whole of what that
+    /// constraint asks, and `.finite` is the constraint that asks the other question.
+    ///
+    /// - Parameters:
+    ///   - value: The value to check.
+    ///   - fieldName: The field name to report a violation against.
+    /// - Returns: The violation, or `nil` when the constraint is satisfied.
     func validate(value: Double, fieldName: String) -> ValidationError? {
         switch self {
         case .positive:
-            if value <= 0 {
+            if value.isNaN || value <= 0 {
                 return ValidationError(
                     field: fieldName,
                     value: value,
@@ -1148,7 +1191,7 @@ public enum ValidationConstraint: Sendable {
             }
 
         case .nonNegative:
-            if value < 0 {
+            if value.isNaN || value < 0 {
                 return ValidationError(
                     field: fieldName,
                     value: value,
@@ -1159,7 +1202,7 @@ public enum ValidationConstraint: Sendable {
             }
 
         case .range(let min, let max):
-            if value < min || value > max {
+            if value.isNaN || value < min || value > max {
                 return ValidationError(
                     field: fieldName,
                     value: value,
@@ -1192,7 +1235,7 @@ public enum ValidationConstraint: Sendable {
             }
 
         case .maxValue(let max):
-            if value > max {
+            if value.isNaN || value > max {
                 return ValidationError(
                     field: fieldName,
                     value: value,
@@ -1203,7 +1246,7 @@ public enum ValidationConstraint: Sendable {
             }
 
         case .minValue(let min):
-            if value < min {
+            if value.isNaN || value < min {
                 return ValidationError(
                     field: fieldName,
                     value: value,

@@ -59,12 +59,34 @@ struct RankStatisticsContaminationTests {
     }
 
     /// A NaN has no rank, and says so, rather than vanishing.
+    ///
+    /// This test used to also assert `ranks[0].isFinite`, with the comment "the other
+    /// positions still rank normally". They did not. The earlier fix restored the *length*
+    /// invariant and stopped the crash, and stopped there; the sort underneath was still
+    /// being handed a comparator that is not a strict weak ordering, which is free to return
+    /// the **valid** elements out of order. Measured on exactly this fixture, against the
+    /// unfixed source:
+    ///
+    ///     [1, 2, 3, nan, 5, 6, 7, 8].rank()  ->  [3, 2, 1, nan, 8, 7, 6, 5]
+    ///
+    /// `rank()` is descending by magnitude, so `1` — the smallest of the eight — was given
+    /// rank 3, third best, and `8` — the largest — was given rank 8, last. Five of the seven
+    /// finite observations were ranked as close to backwards as the data allows. Every one of
+    /// those ranks is finite, so the old assertion passed on all of them.
+    ///
+    /// Ranks are relative: there is no permutation left to read positions off, so one
+    /// unrankable observation costs the whole vector, and every position says so.
     @Test("Rank_UnrankableElementIsNotANumber")
     func rankUnrankableElementIsNotANumber() {
         let ranks = contaminated.rank()
         #expect(ranks.count == contaminated.count)
         #expect(ranks[3].isNaN, "position 3 held the NaN; got \(ranks[3])")
-        #expect(ranks[0].isFinite, "the other positions still rank normally")
+        let allUnranked: Bool = ranks.allSatisfy { $0.isNaN }
+        #expect(allUnranked, "no position can be ranked against an unorderable sample: \(ranks)")
+
+        let reverse = contaminated.reverseRank()
+        let allUnrankedReverse: Bool = reverse.allSatisfy { $0.isNaN }
+        #expect(allUnrankedReverse, "reverseRank() sorts the same data: \(reverse)")
     }
 
     /// Control: clean data ranks exactly as before.

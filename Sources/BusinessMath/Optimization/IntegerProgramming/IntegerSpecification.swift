@@ -48,10 +48,18 @@ public struct IntegerProgramSpecification: Sendable {
     ) -> Bool where V.Scalar == Double {
         let values = solution.toArray()
 
+        // Every test below reports infeasibility by a comparison becoming *true*, and every
+        // comparison against a NaN is false — so an unevaluable variable passed all three as
+        // feasible. That is not a wrong number on a report: `BranchAndBound` calls this first,
+        // so the relaxation was accepted as an integer solution and adopted as the incumbent,
+        // and `mostFractionalVariable` (which would have caught it) is never reached.
+        // A value that is not a number is not an integer, not a binary, and not a zero.
+
         // Check general integer variables
         for i in integerVariables {
             guard i < values.count else { return false }
             let value = values[i]
+            guard value.isFinite else { return false }
             let rounded = round(value)
             if abs(value - rounded) > tolerance {
                 return false
@@ -62,6 +70,7 @@ public struct IntegerProgramSpecification: Sendable {
         for i in binaryVariables {
             guard i < values.count else { return false }
             let value = values[i]
+            guard value.isFinite else { return false }
             if abs(value) > tolerance && abs(value - 1.0) > tolerance {
                 return false
             }
@@ -72,6 +81,10 @@ public struct IntegerProgramSpecification: Sendable {
             var nonzeroCount = 0
             for i in sosSet {
                 guard i < values.count else { return false }
+                // An unevaluable member cannot be shown to be zero, so it cannot be excused
+                // from the at-most-one rule. Counting it as zero let a NaN sit alongside a
+                // genuine nonzero and satisfy the set.
+                guard values[i].isFinite else { return false }
                 if abs(values[i]) > tolerance {
                     nonzeroCount += 1
                 }
@@ -131,13 +144,24 @@ public struct IntegerProgramSpecification: Sendable {
     /// Find the variable with the most fractional value (furthest from integer)
     /// This is used for branching decisions in branch-and-bound
     /// - Parameter solution: The solution vector to analyze
-    /// - Returns: Index of the most fractional variable, or nil if all are integer-feasible
+    /// - Returns: Index of the most fractional variable, or nil if all are integer-feasible.
+    ///   A variable holding a value that is not a finite number is reported ahead of every
+    ///   finite candidate: it is not integer-feasible, so `nil` would be a false statement.
     public func mostFractionalVariable<V: VectorSpace>(
         _ solution: V
     ) -> Int? where V.Scalar == Double {
         let values = solution.toArray()
         var maxFractional = 0.0
         var maxIndex: Int? = nil
+        // The lowest-indexed variable whose value cannot be ordered against anything.
+        //
+        // `round(nan)` is `nan`, so `actualFractional` is `nan`, and `nan > maxFractional` is
+        // false — the comparison loop below never selected such a variable and the function
+        // returned `nil`, which this function's own documentation defines as *all are
+        // integer-feasible*. The caller would have been told the branching search is finished
+        // on a relaxation nobody could evaluate. Infinity behaves the same way, and an
+        // infinite value is no more an integer than a `nan` is.
+        var unorderableIndex: Int? = nil
 
         // Check all integer-restricted variables
         // Sorted, not raw set order. `allIntegerVariables` is a `Set<Int>` and Swift randomises
@@ -147,6 +171,12 @@ public struct IntegerProgramSpecification: Sendable {
         for i in allIntegerVariables.sorted() {
             guard i < values.count else { continue }
             let value = values[i]
+            // Recorded rather than compared. Had this fallen through, the caller would have
+            // been told every integer variable is already integral.
+            guard value.isFinite else {
+                if unorderableIndex == nil { unorderableIndex = i }
+                continue
+            }
             let fractionalPart = abs(value - round(value))
 
             // Most fractional is closest to 0.5
@@ -158,6 +188,13 @@ public struct IntegerProgramSpecification: Sendable {
                 maxFractional = actualFractional
                 maxIndex = i
             }
+        }
+
+        // Ahead of the fractionality test: a variable with no value at all is further from
+        // integrality than any variable with one, and `allIntegerVariables.sorted()` makes
+        // which one is reported deterministic when several are unusable.
+        if let unorderableIndex {
+            return unorderableIndex
         }
 
         // Only return if significantly fractional

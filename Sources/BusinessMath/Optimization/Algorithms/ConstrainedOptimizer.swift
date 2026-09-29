@@ -352,7 +352,19 @@ public struct ConstrainedOptimizer<V: VectorSpace> where V.Scalar: Real {
 
 			// Evaluate constraints at new x
 			let constraintValues = equalityConstraints.map { $0.evaluate(at: x) }
-			let maxViolation = constraintValues.map { abs($0) }.max() ?? V.Scalar(0)
+			// `max()` walks with `<` and every comparison against a `nan` is false, so a
+			// constraint that could not be evaluated was skipped and the largest violation
+			// among the ones that *could* be was reported in its place. The next line then
+			// compared that finite number against the tolerance and returned
+			// `converged: true` — a point certified feasible against a constraint nobody
+			// evaluated. `nan` fails `< constraintTolerance`, so the outer loop keeps going
+			// and the search ends as non-converged, which is what happened.
+			//
+			// Infinities are left to order themselves: an infinite violation is a real
+			// violation and already fails the tolerance test correctly (contract §3.6).
+			let unevaluable: Bool = constraintValues.contains { $0.isNaN }
+			let largest: V.Scalar = constraintValues.map { abs($0) }.max() ?? V.Scalar(0)
+			let maxViolation: V.Scalar = unevaluable ? V.Scalar.nan : largest
 
 			// Record history
 			let objValue = objective(x)
@@ -389,7 +401,12 @@ public struct ConstrainedOptimizer<V: VectorSpace> where V.Scalar: Real {
 
 		// Did not converge
 		let finalObjValue = objective(x)
-		let finalViolation = equalityConstraints.map { abs($0.evaluate(at: x)) }.max() ?? V.Scalar(0)
+		// Same mechanism as the in-loop violation above: a skipped `nan` reports the largest
+		// of the constraints that could be evaluated as though it were the largest of all.
+		let finalValues = equalityConstraints.map { $0.evaluate(at: x) }
+		let finalUnevaluable: Bool = finalValues.contains { $0.isNaN }
+		let finalLargest: V.Scalar = finalValues.map { abs($0) }.max() ?? V.Scalar(0)
+		let finalViolation: V.Scalar = finalUnevaluable ? V.Scalar.nan : finalLargest
 
 		return ConstrainedOptimizationResult(
 			solution: x,

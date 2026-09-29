@@ -192,8 +192,25 @@ extension FinancialSimulation {
 	/// (type 7), computed by ``quantile(sorted:p:)`` — the same function behind
 	/// ``Percentiles`` and ``ProjectionResults/percentile(_:)``.
 	public func percentile(_ p: Double, metric: (FinancialProjection) throws -> Double) rethrows -> Double {
-		let sortedValues = try projections.map(metric).sorted()
+		guard let sortedValues = try orderedMetric(metric) else { return Double.nan }
 		return percentileFromSorted(p, values: sortedValues)
+	}
+
+	/// The metric across every projection, ascending, or `nil` when the sample cannot be
+	/// ordered.
+	///
+	/// Every caller below reads its answer out of this array *by position*, and `sorted()` is
+	/// unspecified on a sample containing a `nan`: the valid projections come back out of
+	/// order, so the number reported as the 95th percentile would be some arbitrary
+	/// projection's — finite, plausible, and unconnected to the question. `quantile(sorted:p:)`
+	/// says in its own documentation that screening this is the caller's job, and this is the
+	/// one place all three callers share.
+	private func orderedMetric(
+		_ metric: (FinancialProjection) throws -> Double
+	) rethrows -> [Double]? {
+		let values = try projections.map(metric)
+		guard values.allSatisfy({ !$0.isNaN }) else { return nil }
+		return values.sorted()
 	}
 
 	/// Helper to calculate percentile from pre-sorted values.
@@ -245,8 +262,12 @@ extension FinancialSimulation {
 		_ level: Double,
 		metric: (FinancialProjection) throws -> Double
 	) rethrows -> (lowerBound: Double, upperBound: Double) {
-		// Optimization: sort once and reuse for both bounds
-		let sortedValues = try projections.map(metric).sorted()
+		// Optimization: sort once and reuse for both bounds. An unorderable sample has no
+		// bounds rather than narrow ones — an interval the caller can read is the whole point
+		// of this function, and `[0, 0]` or a pair of arbitrary projections both read as one.
+		guard let sortedValues = try orderedMetric(metric) else {
+			return (lowerBound: Double.nan, upperBound: Double.nan)
+		}
 		let tail = (1.0 - level) / 2.0
 		let lowerBound = percentileFromSorted(tail, values: sortedValues)
 		let upperBound = percentileFromSorted(1.0 - tail, values: sortedValues)
@@ -328,8 +349,10 @@ extension FinancialSimulation {
 		let tailFraction = 1.0 - confidence
 		guard tailFraction.isFinite else { return Double.nan }
 
-		// Optimization: sort once and reuse for both VaR and tail calculation
-		let sortedValues = try projections.map(metric).sorted()
+		// Optimization: sort once and reuse for both VaR and tail calculation. The tail is
+		// taken by index, so an unspecified order would draw the expected shortfall from an
+		// arbitrary set of projections rather than the worst ones.
+		guard let sortedValues = try orderedMetric(metric) else { return Double.nan }
 
 		// Calculate the tail size (e.g., 5% for 95% confidence). The tail can never be longer
 		// than the sample, so capping the *Double* before converting also keeps a wildly

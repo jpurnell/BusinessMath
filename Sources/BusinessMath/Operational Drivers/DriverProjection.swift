@@ -368,6 +368,11 @@ public struct ProjectionResults<T: Real & Sendable>: Sendable {
 	/// ```
 	public func expected() -> TimeSeries<T> where T: BinaryFloatingPoint {
 		let values = periods.map { period in
+			// Total by construction: `summarize(_:)` is the only place a `ProjectionResults`
+			// is built, and it writes an entry for every element of `periods` before
+			// handing both over. The fallback is unreachable rather than benign — were a
+			// period ever missing, a zero here would be a measured value in a series the
+			// caller indexes by period, not a gap, so it would have to be left out instead.
 			guard let stats = statistics[period] else { return T(0) }
 			return T(stats.mean)
 		}
@@ -406,6 +411,11 @@ public struct ProjectionResults<T: Real & Sendable>: Sendable {
 	/// ```
 	public func percentile(_ p: Double) -> TimeSeries<T> where T: BinaryFloatingPoint {
 		let values = periods.map { period -> T in
+			// Total by construction: `summarize(_:)` is the only place a `ProjectionResults`
+			// is built, and it writes an entry for every element of `periods` before
+			// handing both over. The fallback is unreachable rather than benign — were a
+			// period ever missing, a zero here would be a measured value in a series the
+			// caller indexes by period, not a gap, so it would have to be left out instead.
 			guard let pctiles = percentiles[period] else { return T(0) }
 			return T(pctiles.percentile(p))
 		}
@@ -449,6 +459,11 @@ public struct ProjectionResults<T: Real & Sendable>: Sendable {
 	/// ```
 	public func standardDeviation() -> TimeSeries<T> where T: BinaryFloatingPoint {
 		let values = periods.map { period in
+			// Total by construction: `summarize(_:)` is the only place a `ProjectionResults`
+			// is built, and it writes an entry for every element of `periods` before
+			// handing both over. The fallback is unreachable rather than benign — were a
+			// period ever missing, a zero here would be a measured value in a series the
+			// caller indexes by period, not a gap, so it would have to be left out instead.
 			guard let stats = statistics[period] else { return T(0) }
 			return T(stats.stdDev)
 		}

@@ -244,6 +244,13 @@ extension ScenarioSensitivityAnalysis {
 			  let max = outputValues.max() else {
 			return Double.nan
 		}
+		// `min()`/`max()` order with `<`, and every comparison against a `nan` is false, so a
+		// step of the sweep that the model could not evaluate is skipped rather than reported.
+		// The range then comes back as the spread of the steps that *did* evaluate — a
+		// narrower, entirely plausible number — and on the scale this property is documented
+		// to be read on, a narrower range means a less important driver. A sweep with a hole
+		// in it has no range; it has an unfinished sweep.
+		guard outputValues.allSatisfy({ !$0.isNaN }) else { return Double.nan }
 		return max - min
 	}
 }
@@ -976,28 +983,46 @@ public func runTornadoAnalysis(
 			outputExtractor: outputExtractor
 		)
 
-		// Record low and high outputs
-		let outputLow = sensitivity.outputValues.min() ?? baseCaseOutput
-		let outputHigh = sensitivity.outputValues.max() ?? baseCaseOutput
+		// Record low and high outputs.
+		//
+		// `min()`/`max()` skip a step the model could not evaluate — every comparison against
+		// a `nan` is false — so the bar would have been drawn across the span of the steps
+		// that happened to evaluate, and drawn *shorter* than the truth, which on a tornado
+		// chart is the statement "this driver matters less". The bar for a sweep with a hole
+		// in it is not a shorter bar; there is no bar.
+		let unevaluable: Bool = sensitivity.outputValues.contains { $0.isNaN }
+		let smallest: Double = sensitivity.outputValues.min() ?? baseCaseOutput
+		let largest: Double = sensitivity.outputValues.max() ?? baseCaseOutput
+		let outputLow: Double = unevaluable ? Double.nan : smallest
+		let outputHigh: Double = unevaluable ? Double.nan : largest
 
 		lowValues[inputDriver] = outputLow
 		highValues[inputDriver] = outputHigh
 		impacts[inputDriver] = outputHigh - outputLow
 	}
 
-	// Rank inputs by impact (descending)
-	let rankedInputs = inputDrivers.sorted { input1, input2 in
-		// Triaged and kept. These defaults are unreachable: the loop above throws
-		// `invalidDriver` rather than skipping, so every name in `inputDrivers` has an
-		// `impacts` entry by the time the sort runs. They also must not become `nan` —
-		// every comparison against a NaN is false, so a `nan` impact would make this
-		// predicate stop being a strict weak ordering and `sorted(by:)` would reorder the
-		// *valid* bars around it, which is the failure mode `NaNContaminatedSampleTests`
-		// documents for `Array.sorted()`.
+	// Rank inputs by impact (descending).
+	//
+	// Partitioned before sorting, and only the rankable half is sorted. The `?? 0.0` defaults
+	// inside the predicate were triaged and kept: they are unreachable, because the loop above
+	// throws `invalidDriver` rather than skipping, so every name in `inputDrivers` has an
+	// `impacts` entry by the time this runs — and they must not become `nan` for exactly the
+	// reason this partition exists.
+	//
+	// What that triage did not cover is an entry that is *present and `nan`*, which is what a
+	// sweep the model could not evaluate now stores. Feeding one to `sorted(by:)` makes the
+	// predicate stop being a strict weak ordering, and the consequence is not that the bad bar
+	// lands in the wrong place — it is that the *valid* bars come back in an arbitrary order
+	// (contract §2: `[3, 1, nan, 2, 5, 4].sorted()` gives `[1, 3, nan, 2, 4, 5]`). A tornado
+	// chart is read top to bottom, so that would silently misreport which driver matters most.
+	// Unrankable drivers keep their input order and follow the rankable ones.
+	let rankable = inputDrivers.filter { !(impacts[$0] ?? 0.0).isNaN }
+	let unrankable = inputDrivers.filter { (impacts[$0] ?? 0.0).isNaN }
+	let rankedInputs = rankable.sorted { input1, input2 in
 		let impact1 = impacts[input1] ?? 0.0
 		let impact2 = impacts[input2] ?? 0.0
 		return impact1 > impact2
-	}
+	} + unrankable
 
 	return TornadoDiagramAnalysis(
 		inputs: rankedInputs,

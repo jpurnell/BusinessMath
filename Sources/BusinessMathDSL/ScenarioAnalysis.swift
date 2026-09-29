@@ -236,11 +236,26 @@ public struct ScenarioAnalysis {
     /// - Parameter evaluate: Function to evaluate each scenario
     /// - Returns: Statistical summary of results
     public func statistics(for evaluate: @escaping (Scenario) -> Double) -> Statistics {
-        let values = scenarios.map(evaluate).sorted()
+        let evaluated = scenarios.map(evaluate)
 
-        guard !values.isEmpty else {
+        guard !evaluated.isEmpty else {
             return Statistics(mean: 0, median: 0, stdDev: 0, min: 0, max: 0, count: 0)
         }
+
+        // `min` and `max` below are taken as `values.first` and `values.last` — read off the
+        // sort, not from `min()`/`max()` — and `sorted()` is unspecified on a sample
+        // containing a `nan`, so they would have been whichever scenarios the sort happened
+        // to leave at the ends, and the median whichever it left in the middle. The `count`
+        // is still the truth and is kept; every measured field says it could not be measured.
+        guard evaluated.allSatisfy({ !$0.isNaN }) else {
+            let unusable = Double.nan
+            return Statistics(
+                mean: unusable, median: unusable, stdDev: unusable,
+                min: unusable, max: unusable, count: evaluated.count
+            )
+        }
+
+        let values = evaluated.sorted()
 
         let count = values.count
         // The `guard !values.isEmpty` above already makes this at least 1, but the checker
@@ -279,10 +294,26 @@ public struct ScenarioAnalysis {
     ///   - evaluate: Function to evaluate each scenario
     /// - Returns: Value at the specified percentile
     public func percentile(_ percentile: Int, for evaluate: @escaping (Scenario) -> Double) -> Double {
-        let values = scenarios.map(evaluate).sorted()
-        guard !values.isEmpty else { return 0 }
+        let evaluated = scenarios.map(evaluate)
+        guard !evaluated.isEmpty else { return 0 }
 
-        let index = Int(Double(values.count - 1) * Double(percentile) / 100.0)
+        // The answer is read out by index, and `sorted()` is unspecified on a sample holding
+        // a `nan` — so the value returned under the name of a percentile would be whichever
+        // scenario the sort happened to leave at that position.
+        guard evaluated.allSatisfy({ !$0.isNaN }) else { return Double.nan }
+
+        let values = evaluated.sorted()
+
+        // `percentile` is an unvalidated `Int`, and the index it produces was used to
+        // subscript directly. `percentile(-50)` indexes negatively and `percentile(500)`
+        // indexes past the end: both **trap**, taking the process down rather than
+        // answering. Clamping matches `Percentiles.percentile(_:)`, whose own tests pin
+        // "negative percentile should be clamped to min" and "percentile > 1 should be
+        // clamped to max"; a fresh convention here would be the inconsistency the
+        // contaminated-input contract exists to stop.
+        let last: Int = values.count - 1
+        let raw = Int(Double(last) * Double(percentile) / 100.0)
+        let index: Int = Swift.min(Swift.max(raw, 0), last)
         return values[index]
     }
 }

@@ -490,9 +490,22 @@ public struct RevenueComponent: Sendable {
 
     /// Get the value for a specific period.
     ///
-    /// Returns the time series value if available, otherwise returns the single amount.
+    /// Returns the time series value for a component built from a series, and the single
+    /// ``amount`` for a component built from one. A period the series does not cover is
+    /// **not answerable** and comes back as `nan`.
+    ///
+    /// The `?? amount` this replaced looked like a harmless default and was not one.
+    /// ``init(name:periods:values:)`` stores `0` in `amount` and documents it as unused, so
+    /// every period outside the series answered with a *measured* revenue of zero — summed
+    /// into ``FinancialModel/totalRevenue(for:)`` and differenced into a
+    /// ``FinancialModel/profit(for:)`` of exactly break-even, for a year the model was never
+    /// given any data about. `ModelDebugger` already refuses this: it reads
+    /// `timeSeries[period]` directly rather than calling here, precisely so an unknown
+    /// revenue stays unknown.
     public func value(for period: Period) -> Double {
-        timeSeries?[period] ?? amount
+        guard let timeSeries else { return amount }
+        guard let value = timeSeries[period] else { return .nan }
+        return value
     }
 }
 
@@ -873,26 +886,45 @@ public struct CostComponent: Sendable {
 
     /// Calculate cost for a given revenue amount.
     ///
-    /// If time series is present, returns value for the given period.
-    /// Otherwise calculates based on cost type (fixed or variable).
+    /// A component built from a time series answers from that series, and returns `nan`
+    /// for a period it does not cover — or for no period at all, since a series has no
+    /// single-period answer. A component built from a cost type calculates from that type.
     public func calculate(revenue: Double?, for period: Period? = nil) -> Double {
-        // If we have a time series and a period, use that
-        if let period = period, let value = timeSeries?[period] {
+        // A component built from a series carries `type == .fixed(0)` — the initialiser says
+        // so in its own comment — so falling through to the switch for a period the series
+        // does not cover reported a *cost of zero* for that period. On a cost scale zero is
+        // the favourable end: it lowers total expenses and raises `profit(for:)` for a period
+        // the model was never given.
+        if let timeSeries {
+            guard let period else { return .nan }
+            guard let value = timeSeries[period] else { return .nan }
             return value
         }
 
         // Otherwise use the single-value calculation
         switch type {
         case .fixed(let amount):
+            // A fixed cost never consults revenue, so an unknown revenue must not remove it.
             return amount
         case .variable(let percentage):
+            // `revenue ?? 0` is the shape that makes a percent-of-revenue cost *vanish*
+            // where revenue is unknown, and it is left alone here on purpose. A `nil`
+            // revenue on this path is not "unknown": it is the documented, tested request
+            // to evaluate the fixed part alone — `FinancialModelCacheTests`
+            // `costsVaryWithTheirArgument` pins `calculateCostsCached()` at "200 fixed"
+            // for exactly this model, and `calculateProfit()` never takes it, because it
+            // always passes a revenue. The genuinely-unknown case arrives as a `nan`
+            // revenue from `RevenueComponent.value(for:)` and propagates through the
+            // multiplication below without help.
             return (revenue ?? 0) * percentage
         }
     }
 
     /// Get the value for a specific period.
     ///
-    /// Returns the time series value if available, otherwise calculates based on cost type.
+    /// Returns the time series value for a period the series covers, `nan` for one it does
+    /// not, and otherwise calculates from the cost type. See
+    /// ``calculate(revenue:for:)`` for why a miss is not a cost of zero.
     public func value(for period: Period, revenue: Double? = nil) -> Double {
         calculate(revenue: revenue, for: period)
     }

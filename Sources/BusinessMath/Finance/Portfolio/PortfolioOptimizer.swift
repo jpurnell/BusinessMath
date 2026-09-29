@@ -109,18 +109,29 @@ public struct EfficientFrontier {
 	/// Target returns used to generate frontier
 	public let targetReturns: [Double]
 
-	/// Portfolio with maximum Sharpe ratio
+	/// Portfolio with maximum Sharpe ratio.
+	///
+	/// Portfolios whose Sharpe ratio is not a number take no part in the comparison, and that
+	/// is a correction rather than an omission: `max(by:)` seeds with the first element and
+	/// replaces it only when the predicate says so, so an unratable portfolio sitting in slot
+	/// zero was **returned as the best one**, while the same portfolio anywhere else was
+	/// ignored. Which portfolio this property named depended on nothing but array position.
+	/// Comparing only the ratable ones makes the answer the same either way.
 	public var maximumSharpePortfolio: OptimalPortfolio {
-		guard let portfolio = portfolios.max(by: { $0.sharpeRatio < $1.sharpeRatio }) else {
-			preconditionFailure("EfficientFrontier must contain at least one portfolio")
+		let ratable = portfolios.filter { !$0.sharpeRatio.isNaN }
+		guard let portfolio = ratable.max(by: { $0.sharpeRatio < $1.sharpeRatio }) else {
+			preconditionFailure("EfficientFrontier must contain at least one portfolio with a Sharpe ratio")
 		}
 		return portfolio
 	}
 
-	/// Portfolio with minimum variance
+	/// Portfolio with minimum variance. Same mechanism as ``maximumSharpePortfolio``:
+	/// a portfolio with no measurable volatility cannot be the least volatile one, and it must
+	/// not become the answer by virtue of being first.
 	public var minimumVariancePortfolio: OptimalPortfolio {
-		guard let portfolio = portfolios.min(by: { $0.volatility < $1.volatility }) else {
-			preconditionFailure("EfficientFrontier must contain at least one portfolio")
+		let measurable = portfolios.filter { !$0.volatility.isNaN }
+		guard let portfolio = measurable.min(by: { $0.volatility < $1.volatility }) else {
+			preconditionFailure("EfficientFrontier must contain at least one portfolio with a volatility")
 		}
 		return portfolio
 	}
@@ -454,20 +465,58 @@ public struct PortfolioOptimizer {
 	///   - expectedReturns: Expected return for each asset
 	///   - covariance: Covariance matrix (n×n)
 	///   - riskFreeRate: Risk-free rate (default: 0.02)
-	///   - numberOfPoints: Number of portfolios to compute (default: 20)
+	///   - numberOfPoints: Number of portfolios to compute (default: 20). Must be at least 2:
+	///     a frontier is a spread between two endpoints, and one point has no spacing.
 	/// - Returns: Efficient frontier with optimal portfolios
+	/// - Throws: ``PortfolioOptimizerError/emptyReturns`` when no assets are supplied, and
+	///   ``BusinessMathError/invalidInput(message:value:expectedRange:)`` when fewer than two
+	///   points are asked for.
 	public func efficientFrontier(
 		expectedReturns: VectorN<Double>,
 		covariance: [[Double]],
 		riskFreeRate: Double = 0.02,
 		numberOfPoints: Int = 20
 	) throws -> EfficientFrontier {
+		// The guard every sibling here already has — `minimumVariancePortfolio`,
+		// `maximumSharpePortfolio`, `riskParityPortfolio` and `portfolioForTargetReturn` all
+		// refuse an empty vector. This one did not, and instead took its endpoints from
+		// `?? 0.0` and `?? 0.1`: a frontier spanning 0% to 10% returns, invented for a
+		// portfolio with no assets in it.
+		guard expectedReturns.count > 0 else { throw PortfolioOptimizerError.emptyReturns }
+
+		// `numberOfPoints >= 2` was asserted in a suppression comment on the division below
+		// and enforced nowhere. At 1 the divisor is zero, `step` is an infinity, and
+		// `0.0 * .infinity` is NaN — so the single "target return" handed to
+		// `portfolioForTargetReturn` was not a number, and the frontier came back holding a
+		// portfolio optimised toward it. A claim in a comment is not a guard.
+		guard numberOfPoints >= 2 else {
+			throw BusinessMathError.invalidInput(
+				message: "An efficient frontier needs at least two points",
+				value: "\(numberOfPoints)",
+				expectedRange: ">= 2"
+			)
+		}
+
+		// The other half of the same endpoint problem. The empty vector above was one way the
+		// span could be invented; an asset with no expected return is the other. `min()` and
+		// `max()` order with `<`, and every comparison against a `nan` is false, so that asset
+		// was skipped and the targets were laid out between the extremes of the *rest* — a
+		// complete-looking frontier, optimised over an asset set one member short of the one
+		// the caller passed, with nothing in the result to say which member.
+		let returnValues = expectedReturns.toArray()
+		guard returnValues.allSatisfy({ !$0.isNaN }) else {
+			throw BusinessMathError.dataQuality(
+				message: "An efficient frontier requires an expected return for every asset",
+				context: ["invalid_count": "\(returnValues.filter { $0.isNaN }.count)"]
+			)
+		}
+
 		// Find min and max returns
-		let minReturn = expectedReturns.toArray().min() ?? 0.0
-		let maxReturn = expectedReturns.toArray().max() ?? 0.1
+		let minReturn = returnValues.min() ?? 0.0
+		let maxReturn = returnValues.max() ?? 0.1
 
 		// Generate target returns
-		let step = (maxReturn - minReturn) / Double(numberOfPoints - 1) // fp-safety:disable — numberOfPoints >= 2 by API contract
+		let step = (maxReturn - minReturn) / Double(numberOfPoints - 1) // fp-safety:disable — the guard above rejects numberOfPoints < 2, so the divisor is at least 1
 		let targetReturns = (0..<numberOfPoints).map { minReturn + Double($0) * step }
 
 		var portfolios: [OptimalPortfolio] = []

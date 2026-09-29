@@ -122,6 +122,17 @@ public struct Investment: Sendable {
     }
 
     /// Payback period in years - automatically calculated.
+    ///
+    /// - Returns: The year the cumulative cash flow first turns non-negative, or `nil`.
+    ///
+    /// `nil` **conflates two different answers**: the investment never pays back, and the
+    /// question cannot be answered because a cash flow is `nan`. Every comparison against
+    /// `nan` is false, so `cumulative >= 0` never becomes true once one has entered the
+    /// running total, and the loop falls out of the bottom exactly as it does for a
+    /// genuinely unprofitable investment. This is the §3.3 case in the contaminated-input
+    /// contract — `Double?` has no room for a third answer and widening it is
+    /// source-breaking, so it is documented here rather than changed. Screen the cash
+    /// flows with `isFinite` first if the distinction matters.
     public var paybackPeriod: Double? {
         var cumulative = -initialCost
         for (index, cashFlow) in cashFlows.enumerated() {
@@ -137,6 +148,12 @@ public struct Investment: Sendable {
     }
 
     /// Discounted payback period in years - automatically calculated.
+    ///
+    /// - Returns: The year the cumulative discounted cash flow first turns non-negative,
+    ///   or `nil`.
+    ///
+    /// `nil` carries the same conflation as ``paybackPeriod``: never pays back, and cannot
+    /// be computed, are the same answer here.
     public var discountedPaybackPeriod: Double? {
         var cumulative = -initialCost
         for (index, cashFlow) in cashFlows.enumerated() {
@@ -158,10 +175,27 @@ public struct Investment: Sendable {
         cashFlows.map { $0.amount }.reduce(0, +)
     }
 
-    /// Total return on investment (undiscounted)
+    /// Total return on investment (undiscounted).
+    ///
+    /// `(total inflows − initial cost) / initial cost`.
+    ///
+    /// The `guard initialCost > 0 else { return 0 }` this replaced answered `0` for two
+    /// cases that are not zero returns. `0` on an ROI scale is *broke even exactly*: it
+    /// clears every `roi >= 0` screen and sorts above every loss-making comparator.
+    /// A `nan` cost took that branch because `nan > 0` is false, so an investment nobody
+    /// could cost was reported as having returned the money and no more; and a cost of
+    /// zero took it too, so an investment that paid out with nothing put in — the best
+    /// return there is — read as the break-even case.
+    ///
+    /// - Returns: The ratio; `nan` when the cost is not a usable base, and ±`infinity`
+    ///   when a zero cost produced a non-zero gain.
     public var totalROI: Double {
-        guard initialCost > 0 else { return 0 }
-        return (totalCashInflows - initialCost) / initialCost // fp-safety:disable — guarded above
+        let gain: Double = totalCashInflows - initialCost
+        guard initialCost.isFinite, initialCost > 0 else {
+            guard initialCost == 0, gain.isFinite, gain != 0 else { return .nan }
+            return gain < 0 ? -.infinity : .infinity
+        }
+        return gain / initialCost // fp-safety:disable — guarded above
     }
 
     /// Return on investment (alias for totalROI) - matches documented API

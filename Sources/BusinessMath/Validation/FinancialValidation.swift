@@ -70,7 +70,30 @@ public enum FinancialValidation {
 						  let equity = balanceSheet.totalEquity[period] else {
 						continue
 					}
-					let lhs = assets.isNaN ? 0 : assets
+					// A non-finite term is not an imbalance, it is a question that cannot be
+					// answered, and the accounting identity cannot be checked against it.
+					// `let lhs = assets.isNaN ? 0 : assets` stood here and reported a
+					// *measured zero* for assets nobody could compute: a sheet with NaN
+					// assets against zero liabilities and equity balanced exactly, so
+					// without this guard the caller is told the statement balances. With
+					// non-zero liabilities the substitution was no better — the error named
+					// their whole amount as the difference, sending a reader to look for a
+					// missing account rather than at the calculation that produced the NaN.
+					guard assets.isFinite, liabilities.isFinite, equity.isFinite else {
+						errors.append(ValidationError(
+							field: "\(context.fieldName) - \(period.label)",
+							value: [
+								"Assets": assets,
+								"Liabilities": liabilities,
+								"Equity": equity
+							],
+							rule: "BalanceSheetBalances",
+							message: "Assets, liabilities and equity must all be finite before the accounting equation can be checked",
+							suggestion: "Find the calculation that produced a non-finite balance for this period"
+						))
+						continue
+					}
+					let lhs = assets
 					let rhs = (liabilities + equity)
 
 					let diff = abs(lhs - rhs)
@@ -137,6 +160,22 @@ public enum FinancialValidation {
 					continue
 				}
 
+				// `nan < 0` is false, so a revenue nobody could compute matched no branch
+				// and the statement came back `.valid`. Without this the caller is told the
+				// revenue it asked about is fine. `TimeSeries.validate(detectOutliers:)`
+				// already reports a non-finite observation as an error; this says the same
+				// thing about the same data rather than staying silent.
+				guard revenue.isFinite else {
+					errors.append(ValidationError(
+						field: "\(context.fieldName) - \(period.label)",
+						value: revenue,
+						rule: "PositiveRevenue",
+						message: "Revenue is not a finite number: \(revenue)",
+						suggestion: "Check the calculation that produced this revenue for division by zero or an invalid operation"
+					))
+					continue
+				}
+
 				if revenue < .zero {
 					errors.append(ValidationError(
 						field: "\(context.fieldName) - \(period.label)",
@@ -187,8 +226,28 @@ public enum FinancialValidation {
 
 			// Check each period
 			for period in incomeStatement.periods {
-				guard let revenue = incomeStatement.totalRevenue[period],
-					  revenue > .zero else {
+				guard let revenue = incomeStatement.totalRevenue[period] else {
+					continue
+				}
+
+				// A revenue that is not a number cannot scale a margin. `revenue > .zero`
+				// is false for a NaN, so the period was skipped in silence and the rule
+				// returned `.valid` — "the gross margin is reasonable" about a margin
+				// nobody could compute. Skipping a revenue that really is zero or negative
+				// is a different case and stays: there is no margin to judge there either,
+				// but nothing is unknown about it.
+				guard revenue.isFinite else {
+					warnings.append(ValidationError(
+						field: "\(context.fieldName) - \(period.label)",
+						value: revenue,
+						rule: "ReasonableGrossMargin",
+						message: "Gross margin cannot be evaluated: revenue is not a finite number (\(revenue))",
+						suggestion: "Check the calculation that produced this revenue before reading the margin"
+					))
+					continue
+				}
+
+				guard revenue > .zero else {
 					continue
 				}
 
@@ -197,6 +256,19 @@ public enum FinancialValidation {
 				}
 
 				let margin = grossProfit / revenue
+
+				// `nan <= minMargin` and `nan >= maxMargin` are both false, so an
+				// unusable margin fell through both arms and was reported as reasonable.
+				guard margin.isFinite else {
+					warnings.append(ValidationError(
+						field: "\(context.fieldName) - \(period.label)",
+						value: margin,
+						rule: "ReasonableGrossMargin",
+						message: "Gross margin is not a finite number: \(margin)",
+						suggestion: "Check the gross profit and revenue this margin was computed from"
+					))
+					continue
+				}
 
 				if margin <= minMargin || margin >= maxMargin {
 					warnings.append(ValidationError(
@@ -290,6 +362,25 @@ public enum FinancialValidation {
 
 				let cashChange = currentCash - previousCash
 				let diff = abs(cashChange - periodNetCashFlow)
+
+				// `nan > tolerance` is false, so a reconciliation that could not be
+				// computed produced no error and the rule returned `.valid` — the caller
+				// asked whether cash ties out and was told it does.
+				guard diff.isFinite else {
+					errors.append(ValidationError(
+						field: "\(context.fieldName) - \(currentPeriod.label)",
+						value: [
+							"Beginning Cash": previousCash,
+							"Ending Cash": currentCash,
+							"Cash Change": cashChange,
+							"Net Cash Flow": periodNetCashFlow
+						],
+						rule: "CashFlowReconciliation",
+						message: "Cash flow cannot be reconciled: the cash change and net cash flow do not produce a finite difference",
+						suggestion: "Check the cash accounts and the cash flow statement for a non-finite value in this period"
+					))
+					continue
+				}
 
 				if diff > tolerance {
 					errors.append(ValidationError(

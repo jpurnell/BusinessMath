@@ -136,10 +136,21 @@ public extension VectorSpace {
 	
 	/// Chebyshev distance (L∞ norm) between two vectors.
 	/// - Parameter other: Another vector
-	/// - Returns: Maximum absolute difference: max(|v₁ - w₁|, |v₂ - w₂|, ..., |vₙ - wₙ|)
+	/// - Returns: Maximum absolute difference: max(|v₁ - w₁|, |v₂ - w₂|, ..., |vₙ - wₙ|), or
+	///   `nan` if any coordinate difference is not a number.
 	func chebyshevDistance(to other: Self) -> Scalar {
 		let diff = self - other
-		return diff.toArray().map { abs($0) }.max() ?? Scalar(0)
+		let components = diff.toArray()
+		// ``manhattanDistance(to:)``, eight lines above, reaches its answer with `reduce` and
+		// so propagates a `nan` the way IEEE arithmetic does. This one reaches its answer with
+		// `max()`, which walks the array with `<`; every comparison against a `nan` is false,
+		// so the offending coordinate is skipped and the distance comes back finite — and
+		// *which* coordinate it skips depends on position, because `max()` seeds with the
+		// first element and keeps it when the comparison fails. Two metrics over the same pair
+		// of vectors disagreeing about whether those vectors can be compared at all is the
+		// inconsistency this contract exists to remove.
+		guard components.allSatisfy({ !$0.isNaN }) else { return Scalar.nan }
+		return components.map { abs($0) }.max() ?? Scalar(0)
 	}
 	
 	/// Cosine similarity between two vectors.
@@ -874,19 +885,33 @@ public struct VectorN<T: Real & BinaryFloatingPoint & Sendable & Codable>: Vecto
 	}
 	
 	/// Minimum component value.
-	/// - Returns: Minimum value, or nil if vector is empty.
+	/// - Returns: Minimum value, `nan` if any component is `nan`, or `nil` if the vector is
+	///   empty.
+	///
+	/// `Sequence.min()` seeds with the first element and replaces it only on `e < result`, so
+	/// a `nan` component is skipped unless it happens to land in slot zero — the extremum then
+	/// comes back finite and confident over the components that could be ordered, and whether
+	/// it does depends on nothing but position. `RollingStatistics` and `TimeSeries.aggregate`
+	/// answer `nan` in the same situation so that every field of one summary agrees about
+	/// which sample it describes; this does too.
 	public var min: T? {
-		components.min()
+		guard !components.isEmpty else { return nil }
+		guard components.allSatisfy({ !$0.isNaN }) else { return T.nan }
+		return components.min()
 	}
-	
+
 	/// Maximum component value.
-	/// - Returns: Maximum value, or nil if vector is empty.
+	/// - Returns: Maximum value, `nan` if any component is `nan`, or `nil` if the vector is
+	///   empty. Same mechanism as ``min``.
 	public var max: T? {
-		components.max()
+		guard !components.isEmpty else { return nil }
+		guard components.allSatisfy({ !$0.isNaN }) else { return T.nan }
+		return components.max()
 	}
 	
 	/// Range of component values.
-	/// - Returns: (min, max) tuple, or nil if vector is empty.
+	/// - Returns: (min, max) tuple, `(nan, nan)` if any component is `nan`, or nil if vector
+	///   is empty.
 	public var range: (min: T, max: T)? {
 		guard let minVal = min, let maxVal = max else { return nil }
 		return (minVal, maxVal)
@@ -945,11 +970,27 @@ public struct VectorN<T: Real & BinaryFloatingPoint & Sendable & Codable>: Vecto
 	///
 	/// ``normalizedToSumOne()`` is the old behaviour, under a name that describes it.
 	///
+	/// A vector holding a coordinate that is not a finite number projects to all-`nan`, of the
+	/// same length. The algorithm below is a sort followed by a prefix walk, and `sorted(by: >)`
+	/// is *unspecified* on data containing a `nan` — not merely wrong about where the `nan`
+	/// goes, but free to return the valid coordinates out of order (contract §2:
+	/// `[3, 1, nan, 2, 5, 4].sorted()` gives `[1, 3, nan, 2, 4, 5]`). The threshold then comes
+	/// from an arbitrary prefix of an arbitrary permutation, so every output coordinate is
+	/// affected, not just the offending one. Worse, `T.maximum(nan, 0)` on the last line returns
+	/// **`0`** rather than `nan`, so the unusable coordinate would have been handed back as a
+	/// weight of exactly zero — a confident instruction to hold none of that asset.
+	///
 	/// - Complexity: O(n log n), dominated by the sort.
 	public func simplexProjection() -> VectorN<T> {
 		let v = components
 		let n = v.count
 		guard n > 0 else { return self }
+
+		// Screened before the sort, because the damage from an unspecified ordering is a
+		// permutation of the *valid* entries and marking the output afterwards cannot undo it.
+		guard v.allSatisfy({ $0.isFinite }) else {
+			return VectorN(Array(repeating: T.nan, count: n))
+		}
 
 		// Duchi, Shalev-Shwartz, Singer and Chandra (2008). Sort descending and walk the
 		// prefixes: each prefix length `j` implies a threshold that would put exactly that

@@ -300,10 +300,20 @@ public struct Portfolio<T: Real & Sendable & Codable> {
 	/// the minimum risk portfolio for each return level.
 	///
 	/// - Parameter points: Number of points on the frontier.
-	/// - Returns: Array of portfolio allocations on the efficient frontier.
+	/// - Returns: Array of portfolio allocations on the efficient frontier, or an empty array
+	///   when there are no assets or an asset has no expected return.
 	public func efficientFrontier(points: Int = 100) -> [PortfolioAllocation<T>] {
 		var frontier: [PortfolioAllocation<T>] = []
 		let expectedRets = expectedReturns
+
+		// An asset whose expected return is not a number must not be quietly left out of the
+		// span the frontier is drawn across. `min()`/`max()` order with `<` and every
+		// comparison against a `nan` is false, so that asset was skipped: the target returns
+		// were then laid out between the extremes of the *other* assets, and every point on
+		// the resulting curve was an optimisation over an asset set one member short of the
+		// one the caller supplied — while `assets` still listed it. The empty return is what
+		// this function already says when it cannot draw a frontier.
+		guard expectedRets.allSatisfy({ !$0.isNaN }) else { return [] }
 
 		// Find min and max returns
 		guard let minReturn = expectedRets.min(),

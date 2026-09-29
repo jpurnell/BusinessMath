@@ -52,6 +52,22 @@ extension Array where Element: Real {
     public func rank() -> [Element] {
         guard !isEmpty else { return [] }
 
+        // The earlier fix in the `firstIndex(of:)` branch below restored the *length*
+        // invariant — one rank per observation — and stopped `spearmansRho` trapping. It left
+        // the ordering itself untouched, and the ordering is the second half of the same
+        // fact: `sorted(by:)` given a comparator that is not a strict weak ordering does not
+        // merely misplace the `nan`, it is free to return the **valid** elements out of order
+        // (contract §2: `[3, 1, nan, 2, 5, 4].sorted()` gives `[1, 3, nan, 2, 4, 5]`). So the
+        // finite observations were receiving finite, plausible, *wrong* ranks, and the one
+        // marked `nan` was the only position that admitted anything had gone wrong.
+        //
+        // Ranks are relative, so one unrankable observation costs the whole vector: there is
+        // no permutation left to read positions off. Every position says so, and the length
+        // invariant the earlier fix established is preserved.
+        guard allSatisfy({ $0.isFinite }) else {
+            return Array(repeating: Element.nan, count: count)
+        }
+
         let sorted = self.sorted(by: { $0.magnitude > $1.magnitude })
         var rankArray: [Element] = []
 
@@ -116,6 +132,13 @@ extension Array where Element: Real {
     public func reverseRank() -> [Element] {
         guard !isEmpty else { return [] }
 
+        // Same mechanism as ``rank()``: an unorderable element makes the comparator stop
+        // being a strict weak ordering, so the ranks handed to the *finite* elements are
+        // read off an arbitrary permutation.
+        guard allSatisfy({ $0.isFinite }) else {
+            return Array(repeating: Element.nan, count: count)
+        }
+
         let sorted = self.sorted(by: { $0.magnitude < $1.magnitude })
         var rankArray: [Element] = []
 
@@ -175,11 +198,21 @@ extension Array where Element: Real {
     /// // Adjustment = 2 × (2³ - 2) / 12 = 1.0
     /// ```
     ///
-    /// - Returns: The tie correction factor. Returns 0 if no ties exist.
+    /// - Returns: The tie correction factor. Returns 0 if no ties exist, and `nan` if any
+    ///   element is not finite.
     ///
     /// - Complexity: O(n log n) due to sorting.
     public func tauAdjustment() -> Element {
         guard !isEmpty else { return Element(0) }
+
+        // Two separate failures met here, and `0` is the answer that hid both. The sort is
+        // unspecified with an unorderable element present, so the ranks that drive the tie
+        // groups are read off an arbitrary permutation; and `firstIndex(of:)` compares with
+        // `==`, so the unorderable element is never found and used to be dropped by the
+        // `continue` below — leaving a shorter `rankArray` and, with it, fewer ties. The
+        // correction came back smaller, or exactly `0`, which is the value that means "this
+        // sample has no ties to correct for" and leaves Kendall's τ believing it.
+        guard allSatisfy({ $0.isFinite }) else { return Element.nan }
 
         let sorted = self.sorted(by: { $0.magnitude > $1.magnitude })
         var rankArray: [Element] = []

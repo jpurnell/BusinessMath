@@ -96,7 +96,9 @@ public struct QQPoint<T: Real & Sendable>: Sendable where T: BinaryFloatingPoint
 ///
 /// - Parameter residuals: An array of residual values to assess.
 /// - Returns: An array of ``QQPoint`` values sorted by theoretical quantile.
-///   Returns an empty array if `residuals` is empty.
+///   Returns an empty array if `residuals` is empty. If any residual is `nan` the plotting
+///   positions are still returned, one per residual, each paired with an `observed` of `nan`:
+///   the sample cannot be ordered, so no observation can be paired with any quantile.
 ///
 /// ```swift
 /// let X = try DenseMatrix([[25.0], [30.0], [35.0], [25.0], [30.0], [35.0]])
@@ -113,6 +115,25 @@ public func qqNormalData<T: Real>(
 ) -> [QQPoint<T>] where T: BinaryFloatingPoint {
 	let n = residuals.count
 	guard n > 0 else { return [] }
+
+	// A Q-Q plot is a *pairing*: the i-th smallest observation against the i-th plotting
+	// position. `sorted()` is unspecified on data containing a `nan` — the valid residuals
+	// come back out of order (contract §2) — so the pairing would be wrong for residuals that
+	// are perfectly fine, and the resulting plot would show a curvature that is an artifact of
+	// the sort rather than a property of the model. Nothing downstream could detect it: every
+	// point would be finite and the plot would look like a diagnosis.
+	//
+	// The plotting positions are a function of `n` alone, so they are still well defined and
+	// the length invariant (§3.5) is kept; what is no longer available is the observation each
+	// one pairs with.
+	guard residuals.allSatisfy({ !$0.isNaN }) else {
+		let nT = T(n)
+		return (0..<n).map { i in
+			let rank = T(i + 1)
+			let p = (rank - T(0.375)) / (nT + T(0.25))
+			return QQPoint(theoretical: inverseNormalCDF(p: p), observed: T.nan)
+		}
+	}
 
 	let sorted = residuals.sorted()
 	let nT = T(n)
