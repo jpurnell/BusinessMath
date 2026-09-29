@@ -1,0 +1,429 @@
+[
+  {
+    "contentHash" : "473fe4f80b6b9941cc8ad5e810d3f8633457fbf9d2c89337be0cad3fb711605b",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/project\/reference\/marginal_var_example.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "f3fa9557ff5510e17f4dcf34a81daad6258871b365e658f5e9551e07fbc8fff0",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/project\/reference\/marginal_var_example.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "a47db5614cc3837030ba616e1938d6857ef3549e57eaf08223f48b3a55938ea4",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/project\/reference\/marginal_var_example.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "7d139f1870f9018ea13fceb9b417de30b861e09d5e61f05f0781c06f68cf9c5c",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/project\/reference\/marginal_var_example.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "86c7c13ca920304e66af47bea1e2a05bbf5c4b83eb1107ecf6984e1c765963a5",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/project\/reference\/marginal_var_example.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "730a9f1e2b8fb6c66aba4a5957d5bb98e207255ae29a5d48471841fa26dca7a4",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/project\/reference\/marginal_var_example.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "2f27c7b62b10d8cf348b0bc74cd8550e90450b4412f631d9d7028577984f01cb",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/project\/reference\/NewtonRaphsonOptimization_ALT.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.clamp-absorbs-nan"
+  },
+  {
+    "contentHash" : "9c43d9a8349d4d9d2c03d385b518472d5743ce141e82b840bb0012a28ee6a025",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Statistics\/Classification\/ClassifierEvaluation.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "11190ae440010306f84fbd7a60b7457e37d39485e42dad8b6fb81cc40f10c6d6",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Statistics\/Comparison Statistics\/nemenyiCD.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.classification-omits-nan"
+  },
+  {
+    "contentHash" : "20127782d677069426688c717ff7234c7909347dfc2d5a961200b1570c6eddf0",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Statistics\/Concentration\/Concentration.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "374312265c6b61b3ab5601bcd1d5c6fe367ca38c0019c88d2c10e04009f0185b",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Statistics\/Estimation\/convergenceDiagnostics.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "208ab33410ffecab003b8479a6f10efde67453c5acf1c9872820ccb7bef944b0",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Statistics\/Descriptors\/Central Tendency\/quantile.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "e450c837f22dab35efe644cbd68a76bc4889ebf42c0ccb3a5d349a130b2e2a3e",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Statistics\/Descriptors\/Agreement\/kernelWeightedAgreement.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "b6e3b8284df333cdb3f91d3f92bcdc67fecb741e8b5cb1bf39fa7791458ef1a7",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Statistics\/Probability Distribution\/Poisson Distribution\/DistributionPoisson.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "466e0e4a7fe9fa74ce6fed99992203721f3db6ebde5e0ea29cad6dd1207e45e4",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Statistics\/ANOVA\/postHocTests.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.classification-omits-nan"
+  },
+  {
+    "contentHash" : "04c9ba752025e81131fd7082909d72fbe001dea0667df1734720e794ecc5aef8",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Visualization\/CommandLineVisualization.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.classification-omits-nan"
+  },
+  {
+    "contentHash" : "a22083d9438d30f8111bbf9c509ce2ee97a5eb497b647fedd3305c0080d5be6f",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Visualization\/CommandLineVisualization.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "2526ffd74ad31a0139603fed6eaa2712c951093ede2248f0b0986e8c1fc77cb2",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Derivatives\/Commodity\/CommodityCollar.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.classification-omits-nan"
+  },
+  {
+    "contentHash" : "14aac5257f397b7ead321192ef0fd068df91f689faf7ba1c2eaa5791c85aa9c2",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Derivatives\/Commodity\/CommodityCollar.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.classification-omits-nan"
+  },
+  {
+    "contentHash" : "5386db149fb6a894a9eb874dc2b58610572ed7101f45d359ccfaeef47643d948",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Financial Statements\/DebtInstrument.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "555a26d01443a098912b2a8590a51accf0e5cba2caf1b62bc5fbf12d875a7c51",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Optimization\/GoalSeekOptimizer.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.clamp-absorbs-nan"
+  },
+  {
+    "contentHash" : "179c008cbd5b564fa3ca6a9c58c3534d800e9e89eac345666c308b0b24eecb37",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Optimization\/CapitalAllocationOptimizer.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "3edce017016afbaba7f6274369cb16f3a9c6087d06f9f31e476a0a75a30f24c1",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Optimization\/Heuristic\/NelderMead.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "03767087b5a03a686b9ac3fd2ef9c2a337a9379fcf597bd571d61c6325c4766a",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Optimization\/Heuristic\/NelderMead.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "56f47efa263dad4f2e387018e75bffdc381047eb13571ffe0b0a24a68e434f5d",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Optimization\/Heuristic\/NelderMead.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "350caf4ef529da618058e6e33f619a0aedd85a2509d0d31adad12eac84f4c694",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Optimization\/Heuristic\/NelderMead.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "7b2089a6df65664d22586d0d38f166ac035eb62733bacd30c5faccb2c3533b74",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Optimization\/Heuristic\/NelderMead.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "9d6e04b17f8d7253de14fce4c96c13b5effad202cd9486c3c91575a96e23677f",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Optimization\/Heuristic\/SimulatedAnnealing.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.clamp-absorbs-nan"
+  },
+  {
+    "contentHash" : "211349c1967e8fbedecba2d5ed8523ea802d858ca105b17a5bf3cb0588028802",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Optimization\/Heuristic\/GeneticAlgorithm.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "b3048563efa456368e6f128c6d928df1f1bc6a43c4910c42205df71b3f4933ec",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Optimization\/Algorithms\/NewtonRaphsonOptimizer.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.clamp-absorbs-nan"
+  },
+  {
+    "contentHash" : "a2eb642bc92229e3cee01bda9e4598ab92516d449afe7c2a4f72e9792b257419",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Optimization\/AsyncGradientDescentOptimizer.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.clamp-absorbs-nan"
+  },
+  {
+    "contentHash" : "387b2fcb06a0a32cfe39f88c79f856ea306ce6122c67a9816cd8ec6c1222c208",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Optimization\/AsyncGradientDescentOptimizer.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.clamp-absorbs-nan"
+  },
+  {
+    "contentHash" : "f18abf67b1d573e4db3e5f2f1150c4d5349c6a5570888896dc99fd675a15370f",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Optimization\/AdaptiveProgress.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "1098df76d21b53ad668a5e8f3c5d4147be97735843e90fe559c515da84332bb1",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Combination and Permutation\/permutation.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "deb073a3fc1b59bfcb1beff027a17bb2f3d5d6ef781d9329e4b2e31e6a79699c",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Stochastic\/JumpDiffusion.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "1d37b23225d631e2a2c3ec71152d50c0cd717ba805eb59352bf1777450e2fe50",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Simulation\/distributionGeometric.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "cae2eaf1809da94f05cca363b68dfbf316d9a55cd4429401012f6ec1bd6065c0",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Simulation\/distributionGeometric.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "bc7bff385218020bcfef83010eaf49f63b7bf4ec4b971df0f45822b00a12ec50",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Simulation\/distributionHistogram.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "edfe1396921dcc6a66f463b183411fc2a9174aa717cd31657e64d69aa13e3370",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Simulation\/MonteCarlo\/MonteCarloSimulation.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "00e5201a3f7641814e51d9ca77248877d8a2a00afa893e2c7c495e4c0eaee730",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Simulation\/distributionDiscreteUniform.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "945d852b382340e9bcb64c766bcc3852dcc8be79bb29462af8e7ed2506793ff3",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Simulation\/AliasTable.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "f02b34826f09b9b513ba63a3aa40a1ed2bb8530f4f5129b220fa4d41d06e258e",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Simulation\/distributionDiscreteCounts.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "5431299c0beaef2b4b17e435fccd26a4b2107623c039a7e5f93a59ee67a4fbc4",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Utilities\/Formatting\/FloatingPointFormatter.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "b82bce7b72e6d834bce38edbefdbb569846e87e5afee71fb159429125d2ad364",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Utilities\/Formatting\/FloatingPointFormatter.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.classification-omits-nan"
+  },
+  {
+    "contentHash" : "9000269588bff0c9c84432632a9b3f4a8ae190afd7ccb6bd3a0025d9d42a5dcb",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Time Series\/Growth\/TrendModel.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.classification-omits-nan"
+  },
+  {
+    "contentHash" : "25eaa228929a8c1e9e06732b7ee9b3636112e915d10d757d77dbea09e3c0b2f4",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Time Series\/Diagnostics\/Stationarity.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "d14b30a6a6799c07384dcdb04c55f967b2bb238c2a6ddb6e9361e5cdd73aef80",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Time Series\/TVM\/IRR.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.classification-omits-nan"
+  },
+  {
+    "contentHash" : "4590491404e7e05cdaaf7a9362382933815030a1f067d772b0c17be361c6db59",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Diagnostics\/ModelDebugger.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.classification-omits-nan"
+  },
+  {
+    "contentHash" : "762e8d18e0f4cb895f234aefbe2716b6e26195539649642992e0012c7353de0d",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Portfolio\/PortfolioUtilities.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.clamp-absorbs-nan"
+  },
+  {
+    "contentHash" : "b9b5e3ad583bcbe2c9de2e8dfe6663be3990914b48ddfe8ba4a513cc5cf5456f",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Fluent API\/InvestmentBuilder.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.classification-omits-nan"
+  },
+  {
+    "contentHash" : "8c82997812bb9a4a7fc33111696f8fd35e490576e50cda5e4b851afc540156d9",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Fluent API\/InvestmentBuilder.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.classification-omits-nan"
+  },
+  {
+    "contentHash" : "c24ff02928b85f408d9f9fa6200d31edc99936bc3040085bae780f1ee39f855b",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Fluent API\/InvestmentBuilder.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.classification-omits-nan"
+  },
+  {
+    "contentHash" : "c3e05cd37fab6773c2f84830df5cb6eaee0c738e392c8bcdcf2f591fc5fe1b9f",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Fluent API\/Templates\/StandardTemplates.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "f23714f326d8d969e0199bb233a5d5bf24fe558243d13a6b0b661b50c85d668c",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Forecasting\/MovingAverageModel.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.classification-omits-nan"
+  },
+  {
+    "contentHash" : "f613fb37ce0ad253f63f8b9283160ef61ba5d7088c65cae47c1f329c5813cefd",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Forecasting\/AnomalyDetection.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.classification-omits-nan"
+  },
+  {
+    "contentHash" : "04c5a7be73a7f0f23f87637a487f756ef4fd3c135bb525d8285d1c6c9d485850",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Forecasting\/ETS\/ETSParameterSearch.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.clamp-absorbs-nan"
+  },
+  {
+    "contentHash" : "e10b90e598391b59941c294fa6dd6e018a92fda524d0d4351ec154de9b7e3fa3",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Valuation\/CreditDerivatives\/MertonModel.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.clamp-absorbs-nan"
+  },
+  {
+    "contentHash" : "a16853488a55ff1af73364ac07cfd35499d82e392c16f7b595bb4e4c1a860a3a",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Valuation\/CreditDerivatives\/CreditTermStructure.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "1d045e73d041e4b4d4f40fc7ae791ba6f75429c354accb0fe01719542f47fd76",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Valuation\/Debt\/NelsonSiegel.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "89dafc96fbbb9109141113c3d7876fa6cf70c1e8337aa85ea24566365fb93153",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Valuation\/Curves\/DiscountCurve.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  },
+  {
+    "contentHash" : "15cc558db3519611046f5167240da0ff5838ea8425cef54b945265a280338822",
+    "expiresAt" : "2027-03-28T02:26:17Z",
+    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Valuation\/Curves\/DiscountCurve.swift",
+    "recordedAt" : "2026-09-29T02:26:17Z",
+    "ruleId" : "fallback.int-conversion-unguarded"
+  }
+]

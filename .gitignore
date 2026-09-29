@@ -2,6 +2,7 @@
 .*
 !.gitignore
 !.quality-gate.yml
+!.quality-gate-baseline.json
 !.github/
 !.swift-version
 !.swiftpm/
