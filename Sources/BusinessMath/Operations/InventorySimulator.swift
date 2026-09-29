@@ -78,6 +78,10 @@ public struct InventorySimulator: Sendable {
     /// - Returns: An ``InventorySimulator/Result`` containing the simulated reorder point and supporting metrics.
     /// - Throws: ``OperationsError/insufficientData(required:got:)`` if `demandHistory` is empty.
     /// - Throws: ``OperationsError/invalidServiceLevel`` if `serviceLevel` is not in (0, 1).
+    /// - Throws: ``OperationsError/invalidParameter(_:)`` if `meanLeadTime` or `leadTimeStdDev`
+    ///   is not finite or lies outside `0 ... 100_000` periods. A lead time is both a
+    ///   `Double`-to-`Int` conversion and the trip count of the inner sampling loop, so an
+    ///   unscreened one is fatal twice over — see the guards below.
     public static func simulate(
         demandHistory: [Double],
         meanLeadTime: Double,
@@ -92,6 +96,33 @@ public struct InventorySimulator: Sendable {
         }
         guard serviceLevel > 0, serviceLevel < 1 else {
             throw OperationsError.invalidServiceLevel
+        }
+        // `meanLeadTime` and `leadTimeStdDev` were never screened, and they are fatal in two
+        // different ways. `sampleLeadTime` converts the sampled lead time with `Int(_:)`,
+        // which traps on `nan` and on `infinity` — the crash reported against `:167` and
+        // `:170`. Screening only for finiteness fixes the wrong half: a merely enormous
+        // *finite* lead time such as `1e18` converts perfectly well and then becomes the trip
+        // count of `sampleDDLT`'s `for _ in 0..<days` loop, so the crash turns into a run that
+        // never returns. A hang tells the caller even less than a trap does. Both are refused
+        // here, at the entry point, before any sampling runs.
+        //
+        // The range test also catches `nan` and the infinities on its own — every comparison
+        // against `nan` is false, and `infinity <= maximumLeadTime` is false — so there is one
+        // guard per parameter rather than a finiteness guard and a magnitude guard for each.
+        // The message states both halves so the diagnosis matches the condition.
+        //
+        // `maximumLeadTime` is 100,000 demand periods: about 274 years of daily
+        // replenishment, and already 10^9 inner draws at the default 10,000 iterations.
+        // Beyond that the number is a data-entry error, not a lead time.
+        guard meanLeadTime >= 0, meanLeadTime <= maximumLeadTime else {
+            throw OperationsError.invalidParameter(
+                "meanLeadTime must be finite and within 0 ... \(maximumLeadTime) periods"
+            )
+        }
+        guard leadTimeStdDev >= 0, leadTimeStdDev <= maximumLeadTime else {
+            throw OperationsError.invalidParameter(
+                "leadTimeStdDev must be finite and within 0 ... \(maximumLeadTime) periods"
+            )
         }
 
         let demandMean = mean(demandHistory)
@@ -164,10 +195,10 @@ public struct InventorySimulator: Sendable {
         mean: Double, stdDev: Double, using rng: inout G
     ) -> Int {
         guard stdDev > 0 else {
-            return max(1, Int(mean.rounded()))
+            return boundedLeadTimePeriods(mean.rounded())
         }
         let lt = normalSample(mean: mean, stdDev: stdDev, using: &rng)
-        return max(1, Int(lt.rounded()))
+        return boundedLeadTimePeriods(lt.rounded())
     }
 
     private static func sampleDDLT<G: RandomNumberGenerator>(
@@ -196,5 +227,33 @@ public struct InventorySimulator: Sendable {
         case .empirical: return "empirical"
         case .normal: return "normal"
         }
+    }
+
+    /// The largest lead time, in demand periods, that `simulate(demandHistory:meanLeadTime:leadTimeStdDev:serviceLevel:strategy:iterations:seed:)` will run.
+    ///
+    /// 100,000 periods is roughly 274 years of daily replenishment, and at the default 10,000
+    /// iterations it is already 10^9 inner demand draws. The bound exists because a lead time
+    /// is a loop trip count, not because any real supply chain approaches it.
+    private static let maximumLeadTime: Double = 100_000
+
+    /// Reduces a sampled lead time to a trip count that is safe to convert and safe to loop over.
+    ///
+    /// The value this returns is used twice: as an `Int` (and `Int(_:)` on a `Double` traps on
+    /// a non-finite value and on anything outside `Int`'s range) and as the upper bound of
+    /// `sampleDDLT`'s `for _ in 0..<days` loop (where a merely enormous value is a run that
+    /// never finishes). The entry-point guards in `simulate` already refuse a mean or a
+    /// standard deviation outside `0 ... maximumLeadTime`, but a normal *draw* is not bounded
+    /// by its mean, so the draw is bounded here as well — clamped in `Double`, before the
+    /// conversion, never after it.
+    ///
+    /// - Parameter periods: A sampled lead time in demand periods.
+    /// - Returns: A whole number of periods, at least 1 and at most `maximumLeadTime`.
+    private static func boundedLeadTimePeriods(_ periods: Double) -> Int {
+        // Unreachable through `simulate`, whose parameter guards run first. Kept so the
+        // conversion is total on its own terms rather than by relying on that ordering; a
+        // clamp cannot do this job, because `Swift.min(Swift.max(.nan, 1), x)` is `nan`.
+        guard periods.isFinite else { return 1 }
+        let clamped = Swift.min(Swift.max(periods, 1), maximumLeadTime)
+        return Int(clamped)
     }
 }

@@ -116,6 +116,46 @@ deliberately — an unbounded Sharpe ratio at zero risk, an unbounded Altman com
 debt-free company. Screen infinity only where it breaks the specific computation (e.g. `fCDF`
 throws on an infinite statistic).
 
+### 3.7 Keyed by period
+
+**Narrow the domain; do not fabricate the observation.** A lookup for a period the data does
+not cover has no answer, and `?? T(0)` does not decline to give one — it reports a measured
+zero. `altmanZScore` scored one solvent, profitable company 5.92 ("Safe Zone") for a covered
+quarter and 0.00 — "Distress Zone (High bankruptcy risk within 2 years)", in its own DocC — for
+the next quarter, which was simply outside the statements the caller had supplied.
+
+Matches `TimeSeries.zip(with:)`, which emits only the periods present in both operands. It is
+why every binary operation on a series is already right here, and why the multi-period
+`altmanZScore` never had the defect its single-period sibling did.
+
+```swift
+guard let totalAssets = balanceSheet.totalAssets[period] else { return T.nan }
+```
+
+**Detection is not available, and the rule does not need it.** `TimeSeries.periods` is derived
+from the value keys — `self.periods = valueDict.keys.sorted()` at `TimeSeries.swift:177`, and
+`self.periods = data.keys.sorted()` again at `:264` — and `Period: Comparable` sorts
+**type-first** (`Period.swift:1248`: type, then start date, then end date; the ladder is
+`daily < monthly < quarterly < semiannual < annual < custom`), so `periods.first` / `.last` do
+not bound a span. `subscript(period:)` is a plain dictionary lookup, so `nil` comes back
+identically for a hole, for before the start, and for after the end. So the rule is about the
+query rather than the gap: a period the data does not cover is not answerable, whichever kind
+of absence it turns out to be.
+
+The same fact has a second face on the way in. `init(periods:values:)` builds that dictionary,
+so **duplicate periods collapse silently, last value wins**, and the series comes back shorter
+than the array the caller passed with no diagnostic — twelve observations in, eleven out. That
+is an input-validation question rather than a lookup one, and belongs to `init(validating:)` —
+which today checks emptiness, count agreement and label count, but not duplicates — rather than
+to this clause. It is recorded here because it has the same cause: the keys are the truth and
+the caller's array is not.
+
+**This needs no API change.** A function returning `T` says it with `.nan` (§3.1); one returning
+a `TimeSeries` says it by leaving the period out of the result, as `zip` does; one returning
+`Optional` documents it (§3.3). Where the return type has no room for "not answerable" at all —
+`PiotroskiScore`, `FinancialPeriodSummary` — that is an API decision to take deliberately, not a
+guard to add in passing.
+
 ---
 
 ## 4. Forbidden

@@ -1099,9 +1099,22 @@ public struct RealEstateTemplate: TemplateProtocol {
             )
         }
 
-        guard let loanTerm = parameters["loanTermYears"] as? Double, loanTerm > 0 else {
+        // `create(parameters:)` below converts this value with `Int(_:)`, which **traps** on a
+        // non-finite value and on anything outside `Int`'s range. `nan` never reached that line
+        // because `nan > 0` is false, so this guard already rejected it — by accident, and only
+        // for half the class. `+infinity > 0` is true, so an infinite term sailed through a
+        // guard that looked like it covered the case and took the process down inside the
+        // model constructor. Widening the existing test is the fix; a second guard next to the
+        // conversion would leave two places disagreeing about what a valid term is.
+        //
+        // The ceiling is representability, not real estate: `RealEstateModel` computes
+        // `loanTermYears * 12` as an `Int`, so the term must stay far enough below `Int.max`
+        // for that multiplication not to overflow in turn.
+        let maxLoanTermYears = 1e15
+        guard let loanTerm = parameters["loanTermYears"] as? Double,
+              loanTerm > 0, loanTerm.isFinite, loanTerm <= maxLoanTermYears else {
             throw BusinessMathError.invalidInput(
-                message: "loanTermYears must be positive",
+                message: "loanTermYears must be positive, finite, and a whole number of years",
                 value: "\(parameters["loanTermYears"] ?? "nil")"
             )
         }

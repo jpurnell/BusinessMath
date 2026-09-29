@@ -18,15 +18,19 @@ extension Experiment {
 	/// Validates power and significance level, which every entry point needs.
 	private func validate(power: T?, alpha: T) throws {
 		if let power {
-			let tooLow = power <= T(0)
-			let tooHigh = power >= T(1)
-			guard !tooLow, !tooHigh else {
+			// Written as a positive range test rather than two negated ones, because
+			// `nan <= 0` and `nan >= 1` are both false: a `nan` power passed validation,
+			// made `zBeta` `nan`, and the caller was told nothing at all — `Int(rounded)`
+			// in `sampleSizePerArm` trapped and took the process down. It now names the
+			// argument that was unusable, which is what the other four refusals do.
+			// Same shape as the baseline check in `minimumDetectableEffect(perArm:power:alpha:)`.
+			guard power > T(0), power < T(1) else {
 				throw ExperimentError.invalidPower(Double(power))
 			}
 		}
-		let alphaTooLow = alpha <= T(0)
-		let alphaTooHigh = alpha >= T(1)
-		guard !alphaTooLow, !alphaTooHigh else {
+		// Same reason: a `nan` alpha reached `normSInv` unchallenged and poisoned the
+		// critical value, so the refusal arrived as a crash rather than as this error.
+		guard alpha > T(0), alpha < T(1) else {
 			throw ExperimentError.invalidAlpha(Double(alpha))
 		}
 	}
@@ -108,7 +112,17 @@ extension Experiment {
 			)
 		}
 
+		// `exact` carries a sentinel as often as it carries a size: both sizing formulas
+		// deliberately return `.infinity` when the squared effect underflows to zero, and
+		// an effect of 1e-10 yields a perfectly finite 1.6e21 with no infinity anywhere —
+		// past `Int.max`, which is only 9.22e18. `Int(_:)` traps on either, so what the
+		// caller got for an unsizable design was a dead process, not the refusal this
+		// function's `- Throws:` has promised since it was written.
 		let rounded = exact.rounded(.up)
+		let largestCount: T = T(Int.max)
+		guard rounded.isFinite, rounded < largestCount else {
+			throw ExperimentError.unrepresentableSampleSize(Double(exact))
+		}
 		return Int(rounded)
 	}
 

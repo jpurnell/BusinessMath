@@ -23,8 +23,10 @@ import OSLog
 ///   - a: The lower bound of the interval.
 ///   - b: The upper bound of the interval.
 ///   - c: The mode (most frequent value) of the distribution. It must be within the interval [a, b].
-///   - uSeed: Random seed value in [0, 1] (default: newly generated)
-/// - Returns: A random number generated from the triangular distribution between `a` and `b` with mode `c`.
+///   - uSeed: Random seed value in [0, 1] (default: newly generated). Outside that
+///     interval, or not a number, the call returns `NaN` rather than a value outside
+///     the support.
+/// - Returns: A random number generated from the triangular distribution between `a` and `b` with mode `c`, or `NaN` if any parameter is outside its stated domain.
 ///
 /// - Note: The function uses the inverse transform sampling method to generate a random number from the triangular distribution. The method distinguishes between two cases based on the cumulative distribution function (CDF) of the triangular distribution:
 ///   \[ F(x) = \frac{(x - a)^2}{(b - a)(c - a)} \] when \( a \leq x \leq c \)
@@ -43,7 +45,14 @@ public func triangularDistribution<T: Real>(low a: T, high b: T, base c: T, _ uS
 	guard !a.isNaN, !b.isNaN, !c.isNaN else { return T.nan }
 	guard a.isFinite, b.isFinite, c.isFinite else { return T.nan }
 	guard a <= b else { return T.nan }  // low must be < high
-	guard c >= a, c <= b else { return T.nan }  // base must be in [low, high]
+	// `uSeed` is the public fourth parameter and was the only one of the four not screened
+	// in this block — and it is the one that reaches `Int(uSeed * 1_000_000)` below, where a
+	// `nan`, an infinity, or simply `1e300` **traps**: the caller is told nothing at all
+	// because the process ends. Screened against its documented domain rather than merely
+	// for finiteness, because a finite `uSeed` outside [0, 1] is the worse failure — a
+	// negative one takes the `else` branch and returns a plausible number *below* `a`,
+	// outside the support this function promises, with nothing to mark it as wrong.
+	guard c >= a, c <= b, uSeed >= 0, uSeed <= 1 else { return T.nan }  // base in [low, high], uSeed in [0, 1]
 	guard b > a else { return a }  // degenerate case: single point
 
     let fc = (c - a) / (b - a) // fp-safety:disable — guarded by b > a above

@@ -47,6 +47,11 @@ public enum ExperimentError: Error, Equatable, Sendable {
 	case conversionsExceedObservations(arm: String, conversions: Int, observations: Int)
 	/// A per-arm sample size that is not positive.
 	case nonPositiveSampleSize(Int)
+	/// A design whose per-arm size is not a representable count. Either a sizing formula
+	/// returned its `infinity` sentinel — the squared effect underflowed, so no finite
+	/// sample detects it — or the figure is finite but larger than `Int` can hold, which
+	/// an effect of `1e-10` already is. The payload is the unrounded per-arm figure.
+	case unrepresentableSampleSize(Double)
 }
 
 /// A two-arm experiment design: what is being compared, and how large an effect the

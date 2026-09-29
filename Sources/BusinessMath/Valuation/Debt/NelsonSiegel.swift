@@ -206,18 +206,56 @@ public struct BondMarketData: Sendable, Codable {
 
 	/// Creates bond market data for Nelson-Siegel calibration.
 	///
+	/// The initialiser stores what it is given; nothing is rejected or repaired here, because
+	/// every property is a public `let` a caller may legitimately read back. What decides
+	/// whether the bond can take part in pricing or calibration is ``isSchedulable``, and both
+	/// `NelsonSiegelYieldCurve.price(bond:)` and `NelsonSiegelYieldCurve.calibrate(to:)`
+	/// consult it before the bond reaches a payment schedule.
+	///
 	/// - Parameters:
-	///   - maturity: Time to maturity in years (e.g., 5.0 for 5-year bond)
+	///   - maturity: Time to maturity in years (e.g., 5.0 for 5-year bond). Must be finite and
+	///     positive for the bond to be schedulable.
 	///   - couponRate: Annual coupon rate as decimal (e.g., 0.05 for 5%)
 	///   - faceValue: Par value of the bond (typically 100 or 1000)
 	///   - marketPrice: Observed market price for the bond
-	///   - frequency: Number of coupon payments per year (default: 2 for semiannual)
+	///   - frequency: Number of coupon payments per year (default: 2 for semiannual). Must be
+	///     at least 1 for the bond to be schedulable.
 	public init(maturity: Double, couponRate: Double, faceValue: Double, marketPrice: Double, frequency: Int = 2) {
 		self.maturity = maturity
 		self.couponRate = couponRate
 		self.faceValue = faceValue
 		self.marketPrice = marketPrice
 		self.frequency = frequency
+	}
+
+	/// The largest coupon schedule this type will build.
+	///
+	/// A termination bound, not a market one: `maturity * frequency` is both the argument of a
+	/// trapping `Int(_:)` conversion and the trip count of the coupon loop in
+	/// `NelsonSiegelYieldCurve.price(bond:)`, so screening only for a value `Int` accepts
+	/// would replace a crash with a loop of 10¹⁸ discountings. A million coupon dates is two
+	/// orders of magnitude past a 1,000-year monthly-pay bond.
+	private static let maxCouponPayments = 1_000_000.0
+
+	/// Whether this bond can be placed on a coupon schedule at all.
+	///
+	/// `price(bond:)` converts `maturity * frequency` with `Int(_:)`, which **traps** — on a
+	/// non-finite value and on anything outside `Int`'s range alike. Because the same bond is
+	/// priced inside the calibration objective, one unschedulable bond does not spoil one
+	/// price: it takes down the process in the middle of fitting a whole curve. That blast
+	/// radius is why the test lives on the data rather than at the conversion.
+	///
+	/// The two divisions by `periodsPerYear` in `price(bond:)` carry
+	/// `fp-safety:disable — frequency >= 1 by BondMarketData init` justifications. That claim
+	/// was not true of any code: the initialiser checked nothing. It is this property, and the
+	/// guards that consult it, that make it true.
+	///
+	/// - Returns: `true` when `maturity` is finite and positive, `frequency` is at least one,
+	///   and the implied number of coupon dates is representable.
+	public var isSchedulable: Bool {
+		guard maturity.isFinite, maturity > 0, frequency >= 1 else { return false }
+		let payments = maturity * Double(frequency)
+		return payments.isFinite && payments <= Self.maxCouponPayments
 	}
 }
 
@@ -230,8 +268,15 @@ extension NelsonSiegelYieldCurve {
 	/// Uses continuous compounding: PV = CF · exp(-y·t)
 	///
 	/// - Parameter bond: Bond market data
-	/// - Returns: Theoretical price based on the yield curve
+	/// - Returns: Theoretical price based on the yield curve, or `nan` when the bond cannot be
+	///   placed on a coupon schedule — see ``BondMarketData/isSchedulable``.
 	public func price(bond: BondMarketData) -> Double {
+		// Without this the next line traps and the process dies: `Int(_:)` refuses a
+		// non-finite product and an out-of-range one. A price is a number a caller charts and
+		// sums, so there is no safe substitute to hand back — zero would be "this bond is
+		// worthless" and the face value would be "it is priced at par". Contract §3.1.
+		guard bond.isSchedulable else { return Double.nan }
+
 		let periodsPerYear = Double(bond.frequency)
 		let totalPeriods = Int(bond.maturity * periodsPerYear)
 		let couponPayment = bond.faceValue * bond.couponRate / periodsPerYear // fp-safety:disable — frequency >= 1 by BondMarketData init
@@ -284,7 +329,9 @@ extension NelsonSiegelYieldCurve {
 	///   - tolerance: Convergence tolerance
 	///
 	/// - Returns: Calibrated yield curve
-	/// - Throws: OptimizationError if calibration fails
+	/// - Throws: ``BusinessMathError/dataQuality(message:context:)`` when any bond cannot be
+	///   placed on a coupon schedule (see ``BondMarketData/isSchedulable``), or
+	///   `OptimizationError` if the fit itself fails.
 	///
 	/// ## Example
 	/// ```swift
@@ -305,6 +352,19 @@ extension NelsonSiegelYieldCurve {
 		maxIterations: Int = 200,
 		tolerance: Double = 1e-6
 	) throws -> NelsonSiegelYieldCurve {
+		// A bond that cannot be sized should not enter the calibration set at all. Every bond
+		// here is priced once per objective evaluation, so one unschedulable bond is not a
+		// wrong price among many — it is a trap in the inner loop of the fit, and the whole
+		// curve dies with it. This function already throws, so the caller learns which bonds
+		// were at fault instead of losing the process. Contract §3.2.
+		let unschedulable = bonds.filter { !$0.isSchedulable }
+		guard unschedulable.isEmpty else {
+			throw BusinessMathError.dataQuality(
+				message: "Nelson-Siegel calibration requires every bond to have a finite, positive maturity and a payment frequency of at least 1",
+				context: ["invalid_count": "\(unschedulable.count)", "bond_count": "\(bonds.count)"]
+			)
+		}
+
 		// Get initial parameter guess
 		let initial = initialGuess ?? estimateInitialParameters(bonds: bonds, lambda: fixedLambda)
 
@@ -472,7 +532,9 @@ extension NelsonSiegelYieldCurve {
 	///   - tolerance: Convergence tolerance
 	///
 	/// - Returns: Detailed calibration result with diagnostics
-	/// - Throws: OptimizationError if calibration fails
+	/// - Throws: ``BusinessMathError/dataQuality(message:context:)`` when any bond cannot be
+	///   placed on a coupon schedule (see ``BondMarketData/isSchedulable``), or
+	///   `OptimizationError` if the fit itself fails.
 	public static func calibrateWithDiagnostics(
 		to bonds: [BondMarketData],
 		fixedLambda: Double = 2.5,
@@ -480,6 +542,17 @@ extension NelsonSiegelYieldCurve {
 		maxIterations: Int = 200,
 		tolerance: Double = 1e-6
 	) throws -> NelsonSiegelCalibrationResult {
+		// The same screen as `calibrate(to:...)`, for the same reason: this is the second entry
+		// point into the same objective, and a sibling that refused a bond while its twin
+		// crashed on it would be the inconsistency this sweep exists to remove. Contract §3.2.
+		let unschedulable = bonds.filter { !$0.isSchedulable }
+		guard unschedulable.isEmpty else {
+			throw BusinessMathError.dataQuality(
+				message: "Nelson-Siegel calibration requires every bond to have a finite, positive maturity and a payment frequency of at least 1",
+				context: ["invalid_count": "\(unschedulable.count)", "bond_count": "\(bonds.count)"]
+			)
+		}
+
 		let initial = initialGuess ?? estimateInitialParameters(bonds: bonds, lambda: fixedLambda)
 
 		let objective: @Sendable (VectorN<Double>) -> Double = { params in

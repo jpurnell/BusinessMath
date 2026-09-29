@@ -148,9 +148,23 @@ extension DistributionGeometric: DiscreteDistribution {
 	}
 
 	/// The smallest `k` with `cdf(k) >= q`: ⌈ln(1 − q) / ln(1 − p)⌉.
+	///
+	/// - Parameter q: A probability. At or below zero — and for a `q` that is not a
+	///   number — the answer is `1`, the smallest value in the support, matching
+	///   ``DistributionNegativeBinomial/quantile(_:)`` and
+	///   ``DistributionLogarithmic/quantile(_:)``. At or above one it is `Int.max`: no
+	///   finite count reaches certainty.
 	public func quantile(_ q: Double) -> Int {
 		guard p > 0, p <= 1 else { return 0 }
 		if p == 1 { return 1 }
+		// The guard both siblings open with and this one did not have. Without it a `q` of
+		// `-.infinity` makes `1 - q` infinite, which sails through the `complement > 0`
+		// guard below, and `ln(∞) / ln(1 − p)` is `-.infinity` — where `Int(_:)` **traps**
+		// and the caller is told nothing at all, because the process ends. One is the
+		// answer the un-trapped arithmetic would have reached anyway: `Swift.max(1, …)` of
+		// any non-positive count is the first trial. A `nan` `q` fails this comparison too
+		// and gets the same support minimum its two siblings hand it.
+		guard q > 0 else { return 1 }
 		let complement = 1 - q
 		guard complement > 0 else { return Int.max }
 

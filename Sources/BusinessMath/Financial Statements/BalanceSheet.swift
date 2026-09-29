@@ -748,34 +748,63 @@ public struct BalanceSheet<T: Real & Sendable>: Sendable where T: Codable {
 	/// ```
 	///
 	/// - Parameter revenue: Revenue time series (typically from income statement)
-	/// - Returns: Working capital turnover ratio for each period
+	/// - Returns: Working capital turnover ratio for each period the balance sheet and
+	///   `revenue` both cover. Periods covered by only one of the two are omitted rather than
+	///   answered, in the same way `TimeSeries.zip(with:)` omits them.
 	/// - SeeAlso: ``netWorkingCapital``
 	/// - SeeAlso: ``IncomeStatement/totalRevenue``
 	public func workingCapitalTurnover(revenue: TimeSeries<T>) -> TimeSeries<T> {
 		let nwc = self.netWorkingCapital
 
-		let turnoverValues = periods.enumerated().map { (index, period) -> T in
-			let currentRevenue = revenue[period] ?? T(0)
+		var turnoverPeriods: [Period] = []
+		var turnoverValues: [T] = []
+		turnoverPeriods.reserveCapacity(periods.count)
+		turnoverValues.reserveCapacity(periods.count)
 
+		for (index, period) in periods.enumerated() {
+			// `revenue` arrives from the caller — normally an income statement — and is
+			// indexed here on the *balance sheet's* period axis, so the two need not agree.
+			// `?? T(0)` fabricated a quarter of zero revenue whenever they did not, and the
+			// ratio came back as `0.0×`: working capital that generates no sales at all, the
+			// worst reading this ratio has and indistinguishable from a measured one. The
+			// same `?? T(0)` on working capital reached the zero-divisor guard below and
+			// produced that identical `0.0×` from the other side.
+			//
+			// `TimeSeries` cannot tell "before the series starts" from "a hole in the middle"
+			// — `periods` is derived from the value keys, and `Period` sorts type-first, so
+			// the ends do not bound a span — so the rule is not to detect the gap but to
+			// decline to invent the observation. A period the inputs do not both cover is
+			// left out of the result, which is what every binary `TimeSeries` operation in
+			// the library already does, and needs no change to this signature.
+			guard let currentRevenue = revenue[period], let currentWC = nwc[period] else { continue }
+
+			let divisor: T
 			if index == 0 {
 				// First period: use current working capital
-				let currentWC = nwc[period] ?? T(0)
-				guard currentWC != T(0) else { return T(0) }
-				return currentRevenue / currentWC
+				divisor = currentWC
 			} else {
-				// Subsequent periods: use average working capital
-				let currentWC = nwc[period] ?? T(0)
-				let priorWC = nwc[periods[index - 1]] ?? T(0)
-				let averageWC = (currentWC + priorWC) / T(2)
-				// The first-period branch above already guards its divisor; this one did
-				// not, so a period whose working capital averaged to zero returned
-				// `+infinity`. Same guard, same answer, for consistency within the method.
-				guard averageWC != T(0) else { return T(0) }
-				return currentRevenue / averageWC
+				// Subsequent periods: use average working capital. A prior period the
+				// balance sheet does not cover is not a prior period of zero working
+				// capital — averaging against a fabricated zero halved the denominator and
+				// so doubled the reported turnover.
+				guard let priorWC = nwc[periods[index - 1]] else { continue }
+				divisor = (currentWC + priorWC) / T(2)
 			}
+
+			// The first-period branch used to be the only one guarding its divisor, so a
+			// period whose working capital averaged to zero returned `+infinity`. Same
+			// guard, same answer, for consistency within the method.
+			guard divisor != T(0) else {
+				turnoverPeriods.append(period)
+				turnoverValues.append(T(0))
+				continue
+			}
+
+			turnoverPeriods.append(period)
+			turnoverValues.append(currentRevenue / divisor)
 		}
 
-		return TimeSeries(periods: periods, values: turnoverValues)
+		return TimeSeries(periods: turnoverPeriods, values: turnoverValues)
 	}
 
 	// MARK: - Financial Ratios

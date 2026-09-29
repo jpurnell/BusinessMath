@@ -105,17 +105,46 @@ public struct HazardRateCurve<T: Real & BinaryFloatingPoint & Sendable>: Sendabl
     /// Uses the credit curve to price a CDS and extract the fair spread.
     ///
     /// - Parameters:
-    ///   - maturity: CDS maturity in years
+    ///   - maturity: CDS maturity in years. Must be finite, non-negative and no greater than
+    ///     1,000; the premium leg is a quarterly schedule and a maturity outside that range
+    ///     cannot be placed on it.
     ///   - recoveryRate: Expected recovery rate (default: 0.40)
-    /// - Returns: Fair CDS spread as decimal
+    /// - Returns: Fair CDS spread as decimal, or `nan` when no spread exists: a maturity that
+    ///   cannot be scheduled, or one shorter than a single quarter, where the premium schedule
+    ///   is empty and the risky annuity is therefore zero.
     public func cdsSpread(maturity: T, recoveryRate: T = T(40) / T(100)) -> T {
+        // `Int(_:)` on a floating-point value traps outright — on a non-finite value and on
+        // anything outside `Int`'s range — and the number it produces here is also the trip
+        // count of the schedule loop below, so a finiteness-only screen would swap the crash
+        // for a loop that does not end. A maturity that cannot be put on a quarterly schedule
+        // has no fair spread, and the caller is told exactly that. It is not told a number:
+        // `T.zero` would read as a fair spread of 0 bp — protection on this name is free —
+        // which is the misreading the guard at the foot of this same function documents, and
+        // `survivalProbability(time:)` above already answers a `nan` time with `nan`.
+        //
+        // The upper bound is the schedule grid, not the credit market: 1,000 years is four
+        // thousand quarterly dates, past any tenor that has ever been quoted and still small
+        // enough to materialise.
+        let maxTenorYears: T = T(1_000)
+        guard maturity.isFinite, maturity >= T.zero, maturity <= maxTenorYears else {
+            return T.nan
+        }
+
         // Build discount curve (assume flat at 5% for simplicity)
         let riskFreeRate = T(5) / T(100)
-        let numPeriods = Int(maturity) * 4  // Quarterly
+        // Quarterly dates falling on or before maturity. This was `Int(maturity) * 4`, which
+        // counted only the *whole years*: a 1.5-year CDS was priced off a one-year premium
+        // leg, silently dropping the last two coupons. The `t <= maturity` filter below is
+        // what the count has always been checked against, and it is what makes the corrected
+        // count safe. For whole-year maturities the two expressions agree exactly.
+        let quarterlyDates: T = maturity * T(4)
+        let numPeriods = Int(quarterlyDates)
         var discountTimes: [T] = []
         var discountFactors: [T] = []
 
-        for i in 1...numPeriods {
+        // A half-open range: `1...numPeriods` traps when `numPeriods` is zero, which it is for
+        // every maturity shorter than one quarter.
+        for i in 1..<(numPeriods + 1) {
             let t = T(i) / T(4)
             if t <= maturity {
                 discountTimes.append(t)
@@ -123,7 +152,11 @@ public struct HazardRateCurve<T: Real & BinaryFloatingPoint & Sendable>: Sendabl
             }
         }
 
-        guard !discountTimes.isEmpty else { return T.zero }
+        // A maturity shorter than one quarter has no premium payment date at all, so the risky
+        // annuity is zero and `protection / annuity` has no value. This used to return
+        // `T.zero` and was unreachable while the loop above trapped first; zero here would say
+        // the same thing the annuity guard below refuses to say, that protection is free.
+        guard !discountTimes.isEmpty else { return T.nan }
 
         let periods = discountTimes.map { time -> Period in
             Period.year(Int(time) + 2024)

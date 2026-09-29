@@ -60,6 +60,13 @@ crashes in the campaign were found by accident rather than by sweeping for it.
 | Scenario Analysis / Diagnostics / Fluent API | — | — | — | — | ~27 |
 | Visualization / Risk / Marketing / Finance / AdvancedOpt | — | — | — | — | ~28 |
 
+> **The F column has been read since this table was built, and two of its cells do not mean what
+> the header says.** Time Series' 78 are `DateComponents.year ?? 0` — Foundation calendar
+> unwraps, a different shape — and Network's 20 are accumulator reads that are correct by
+> construction. The real `?? 0`-on-a-period-lookup class is ~75 sites concentrated in Financial
+> Statements. See Phase 2. Every other cell in this table is still `grep`-level and unread;
+> treat each as a question, not a count.
+
 ### 2.3 Areas never probed at all
 
 Never visited by a triage agent and never probed by hand, ordered by public API surface:
@@ -100,23 +107,52 @@ Low defect count, high severity each.
 **Exit:** every `Int(` on a floating-point expression either has a dominating finiteness guard
 or a comment saying why it cannot be non-finite.
 
-### Phase 2 — Shape F in Time Series and Financial Statements (`?? 0`)
+### Phase 2 — Shape F in Financial Statements (`?? 0`)
 
-**Scope:** ~78 sites in Time Series, ~20 in Network, ~8 in Statistics.
+> **Corrected 2026-09-28.** This section originally scoped the class as "~78 sites in Time
+> Series, ~20 in Network, ~8 in Statistics". That was wrong, and wrong in the way a grep is
+> usually wrong: the pattern matched, the meaning did not. The counts below are read, not
+> matched. See §5's rule — *a site is not a defect* — which applies just as forcefully to a
+> site's **classification** as to its severity.
 
-**Why second:** this is a coherent, high-consequence class that has never been examined at all.
-`timeSeries[period] ?? 0` means **a missing period reads as a real zero** — in a financial
-model, a gap in the data becomes zero revenue, zero cost, zero cash flow. That is the
-contract's §4 violation in its purest form, and it silently changes every aggregate computed
-over the series.
+**What the original scope actually contained:**
 
-**Method:** this one needs a design decision before any edit, because `?? 0` is sometimes
-correct (a period genuinely outside the model's horizon contributes nothing) and sometimes a
-fabricated observation. Establish the distinction first — probably "inside the declared period
-range" versus "outside it" — and write it into the contract as §3.7 before touching sites.
+- **Time Series' 78** are `DateComponents.year ?? 0`, `.month ?? 0`, `.day ?? 0` — Foundation
+  calendar unwraps, in `Period.swift` (62), `PeriodArithmetic.swift` (10) and
+  `FiscalCalendar.swift` (4). Not period lookups at all. They are a **different shape worth its
+  own line**: a missing calendar component silently becomes year 0, which is a real defect
+  class, just not this one. Do not fix it here; log it and scope it separately.
+- **Network's 20** are `[Node: Double]` accumulator reads, where a node absent from the
+  accumulator has genuinely contributed nothing. Correct by construction. Not defects.
 
-**Expected:** the largest single block of work and the most likely to need an API decision
-rather than a guard. Treat a design note as the deliverable of this phase, not a fix count.
+**Actual scope:** ~75 sites — **Financial Statements (63)**, Model Definition (3), Diagnostics
+(2), Industry Models (2). Top files: `CreditMetrics.swift` (25), `FinancialPeriodSummary.swift`
+(20).
+
+**Why it matters:** `statements[period] ?? 0` means **a missing period reads as a real zero**.
+Measured: `altmanZScore` for a period outside the supplied statements returns **0.00 — the
+distress zone** — for a solvent, profitable company, because `totalAssets[period]` is `nil`.
+`piotroskiScore` is worse, taking `period` *and* `priorPeriod` and thresholding on both, so an
+uncovered prior period silently **awards** the "increasing ROA" point: the score goes up
+because data is missing.
+
+**The design constraint, established before any edit:** `TimeSeries` **cannot** distinguish
+"before the series starts" from "a hole in the middle". Its `periods` is derived from the value
+keys (`self.periods = valueDict.keys.sorted()`), and `Period: Comparable` sorts **type-first**,
+so `periods.first` / `.last` do not bound a span. The rule therefore cannot be "detect the gap".
+
+**Method:** the rule is **"narrow the domain, don't fabricate the observation"** — a query about
+a period the data does not cover is not answerable, and the API says so in whatever way its
+signature already allows. `TimeSeries.zip(with:)` already does exactly this and is the
+precedent. This needs **no API change**. Landed as contract §3.7.
+
+**Sequencing.** `altmanZScore` and `BalanceSheet.workingCapitalTurnover(revenue:)` are ready
+now. `piotroskiScore` and `FinancialPeriodSummary.init` are not: the latter is declared `throws`
+and contains **zero `throw` statements**, filling twenty fields with fabricated zeros for any
+period whatsoever. It is the highest-value fix in the file and the most likely to turn existing
+fixtures red — budget it as a deliberate pass with fixture repair, not as part of a sweep.
+
+**Expected:** a design note and two fixes in this phase; a second, larger pass for the rest.
 
 ### Phase 3 — Streaming and Time Series, by probe
 

@@ -287,7 +287,8 @@ extension FinancialSimulation {
 	///   - confidence: The confidence level (e.g., 0.95 for 95% CVaR).
 	///   - metric: A function that extracts the metric from a projection.
 	///
-	/// - Returns: The Conditional Value at Risk.
+	/// - Returns: The Conditional Value at Risk, or `nan` when `confidence` is not finite and
+	///   the tail therefore has no size.
 	///
 	/// ## Example
 	/// ```swift
@@ -309,11 +310,27 @@ extension FinancialSimulation {
 		_ confidence: Double,
 		metric: (FinancialProjection) throws -> Double
 	) rethrows -> Double {
+		// The tail fraction sizes the tail, and `Int(_:)` traps on a non-finite argument — so
+		// `conditionalValueAtRisk(.nan)`, one hop from a confidence level that was itself
+		// computed, took the process down rather than returning a shortfall. There is no
+		// number to substitute: the worst observation would read as "the whole tail", and zero
+		// as "no expected shortfall", which on a risk report is the reassuring end. Contract
+		// §3.1. Screened here, before the metric is evaluated at all.
+		let tailFraction = 1.0 - confidence
+		guard tailFraction.isFinite else { return Double.nan }
+
 		// Optimization: sort once and reuse for both VaR and tail calculation
 		let sortedValues = try projections.map(metric).sorted()
 
-		// Calculate the tail size (e.g., 5% for 95% confidence)
-		let tailSize = Int(ceil(Double(sortedValues.count) * (1.0 - confidence)))
+		// Calculate the tail size (e.g., 5% for 95% confidence). The tail can never be longer
+		// than the sample, so capping the *Double* before converting also keeps a wildly
+		// out-of-domain confidence — finite, and therefore still the caller's own arithmetic —
+		// inside `Int`'s range. `tailFraction` is known finite above, so this is a cap on a
+		// real number rather than a clamp that could turn `nan` into a bound.
+		let sampleCount = Double(sortedValues.count)
+		let rawTail = (sampleCount * tailFraction).rounded(.up)
+		let cappedTail = Swift.min(rawTail, sampleCount)
+		let tailSize = cappedTail > 0 ? Int(cappedTail) : 0
 		guard tailSize > 0 else { return sortedValues.first ?? 0.0 }
 
 		// Sum the worst outcomes (already sorted, so first tailSize elements)

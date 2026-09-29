@@ -230,7 +230,9 @@ public struct PiotroskiScore {
 ///   - period: Period to calculate Z-Score for
 ///   - marketPrice: Stock price per share for the period
 ///   - sharesOutstanding: Number of shares outstanding for the period
-/// - Returns: Z-Score for the specified period
+/// - Returns: Z-Score for the specified period, or `.nan` if the statements do not cover
+///   `period` — a Z-Score is an observation about a period, and there is none to report for a
+///   period that was never filed.
 public func altmanZScore<T: Real>(
 	incomeStatement: IncomeStatement<T>,
 	balanceSheet: BalanceSheet<T>,
@@ -238,27 +240,48 @@ public func altmanZScore<T: Real>(
 	marketPrice: T,
 	sharesOutstanding: T
 ) -> T {
+	// Every one of the six figures below used to fall back to `?? T(0)` — a fabricated
+	// observation for a period the statements do not cover. Measured on one profitable
+	// company with 165,000 of assets and 12,000 of payables: the covered quarter scored 5.92
+	// ("Safe Zone"), and the very next quarter — outside the books entirely, so
+	// `totalAssets[period]` was nil — scored 0.00, which this file documents above as
+	// "Distress Zone (High bankruptcy risk within 2 years)". A solvent company was reported
+	// as facing bankruptcy purely because the caller asked about a quarter it had not
+	// supplied, and the answer carried no mark of having been invented.
+	//
+	// The rule cannot be "detect the gap": `TimeSeries` cannot distinguish "before the series
+	// starts" from "a hole in the middle", because its `periods` is derived from the value
+	// keys and `Period` sorts type-first, so `periods.first`/`.last` do not bound a span. The
+	// rule is to narrow the domain instead — a query about a period the data does not cover
+	// is not answerable. The multi-period overload below already behaves this way for free,
+	// being built from `TimeSeries` arithmetic, which emits only periods present in both
+	// operands; this overload returns `T`, so `.nan` is how its signature says the same thing.
+	guard let workingCapital = (balanceSheet.currentAssets - balanceSheet.currentLiabilities)[period],
+		  let totalAssets = balanceSheet.totalAssets[period],
+		  let retainedEarnings = balanceSheet.retainedEarnings[period],
+		  let ebit = incomeStatement.operatingIncome[period],
+		  let totalLiabilities = balanceSheet.totalLiabilities[period],
+		  let sales = incomeStatement.totalRevenue[period]
+	else { return T.nan }
+
 	// Component A: Working Capital / Total Assets
-	let workingCapital = (balanceSheet.currentAssets - balanceSheet.currentLiabilities)[period] ?? T(0)
-	let totalAssets = balanceSheet.totalAssets[period] ?? T(0)
 	// Four of the five components are scaled by total assets, so a firm with none has no
 	// Z-Score to report. Zero is the right answer here rather than a sentinel: a company
 	// with no assets is not a going concern, and zero sits in the distress zone where such a
 	// company belongs. Contrast the liabilities case below, where zero means the opposite.
+	// This is now reached only for a covered period that genuinely reports no assets; the
+	// uncovered-period path that also used to arrive here is diverted above.
 	guard totalAssets != T(0) else { return T(0) }
 	let a = workingCapital / totalAssets
 
 	// Component B: Retained Earnings / Total Assets
-	let retainedEarnings = balanceSheet.retainedEarnings[period] ?? T(0)
 	let b = retainedEarnings / totalAssets
 
 	// Component C: EBIT / Total Assets
-	let ebit = incomeStatement.operatingIncome[period] ?? T(0)
 	let c = ebit / totalAssets
 
 	// Component D: Market Value of Equity / Total Liabilities
 	let marketValue = marketPrice * sharesOutstanding
-	let totalLiabilities = balanceSheet.totalLiabilities[period] ?? T(0)
 	// This used to `guard totalLiabilities != T(0) else { return T(0) }`, which put the
 	// *safest* possible balance sheet in the distress zone. Zero liabilities means debt-free,
 	// and `Z < 1.81` is documented above as "High bankruptcy risk within 2 years", so the
@@ -288,7 +311,6 @@ public func altmanZScore<T: Real>(
 	}
 
 	// Component E: Sales / Total Assets
-	let sales = incomeStatement.totalRevenue[period] ?? T(0)
 	let e = sales / totalAssets
 
 	// Z-Score = 1.2×A + 1.4×B + 3.3×C + 0.6×D + 1.0×E

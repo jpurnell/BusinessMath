@@ -451,7 +451,21 @@ public struct SimulationResults: Sendable {
 		let fdBins: Int
 		if binWidth > 0 {
 			let range = statistics.max - statistics.min
-			fdBins = Int(ceil(range / binWidth))
+			let requestedBins = ceil(range / binWidth)
+			// Freedman-Diaconis divides the full range by a width derived from the
+			// *interquartile* core, so a heavy tail over a tight core asks for a bin count far
+			// beyond `Int` — no infinity and no contamination needed, just a fat-tailed sample.
+			// `Int(_:)` on a `Double` traps on anything outside `Int`'s range, so the request
+			// has to be bounded in `Double`, before the conversion. Without this the caller
+			// would have been told nothing at all: the process dies inside `histogram()`.
+			//
+			// The ceiling is `maximumBinCount`, which is the bound this function already
+			// applies three lines below and already documents ("maximum of 1000"). Bounding
+			// early therefore changes no answer that was reachable before — it only stops the
+			// arithmetic that produced the same capped answer from being fatal on the way.
+			fdBins = requestedBins.isFinite
+				? Int(Swift.min(Swift.max(requestedBins, 1), Double(Self.maximumBinCount)))
+				: Self.maximumBinCount
 		} else {
 			// If IQR is 0 (all values in middle 50% are the same), fall back to Sturges
 			fdBins = sturgesBins
@@ -461,7 +475,7 @@ public struct SimulationResults: Sendable {
 		let optimalBins = max(sturgesBins, fdBins)
 
 		// Clamp between reasonable bounds
-		return max(1, min(optimalBins, 1000))
+		return max(1, min(optimalBins, Self.maximumBinCount))
 	}
 
 	// MARK: - Confidence Intervals
@@ -503,7 +517,7 @@ public struct SimulationResults: Sendable {
 
 	/// Formatted percentiles summary with clean floating-point display
 	public var formattedPercentiles: String {
-		let length = Int(max(log10(percentiles.p5), log10(percentiles.p99)).rounded(.up)) + 7
+		let length = Self.percentileColumnWidth(p5: percentiles.p5, p99: percentiles.p99)
 		var desc = "Percentiles:\n"
 		desc += "   P5: \(percentiles.p5.number(1).paddingLeft(toLength: length))\n"
 		desc += "  P10: \(percentiles.p10.number(1).paddingLeft(toLength: length))\n"
@@ -552,5 +566,62 @@ public struct SimulationResults: Sendable {
 		desc += "\n\n"
 		desc += formattedPercentiles
 		return desc
+	}
+
+	// MARK: - Display scale
+
+	/// The largest automatic histogram bin count.
+	///
+	/// Declared once so the Freedman-Diaconis bound and the final clamp cannot drift apart;
+	/// the value is the one ``histogram(bins:)`` has always documented.
+	private static let maximumBinCount: Int = 1000
+
+	/// The characters reserved for the sign, decimal separator and one decimal digit in the
+	/// percentile table, on top of the integer digits.
+	private static let percentileColumnPadding: Int = 7
+
+	/// The column width used to right-align the percentile table.
+	///
+	/// ## Why this is not `Int(max(log10(p5), log10(p99)).rounded(.up)) + 7`
+	///
+	/// That expression was fatal for two entirely legitimate, finite samples, because `log10`
+	/// manufactures non-finite values out of ordinary data and `Int(_:)` on a `Double` traps
+	/// on them:
+	///
+	/// - an all-zero sample gives `log10(0) = -infinity`;
+	/// - **any loss distribution** gives `log10(negative) = nan` — and negative percentiles are
+	///   the *normal* shape for a risk simulation, not an edge case.
+	///
+	/// A third route needs no arithmetic at all: a sample that `Percentiles(values:)` refuses
+	/// leaves ``percentiles`` as `.undefined(values:)`, whose fields are `nan` by design.
+	///
+	/// In every case the caller would otherwise have been told nothing whatsoever — the
+	/// process died while *printing* a result it had already computed correctly. A column
+	/// width is a display decision and must never be fatal.
+	///
+	/// A negative width is fatal one step later, too: `paddingLeft(toLength:)` forwards to
+	/// `suffix(_:)`, which traps on a negative count. Flooring at
+	/// `percentileColumnPadding` rules that out as well.
+	///
+	/// Taking magnitudes rather than the raw values also *widens* what can be measured: the
+	/// old form compared `log10(p5)` with `log10(p99)` directly, which is only equivalent to
+	/// "the wider of the two" while both are positive.
+	///
+	/// - Parameters:
+	///   - p5: The 5th-percentile value.
+	///   - p99: The 99th-percentile value.
+	/// - Returns: A width wide enough for the larger magnitude, never less than
+	///   `percentileColumnPadding`. Positive, finite samples get the same width they
+	///   always did.
+	private static func percentileColumnWidth(p5: Double, p99: Double) -> Int {
+		let scale = Swift.max(p5.magnitude, p99.magnitude)
+		// `scale == 0` is the all-zero sample; a non-finite `scale` is a `nan` or infinite
+		// percentile. Both degrade to the bare padding rather than to a trap.
+		guard scale.isFinite, scale > 0 else { return percentileColumnPadding }
+		// `scale` is finite and positive here, so `log10(scale)` lies within about
+		// ±324 and the conversion below is total.
+		let integerDigits = log10(scale).rounded(.up)
+		let digits = Int(Swift.max(integerDigits, 0))
+		return digits + percentileColumnPadding
 	}
 }

@@ -350,7 +350,9 @@ public struct DiscountCurve: Sendable {
     /// already-bootstrapped curve before solving the next tenor.
     ///
     /// - Parameters:
-    ///   - parRates: Array of (tenor, par rate) tuples. Tenors must be positive.
+    ///   - parRates: Array of (tenor, par rate) tuples. Tenors must be positive, finite, and
+    ///     no greater than 1,000 years — the curve is materialised on an integer-year grid, so
+    ///     a tenor outside that range cannot be placed on it and is dropped.
     ///   - asOfDate: The valuation date for the resulting curve.
     /// - Returns: A bootstrapped ``DiscountCurve``.
     public static func bootstrap(
@@ -366,7 +368,16 @@ public struct DiscountCurve: Sendable {
         // `nan`, so the sort's order is unspecified as well. A tenor that cannot be placed on
         // the year grid cannot contribute a knot; a bad *rate* is handled in the loop instead,
         // where it belongs.
-        let placeable = parRates.filter { $0.tenor.isFinite }
+        //
+        // Finiteness alone is not enough, and this predicate used to test only that. `1e300`
+        // is finite and `Int(1e300)` traps on exactly the same line, for the other half of
+        // what `Int(_:)` refuses: out of range. `maxTenor` is also the size of the integer-year
+        // grid this function materialises and the bound of the gap-filling loop, so even a
+        // tenor that *did* convert — `1e17` — would turn the crash into a curve with a hundred
+        // quadrillion knots. The grid is the real constraint, and 1,000 annual knots is past
+        // any par swap curve that has ever been quoted.
+        let maxGridYears = 1_000.0
+        let placeable = parRates.filter { $0.tenor.isFinite && $0.tenor.magnitude <= maxGridYears }
         guard !placeable.isEmpty else {
             return DiscountCurve(asOfDate: asOfDate, tenors: [], discountFactors: [])
         }

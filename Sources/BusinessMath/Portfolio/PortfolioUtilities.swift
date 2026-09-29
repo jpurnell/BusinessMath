@@ -207,7 +207,8 @@ public func generateCovarianceMatrix<G: RandomNumberGenerator>(
 ///   - volatility: Asset volatility range (min, max)
 ///   - seed: Fixes the volatilities and the within-cluster correlations, so the same
 ///     seed returns the same matrix. `nil` (the default) draws fresh values.
-/// - Returns: size × size sparse covariance matrix
+/// - Returns: size × size sparse covariance matrix, or the same shape filled with `nan` when
+///   `sparsity` or a `volatility` bound cannot describe one.
 ///
 /// ## Example
 /// ```swift
@@ -268,13 +269,38 @@ public func generateSparseCovarianceMatrix(
 ///   - sparsity: Fraction of off-diagonal entries left at zero.
 ///   - volatility: Bounds of the per-asset volatility draw.
 ///   - generator: The random source.
-/// - Returns: A symmetric `size × size` covariance matrix with a block structure.
+/// - Returns: A symmetric `size × size` covariance matrix with a block structure, or the same
+///   shape filled with `nan` when the inputs cannot describe one.
 public func generateSparseCovarianceMatrix<G: RandomNumberGenerator>(
 	size: Int,
 	sparsity: Double,
 	volatility: (min: Double, max: Double) = (0.10, 0.30),
 	using generator: inout G
 ) -> [[Double]] {
+	// A negative size has no matrix at all to preserve, and every loop below — including the
+	// `Array(repeating:count:)` that builds the result — traps on one.
+	guard size >= 0 else { return [] }
+
+	// `Int(_:)` traps on a non-finite argument, so `sparsity: .nan` brought the process down
+	// at the cluster-size line, and the `max(5, …)` that reads like a floor sits *after* the
+	// conversion, where it protects nothing. A non-finite volatility bound, or a `min` above
+	// its `max`, traps just as hard one line into the draw loop: `Double.random(in:)` requires
+	// an ordered range.
+	//
+	// Both are screened here, before a single value is drawn, so a rejected call leaves the
+	// caller's `generator` exactly where it found it.
+	//
+	// The result is indexed by asset, so the length invariant is the contract (§3.5): the
+	// caller gets the same size × size shape with every entry marked `nan`. A matrix of zeros
+	// would be a statement — these assets have no variance and no correlation — and a caller
+	// feeding it to an optimiser would read it as the safest portfolio available.
+	let clusterTarget = Double(size) * (1.0 - sparsity)
+	guard clusterTarget.isFinite, clusterTarget.magnitude < 1e15,
+		  volatility.min.isFinite, volatility.max.isFinite,
+		  volatility.min <= volatility.max else {
+		return Array(repeating: Array(repeating: Double.nan, count: size), count: size)
+	}
+
 	// Generate random volatilities
 	var volatilities: [Double] = []
 	volatilities.reserveCapacity(size)
@@ -292,7 +318,7 @@ public func generateSparseCovarianceMatrix<G: RandomNumberGenerator>(
 
 	// Set sparse off-diagonal elements
 	// Group assets into clusters for realistic correlation structure
-	let clusterSize = max(5, Int(Double(size) * (1.0 - sparsity)))
+	let clusterSize = max(5, Int(clusterTarget))
 	let numClusters = size / clusterSize
 
 	for cluster in 0..<numClusters {

@@ -182,8 +182,18 @@ public struct ClassifierEvaluation<T: Real & Sendable & BinaryFloatingPoint>: Se
 		var counts = [Int](repeating: 0, count: buckets)
 		for (score, outcome) in zip(scores, outcomes) {
 			let scaled: T = score * T(buckets)
-			var slot = Int(scaled)
-			slot = Swift.min(Swift.max(slot, 0), buckets - 1)
+			// The clamp has to happen in `T`, not on the `Int`. The initialiser admits any
+			// finite score on purpose — a raw margin is only ever ordered, so `1e30` is
+			// legitimate input, not contamination — and `Int(_:)` traps above `Int.max`,
+			// which is only 9.22e18. Clamping afterwards meant the caller lost the whole
+			// process where the intent was to lose nothing: the score belongs in the top
+			// bucket, which is what it now gets. `scaled` cannot be `nan` here (a finite
+			// score times a finite bucket count), so this clamp cannot launder one into a
+			// bound.
+			let topSlot: T = T(buckets - 1)
+			let floored: T = Swift.max(scaled, T.zero)
+			let bounded: T = Swift.min(floored, topSlot)
+			let slot = Int(bounded)
 			totals[slot] += score
 			if outcome { hits[slot] += 1 }
 			counts[slot] += 1

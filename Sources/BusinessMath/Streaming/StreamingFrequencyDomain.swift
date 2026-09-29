@@ -67,7 +67,18 @@ public struct FrequencySpectrum: Sendable {
     ///
     /// - Parameter range: The frequency range in Hz (half-open interval).
     /// - Returns: Sum of power values in the band. Returns 0 if the range
-    ///   is outside the spectrum or the spectrum is empty.
+    ///   is outside the spectrum or the spectrum is empty. Returns `nan` only when the
+    ///   bin index cannot be determined at all — see the note on unbounded ranges.
+    ///
+    /// ## Unbounded and out-of-scale ranges
+    ///
+    /// `spectrum.power(in: 0.15 ..< .infinity)` is the natural way to spell "all the power
+    /// above 0.15 Hz", and an unbounded end is a reasonable request rather than bad data.
+    /// The range is therefore clamped to the spectrum's own bin domain **in `Double`**,
+    /// before any `Int` conversion: an infinite (or merely enormous) bound becomes the last
+    /// bin, and the honest answer — all the remaining power — is what comes back. The same
+    /// clamp covers a finite bound so large that dividing it by a fine `frequencyResolution`
+    /// overflows `Int`.
     ///
     /// ## Usage Example
     /// ```swift
@@ -76,13 +87,27 @@ public struct FrequencySpectrum: Sendable {
     ///
     /// let lfPower = spectrum.power(in: 0.04..<0.15)  // LF band for HRV
     /// let hfPower = spectrum.power(in: 0.15..<0.40)  // HF band for HRV
+    /// let allHF = spectrum.power(in: 0.15 ..< .infinity)  // everything above 0.15 Hz
     /// ```
     public func power(in range: Range<Double>) -> Double {
         let resolution = frequencyResolution
         guard resolution > 0, powers.isEmpty == false else { return 0.0 }
 
-        let startBin = Swift.max(0, Int((range.lowerBound / resolution).rounded(.down)))
-        let endBin = Swift.min(powers.count - 1, Int((range.upperBound / resolution).rounded(.up)))
+        // `Int(_:)` on a `Double` traps on a non-finite value and on anything outside `Int`'s
+        // range, so both bounds are reduced to the spectrum's own bin domain while they are
+        // still `Double`s. `Range` itself already forbids a `nan` bound (`..<` requires
+        // `lowerBound <= upperBound`, which every `nan` comparison fails), but `infinity /
+        // infinity` is `nan`, so an infinite `sampleRate` can still manufacture one here.
+        // That is the one case with no defensible bin index at all: per the contaminated-input
+        // contract a non-throwing floating-point API answers `nan` rather than `0`, because
+        // `0` would read as "no power in this band" — a measurement, not a refusal.
+        let lastBin = Double(powers.count - 1)
+        let requestedStart = (range.lowerBound / resolution).rounded(.down)
+        let requestedEnd = (range.upperBound / resolution).rounded(.up)
+        guard !requestedStart.isNaN, !requestedEnd.isNaN else { return Double.nan }
+
+        let startBin = Int(Swift.min(Swift.max(requestedStart, 0), lastBin))
+        let endBin = Int(Swift.min(Swift.max(requestedEnd, 0), lastBin))
 
         guard startBin <= endBin, startBin < powers.count else { return 0.0 }
 

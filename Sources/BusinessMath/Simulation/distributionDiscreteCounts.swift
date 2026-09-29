@@ -96,6 +96,11 @@ public struct DistributionNegativeBinomial: DiscreteDistribution, Sendable {
 	/// Monotone in the argument, as the protocol requires for quasi-random sampling.
 	///
 	/// - Parameter p: A probability. At or below zero the answer is zero.
+	/// - Note: The search is linear in the outcome, so its ceiling is a trip count as
+	///   well as a bound. It stops after ten million accumulation steps; a distribution
+	///   whose mean + 20σ exceeds that — roughly `p` below `2e-6` at `s = 1` — saturates
+	///   there rather than continuing. That is stated rather than hidden because the
+	///   alternative was `Int(_:)` trapping on the unbounded count.
 	public func quantile(_ p: Double) -> Int {
 		guard p > 0 else { return 0 }
 		if self.p.isEqual(to: 1) { return 0 }
@@ -109,7 +114,21 @@ public struct DistributionNegativeBinomial: DiscreteDistribution, Sendable {
 		// loop for an argument at or above one.
 		let mean: Double = successesReal * (1 - self.p) / self.p
 		let deviation: Double = (successesReal * (1 - self.p)).squareRoot() / self.p
-		let ceiling: Int = Int(mean + 20 * deviation) + 100
+		let span: Double = mean + 20 * deviation
+		// `p = 1e-300` satisfies every condition the initialiser imposes and puts that span
+		// at 1e301, which `Int(_:)` cannot hold: the conversion **traps**, and the caller is
+		// told nothing at all — the process ends mid-simulation. The bound below is also the
+		// loop's trip count, so it has to be small enough to finish rather than merely
+		// representable; past ten million accumulation steps this linear scan is the wrong
+		// algorithm, not a slow one, and the closed-form `cdf` above is the way out. The
+		// sibling ``DistributionLogarithmic/quantile(_:)`` stops at 100,000 for the same
+		// reason. Every distribution whose mean + 20σ fits under the bound is unaffected,
+		// step for step.
+		let searchLimit: Double = 10_000_000
+		// Written as a comparison rather than `Swift.min`: `Swift.min(.nan, limit)` returns
+		// the `nan`, which would put the trap straight back.
+		let bounded: Double = (span.isFinite && span < searchLimit) ? span : searchLimit
+		let ceiling: Int = Int(bounded) + 100
 
 		while k <= ceiling {
 			cumulative += pmf(k)

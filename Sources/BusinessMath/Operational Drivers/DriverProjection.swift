@@ -412,7 +412,7 @@ public struct ProjectionResults<T: Real & Sendable>: Sendable {
 
 		let metadata = TimeSeriesMetadata(
 			name: driver.name,
-			description: "P\(Int(p * 100)) \(driver.name)"
+			description: "\(Self.percentLabel(p)) \(driver.name)"
 		)
 
 		return TimeSeries(periods: periods, values: values, metadata: metadata)
@@ -459,5 +459,25 @@ public struct ProjectionResults<T: Real & Sendable>: Sendable {
 		)
 
 		return TimeSeries(periods: periods, values: values, metadata: metadata)
+	}
+
+	/// A percentile label that cannot trap.
+	///
+	/// `Int(_:)` on a `Double` is a trapping conversion: it crashes on a non-finite value and
+	/// on anything outside `Int`'s range. A series' *name* is the last place that should be
+	/// able to bring a process down, and before this guard `percentile(.nan)` did exactly
+	/// that — not in the statistics, in the metadata string built after them.
+	///
+	/// This is the same contract, and deliberately the same shape, as `percentLabel` in
+	/// `BusinessMathDSL/ScenarioAnalysis.swift`, which fixed the identical defect in a
+	/// scenario name. The two must keep agreeing.
+	///
+	/// - Parameter p: The percentile being labelled, as a fraction.
+	/// - Returns: `"P"` followed by the percentile as a whole number, or by its plain
+	///   description when that conversion is not safe.
+	private static func percentLabel(_ p: Double) -> String {
+		let percent = p * 100
+		guard percent.isFinite, percent.magnitude < 1e15 else { return "P\(percent)" }
+		return "P\(Int(percent))"
 	}
 }

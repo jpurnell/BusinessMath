@@ -121,8 +121,22 @@ public struct JumpDiffusion: StochasticProcess, Sendable {
     ///   - current: Current price. If zero or negative, returned unchanged.
     ///   - dt: Time step in years.
     ///   - normalDraws: Standard normal draw for the diffusion component.
-    /// - Returns: The price at the next time step. Always positive for positive input.
+    /// - Returns: The price at the next time step. Always positive for positive input, and
+    ///   `nan` when `current`, `dt` or the process's own `jumpIntensity` is not finite, or
+    ///   when `jumpIntensity * dt` is too large for a jump count to be drawn.
     public func step(from current: Double, dt: Double, normalDraws: Double) -> Double {
+        // The Poisson mean is `jumpIntensity * dt`, and for a mean above 30 `poissonInverseCDF`
+        // finished with `Int(result.rounded())` — a conversion that **traps**, both on a
+        // non-finite value and on anything outside `Int`'s range. `jumpIntensity: .infinity`
+        // passes the `> 0` test two lines below, so the process died inside a simulation step.
+        //
+        // The screen cannot be folded into that `> 0` guard: its `else` branch is "no jumps —
+        // pure GBM", and routing an unusable intensity there would answer a contaminated model
+        // with a confident price path — reporting contamination through a guard written for a
+        // different condition. So contamination is diverted first and the domain guards keep
+        // their own meanings, the same order as `CapitalAllocationOptimizer.roi`. Contract §3.1.
+        guard current.isFinite, dt.isFinite, jumpIntensity.isFinite else { return Double.nan }
+
         guard current > 0, dt > 0 else { return current }
         guard jumpIntensity > 0 else {
             // No jumps — pure GBM
@@ -165,7 +179,12 @@ public struct JumpDiffusion: StochasticProcess, Sendable {
         // index-scale option — and this file kept one.
         let poissonMean = jumpIntensity * dt
         let uniformForPoisson = normalCDF(x: normalDraws)
-        let jumpCount = poissonInverseCDF(mean: poissonMean, u: uniformForPoisson)
+        // `nil` means the jump count is not a number of jumps: see `poissonInverseCDF`. A
+        // price path cannot be continued past that, and no substitute is honest — zero jumps
+        // would be the calm answer to the most violent input the model can be given.
+        guard let jumpCount = poissonInverseCDF(mean: poissonMean, u: uniformForPoisson) else {
+            return Double.nan
+        }
 
         // Accumulate jump component
         var jumpComponent = 0.0
@@ -199,13 +218,27 @@ public struct JumpDiffusion: StochasticProcess, Sendable {
     ///
     /// For small means (≤ 30), uses exact CDF computation.
     /// For large means (> 30), uses normal approximation: Poisson(λ) ≈ N(λ, λ).
-    private func poissonInverseCDF(mean: Double, u: Double) -> Int {
+    ///
+    /// - Returns: The jump count, or `nil` when no count exists — see the guard on `result`.
+    private func poissonInverseCDF(mean: Double, u: Double) -> Int? {
         guard mean > 0, u > 0 else { return 0 }
 
         if mean > 30 {
             // Normal approximation for large lambda: Poisson(λ) ≈ N(λ, λ).
             let z = inverseNormalCDF(p: u)
             let result = mean + mean.squareRoot() * z
+
+            // `Int(_:)` traps here on a non-finite value, and this one is reachable with
+            // nothing contaminated at all: `normalCDF` saturates to exactly 1.0 for a draw
+            // around 8.3 or beyond, `inverseNormalCDF(p: 1)` is documented to be `+infinity`,
+            // and any intensity above 30 jumps per step then puts an infinity into this
+            // conversion. The count is also the trip count of the jump loop in `step`, so a
+            // merely enormous one would trade the crash for a run that does not finish.
+            //
+            // Optional rather than a number: a clamp to `maxJumpsPerStep` would make the most
+            // extreme draw indistinguishable from an ordinary busy step, and zero would make
+            // it indistinguishable from a quiet one. The caller turns `nil` into `nan`.
+            guard result.isFinite, result <= Self.maxJumpsPerStep else { return nil }
             return max(0, Int(result.rounded()))
         }
 
@@ -223,5 +256,13 @@ public struct JumpDiffusion: StochasticProcess, Sendable {
 
         return k
     }
+
+    /// The largest number of jumps a single step will draw.
+    ///
+    /// A termination bound, not a modelling one: each jump costs two LCG draws and a
+    /// Box-Muller transform in `step(from:dt:normalDraws:)`, so a count of 10¹⁸ — which
+    /// `Int` accepts without complaint — is a hang rather than a simulation. A million jumps
+    /// in one step is already far past any intensity a jump-diffusion model is calibrated to.
+    private static let maxJumpsPerStep = 1_000_000.0
 
 }

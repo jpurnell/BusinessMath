@@ -44,13 +44,22 @@ public struct DistributionPoisson: DiscreteDistribution, Sendable {
 
 	/// Creates a Poisson distribution with rate `lambda`.
 	///
-	/// - Parameter lambda: The mean number of events per interval. Must be finite and
-	///   non-negative; `0` is the degenerate distribution with all mass at zero.
-	/// - Returns: `nil` if `lambda` is negative, infinite or NaN. Rejecting these at
-	///   construction means every other method on the type can assume a usable rate,
-	///   rather than each having to describe its own failure.
+	/// - Parameter lambda: The mean number of events per interval. Must be finite,
+	///   non-negative, and no larger than 2^53; `0` is the degenerate distribution with
+	///   all mass at zero.
+	/// - Returns: `nil` if `lambda` is negative, infinite, NaN, or too large to name a
+	///   distinct count. Rejecting these at construction means every other method on the
+	///   type can assume a usable rate, rather than each having to describe its own failure.
 	public init?(lambda: Double) {
-		guard lambda.isFinite, lambda >= 0 else { return nil }
+		// The magnitude bound is not decoration, and it is why this guard screens more than
+		// finiteness. `quantile(_:)` forms `Int(lambda + 10 * sqrt(lambda)) + 40`, and
+		// `Int(_:)` *traps* above `Int.max` — so `lambda: 1e19` did not give a bad count, it
+		// took the process down, with no value to inspect and nothing to catch. The bound is
+		// 2^53 rather than `Int.max` because 2^53 is where a `Double` stops being able to
+		// tell this rate from the next integer count: beyond it λ can no longer name a point
+		// in the distribution's own support, so there is nothing to sample or invert.
+		let largestDistinctCount = 0x1p53
+		guard lambda.isFinite, lambda >= 0, lambda <= largestDistinctCount else { return nil }
 		self.lambda = lambda
 	}
 

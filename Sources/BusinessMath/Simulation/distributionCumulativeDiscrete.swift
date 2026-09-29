@@ -74,11 +74,18 @@ public struct DistributionCumulativeDiscrete: DiscreteDistribution, Sendable {
 	/// - Parameters:
 	///   - doubleValues: The outcomes.
 	///   - cumulative: `P(X ≤ value)` at each.
-	/// - Returns: `nil` under the same conditions as the primary initialiser, or if
+	/// - Returns: `nil` under the same conditions as the primary initialiser; if any
+	///   value is not finite, or is finite but too large to round into an `Int`; or if
 	///   two values round to the same integer — which would silently merge two
 	///   outcomes the caller stated separately.
 	public init?(values doubleValues: [Double], cumulative: [Double]) {
-		guard doubleValues.allSatisfy({ $0.isFinite }) else { return nil }
+		// `Int($0.rounded())` on the next line **traps** — it does not return a wrong
+		// answer — for anything outside `Int`'s range, and `isFinite` alone admits `1e300`.
+		// Without the magnitude half the caller is told nothing at all: the process ends,
+		// taking every other distribution being built alongside this one with it. Widened
+		// rather than paired with a second guard, and kept ahead of the `map` so the
+		// conversion is only ever reached for values it can actually perform.
+		guard doubleValues.allSatisfy({ $0.isFinite && $0.magnitude < Double(Int.max) }) else { return nil }
 		let rounded = doubleValues.map { Int($0.rounded()) }
 		guard Set(rounded).count == rounded.count else { return nil }
 		self.init(values: rounded, cumulative: cumulative)
