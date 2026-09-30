@@ -65,7 +65,12 @@ extension BinaryFloatingPoint {
 	public func currency(_ decimals: Int = 2, _ currency: String = "usd", _ significantDigitsRange: ClosedRange<Int> = (1...3), signStrategy: BMCurrencySignDisplay = .automatic, _ roundingRule: FloatingPointRoundingRule = .toNearestOrAwayFromZero, _ locale: Locale = .autoupdatingCurrent, _ grouping: BMNumberGrouping = .automatic, _ presentation: BMNumberPresentation = .standard) -> String {
 		let code = currency.uppercased()
 		let value = Double(self)
-		
+
+		// One definition of what a non-finite value looks like to a reader, shared with
+		// `FloatingPointFormatter`. Without it these fell through to ICU, whose spelling is
+		// locale-dependent, so the same infinity rendered differently on different machines.
+		if let token = displayNonFiniteToken(value) { return token }
+
 		if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *) {
 			var style = FloatingPointFormatStyle<Double>.Currency.currency(code: currency)
 			style = style
@@ -136,8 +141,13 @@ extension BinaryFloatingPoint {
 	/// - Returns: Formatted percentage string (e.g., "12.50%")
 	public func percent(_ decimals: Int = 2, _ signStrategy: BMNumberSignDisplay = .automatic, _ significantDigitsRange: ClosedRange<Int> = (1...3), _ roundingRule: FloatingPointRoundingRule = .toNearestOrAwayFromZero, _ locale: Locale = .autoupdatingCurrent, _ grouping: BMNumberGrouping = .automatic, _ notation: BMNumberNotation = .automatic) -> String {
 		let value = Double(self)
-		if value.isInfinite { return "∞" }
-		if value.isNaN { return "NaN" }
+		// `if value.isInfinite { return "∞" }` dropped the sign, so a negative infinity rendered
+		// as a positive one — a change of value, not of presentation. `number()` gave `-∞` for
+		// the same input, so the two disagreed about the magnitude's direction.
+		// One definition of what a non-finite value looks like to a reader, shared with
+		// `FloatingPointFormatter`. Without it these fell through to ICU, whose spelling is
+		// locale-dependent, so the same infinity rendered differently on different machines.
+		if let token = displayNonFiniteToken(value) { return token }
 		if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *) {
 			var style = FloatingPointFormatStyle<Double>.Percent.percent
 			style = style
@@ -193,6 +203,11 @@ extension BinaryFloatingPoint {
 	/// - Returns: Formatted number string (e.g., "1,234.56")
 	public func number(_ decimals: Int = 2, _ roundingRule: FloatingPointRoundingRule = .toNearestOrAwayFromZero, _ locale: Locale = .autoupdatingCurrent, _ signStrategy: BMNumberSignDisplay = .automatic, _ grouping: BMNumberGrouping = .automatic, _ notation: BMNumberNotation = .automatic) -> String {
 		let value = Double(self)
+
+		// One definition of what a non-finite value looks like to a reader, shared with
+		// `FloatingPointFormatter`. Without it these fell through to ICU, whose spelling is
+		// locale-dependent, so the same infinity rendered differently on different machines.
+		if let token = displayNonFiniteToken(value) { return token }
 
 		if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *) {
 			var style = FloatingPointFormatStyle<Double>.number

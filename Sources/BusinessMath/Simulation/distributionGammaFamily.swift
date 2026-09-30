@@ -265,10 +265,17 @@ public struct DistributionPearson6: ContinuousDistribution, Sendable {
 		return Double.exp(logDensity)
 	}
 
-	/// P(X ≤ x), zero at or below the origin.
+	/// P(X ≤ x), zero at or below the origin and one at `+infinity`.
 	public func cdf(_ x: Double) -> Double {
 		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
-		guard x > 0 else { return 0 }
+		guard x > 0 else { return 0 } // Below the support, including -infinity: no mass there. ``ContinuousDistribution/cdf(_:)``
+		// `+infinity` is the upper limit of the support and its CDF is 1. Without this the map
+		// below formed `y = inf`, `denominator = inf`, `mapped = inf/inf` = `nan`;
+		// `regularizedIncompleteBeta`'s `guard x >= 0 && x <= 1` threw on the `nan`, and the
+		// `catch` — annotated "unreachable" — returned `nan` where the protocol promises 1. The
+		// screen is against `+infinity` specifically, not `isFinite`: `-infinity` is a genuine
+		// observation below the support and was already answered 0 on the line above (§3.6).
+		guard x < Double.infinity else { return 1 }
 		let y: Double = x * inverseBeta
 		// `1 + y` exceeds one for any positive `y`, and `x > 0` was checked above.
 		let denominator: Double = 1 + y

@@ -313,10 +313,30 @@ public actor ModelProfiler {
 
     /// Get bottlenecks (slowest operations)
     ///
-    /// - Parameter threshold: Minimum duration in seconds
-    /// - Returns: List of slow operations
+    /// ## Why `NaN` traps rather than returning an empty list
+    ///
+    /// Every comparison against `NaN` is false, so `averageTime > threshold` was false for
+    /// every operation and this method returned `[]` — which reads as *no bottlenecks*, the
+    /// most reassuring answer it has, from a run where nothing at all had been examined.
+    /// `[OperationStatistics]` has no room to say "not answerable": the empty list is
+    /// already spoken for.
+    ///
+    /// This is a contaminated **parameter**, not contaminated data. The caller is a
+    /// programmer who wrote a threshold, not an analyst who was handed a series, so the
+    /// right report is a stack trace naming the line that produced it.
+    ///
+    /// - Parameter threshold: Minimum duration in seconds. Must be a number; passing `NaN`
+    ///   traps. An infinite threshold is accepted, because it still compares: `+∞` selects
+    ///   nothing and `-∞` selects everything, and both are answers.
+    /// - Returns: Operations whose average time exceeds the threshold, in report order.
     public func bottlenecks(threshold: TimeInterval? = nil) -> [OperationStatistics] {
         let effectiveThreshold = threshold ?? warningThreshold
+        // Without this the caller would have been told "no bottlenecks" — an empty list —
+        // for every operation profiled, however slow.
+        guard !effectiveThreshold.isNaN else {
+            preconditionFailure("ModelProfiler bottleneck threshold must be a number: NaN compares false against every duration, so every operation would be reported as fast")
+        }
+
         let report = self.report()
 
         return report.operations.filter { $0.averageTime > effectiveThreshold }
@@ -334,8 +354,19 @@ public actor ModelProfiler {
         metrics.removeValue(forKey: operation)
     }
 	
-	/// Set the minimum duration in seconds
+	/// Set the minimum duration in seconds an operation may take before it is called slow.
+	///
+	/// - Parameter threshold: The duration in seconds. Must be a number; passing `NaN` traps,
+	///   for the reason given on ``bottlenecks(threshold:)`` — it would silence every warning
+	///   this profiler exists to raise, and leave ``bottlenecks(threshold:)`` answering "none"
+	///   until the profiler was rebuilt. A threshold is a parameter a programmer wrote, so a
+	///   trap naming that line is the report; there is no value here to degrade gracefully to.
 	public func setWarningThreshold(_ threshold: TimeInterval) async {
+		// Without this the caller would have been told nothing at all: no slow-operation log
+		// line, and `bottlenecks()` empty, for the rest of this profiler's life.
+		guard !threshold.isNaN else {
+			preconditionFailure("ModelProfiler warning threshold must be a number: NaN compares false against every duration, so no operation could ever be reported as slow")
+		}
 		self.warningThreshold = threshold
 	}
 

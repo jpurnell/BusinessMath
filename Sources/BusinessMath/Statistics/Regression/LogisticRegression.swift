@@ -315,6 +315,17 @@ extension LogisticRegression {
 	}
 
 	/// Whether a threshold on this column splits the outcome perfectly.
+	///
+	/// - Precondition: every value is finite. `min()` and `max()` order by `<`, and every
+	///   comparison against a `nan` is false, so an all-`nan` column would come back `false`
+	///   — "no separation found", the answer that lets the fit proceed — about a column the
+	///   detector could not read. That is the campaign's worst shape (a detector reporting a
+	///   problem by letting a comparison become *true*), and it is unreachable here rather than
+	///   guarded: the only caller is ``refuseSeparation()``, whose only caller is
+	///   ``fit(maxIterations:tolerance:)``, which calls ``validatedDesign()`` first — and that
+	///   rejects a non-finite predictor with `malformedInput(reason: "a predictor is not
+	///   finite")` before any separation test runs. A second caller added ahead of that screen
+	///   would reintroduce the defect, which is why the precondition is written down.
 	static func separatesByThreshold(values: [T], outcomes: [Bool]) -> Bool {
 		var positive: [T] = []
 		var negative: [T] = []

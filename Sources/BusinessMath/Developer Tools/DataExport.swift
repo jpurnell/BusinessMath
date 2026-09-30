@@ -35,6 +35,23 @@ private let logger = Logger(subsystem: "com.businessmath", category: "DataExport
 /// uniform — including for a NaN carrying a payload, whose `description` would otherwise be
 /// `nan(0x…)`, and for a generic `T: Real` whose `description` is not specified at all.
 ///
+/// ## Why this spelling differs from the display one, and why the name stays
+///
+/// The display side of the library spells these values `NaN`, `∞` and `-∞`, through
+/// `displayNonFiniteToken(_:)` in `FloatingPointFormatter.swift`. That function and this one
+/// are a deliberate pair, one per audience, and each names the other: **lowercase ASCII means
+/// the field is going to be parsed.** The lowercase spelling is not this function's own habit
+/// and not drift — it is the only spelling that survives `Double(_: String)`, `strtod` and
+/// `pandas`, and it is locale-invariant, which `∞` is not and a formatted number never is.
+///
+/// The name was deliberately *not* changed to something like `machineReadableNonFiniteToken`.
+/// `csv` already says which side of the boundary this is, at every call site, in the one word
+/// a reader is looking for; the question a reader actually arrives with is not *what is this
+/// for* but *why is it spelled differently from the report I just read*, and that is a
+/// question only prose answers. Renaming would also have touched
+/// `Performance/CalculationCache.swift`, which reaches for both of these from its own CSV
+/// builder — a second file changed to say nothing new.
+///
 /// - Parameter value: The value bound for a CSV data column.
 /// - Returns: The ASCII token, or `nil` when `value` is finite and should be formatted normally.
 internal func csvNonFiniteToken<T: FloatingPoint>(_ value: T) -> String? {

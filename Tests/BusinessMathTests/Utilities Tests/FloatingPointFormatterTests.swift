@@ -118,15 +118,22 @@ struct FloatingPointFormatterTests {
 
     // MARK: - Edge Cases
 
+    /// Infinity is rendered for a person, with its sign.
+    ///
+    /// This used to assert `.lowercased().contains("inf")`, which passed on the `inf` that
+    /// `String(describing:)` produced — the spelling a CSV parser wants, from a formatter
+    /// whose stated job is readable output, and the same bytes `csvNonFiniteToken(_:)` writes
+    /// into a data column. The display and machine spellings are now a documented pair, so
+    /// this asserts the display one exactly.
     @Test("Handles infinity")
     func testInfinity() throws {
         let formatter = FloatingPointFormatter(strategy: .smartRounding())
 
         let posInf = formatter.format(Double.infinity)
-        #expect(posInf.formatted.lowercased().contains("inf"))
+        #expect(posInf.formatted == "∞")
 
         let negInf = formatter.format(-Double.infinity)
-        #expect(negInf.formatted.lowercased().contains("inf"))
+        #expect(negInf.formatted == "-∞", "The sign is part of the answer, not of the presentation")
     }
 
     @Test("Handles NaN")
@@ -134,7 +141,7 @@ struct FloatingPointFormatterTests {
         let formatter = FloatingPointFormatter(strategy: .smartRounding())
 
         let result = formatter.format(Double.nan)
-        #expect(result.formatted.lowercased().contains("nan"))
+        #expect(result.formatted == "NaN")
     }
 
     @Test("Handles negative numbers")

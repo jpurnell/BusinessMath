@@ -141,4 +141,91 @@ struct ContaminatedConstraintTests {
         let right = VectorN([0.0, 1.0]).angle(with: reference)
         #expect(abs(right - Double.pi / 2) < 1e-12, "got \(right)")
     }
+
+    // MARK: - The public array API in Constraint.swift
+    //
+    // The free functions above are the *internal* path the five heuristics share.
+    // `Constraint.swift` carries a second, **public** copy of the same measurement for callers
+    // — `violations(at:)` and `maxViolation(at:)` on `[MultivariateConstraint<VectorN<Double>>]`
+    // — and it was written with the same `Swift.max(0, value)`. `Swift.max(a, b)` is
+    // `b >= a ? b : a`, so `Swift.max(0, nan)` tests `nan >= 0`, finds it false, and returns
+    // `0`. A caller thresholding that against a feasibility tolerance certifies a point at
+    // which nothing was evaluated.
+    //
+    // What makes this one legible is that the same file already disagrees with itself:
+    // `isSatisfied(at:tolerance:)` returns `value <= tolerance`, false for a NaN, so
+    // `allSatisfied(at:)` answers "not satisfied" for the very point `maxViolation` scored `0`.
+
+    /// Elementwise agreement, NaN-tolerant — `isEqual(to:)` is IEEE equality, so
+    /// `nan.isEqual(to: .nan)` is false and a plain zip would never match a NaN position.
+    private func agree(_ lhs: [Double], _ rhs: [Double]) -> Bool {
+        lhs.count == rhs.count && zip(lhs, rhs).allSatisfy { $0.isEqual(to: $1) || ($0.isNaN && $1.isNaN) }
+    }
+
+    /// The behavioural assertion: feasibility must not be certified against a constraint
+    /// nobody evaluated.
+    @Test("MaxViolation_OfAnUnevaluableConstraint_DoesNotCertifyFeasibility")
+    func maxViolationOfAnUnevaluableConstraintDoesNotCertifyFeasibility() {
+        let unevaluable = MultivariateConstraint<VectorN<Double>>.inequality { point in
+            point[0] < 0 ? Double.nan : point[0] - 1
+        }
+        let constraints: [MultivariateConstraint<VectorN<Double>>] = [unevaluable]
+        let point = VectorN([-1.0, 0.0])
+
+        let worst = constraints.maxViolation(at: point)
+        let certifiedFeasible = worst < 1e-6
+        #expect(!certifiedFeasible,
+                "maxViolation reported \(worst), which a tolerance test reads as a feasible point")
+        #expect(!constraints.allSatisfied(at: point),
+                "allSatisfied already answers false here — the two halves of the file disagreed")
+    }
+
+    /// And the answer must not depend on where the unevaluable constraint sits, which is how
+    /// `Array.max()` fails: it compares with `<`, so `[3, nan].max()` is `3` and
+    /// `[nan, 3].max()` is `nan`.
+    @Test("MaxViolation_DoesNotDependOnThePositionOfTheUnevaluableConstraint")
+    func maxViolationDoesNotDependOnThePositionOfTheUnevaluableConstraint() {
+        let unevaluable = MultivariateConstraint<VectorN<Double>>.inequality { _ in Double.nan }
+        let violated = MultivariateConstraint<VectorN<Double>>.inequality { _ in 3.0 }
+        let point = VectorN([0.0])
+
+        let unevaluableFirst = [unevaluable, violated].maxViolation(at: point)
+        let unevaluableLast = [violated, unevaluable].maxViolation(at: point)
+        #expect(unevaluableFirst.isNaN, "reported \(unevaluableFirst)")
+        #expect(unevaluableLast.isNaN,
+                "reported \(unevaluableLast) — the same constraint set, answered differently by order")
+    }
+
+    /// `violations(at:)` keeps one entry per constraint, and marks the unusable position
+    /// rather than scoring it zero.
+    @Test("Violations_MarkTheUnevaluablePosition_AndKeepTheLengthInvariant")
+    func violationsMarkTheUnevaluablePositionAndKeepTheLengthInvariant() {
+        let satisfied = MultivariateConstraint<VectorN<Double>>.inequality { _ in -2.0 }
+        let unevaluable = MultivariateConstraint<VectorN<Double>>.inequality { _ in Double.nan }
+        let violated = MultivariateConstraint<VectorN<Double>>.inequality { _ in 3.0 }
+        let amounts = [satisfied, unevaluable, violated].violations(at: VectorN([0.0]))
+        #expect(agree(amounts, [0.0, Double.nan, 3.0]),
+                "got \(amounts); the middle entry is the one that used to read 0.0")
+    }
+
+    /// Control: ordinary constraint sets are measured exactly as they were, including the
+    /// equality magnitude and the empty set.
+    @Test("ArrayViolations_OrdinaryConstraintSets_Unchanged")
+    func arrayViolationsOrdinaryConstraintSetsUnchanged() {
+        let satisfied = MultivariateConstraint<VectorN<Double>>.inequality { _ in -2.0 }
+        let violated = MultivariateConstraint<VectorN<Double>>.inequality { _ in 3.0 }
+        let equality = MultivariateConstraint<VectorN<Double>>.equality { _ in -4.0 }
+        let point = VectorN([0.0])
+
+        let amounts = [satisfied, violated, equality].violations(at: point)
+        #expect(agree(amounts, [0.0, 3.0, 4.0]), "got \(amounts)")
+        // 4.0, not 3.0: `violations` above returns [0.0, 3.0, 4.0], and the equality
+        // constraint's magnitude is the largest of the three.
+        #expect([satisfied, violated, equality].maxViolation(at: point).isEqual(to: 4.0))
+        #expect([satisfied].maxViolation(at: point).isEqual(to: 0.0), "a satisfied set is 0")
+
+        let empty: [MultivariateConstraint<VectorN<Double>>] = []
+        #expect(empty.maxViolation(at: point).isEqual(to: 0.0),
+                "an empty constraint set really is satisfied everywhere")
+    }
 }

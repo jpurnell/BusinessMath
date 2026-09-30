@@ -340,7 +340,29 @@ extension TimeSeries: Validatable where T: Real & Sendable {
 // MARK: - FinancialModel Validation
 
 extension FinancialModel: Validatable {
-	/// Checks for three types of errors: Empty Models, Models with costs, but without Revenue, or negative Revenue values
+	/// Validates the model's components and reports what is wrong with them.
+    ///
+    /// Four conditions are reported, at three severities:
+    ///
+    /// | condition | severity | `isValid` |
+    /// |---|---|---|
+    /// | no components at all | `.info` | `true` |
+    /// | costs but no revenue | `.warning` | `true` |
+    /// | a revenue amount that is not finite | `.error` | `false` |
+    /// | a revenue amount below zero | `.error` | `false` |
+    ///
+    /// **Negative revenue is an error.** It was a `.warning` until this was written, which —
+    /// with the empty case at `.info` and the pre-revenue case at `.warning` — left this
+    /// conformance unable to return `isValid == false` for any reason of its own. Revenue
+    /// below zero is not a modelling choice a caller might have meant: it is a sign error, or
+    /// an input contaminated on the way in. A refund, an allowance or a chargeback is an
+    /// expense and belongs in `costComponents`, which is what the suggestion says.
+    ///
+    /// **Costs without revenue stays a warning.** A pre-revenue company is a real thing, its
+    /// model is worth building, and it must keep validating.
+    ///
+    /// - Returns: A ``BMValidationResult`` whose `isValid` is `false` when any `.error`
+    ///   warning was produced.
     public func validate() -> BMValidationResult {
         var warnings: [CalculationWarning] = []
 
@@ -370,7 +392,9 @@ extension FinancialModel: Validatable {
         // below and was reported as nothing at all. The `TimeSeries` conformance in this
         // same file already reports a non-finite observation as `.error` — that is the
         // sibling this follows, and the severity is taken from it rather than chosen: an
-        // amount nobody could compute is not a judgement call about sign.
+        // amount nobody could compute is not a judgement call about sign. The negative
+        // branch below is now `.error` as well, on its own reasoning — the two arrived
+        // there separately and neither depends on the other.
         for (index, component) in revenueComponents.enumerated() {
             guard component.amount.isFinite else {
                 warnings.append(CalculationWarning(
@@ -386,13 +410,20 @@ extension FinancialModel: Validatable {
                 continue
             }
 
+            // Revenue below zero is an error, not a warning.
+            //
+            // Without this severity the caller was told "verify that negative revenue is
+            // intentional" on a result whose `isValid` was still `true` — and a caller that
+            // branches on `isValid`, which is the whole point of the type, never read the
+            // sentence. Nothing legitimate produces it: a refund, an allowance or a
+            // chargeback is an expense, and the suggestion says where it belongs.
             if component.amount < 0 {
                 warnings.append(CalculationWarning(
-                    severity: .warning,
+                    severity: .error,
                     type: .invalidValue,
                     message: "Revenue component '\(component.name)' has negative value",
-                    context: ["component": component.name, "index": String(index)],
-                    suggestions: ["Verify that negative revenue is intentional", "Consider using cost components for expenses"]
+                    context: ["component": component.name, "index": String(index), "value": String(component.amount)],
+                    suggestions: ["Move the amount to a cost component if it is an expense", "Correct the sign of the amount"]
                 ))
             }
         }

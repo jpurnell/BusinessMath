@@ -239,8 +239,24 @@ extension DistributionF: ContinuousDistribution {
 	}
 
 	/// P(X ≤ x) for this F distribution.
+	///
+	/// The support is `[0, ∞)`, so the limits are 0 below zero and 1 at `+infinity`, which is
+	/// what ``ContinuousDistribution/cdf(_:)`` promises and what the two guards below supply.
 	public func cdf(_ x: Double) -> Double {
 		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
+		// Below the support `fCDF` throws ("F-statistic must be non-negative"), so every
+		// negative argument — `-1` as much as `-infinity` — came back from `totalizedResult` as
+		// `nan` where the answer is 0.
+		guard x > 0 else { return 0 }
+		// At `+infinity` `fCDF` forms `d₁x / (d₁x + d₂)` = `inf/inf` = `nan` internally, which
+		// `regularizedIncompleteBeta`'s `guard x >= 0 && x <= 1` then throws on — so the answer
+		// was `nan` at the one point where a CDF is certainly 1.
+		//
+		// Both are answered here rather than in `fCDF` on purpose. `fCDF` is a *throwing* free
+		// function whose callers can act on a bad statistic, and contract §3.6 names its refusal
+		// of an infinite one as correct. It is the conformer that owes the limits, because it is
+		// the conformer that is documented to be total.
+		guard x < Double.infinity else { return 1 }
 		return totalizedResult { try fCDF(f: x, df1: df1, df2: df2) }
 	}
 

@@ -38,6 +38,23 @@ import Numerics
 /// scalar-valued interpolators can use the bare numeric type without
 /// wrapping it in a trivial vector.
 ///
+/// ## How far one unusable sample reaches
+///
+/// A non-finite `xs` is refused at construction — see the initializer's `Throws` — but a
+/// non-finite `ys` is accepted, propagates arithmetically, and comes back as `.nan` from the
+/// affected queries. **How many queries those are is method-specific, and a caller cannot
+/// infer it from this protocol**: ``LinearInterpolator``, ``NearestNeighborInterpolator``,
+/// ``PreviousValueInterpolator`` and ``NextValueInterpolator`` confine one bad `ys[i]` to the
+/// intervals that touch knot `i`; ``PCHIPInterpolator``, ``AkimaInterpolator`` and
+/// ``CatmullRomInterpolator`` spread it across the stencil around it; and
+/// ``CubicSplineInterpolator``, ``BarycentricLagrangeInterpolator`` and
+/// ``BSplineInterpolator`` above degree 1 are global — one `nan` anywhere in `ys` makes
+/// **every** query `nan`, because the coefficients are solved from all the data at once
+/// (a degree-1 B-spline is piecewise linear and behaves like the local group). Nothing is
+/// wrong with any of those: each is the true reach of its own algorithm. It is stated here
+/// because the difference is invisible at the call site, and a caller who probes one query
+/// and finds it finite has learned nothing about the rest of the curve for the last three.
+///
 /// ## Conforming types in v2.1.2
 ///
 /// All ten 1D interpolation methods conform to `Interpolator` with
@@ -175,6 +192,15 @@ internal func validateXY<T: Real>(
             ]
         )
     }
+    // `duplicateXValues` is an **exact**-equality check and deliberately stays one. Two
+    // abscissae a fraction of an ulp apart — `xs[i] - xs[i-1] ≈ 1e-300` — are distinct, pass
+    // here, and give every method that divides by the step (`Linear`, `CubicSpline`, `PCHIP`,
+    // `Akima`, `CatmullRom`) a slope of order `1e300` or an outright `±infinity`. That was
+    // probed rather than guarded: see ``CubicSplineInterpolator/thomasSolve(sub:diag:sup:rhs:)``
+    // for the arithmetic. An overflowing slope propagates as `inf` or `nan` all the way to the
+    // caller (contract §3.1) because the solver is pure arithmetic with no control flow over
+    // the data; a slope that stays finite is real ill-conditioning, and a minimum-spacing
+    // threshold here would have to invent a scale the caller's data does not carry.
     if xs.count >= 2 {
         for i in 1..<xs.count {
             if xs[i] < xs[i - 1] {

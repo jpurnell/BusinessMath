@@ -428,8 +428,15 @@ public struct TimeSeries<T: Real & Sendable>: Sequence, Sendable {
 	/// let subset = ts.range(from: jan, to: mar)  // Jan, Feb, Mar
 	/// ```
 	public func range(from start: Period, to end: Period) -> TimeSeries<T> {
+		// `>=` and `<=` on `Period` are synthesised from its `<`, which compares `Date`s, which
+		// compare `Double`s. On a NaN-backed date both derived operators answer **true**, so a
+		// contaminated period was included in *every* range query regardless of the bounds —
+		// and then `compactMap { values[$0] }` dropped it, because such a period is not even
+		// equal to itself, leaving `filteredPeriods.count` and `filteredValues.count`
+		// disagreeing by one on the way into the initialiser below.
 		let filteredPeriods = periods.filter { period in
-			period >= start && period <= end
+			guard period.startDate.timeIntervalSinceReferenceDate.isFinite else { return false }
+			return period >= start && period <= end
 		}
 
 		let filteredValues = filteredPeriods.compactMap { values[$0] }

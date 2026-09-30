@@ -341,9 +341,18 @@ struct Phase5SmallAreaTests {
 		#expect(message.contains("not finite"))
 	}
 
-	/// The control: a finite model still validates, and a negative amount is still only a
-	/// warning — that severity is a judgement about sign and this fix did not change it.
-	@Test("A finite model still validates and a negative amount is still only a warning")
+	/// The control: a finite model still validates.
+	///
+	/// This test used to assert the other half too — that a negative amount stays a
+	/// `.warning`, "that severity is a judgement about sign and this fix did not change it".
+	/// That was true of the non-finite fix recorded above and is no longer true of the API:
+	/// the judgement was taken afterwards, deliberately, and it went the other way. Revenue
+	/// below zero is a sign error or a contaminated input, and leaving it at `.warning` left
+	/// `FinancialModel.validate()` unable to return `isValid == false` for any reason of its
+	/// own. The pair that proves the new severity is targeted — a pre-revenue model still
+	/// validates while a negative-revenue one does not — lives in `OpenDecisionsTests`; what
+	/// is kept here is the assertion this test was actually for.
+	@Test("A finite model still validates, and negative revenue is now an error")
 	func financialModelValidateControls() {
 		var good = FinancialModel()
 		good.revenueComponents.append(RevenueComponent(name: "Product", amount: 1_000.0))
@@ -354,8 +363,9 @@ struct Phase5SmallAreaTests {
 		var negative = FinancialModel()
 		negative.revenueComponents.append(RevenueComponent(name: "Product", amount: -1.0))
 		let negativeResult = negative.validate()
-		#expect(negativeResult.isValid, "Negative revenue stays a warning, not an error")
-		#expect(negativeResult.warningsOnly.count == 1)
+		#expect(!negativeResult.isValid, "Negative revenue became an error after this phase closed")
+		#expect(negativeResult.errors.count == 1)
+		#expect(negativeResult.warningsOnly.isEmpty)
 	}
 
 	// MARK: - ModelDebugger.findMissingData

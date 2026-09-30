@@ -271,7 +271,10 @@ public struct DriverOptimizer: Sendable {
 	///   - model: Model function that maps driver values to metrics
 	///   - objective: Objective function (default: .minimizeChange)
 	/// - Returns: Optimal driver values and achieved metrics
-	/// - Throws: `OptimizationError` if optimization fails
+	/// - Throws: ``OptimizationError/nonFiniteValue(message:)`` if any driver or target carries
+	///   a value the solver cannot compute with, naming every offender;
+	///   ``OptimizationError/invalidInput(message:)`` if there are no drivers or no targets;
+	///   otherwise whatever the underlying solver throws.
 	public func optimize(
 		drivers: [OptimizableDriver],
 		targets: [FinancialTarget],
@@ -286,6 +289,18 @@ public struct DriverOptimizer: Sendable {
 		guard !targets.isEmpty else {
 			throw OptimizationError.invalidInput(message: "No targets provided")
 		}
+
+		// Screen what the caller supplied. `optimize` already throws, so §3.2 of the
+		// contaminated-input contract applies: refuse, and say which input was unusable.
+		//
+		// Nothing downstream crashes without this, and that is exactly why it is worth adding.
+		// Every fulfilment test in `buildResult` (`<`, `>=`, `<=`) is false for a NaN, so a
+		// contaminated run already reports `feasible == false` — the unfavourable end, which is
+		// the safe direction to fall. What the caller does not get is any way to tell "these
+		// targets are out of reach" from "one of the numbers you handed me was not a number",
+		// and those two call for opposite responses. The names collected below are what turns
+		// the second into something fixable.
+		try Self.screenInputs(drivers: drivers, targets: targets)
 
 		// Variable layout of the smooth problem actually handed to the optimizer
 		let layout = Self.buildLayout(
@@ -346,6 +361,92 @@ public struct DriverOptimizer: Sendable {
 		)
 	}
 
+	// MARK: - Entry Screening
+
+	/// Refuse drivers or targets carrying a value the solver cannot compute with.
+	///
+	/// Screens what the *caller* supplies, not what the model returns. A model is entitled to
+	/// be undefined somewhere in the search space — that is what a feasible region is for — and
+	/// the constraint machinery reports it as a violation of unknown size rather than as bad
+	/// input.
+	///
+	/// Every offender is collected before throwing, so one run names them all rather than
+	/// sending the caller round the loop once per bad number.
+	///
+	/// - Parameters:
+	///   - drivers: The drivers to screen.
+	///   - targets: The targets to screen.
+	/// - Throws: ``OptimizationError/nonFiniteValue(message:)`` carrying the count and a
+	///   description of each offending driver or target.
+	private static func screenInputs(
+		drivers: [OptimizableDriver],
+		targets: [FinancialTarget]
+	) throws {
+		var offenders: [String] = []
+
+		for driver in drivers {
+			if !driver.currentValue.isFinite {
+				offenders.append("driver '\(driver.name)' currentValue is \(driver.currentValue)")
+			}
+			// An infinite range bound is a legitimate "unbounded", and
+			// ``normalisationScale(for:)`` documents what it does with one. A NaN bound cannot
+			// arrive at all — `ClosedRange` requires `lower <= upper`, false for a NaN either
+			// side, so such a range traps at construction — so there is nothing to screen.
+			if let changeConstraint = driver.changeConstraint {
+				switch changeConstraint {
+				case .absoluteChange(let maximum) where !maximum.isFinite:
+					offenders.append("driver '\(driver.name)' absoluteChange max is \(maximum)")
+				case .percentageChange(let maximum) where !maximum.isFinite:
+					// Not the no-op it looks like: `centre * (1 + .infinity)` is `nan` for a
+					// driver centred at zero, and both bound constraints go with it.
+					offenders.append("driver '\(driver.name)' percentageChange max is \(maximum)")
+				default:
+					// `.stepSize` is ignored by this continuous formulation and never reaches
+					// an arithmetic path, so refusing it would reject input that works today.
+					break
+				}
+			}
+		}
+
+		for target in targets {
+			if !target.weight.isFinite {
+				offenders.append("target '\(target.metric)' weight is \(target.weight)")
+			}
+			for bound in Self.bounds(of: target.target) where !bound.isFinite {
+				// An infinite bound is not "no limit" here either: the slack is normalised by
+				// `max(abs(bound), 1)`, so `(bound − actual) / denominator` is `inf / inf`.
+				offenders.append("target '\(target.metric)' bound is \(bound)")
+			}
+		}
+
+		// Without this the caller is told only that the run was infeasible, which is also what
+		// they are told when the targets are simply unreachable — the same report for a problem
+		// they can act on and one they cannot.
+		guard offenders.isEmpty else {
+			let detail = offenders.joined(separator: "; ")
+			throw OptimizationError.nonFiniteValue(
+				message: "Driver optimization requires finite inputs; \(offenders.count) unusable: \(detail)"
+			)
+		}
+	}
+
+	/// The numeric bounds a ``TargetValue`` carries, in declaration order.
+	///
+	/// - Parameter target: The target specification to read.
+	/// - Returns: One element for `.exact`, `.minimum` and `.maximum`; two for `.range`.
+	private static func bounds(of target: TargetValue) -> [Double] {
+		switch target {
+		case .exact(let value):
+			return [value]
+		case .minimum(let value):
+			return [value]
+		case .maximum(let value):
+			return [value]
+		case .range(let minValue, let maxValue):
+			return [minValue, maxValue]
+		}
+	}
+
 	// MARK: - Epigraph Reformulation
 
 	/// One auxiliary variable standing in for a one-sided target violation.
@@ -363,6 +464,16 @@ public struct DriverOptimizer: Sendable {
 		/// the type. Four call sites each writing `max(abs(x), 1)` is a convention, and a
 		/// fifth that forgets is a division by zero; a private setter and a clamping
 		/// initialiser make the invariant hold by construction instead.
+		///
+		/// **The argument order in that clamp is load-bearing and must not be normalised.**
+		/// `Swift.max(a, b)` is `b >= a ? b : a`. Written `Swift.max(abs(x), 1.0)` it tests
+		/// `1.0 >= nan`, finds it false, and returns `abs(x)` — so a NaN propagates and the
+		/// normalised violation stays NaN. Written the other way round, `Swift.max(1.0, abs(x))`
+		/// tests `nan >= 1.0`, also false, and returns **`1.0`** — a denominator that looks like
+		/// an ordinary scale, after which the violation looks like an ordinary number. Same two
+		/// operands, opposite meanings; every site in this file is verified to use the first.
+		/// (Reaching one requires a bound the entry screening did not see, but the property is
+		/// worth keeping true rather than currently unreachable.)
 		private(set) var denominator: Double
 		/// `true` when the violation is `(bound − actual)`, `false` when `(actual − bound)`.
 		let measuresShortfall: Bool
@@ -418,14 +529,37 @@ public struct DriverOptimizer: Sendable {
 	/// The normalisation factor for one driver: the largest magnitude it can take.
 	///
 	/// Falls back to `1` for a driver pinned at zero, which is the only case where the
-	/// magnitudes above are all zero and the division would not be safe.
+	/// magnitudes below are all zero and the division would not be safe, and for a driver
+	/// whose range is unbounded, where no largest magnitude exists to divide by.
+	///
+	/// Returns `nan` for a driver whose current value is not a number. That is a different
+	/// question from either fallback and it has no answer; ``optimize(drivers:targets:model:objective:)``
+	/// refuses such a driver at the door, naming it, so a caller of the public API never
+	/// reaches this.
 	private static func normalisationScale(for driver: OptimizableDriver) -> Double {
 		let currentMagnitude = abs(driver.currentValue)
+		// `driver.range` cannot carry a NaN: `ClosedRange` requires `lower <= upper`, which is
+		// false for a NaN either side, so such a range traps at construction and never arrives
+		// here. Only `currentValue` needs screening, and it is screened as its own operand
+		// rather than relied on to survive the `Swift.max` below — `Swift.max(a, b)` is
+		// `b >= a ? b : a`, so it propagates a NaN in `a` and swallows one in `b`, and which
+		// of those this is would change the moment someone reorders the arguments.
+		//
+		// Without this the guard below would fire and return `1.0`: a measured normalisation
+		// scale, reported for a driver nobody could measure. Every normalised coordinate
+		// derived from it — the centre, the bounds, the reported change — would then look
+		// like an ordinary number in the driver's own units.
+		guard !currentMagnitude.isNaN else { return Double.nan }
 		let lowerMagnitude = abs(driver.range.lowerBound)
 		let upperMagnitude = abs(driver.range.upperBound)
 		let boundsMagnitude = Swift.max(lowerMagnitude, upperMagnitude)
 		let largest = Swift.max(currentMagnitude, boundsMagnitude)
-		guard largest.isFinite, largest > 0 else { return 1.0 }
+		// An unbounded driver has no largest magnitude, so normalisation is a no-op rather
+		// than an error: `1` leaves the coordinate in the driver's original units, which is
+		// what "no useful scale exists" means here.
+		guard largest.isFinite else { return 1.0 }
+		// A driver pinned at zero, the documented case: the division would otherwise be by zero.
+		guard largest > 0 else { return 1.0 }
 		return largest
 	}
 
@@ -646,6 +780,9 @@ public struct DriverOptimizer: Sendable {
 		for (i, driver) in drivers.enumerated() {
 			let offset = values[i] - layout.centres[i]
 			let change = offset * layout.scales[i]
+			// Argument order verified, and not interchangeable — see the note on
+			// ``TargetSlack/denominator``. `Swift.max(abs(x), 1e-6)` returns `abs(x)` when it
+			// is NaN; the reverse order would return `1e-6` and make the change look measured.
 			let normalizedChange = change / Swift.max(abs(driver.currentValue), 1e-6)
 			totalChange += normalizedChange * normalizedChange
 		}
@@ -688,6 +825,8 @@ public struct DriverOptimizer: Sendable {
 				continue
 			}
 
+			// Argument order verified — see the note on ``TargetSlack/denominator``. This is the
+			// propagating order; the reverse would hand a NaN metric a denominator of `1.0`.
 			let denominator = Swift.max(abs(value), 1.0)
 			let normalized: Double = (actual - value) / denominator
 			let squared: Double = normalized * normalized
@@ -837,6 +976,16 @@ public struct DriverOptimizer: Sendable {
 			let metrics = model(dict)
 			for slack in layout.slacks {
 				let violation = Self.slackViolation(slack, metrics: metrics)
+				// `Swift.max(0.0, nan)` is `0.0`, and here that is the right answer rather than
+				// the forbidden clamp it resembles. This is a *starting guess*, not a reported
+				// measurement: a model undefined at the caller's current drivers says nothing
+				// about where the optimum is, and appending NaN would spread through every
+				// component the solver touches, so one unknown slack would cost the whole
+				// vector. What must not be silenced is the *report*, and it is not — the
+				// epigraph constraint `violation − s` re-evaluates the model at each iterate
+				// and stays NaN wherever it is undefined, so infeasibility there is still
+				// visible to the solver. Entry screening covers the caller's numbers; the
+				// model's own domain is the solver's business.
 				values.append(Swift.max(0.0, violation))
 			}
 		}

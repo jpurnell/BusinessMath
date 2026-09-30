@@ -452,6 +452,24 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 	/// print(stub.months())         // [] — a stub is not divisible on the ladder
 	/// ```
 	public static func custom(start: Date, end: Date) -> Period {
+		// `end >= start` alone does NOT reject a contaminated date, and this is the one place
+		// in the library where the usual rule inverts. Swift synthesises `>=` as `!(lhs < rhs)`
+		// for a `Comparable` that supplies only `<`, so on a NaN-backed `Date` it negates a
+		// false and answers **true** — measured: `Date(timeIntervalSinceReferenceDate: .nan)
+		// >= anyRealDate` is `true`, where the same comparison on the raw `Double` is `false`.
+		// The guard therefore failed *open*: `(good, nan)`, `(nan, good)` and `(nan, nan)` were
+		// all accepted, and `.custom` stores its dates verbatim (no `startOfDay` laundering),
+		// so the NaN survived into the `Period`. From there `p == p` is false, so a `Set` gains
+		// a duplicate on every insert and `TimeSeries.values[period]` cannot find the key it
+		// just stored; `sorted()` stops being a strict weak ordering, so the *valid* periods
+		// come back out of order; and `days()` never terminates.
+		//
+		// Screening the operands is what the comparison cannot do. The ordering check below is
+		// unchanged and still rejects a genuine inversion.
+		guard start.timeIntervalSinceReferenceDate.isFinite,
+			  end.timeIntervalSinceReferenceDate.isFinite else {
+			preconditionFailure("Custom period bounds must be real dates; got start \(start), end \(end)")
+		}
 		guard end >= start else {
 			preconditionFailure("Custom period end (\(end)) must not precede its start (\(start))")
 		}
@@ -852,6 +870,16 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 		var currentDate = startDate
 		let end = endDate
 		var days: [Period] = []
+
+		// `currentDate <= end` is `!(end < currentDate)`, and `<` on a NaN-backed `Date` is
+		// false, so the negation is permanently **true** and this loop appends a `Period` for
+		// ever — an unbounded allocation, not a wrong answer. `custom(start:end:)` and the
+		// decoder now refuse such a date, but the loop states its own precondition rather than
+		// relying on a guard in another function: the cost of the redundancy is one comparison
+		// and the cost of omitting it is the process. (`hours()`, `months()` and the rest use
+		// `<`, which is false for a NaN, so they return an empty array — quiet, not fatal.)
+		guard end.timeIntervalSinceReferenceDate.isFinite,
+			  currentDate.timeIntervalSinceReferenceDate.isFinite else { return [] }
 
 		while currentDate <= end {
 			days.append(Period.day(currentDate))
@@ -1354,6 +1382,18 @@ extension Period {
 					forKey: .end,
 					in: container,
 					debugDescription: "A custom period requires an explicit end date; none was present."
+				)
+			}
+			// The same inversion as `custom(start:end:)`, and this is the untrusted path: a
+			// persisted or wire payload reaches it directly. `>=` on a NaN-backed `Date` is
+			// synthesised as `!(<)` and answers `true`, so the ordering check alone admitted a
+			// contaminated date from a file. Operands first.
+			guard decodedDate.timeIntervalSinceReferenceDate.isFinite,
+				  decodedEnd.timeIntervalSinceReferenceDate.isFinite else {
+				throw DecodingError.dataCorruptedError(
+					forKey: .end,
+					in: container,
+					debugDescription: "A custom period requires real dates; got start \(decodedDate), end \(decodedEnd)."
 				)
 			}
 			guard decodedEnd >= decodedDate else {

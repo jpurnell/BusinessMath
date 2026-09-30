@@ -639,10 +639,25 @@ public extension Array where Element == MultivariateConstraint<VectorN<Double>> 
 	/// Get the constraint violations at a point
 	///
 	/// - Parameter point: Point to check
-	/// - Returns: Array of violation values (0 if satisfied, positive if violated)
+	/// - Returns: Array of violation values — `0` if satisfied, positive if violated, and
+	///   `nan` for a constraint whose function could not be evaluated at this point. One
+	///   entry per constraint, in order.
 	func violations(at point: VectorN<Double>) -> [Double] {
-		map { constraint in
+		map { constraint -> Double in
 			let value = constraint.evaluate(at: point)
+			// `Swift.max(a, b)` is `b >= a ? b : a`, so `Swift.max(0, nan)` tests `nan >= 0`,
+			// finds it false, and returns **`0`** — the value reserved for "this point
+			// satisfies the constraint exactly", reported for a constraint nobody could
+			// evaluate. A constraint closure returns NaN whenever a search reaches where the
+			// caller's `log`, `sqrt` or division by a decision variable is undefined, which is
+			// ordinary. ``isSatisfied(at:tolerance:)`` on the same constraint already answers
+			// `false` there, because `nan <= tolerance` is false too, so without this screen
+			// the two halves of this file contradict each other on the same point.
+			//
+			// Screened explicitly rather than by writing `Swift.max(value, 0)`, which would
+			// propagate only as a side effect of the operand order — correct by accident, and
+			// silently undone by anyone normalising the two `max` calls below into one shape.
+			guard !value.isNaN else { return Double.nan }
 			switch constraint {
 			case .equality, .linearEquality:
 				return abs(value)  // |h(x)|
@@ -662,9 +677,21 @@ public extension Array where Element == MultivariateConstraint<VectorN<Double>> 
 	/// Get the maximum constraint violation at a point
 	///
 	/// - Parameter point: Point to check
-	/// - Returns: Maximum violation (0 if all satisfied)
+	/// - Returns: Maximum violation (0 if all satisfied, or if there are no constraints);
+	///   `nan` when any constraint could not be evaluated at this point, because feasibility
+	///   is then unknown rather than established.
 	// LIVE: MCP tool interface for constraint validation
 	func maxViolation(at point: VectorN<Double>) -> Double {
-		violations(at: point).max() ?? 0.0
+		let amounts = violations(at: point)
+		// `max()` compares with `<`, and every comparison against a NaN is false, so whether an
+		// unevaluable constraint survives depends on where it sits: `[3, nan].max()` is `3` and
+		// `[nan, 3].max()` is `nan`. A caller thresholding this against a feasibility tolerance
+		// would certify the point in the first ordering and not the second, from the same
+		// constraint set. An unevaluable constraint dominates: nothing is known about
+		// feasibility here, which is not the same as nothing being wrong with it.
+		if amounts.contains(where: { $0.isNaN }) { return Double.nan }
+		// An empty constraint set really is satisfied everywhere, so `0` is the measurement
+		// rather than a fallback.
+		return amounts.max() ?? 0.0
 	}
 }

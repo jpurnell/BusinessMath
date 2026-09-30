@@ -57,9 +57,17 @@ import Numerics
 /// - ``regularizedIncompleteBeta(x:a:b:)``
 public func regularizedLowerIncompleteGamma<T: Real>(a: T, x: T) -> T {
 	guard a > T.zero, !a.isNaN, a.isFinite else { return T.nan }
+	// Both halves of this guard answer `nan`, and here that is right rather than the
+	// one-guard-two-questions shape contract §4 forbids. This is the special function, whose
+	// domain is the integral's: γ(a, x) is not defined for a negative upper limit, so "below
+	// zero" and "unreadable" really are the same answer. The *distribution* built on it is a
+	// different contract — ``gammaCDF(_:shape:scale:)`` owes 0 below its support and answers
+	// it there, before calling this.
 	guard x >= T.zero, !x.isNaN else { return T.nan }
 
 	if x == T.zero { return T.zero }
+	// `+infinity` only; a negative infinity failed the guard above. The whole mass lies below
+	// it, so P is 1 — contract §3.6, an infinity kept rather than screened.
 	if x.isInfinite { return T(1) }
 
 	let branchPoint: T = a + T(1)

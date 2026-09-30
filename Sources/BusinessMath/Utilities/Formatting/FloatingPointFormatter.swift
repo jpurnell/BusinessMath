@@ -7,6 +7,45 @@
 
 import Foundation
 
+// MARK: - Display Non-Finite Values
+
+/// The token a **human-readable** rendering uses for a number that is not finite.
+///
+/// This is the display half of a deliberate pair. Its counterpart is
+/// `csvNonFiniteToken(_:)`, which renders the same three values for a **machine-readable**
+/// column as the lowercase ASCII `nan`, `inf` and `-inf`. The two spellings differ on
+/// purpose, and the difference is the whole signal:
+///
+/// | audience | `nan` | `+∞` | `-∞` | chosen because |
+/// |---|---|---|---|---|
+/// | a person reading a report | `NaN` | `∞` | `-∞` | it is what `FloatingPointFormatStyle` already writes, so a formatter's output and an unformatted `1.0.formatted()` agree |
+/// | a parser reading a data column | `nan` | `inf` | `-inf` | it round-trips through `Double(_: String)`, `strtod` and `pandas`, and is locale-invariant |
+///
+/// Before this existed the display strategies below fell through to
+/// `String(describing:)`, which writes the *machine* spelling — so a formatter whose stated
+/// job is "clean, readable output" rendered `nan` and `inf`, byte-identical to a CSV field,
+/// while `percent()` beside it rendered `NaN` and `∞`.
+/// Two spellings of one value in one report is drift; two spellings across the display and
+/// data boundary is a decision, and after this the lowercase spelling means exactly one
+/// thing: *this column is going to be parsed*.
+///
+/// The sign is kept on an infinity because losing it would be a change of value, not of
+/// presentation — `-∞` and `∞` are different answers, and a reader has no way to recover
+/// which one was meant.
+///
+/// - Parameter value: The value being rendered for a person.
+/// - Returns: The display token, or `nil` when `value` is finite and should be formatted
+///   normally.
+internal func displayNonFiniteToken<T: FloatingPoint>(_ value: T) -> String? {
+    if value.isNaN {
+        return "NaN"
+    }
+    if value.isInfinite {
+        return value < 0 ? "-∞" : "∞"
+    }
+    return nil
+}
+
 /// Formats floating-point numbers with intelligent strategies to handle numerical noise.
 ///
 /// Optimization results often have floating-point noise in the least significant digits.
@@ -101,9 +140,10 @@ public struct FloatingPointFormatter: Sendable {
     }
 
     private func formatWithSmartRounding(_ value: Double, tolerance: Double) -> String {
-        // Handle edge cases
-        if !value.isFinite {
-            return String(describing: value)
+        // Handle edge cases. Without this the caller would have been handed the machine
+        // spelling — `nan`, `inf` — from a formatter whose output is meant to be read.
+        if let nonFinite = displayNonFiniteToken(value) {
+            return nonFinite
         }
 
         // Essentially zero?
@@ -137,8 +177,9 @@ public struct FloatingPointFormatter: Sendable {
     private func formatWithSigFigs(_ value: Double, _ n: Int) -> String {
         if value == 0 { return "0" }
 
-        // Guard against edge cases
-        if !value.isFinite { return String(describing: value) }
+        // Guard against edge cases. Without this the caller would have been handed the
+        // machine spelling — `nan`, `inf` — from a formatter whose output is meant to be read.
+        if let nonFinite = displayNonFiniteToken(value) { return nonFinite }
         if n <= 0 { return "0" }
 
         let magnitude = floor(log10(abs(value)))
@@ -166,9 +207,10 @@ public struct FloatingPointFormatter: Sendable {
 
     /// Context-aware formatting: adapt precision to magnitude
     private func formatContextAware(_ value: Double, tolerance: Double, maxDecimals: Int) -> String {
-        // Handle edge cases
-        if !value.isFinite {
-            return String(describing: value)
+        // Handle edge cases. Without this the caller would have been handed the machine
+        // spelling — `nan`, `inf` — from a formatter whose output is meant to be read.
+        if let nonFinite = displayNonFiniteToken(value) {
+            return nonFinite
         }
 
         // 1. Check if essentially zero
@@ -225,6 +267,11 @@ extension FloatingPointFormatter {
     /// Default formatter for probabilities (3 significant figures)
     public static let probability = FloatingPointFormatter(strategy: .significantFigures(count: 3))
 
-    /// Raw formatter (no formatting, just string conversion)
+    /// Raw formatter (no formatting, just string conversion).
+    ///
+    /// The one formatter here that still spells a non-finite value `nan` or `inf`, because
+    /// `String(describing:)` *is* its contract — it promises Swift's own rendering, not a
+    /// presented one. A caller who wants the display spelling wants one of the strategies
+    /// above; a caller who reached for `.raw` asked for the unformatted value.
     public static let raw = FloatingPointFormatter(strategy: .custom { String(describing: $0) })
 }

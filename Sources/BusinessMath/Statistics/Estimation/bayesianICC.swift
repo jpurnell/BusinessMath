@@ -105,6 +105,11 @@ internal func sampledVariance<T: Real, G: RandomNumberGenerator>(
 /// - Throws: ``BusinessMathError/calculationFailed(operation:reason:suggestions:)`` when no
 ///   draw survived thinning and burn-in, which is a configuration error rather than a
 ///   result.
+/// - Throws: ``BusinessMathError/dataQuality(message:context:)`` when a merged ICC draw is not
+///   finite. Both public entry points screen the *ratings*, so this is a statement about the
+///   sampler's own output rather than about the caller's data; it is screened here because
+///   the summary below sorts the draws, and one unorderable draw is enough to move the valid
+///   ones (§2 of the contaminated-input contract).
 internal func summarisePosterior<T: Real>(
     allChainSigmaS: [[T]],
     allChainSigmaR: [[T]],
@@ -120,6 +125,19 @@ internal func summarisePosterior<T: Real>(
         throw BusinessMathError.calculationFailed(
             operation: "Bayesian ICC",
             reason: "No post-burn-in samples collected; increase iterations or reduce burn-in")
+    }
+
+    // `sorted()` is unspecified unless `<` is a strict weak ordering, and every comparison
+    // against a `nan` is false — so one unusable draw leaves *valid* draws in the wrong
+    // positions, and the median and the 2.5% / 97.5% indices below then read whichever draws
+    // happen to land at those ranks. The caller would receive a finite, plausible posterior
+    // median and a tight credible interval computed from the wrong quantiles, with nothing in
+    // the result to say the ordering never held.
+    let invalidDraws = mergedICC.filter { !$0.isFinite }.count
+    guard invalidDraws == 0 else {
+        throw BusinessMathError.dataQuality(
+            message: "Bayesian ICC posterior requires finite draws",
+            context: ["invalid_count": "\(invalidDraws)"])
     }
 
     let iccMeanVal = mean(mergedICC)

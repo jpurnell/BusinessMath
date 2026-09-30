@@ -635,7 +635,23 @@ public actor ModelDebugger {
     /// Checks exactly three things, and no others:
     /// - the model has at least one revenue or cost component
     /// - a model with costs also has revenue
-    /// - no revenue time series carries a `NaN`
+    /// - no time series carries a `NaN`, on either side of the model
+    ///
+    /// **Both sides are scanned.** This used to walk `revenueComponents` only, and its
+    /// documentation described that narrowness rather than deciding it — so a model whose
+    /// cost series was `NaN` from end to end came back `isValid` with the summary
+    /// `"✅ Model is valid"`, which is the most reassuring thing this method can say. Its
+    /// sibling ``ModelDebugger/findMissingData(in:)`` had the identical gap and was widened
+    /// first; this follows it so the two agree about what "the model" means.
+    ///
+    /// A revenue and a cost component may carry the same name. Each produces its own error,
+    /// labelled with the side it came from, so neither displaces the other — the same
+    /// guarantee `findMissingData(in:)` buys by merging into one key instead of overwriting.
+    ///
+    /// Infinities are not reported here. They order and compare correctly and are a
+    /// legitimate observation in a financial series, so the contaminated-input contract
+    /// leaves them alone unless they break the specific computation; the rule this method
+    /// reports under is `no-nan-values` and it means what it says.
     ///
     /// It does **not** detect dependency cycles between accounts. A ``FinancialModel``'s
     /// components hold time series rather than formulas, so no account can refer to another
@@ -684,21 +700,17 @@ public actor ModelDebugger {
             ))
         }
 
-        // Check for NaN values in time series
+        // Check for NaN values in time series, on both sides of the model.
+        //
+        // `side` reaches the message rather than the field so that two components sharing a
+        // name stay tellable apart in the report; `field` remains the component name, which
+        // is what a caller filters on.
         for component in model.revenueComponents {
-            if let timeSeries = component.timeSeries {
-                for (period, value) in zip(timeSeries.periods, timeSeries.valuesArray) {
-                    if value.isNaN {
-                        errors.append(ValidationError(
-                            field: component.name,
-                            value: value,
-                            rule: "no-nan-values",
-                            message: "NaN value in revenue '\(component.name)' for period \(period)",
-                            suggestion: "Replace NaN with valid number or use fillMissing()"
-                        ))
-                    }
-                }
-            }
+            errors.append(contentsOf: nanErrors(in: component.timeSeries, named: component.name, side: "revenue"))
+        }
+
+        for component in model.costComponents {
+            errors.append(contentsOf: nanErrors(in: component.timeSeries, named: component.name, side: "cost"))
         }
 
         let isValid = errors.isEmpty
@@ -711,6 +723,36 @@ public actor ModelDebugger {
             summary: summary,
             timestamp: clock.now
         )
+    }
+
+    /// The `NaN` errors one component's series contributes to a validation report.
+    ///
+    /// Shared by the revenue and cost passes of ``validate(_:)`` so the two cannot drift
+    /// apart again: one scan, called twice, differing only in the word it uses for the side
+    /// of the model a component sits on.
+    ///
+    /// - Parameters:
+    ///   - series: The component's series, or `nil` for a component that carries a single
+    ///     amount instead. A component with no series contributes no errors, because there
+    ///     is no per-period value here to read.
+    ///   - name: The component's name, reported as the error's `field`.
+    ///   - side: `"revenue"` or `"cost"`, which is all that distinguishes two components
+    ///     that share a name.
+    /// - Returns: One error per `NaN` reading, in period order; empty when there are none.
+    private func nanErrors(in series: TimeSeries<Double>?, named name: String, side: String) -> [ValidationError] {
+        guard let series else { return [] }
+
+        var errors: [ValidationError] = []
+        for (period, value) in zip(series.periods, series.valuesArray) where value.isNaN {
+            errors.append(ValidationError(
+                field: name,
+                value: value,
+                rule: "no-nan-values",
+                message: "NaN value in \(side) '\(name)' for period \(period)",
+                suggestion: "Replace NaN with valid number or use fillMissing()"
+            ))
+        }
+        return errors
     }
 
     /// Find missing data in a financial model.

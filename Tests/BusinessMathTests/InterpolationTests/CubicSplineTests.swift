@@ -126,12 +126,37 @@ struct CubicSplineTests {
         }
     }
 
-    @Test("Clamped allows 2-point input")
+    @Test("Clamped allows 2-point input, and honours slopes that differ")
     func clampedAllowsTwoPoints() throws {
+        // FIXTURE REPLACED. This read `xs: [0, 1], ys: [0, 1], clamped(left: 1, right: 1)` and
+        // asserted `interp(0.5) ≈ 0.5`. That is the one configuration where
+        // `left == right == the chord slope`, so the second derivatives genuinely are zero —
+        // and the two-point branch discarded `left` and `right` entirely and returned `[0, 0]`
+        // regardless. The test passed for the whole life of the bug because its fixture was
+        // the bug's only correct case. All three quantities differ below.
+        let left: Double = 0.5
+        let right: Double = 3.0
         let interp = try CubicSplineInterpolator(
-            xs: [0.0, 1.0], ys: [0.0, 1.0], boundary: .clamped(left: 1.0, right: 1.0)
+            xs: [0.0, 2.0], ys: [1.0, 5.0], boundary: .clamped(left: left, right: right)
         )
-        #expect(abs(interp(0.5) - 0.5) < 1e-6)
+        // The unique cubic with p(0) = 1, p(2) = 5, p'(0) = 0.5 and p'(2) = 3 is
+        // p(x) = 1 + 0.5x + x² − 0.125x³. `InterpolationAndLimitsTests` derives it from those
+        // four conditions in general form; here it is written out and evaluated.
+        let t: Double = 1.0
+        let linearPart: Double = 1.0 + left * t
+        let quadraticPart: Double = t * t
+        let cubicPart: Double = 0.125 * t * t * t
+        let expected: Double = linearPart + quadraticPart - cubicPart
+        let got: Double = interp(t)
+        #expect(abs(got - expected) < 1e-12, "got \(got), wanted \(expected)")
+
+        // The chord — what `[0, 0]` second derivatives produce — is 3.0 at t = 1.
+        let chord: Double = 1.0 + 2.0 * t
+        #expect(abs(got - chord) > 0.5, "spline collapsed to the chord \(chord); got \(got)")
+
+        // Pass-through at both knots, unchanged.
+        #expect(abs(interp(0.0) - 1.0) < 1e-12)
+        #expect(abs(interp(2.0) - 5.0) < 1e-12)
     }
 
     @Test("Periodic throws when ys.first != ys.last")

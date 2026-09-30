@@ -23,6 +23,12 @@ import Numerics
 
 /// Validate that all vectors in `ys` have the same dimension as `ys[0]`,
 /// and return that dimension. Throws if mismatched.
+///
+/// **An empty `ys` returns dimension 0 rather than throwing**, and that is not a way of
+/// validating `xs`. Zero channels means `vectorChannels` calls `makeChannel` zero times, so
+/// the scalar initialiser — the only thing in the vector path that reaches `validateXY` —
+/// never runs. Every initialiser in this file therefore calls `validateXY` itself, before
+/// `vectorChannels`, rather than relying on the channel build to do it.
 @inlinable
 internal func validateVectorYs<T: Real & BinaryFloatingPoint & Sendable & Codable>(
     _ ys: [VectorN<T>]
@@ -375,6 +381,20 @@ public struct VectorCubicSplineInterpolator<T: Real & BinaryFloatingPoint & Send
         boundary: BoundaryCondition = .natural,
         outOfBounds: ExtrapolationPolicy<T> = .clamp
     ) throws {
+        // Without this the abscissae were never checked at all. `validateVectorYs` returns
+        // dimension 0 for an empty `ys`, `transposeChannels` then builds zero channels, and
+        // `makeChannel` — the only thing that reaches `validateXY` — never runs. Measured:
+        // `try VectorCubicSplineInterpolator(xs: [5, 1, .nan, 1], ys: [])` **succeeded**, with
+        // `xs` unsorted, duplicated and contaminated, and every query afterwards returned an
+        // empty `VectorN`, documented elsewhere as the additive identity at every dimension.
+        // Five of the ten types in this file already opened with this line; these five did not,
+        // and that asymmetry inside one file is what named the defect.
+        let minPoints: Int
+        switch boundary {
+        case .clamped: minPoints = 2
+        default:       minPoints = 3
+        }
+        try validateXY(xs: xs, ysCount: ys.count, minimumPoints: minPoints)
         let built = try vectorChannels(ys) {
             try CubicSplineInterpolator(xs: xs, ys: $0, boundary: boundary, outOfBounds: outOfBounds)
         }
@@ -439,6 +459,11 @@ public struct VectorPCHIPInterpolator<T: Real & BinaryFloatingPoint & Sendable &
         ys: [VectorN<T>],
         outOfBounds: ExtrapolationPolicy<T> = .clamp
     ) throws {
+        // See ``VectorCubicSplineInterpolator/init(xs:ys:boundary:outOfBounds:)``: an empty `ys`
+        // makes `vectorChannels` build zero channels, so the channel initialiser that would
+        // have validated `xs` is never called and any `xs` at all is accepted. `minimumPoints`
+        // matches ``PCHIPInterpolator``'s own.
+        try validateXY(xs: xs, ysCount: ys.count, minimumPoints: 2)
         let built = try vectorChannels(ys) {
             try PCHIPInterpolator(xs: xs, ys: $0, outOfBounds: outOfBounds)
         }
@@ -506,6 +531,11 @@ public struct VectorAkimaInterpolator<T: Real & BinaryFloatingPoint & Sendable &
         modified: Bool = true,
         outOfBounds: ExtrapolationPolicy<T> = .clamp
     ) throws {
+        // See ``VectorCubicSplineInterpolator/init(xs:ys:boundary:outOfBounds:)``: an empty `ys`
+        // makes `vectorChannels` build zero channels, so the channel initialiser that would
+        // have validated `xs` is never called and any `xs` at all is accepted. `minimumPoints`
+        // matches ``AkimaInterpolator``'s own.
+        try validateXY(xs: xs, ysCount: ys.count, minimumPoints: 2)
         let built = try vectorChannels(ys) {
             try AkimaInterpolator(xs: xs, ys: $0, modified: modified, outOfBounds: outOfBounds)
         }
@@ -574,6 +604,11 @@ public struct VectorCatmullRomInterpolator<T: Real & BinaryFloatingPoint & Senda
         tension: T = T(0),
         outOfBounds: ExtrapolationPolicy<T> = .clamp
     ) throws {
+        // See ``VectorCubicSplineInterpolator/init(xs:ys:boundary:outOfBounds:)``: an empty `ys`
+        // makes `vectorChannels` build zero channels, so the channel initialiser that would
+        // have validated `xs` is never called and any `xs` at all is accepted. `minimumPoints`
+        // matches ``CatmullRomInterpolator``'s own.
+        try validateXY(xs: xs, ysCount: ys.count, minimumPoints: 2)
         let built = try vectorChannels(ys) {
             try CatmullRomInterpolator(xs: xs, ys: $0, tension: tension, outOfBounds: outOfBounds)
         }
@@ -642,6 +677,20 @@ public struct VectorBSplineInterpolator<T: Real & BinaryFloatingPoint & Sendable
         degree: Int = 3,
         outOfBounds: ExtrapolationPolicy<T> = .clamp
     ) throws {
+        // See ``VectorCubicSplineInterpolator/init(xs:ys:boundary:outOfBounds:)``: an empty `ys`
+        // makes `vectorChannels` build zero channels, so the channel initialiser that would
+        // have validated `xs` — and `degree` — is never called and any input at all is
+        // accepted. Both checks mirror ``BSplineInterpolator``'s, in its order, so the two
+        // report the same error for the same input: degree first, then the abscissae, with the
+        // minimum the backend that degree selects actually needs (linear for 1, a not-a-knot
+        // cubic spline for 2…5).
+        guard (1...5).contains(degree) else {
+            throw InterpolationError.invalidParameter(
+                message: "BSpline degree must be in 1...5 (got \(degree))"
+            )
+        }
+        let minPoints: Int = degree == 1 ? 2 : 3
+        try validateXY(xs: xs, ysCount: ys.count, minimumPoints: minPoints)
         let built = try vectorChannels(ys) {
             try BSplineInterpolator(xs: xs, ys: $0, degree: degree, outOfBounds: outOfBounds)
         }

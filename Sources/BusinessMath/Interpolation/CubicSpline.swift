@@ -173,8 +173,36 @@ public struct CubicSplineInterpolator<T: Real & BinaryFloatingPoint & Sendable &
         let n = xs.count
         if n < 2 { return [T](repeating: T(0), count: n) }
         if n == 2 {
-            // Two-point clamped: linear, second derivatives are 0
-            return [T(0), T(0)]
+            // Two points can only arrive here as `.clamped` — every other boundary condition
+            // requires three — and the answer is the cubic Hermite through them, not a line.
+            //
+            // "Second derivatives are 0" was true of exactly one case: `left == right == delta`,
+            // the straight line the slopes already describe. For any other endpoint slopes the
+            // caller's `left` and `right` were **silently discarded** while `interp.boundary`
+            // went on reporting them, so `.clamped` ignored the one thing it exists to specify.
+            //
+            // Solving the 2x2 clamped system this file writes out for n > 2,
+            //     2h*M0 +  h*M1 = 6*(delta - left)
+            //      h*M0 + 2h*M1 = 6*(right - delta)
+            // gives M0 = (6*delta - 4*left - 2*right)/h and M1 = (2*left - 6*delta + 4*right)/h.
+            // Substituting them into the evaluation in `callAsFunction(_:)` recovers
+            // f'(x0) = left and f'(x1) = right exactly, and collapses to [0, 0] when both
+            // slopes equal delta — so the degenerate case the old branch handled is unchanged.
+            guard case .clamped(let left, let right) = boundary else {
+                // Unreachable through any initialiser: `init` requires 3 points for `.natural`,
+                // `.notAKnot` and `.periodic`. Reached only by calling this internal method
+                // directly with two points and one of those conditions, where there are no
+                // endpoint slopes to solve for and the interpolant through two points is the
+                // straight line whose second derivative genuinely is zero.
+                return [T(0), T(0)]
+            }
+            let h0: T = xs[1] - xs[0]
+            let delta0: T = (ys[1] - ys[0]) / h0
+            let leftPart: T = T(6) * delta0 - T(4) * left
+            let rightPart: T = T(2) * left - T(6) * delta0
+            let m0: T = (leftPart - T(2) * right) / h0
+            let m1: T = (rightPart + T(4) * right) / h0
+            return [m0, m1]
         }
 
         // Step sizes h[i] = xs[i+1] - xs[i]
@@ -394,6 +422,50 @@ public struct CubicSplineInterpolator<T: Real & BinaryFloatingPoint & Sendable &
 
     /// Solves a tridiagonal linear system in O(n) time.
     /// Modifies copies internally; inputs are not mutated.
+    ///
+    /// ## No pivoting, and why that is safe here
+    ///
+    /// There is no pivot check on `d[i - 1]` and no divide-by-zero guard anywhere in this
+    /// directory. That was probed rather than assumed, because two *adjacent* abscissae can
+    /// be distinct and still be a fraction of an ulp apart — `xs[i] - xs[i-1] ≈ 1e-300` passes
+    /// `validateXY`'s exact-equality check — and the slopes `delta` built from them overflow
+    /// to `±infinity`. The question that decides whether that is a contract violation is
+    /// whether an `inf - inf` in the forward sweep can cancel back to a **finite but wrong**
+    /// number, which would be silent. It cannot:
+    ///
+    /// - `inf - inf` is NaN in IEEE-754 under every rounding mode; subtraction of two
+    ///   infinities has no finite result. So the sweep cannot manufacture a plausible number
+    ///   out of two infinities.
+    /// - NaN is absorbing through everything below. This function is pure arithmetic —
+    ///   `+ - * /` and nothing else. It has no comparison, no branch on the data, no `min`,
+    ///   `max` or `sorted`, which is where §2 of the contaminated-input contract says NaN
+    ///   turns into a *decision* instead of a value. So a NaN in `d` or `r` reaches `M`, and
+    ///   `callAsFunction(_:)` propagates it to the caller as `.nan` — contract §3.1.
+    /// - The one mechanism that *could* restore finiteness is `finite / inf = 0`, at
+    ///   `factor = sub[i] / d[i - 1]`. It needs an infinite pivot, and the `.natural` and
+    ///   `.clamped` systems cannot produce one: both are strictly diagonally dominant with
+    ///   positive entries, and `d[i] = 2(h[i-1] + h[i]) - h[i-1]²/d[i-1] ≥ h[i-1] + 2h[i]`
+    ///   by induction from `d[0] = 2(h[0] + h[1])`, so `d[i] > 0` and stays of the order of
+    ///   the step sizes. Measured on `xs = [-1, 0, 1e-300, 1, 2]`: `d` came out
+    ///   `[2.0, 2.0, 3.5]` while `delta[1]` was `+infinity`.
+    ///
+    /// Measured outcomes for a near-duplicate interval, natural BC, five knots:
+    ///
+    /// | `delta` at the tiny interval | `M` | verdict |
+    /// |---|---|---|
+    /// | `1e300`, finite | finite, `~3e300` | ill-conditioned, not contaminated |
+    /// | `+infinity` | `[0, inf, -inf, inf, 0]` | propagates; every query is `±inf` or `nan` |
+    /// | two adjacent near-duplicates, `inf - inf` in `rhs` | all `nan` | propagates |
+    ///
+    /// The first row is the honest caveat and is **not** a defect this can fix: an interval of
+    /// width `1e-300` carrying an ordinary rise really does have a slope of `1e300`, and no
+    /// guard can tell that apart from legitimately steep data. The values it produces are of
+    /// order `1e300`, so they do not read as an answer either. Adding a pivot or a
+    /// minimum-spacing threshold would mean choosing a scale the caller's data does not have.
+    ///
+    /// So: no guard is added here. A pivot would only convert an infinity that already
+    /// propagates correctly into a different infinity, and a `nan` that already propagates
+    /// correctly into a fabricated finite one.
     @usableFromInline
     internal static func thomasSolve(
         sub: [T], diag: [T], sup: [T], rhs: [T]

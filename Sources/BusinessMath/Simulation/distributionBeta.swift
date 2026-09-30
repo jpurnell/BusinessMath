@@ -276,8 +276,26 @@ extension DistributionBeta: ContinuousDistribution {
 	}
 
 	/// P(X ≤ x) = I_x(α, β), the regularized incomplete beta.
+	///
+	/// The support is `[0, 1]`, and the two guards below carry the whole of the rest of
+	/// ``ContinuousDistribution/cdf(_:)``'s contract: 0 below the support, 1 above it, and the
+	/// same two answers at `-infinity` and `+infinity`, which are ordered points on the line
+	/// and not contamination (contract §3.6).
 	public func cdf(_ x: Double) -> Double {
 		guard !x.isNaN else { return Double.nan } // NaN in, NaN out — no point on the line, so no probability. ``ContinuousDistribution/cdf(_:)``
+		// Outside `[0, 1]` the answer had to be given here, because `regularizedIncompleteBeta`
+		// cannot: its `guard x >= 0 && x <= 1` **throws**, `totalizedResult` turns a throw into
+		// `nan`, and a caller asking P(X ≤ 1.5) of a Beta was told the probability could not be
+		// computed when it is exactly 1. `-infinity` and `+infinity` failed the same guard and
+		// answered `nan` too, where the protocol promises 0 and 1.
+		//
+		// Screening `x <= 0` / `x >= 1` rather than `isFinite` is the point: a finiteness screen
+		// gets every assertion about a finite out-of-support argument right and every assertion
+		// about an infinity wrong, which is the most likely way to get this backwards.
+		// At the endpoints themselves nothing moves — `regularizedIncompleteBeta` already
+		// short-circuits `x == 0` to 0 and `x == 1` to 1.
+		guard x > 0 else { return 0 }
+		guard x < 1 else { return 1 }
 		return totalizedResult { try regularizedIncompleteBeta(x: x, a: alpha, b: beta) }
 	}
 
