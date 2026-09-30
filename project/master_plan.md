@@ -38,6 +38,49 @@ suite depends on it.
 
 ## Current Status
 
+**3.0.0-alpha.10 shipped 2026-09-30** — `FormattedValue` supplies `<=` and `>=` rather than
+letting Swift synthesise them as negations, which invert on a NaN. Prophylaxis: the type
+constrains `T: FloatingPoint`, so the hazard is never conditional, but no validation guard uses
+it yet. 8,962 tests / 835 suites, gate 46/46 at 0 errors and 0 warnings.
+
+**3.0.0-alpha.9 shipped 2026-09-29** — the Linux fallback logger is compiled on every platform
+as `BusinessMathFallbackLogger` and aliased to `Logger` only where OSLog is absent. No behaviour
+change; the change is that a Mac now typechecks it and can test it. Nine tests cover what had
+been broken.
+
+**3.0.0-alpha.8 shipped 2026-09-29** — the contaminated-input campaign, all five phases closed.
+~1,200 sites read, ~215 real defects, 6 hard crashes, 32 commits. One class: *a guard that is
+correct while the value it returns is a claim landing at the favourable end of a scale the
+caller reads.* The principle it produced is worth more than any individual fix:
+
+> The question is not "does this check for NaN". It is: **when the comparison cannot be
+> evaluated, which way does the default fall?**
+
+`GaussianElimination` was clean because an unevaluable comparison lands on the failure enum.
+`FinancialValidation` held the campaign's worst defect because the identical mechanism landed
+on "valid" — `ModelValidator` printed `✅ Validation PASSED — 0 errors, 0 warnings` for a
+projection with NaN assets and NaN revenue. Full accounting in CHANGELOG.md; the campaign
+narrative and its phase table are in `HANDOFF.md`.
+
+**A note on this section's own drift.** alpha.8 and alpha.9 were tagged on 2026-09-29 and
+reached neither this file nor the CHANGELOG — the campaign's 32 commits sat under
+`[Unreleased]`, and this file's Last Updated still read 2026-09-18 / alpha.7 three releases
+later. The doc-housekeeping rule exists because nothing compiles these files, and this is what
+it looks like when the rule is skipped: not a wrong statement, an absent one.
+
+Two older irregularities were checked during this pass and are **not** drift:
+
+- **alpha.4 has no CHANGELOG heading of its own, deliberately.** Its content is folded into the
+  alpha.5 section under a note saying exactly that — "so the record says what happened instead
+  of implying a tidier history". Left alone; retro-fitting it would undo a decision that was
+  made on purpose and written down.
+- **alpha.1, alpha.2 and alpha.3 have GitHub releases whose git tags do not exist**, in this
+  clone or on the remote. The releases survive as orphans pointing at `main`. Recreating them
+  would mean guessing which commit each shipped from, so they are recorded here instead.
+
+The real release-side gap was the inverse: **alpha.4 through alpha.9 were tagged and never
+released on GitHub.** Backfilled 2026-09-30.
+
 **The four Bessel functions landed 2026-09-11**, unreleased. `besselJ`, `besselY`, `besselI`
 and `besselK` in `Statistics/SpecialFunctions/`. With them, Excel's engineering block holds no
 mathematics this package lacks. Additive, so `PROPOSAL_bessel_functions.md` §8 places them in
@@ -735,7 +778,16 @@ The earlier table was about *scope*; this one is about *what is being measured*.
 
 ---
 
-**Last Updated:** 2026-09-18 — reconciled for 3.0.0-alpha.7. Recorded `pdf(_:)` joining
+**Last Updated:** 2026-09-30 — reconciled for 3.0.0-alpha.8, alpha.9 and alpha.10 together,
+because none of the three had been recorded. Added all three to Current Status with the design
+principle the contaminated-input campaign produced, and carved the CHANGELOG's `[Unreleased]`
+block into the releases it had actually shipped as. Checked two older irregularities and found
+neither was drift: alpha.4's missing heading is a recorded decision, and alpha.1-3 have releases
+whose tags no longer exist. Backfilled the GitHub releases for alpha.4 through alpha.9, which
+had been tagged and never released.
+3.0.0-alpha.10 measures 8,962 tests / 835 suites with the gate at 46/46, 0 errors, 0 warnings.
+
+**Previously, 2026-09-18** — reconciled for 3.0.0-alpha.7. Recorded `pdf(_:)` joining
 `ContinuousDistribution` in the Phase 0 narrative and its checklist, both of which described a
 protocol of two requirements. The 2.6.0 status table below is left as written: it is a record of
 what was measured at that tag, not a live status line, and 3.0.0-alpha.7 measures 7,908 tests

@@ -22,8 +22,8 @@ struct FallbackLoggerTests {
 
     @Test("A private annotation is accepted and does not redact")
     func privateAnnotationAccepted() {
-        let secret = "1234"
-        #expect(BusinessMathLogMessage("acct \(secret, privacy: .private)").rendered == "acct 1234")
+        let accountNumber = "1234"
+        #expect(BusinessMathLogMessage("acct \(accountNumber, privacy: .private)").rendered == "acct 1234")
     }
 
     @Test("format: .fixed(precision:) rounds to the requested fraction digits")

@@ -11,16 +11,18 @@ Build DCF models, optimize portfolios, run Monte Carlo simulations, and value se
 
 ---
 
-## Pre-release: 3.0.0-alpha.7
+## Pre-release: 3.0.0-alpha.10
 
-**The breaking set, and only the breaking set.** Three items that have been waiting for a
-major since August, shipped together as a pre-release.
+**The breaking set shipped first, in alpha.1 and alpha.2** — the items that had been waiting
+for a major since August. Everything since has been correctness work and one protocol
+requirement, and the last three alphas are source-compatible: alpha.8, alpha.9 and alpha.10 add
+no API at all. What breaks, breaks below; it has not moved since alpha.7.
 
 `from:` ranges **exclude pre-releases**, so if your `Package.swift` says
 `from: "2.7.0"` you stay on 2.18.0 and nothing changes. To try the alpha, ask for it by name:
 
 ```swift
-.package(url: "https://github.com/jpurnell/BusinessMath.git", exact: "3.0.0-alpha.7")
+.package(url: "https://github.com/jpurnell/BusinessMath.git", exact: "3.0.0-alpha.10")
 ```
 
 What breaks:
@@ -64,6 +66,25 @@ produced wrong answers: a negative lower bound written as a closure was silently
 zero, and `EOQModel` overflowed to a non-finite order quantity with no error. It also adds
 `ModifiedZScoreAnomalyDetector` and `IQRAnomalyDetector`, and a `seed:` on
 `runFinancialSimulation`.
+
+**alpha.8, alpha.9 and alpha.10 add no API and are not source-breaking.** alpha.8 closes the
+contaminated-input campaign: ~1,200 sites read, ~215 real defects and 6 hard crashes, in 32
+commits, against one class — *a guard that is correct while the value it returns is a claim
+landing at the favourable end of a scale the caller reads.* The principle it produced:
+
+> The question is not "does this check for NaN". It is: **when the comparison cannot be
+> evaluated, which way does the default fall?**
+
+Concretely, `ModelValidator` printed `✅ Validation PASSED — 0 errors, 0 warnings` for a
+projection with NaN assets and NaN revenue; `[1,2,3,nan,5,6,7,8].rank()` put the largest element
+last; `altmanZScore` returned `0.00`, the distress zone, for a solvent and profitable company.
+
+alpha.9 compiles the Linux fallback logger on every platform, so a Mac typechecks and tests it —
+it had not compiled since December, behind `#if !canImport(OSLog)` where no macOS build reads it.
+
+alpha.10 gives `FormattedValue` explicit `<=` and `>=`. Swift synthesises them as negations of
+`<`, and every comparison against a NaN is false, so both answer **true** — a guard written
+`guard a >= b` fails *open*. Prophylactic here; the same shape was live in `Date`.
 
 **alpha.7 adds one protocol requirement and fixes a density that was computing a CDF.**
 
@@ -245,7 +266,7 @@ before you upgrade rather than after:
 
 **Type-Safe & Concurrent**: Full Swift 6 compliance with generics (`TimeSeries<T: Real & Sendable>`) and strict concurrency for thread safety. Model closures are `@Sendable`. As of 2.6.0 the vector and optimizer types require `Real & BinaryFloatingPoint` rather than `Real` alone — the conversion that constraint supplies used to be faked with a runtime-cast ladder that answered `0.0` when it failed.
 
-**Complete**: 73 comprehensive guides, 7,908 tests, and production implementations of valuation models, optimization algorithms, and risk analytics. **Every code block in the guides is compiled against the module** by the `doc-code` auditor (`quality-gate --check doc-code`), so an example that no longer matches the API fails the check rather than the reader.
+**Complete**: 73 comprehensive guides, 8,962 tests, and production implementations of valuation models, optimization algorithms, and risk analytics. **Every code block in the guides is compiled against the module** by the `doc-code` auditor (`quality-gate --check doc-code`), so an example that no longer matches the API fails the check rather than the reader.
 
 **Accurate**: Calendar-aware calculations (365.25 days/year), industry-standard formulas (ISDA CDS pricing, Black-Scholes), and — where a result is an approximation — a measured accuracy recorded in the doc comment rather than an assurance. `inverseNormalCDF` is 2 ulp over `1e-12 ≤ p ≤ 1 − 1e-12`; `normalCDF` holds ~1e-14 relative down to `x = −37`. Numbers that changed in 2.6.0 are tabulated in the CHANGELOG with the measurement that found them.
 
@@ -427,7 +448,7 @@ The package vends three products: **`BusinessMath`** (the library), **`BusinessM
 ### Documentation & Testing
 - 📚 **73 comprehensive guides** (~50,900 lines of DocC documentation), every code block compiled against the module
 - ✅ **100% documentation coverage** — 7,902 of 7,902 public APIs documented
-- ✅ **7,908 tests** across 721 test suites (100% pass rate, 0 known issues)
+- ✅ **8,962 tests** across 835 test suites (100% pass rate, 0 known issues)
 - ✅ **Quality gate at 0 errors, 0 warnings** across 40 of 45 checkers (5 not selected), enforced by a pre-commit hook
 - 📊 **Performance benchmarks** for typical use cases
 - 🎓 **Learning paths** for different roles

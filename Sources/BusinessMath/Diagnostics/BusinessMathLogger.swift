@@ -164,6 +164,24 @@ public struct BusinessMathLogMessage: ExpressibleByStringLiteral, ExpressibleByS
     }
 }
 
+/// A logging implementation for platforms without OSLog, compiled on every platform.
+///
+/// Where `OSLog` is available this type is unused and `Logger` refers to the system logger;
+/// where it is absent, `Logger` is a type alias for this one. It is deliberately **not** placed
+/// behind `#if !canImport(OSLog)`.
+///
+/// That placement is the point. This implementation spent ten months inside an `#else` branch
+/// that no macOS build compiled and no macOS test executed, and in that time it did not compile
+/// at all: its primitives took a plain `String`, while every call site in the package writes
+/// `\(value, privacy: .public)`, which a string literal cannot accept. Ten months of green
+/// builds said nothing about it either way, because none of them read the file.
+///
+/// Compiling it everywhere and aliasing only the *name* that differs means a Mac typechecks
+/// this code and `swift test` can call it. The guarded-implementation pattern looks more
+/// careful and is the one that rots.
+///
+/// Its six severities mirror `os.Logger`'s, and it accepts ``BusinessMathLogMessage``, which
+/// supports `privacy:` on any value and `format: .fixed(precision:)` on a floating-point one.
 public struct BusinessMathFallbackLogger: Sendable {
     let subsystem: String
     let category: String

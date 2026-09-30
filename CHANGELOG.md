@@ -9,7 +9,183 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
-### [Unreleased]
+### [3.0.0-alpha.10] - 2026-09-30
+
+**A `Comparable` wrapper inverts on a NaN, and Swift's synthesis is why.** One fix, and it is
+the exception the contaminated-input campaign found last — the single place where a NaN makes a
+guard *succeed* rather than fall through.
+
+#### Fixed
+
+- **`FormattedValue` now supplies `<=` and `>=` rather than letting Swift synthesise them.**
+  The type declared `Comparable` with only `<`, so the two inclusive operators came from the
+  default implementations: `a <= b` as `!(b < a)`, and `a >= b` as `!(a < b)`. Every comparison
+  against a NaN is false, so both negations answer **true**. An unusable value reported itself
+  as simultaneously at least and at most every other value, and a guard written `guard a >= b`
+  would fail *open* — admitting precisely what it was written to reject.
+
+      raw Double : nan >= x               -> false
+      Date       : nanDate >= realDate    -> TRUE
+      control    : Date(0) >= Date(1.7e9) -> false   // a real inversion IS still rejected
+
+  The struct constrains `T: FloatingPoint`, so unlike `Date` there is no instantiation that does
+  not wrap a float — the hazard is never conditional. But no validation guard uses the type yet,
+  so this is prophylaxis rather than a repair. Both operators now delegate to `rawValue`, which
+  is what a wrapper owes: it should answer what the thing it wraps answers.
+
+  Swift's synthesis is a sound default for a total order and simply wrong for IEEE ordering,
+  which is not total. NaN is unordered with everything, so "not less than" is not "greater than
+  or equal".
+
+- **`==` is deliberately unchanged.** It already delegates to `rawValue`, so a NaN-valued
+  instance is not equal to itself, exactly as the underlying value is not. That makes it a poor
+  `Set` member — but so is a bare `Double`, and hiding the difference would be the worse error.
+
+8,962 tests / 835 suites. Gate 46/46, 0 errors, 0 warnings.
+
+---
+
+
+### [3.0.0-alpha.9] - 2026-09-29
+
+**Compile the fallback everywhere, so a Mac can see it break.** No behaviour change; a change to
+which platforms typecheck the code.
+
+#### Changed
+
+- **The Linux fallback logger is now compiled on every platform** under its own name,
+  `BusinessMathFallbackLogger`, and aliased to `Logger` only where OSLog is absent. Its behaviour
+  does not change. What changes is that `swift build` on a Mac now typechecks it and `swift test`
+  can call it.
+
+  The previous release fixed this file; Linux CI then failed again *on the fix*, because a
+  blanket rewrite had turned `warning(message)` into `warning(message.rendered)` in two
+  convenience methods where `message` is already a `String`. Four sites, none of them visible
+  from macOS, because the whole branch sat behind `#else` of `canImport(OSLog)`.
+
+  Three round-trips through CI for code no local build compiles is an argument about structure,
+  not about the patch. The guarded-implementation pattern looks more careful and is the one that
+  rots. This is the shape `quality-gate-types` 1.7.0 adopted for the same reason.
+
+#### Added
+
+- **Nine tests covering exactly what had been broken**: privacy interpolation,
+  `format: .fixed(precision:)` rendering `0.0421999` as `"0.042"`, every severity the package
+  calls, the five category loggers, and a convenience method still taking a runtime `String`.
+
+---
+
+
+### [3.0.0-alpha.8] - 2026-09-29
+
+**The contaminated-input campaign, closed across all five phases** — plus the last of the Tier 2
+oracle work and a divisor sweep that stopped looking only at divisors.
+
+Roughly **1,200 sites read, ~215 real defects, 6 hard crashes**, in 32 commits. One defect class:
+**a guard that is correct while the value it returns is a claim landing at the favourable end of
+a scale the caller reads.**
+
+#### The one fact underneath all of it
+
+**Every comparison against `nan` is false, including `nan == nan`.** It never raises. It answers
+*no*, and "no" is a valid answer everywhere in Swift. Five structurally different failures follow:
+
+| expression | what breaks |
+|---|---|
+| `nan > 0` | a guard fires → its fallback is returned as a measurement |
+| `nan < x` | `sorted()` is unspecified — **valid** elements come back out of order |
+| `nan == nan` | `firstIndex(of:)` → nil → the element vanishes |
+| `nan > 0` **and** `nan < 0` | both arms of if/else-if skipped |
+| `Swift.min(1, nan)` | returns **`1`** — the idiomatic clamp turns "unknown" into "maximum" |
+
+And `Int(Double)` **traps** rather than answering — on non-finite values *and* on anything past
+`Int.max ≈ 9.22e18`.
+
+#### The design principle this found
+
+`Core/GaussianElimination.swift` is clean because every guard is written so a NaN **fails the
+comparison and therefore lands on the failure enum**. `FinancialValidation.swift` was broken
+because every rule is written so a NaN fails the comparison and **lands on "valid"**. Identical
+mechanism, opposite default.
+
+> **The question is not "does this check for NaN". It is: when the comparison cannot be
+> evaluated, which way does the default fall?**
+
+A solver that defaults to failure gets NaN-safety free. A validator that defaults to "no problem
+found" gets this campaign's worst defect free.
+
+#### What each phase found
+
+| phase | shape | sites | defects |
+|---|---|---|---|
+| 1 | `Int(x)` traps | ~92 | 39 + 4 crashes |
+| 2 | `?? 0` on a period lookup | 34 | 9 (+18 legitimate, pinned) |
+| 3 | Streaming / Time Series, by probe | 21 probes | ~25 |
+| 4 | `else { return T(0) }` after a valid guard | ~420 | ~96 |
+| 5 | ordering, Fluent API, 20 never-swept directories | ~400 | 36 |
+
+#### Fixed — the measurements that made the class legible
+
+- **`ModelValidator` printed `✅ Validation PASSED - 0 errors, 0 warnings`** for a projection
+  with NaN assets and NaN revenue.
+- **`[1,2,3,nan,5,6,7,8].rank()` → `[3,2,1,nan,8,7,6,5]`.** The largest element ranked **last**.
+- **`altmanZScore` returned `0.00` — the distress zone** — for a solvent, profitable company
+  asked about a period outside its statements.
+- **`piotroskiScore` scored a deteriorating company 4 against its real prior quarter and 7
+  against a fabricated one**, crossing the "buy signal" threshold the file documents.
+- **A gradient-descent optimizer reported `converged = true, optimalValue = 10.0` at iteration
+  zero** on `min x²` from 10: a collapsed step made the derivative estimate exactly 0, which
+  *is* the convergence test.
+- **`detectSeasonalAnomalies` let one NaN poison a season baseline permanently**, so a genuine
+  **50× spike 24 observations later** reported `isAnomaly = false`.
+- **`decomposeTimeSeries(.additive)` subtracted a dimensionless re-centred ratio from values
+  carrying units.** The error factor ~128 *is* the level of the series, so it is unbounded.
+- **`OilGasEPModel` priced a missing commodity price at $0/bbl while still charging full lease
+  operating expense** — a *producing* well booking zero revenue at full cash cost, −$196,500.
+- **Four solvers certified their starting point as a feasible optimum.**
+- **VaR and CVaR answered confidently from a sample they could not sort.**
+- **A debt-free company was reported as facing bankruptcy within 2 years.**
+- **`simplexProjection` normalised instead of projecting**, handing a portfolio its worst asset.
+
+#### Fixed — the ordering exception, found last, which inverts the rule
+
+**`nan >= x` is false for a `Double`. It is `true` for a `Comparable` wrapper over one.** Swift
+synthesises `>=` as `!(lhs < rhs)` and `<=` as `!(rhs < lhs)`, so a type supplying only `<` —
+`Date`, and `Period` one level above it — negates a false and answers **true**. So
+`guard end >= start` does not fail closed; it fails **open**.
+
+`Period.custom`, its decoder, `days()` and `TimeSeries.range(from:to:)` are fixed by screening
+the operands, since the comparison cannot. `Period.day(_:)` is deliberately *not* guarded and is
+pinned by a test: `Calendar.startOfDay(for:)` launders a NaN-backed date into the real
+4713-01-01, so its periods have working equality and ordering.
+
+#### Patterns worth keeping
+
+- **A fix installed upstream of the leak reads as done and is not.** Three times. When you guard
+  the thing that computes the answer, check whether anything decides not to call it.
+- **The remediation carries the defect.** Four times: `Swift.min(span, limit)` returns the
+  `nan`; `T(Int.max)` rounds to 2^63 and traps; a filter after `let n = count` gives
+  `Index out of range`; `abs(nan) > 0.001` being false let a `.nan` reach an `.infinity` exit —
+  the *passing* end of a covenant.
+- **A correctly-behaving sibling decides the contract.** Used a dozen times; twice the sibling
+  was eight lines away, or in another backend (the Metal kernel never had the CPU's `u > 0` bug).
+- **A justification comment is a claim.** `// Edge case: no data` hid a second implementation of
+  a whole report.
+- **A site is not a defect.** ~1,000 of ~1,200 sites were legitimate. `pdf` returning 0 outside
+  its support is 68 sites of correct-by-specification.
+- **The specification was already right, three times.** Not a missing decision — a missing
+  implementation of a decision already made.
+
+#### Also in this release
+
+The Linux fallback logger, which had never compiled since December: its six primitives take a
+plain `String`, and every call site writes `\(value, privacy: .public)`, which a `String` literal
+cannot accept. A fallback the callers cannot call is not a fallback; it is the shape of one.
+Found by pointing Linux CI at `quality-gate-swift`, which depends on this package. Ten months of
+green macOS builds said nothing about it either way.
+
+The dated entries below carry the oracle and divisor-sweep work from 2026-09-19 to 09-21.
+
 
 #### 2026-09-21 — What a divisor sweep found once it stopped looking only at divisors
 
