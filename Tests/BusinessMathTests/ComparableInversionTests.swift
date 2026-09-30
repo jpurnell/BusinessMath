@@ -110,4 +110,37 @@ struct ComparableInversionTests {
 		#expect(laundered == laundered, "a laundered period is equal to itself")
 		#expect(laundered.startDate.timeIntervalSinceReferenceDate.isFinite)
 	}
+
+	// MARK: - The same shape, fixed at the source
+
+	@Test("FormattedValue's inclusive operators answer what the wrapped number answers")
+	func formattedValueDoesNotInvert() {
+		// `FormattedValue` is constrained to `T: FloatingPoint`, so unlike `Date` every
+		// instantiation wraps a float and the hazard is not conditional. It supplies `<=` and
+		// `>=` explicitly rather than letting Swift synthesise them as negations of `<`.
+		let unusable = FormattedValue(rawValue: Double.nan, formatted: "NaN")
+		let real = FormattedValue(rawValue: 42.0, formatted: "42")
+
+		let atLeast: Bool = unusable >= real
+		let atMost: Bool = unusable <= real
+		#expect(atLeast == false, "synthesised >= would answer true here")
+		#expect(atMost == false, "and so would synthesised <=")
+
+		// The strict operators were never wrong; pinned so a later edit cannot regress them.
+		#expect((unusable > real) == false)
+		#expect((unusable < real) == false)
+	}
+
+	@Test("FormattedValue still orders ordinary values")
+	func formattedValueStillOrders() {
+		// The control: the fix must not have broken comparison for the values it is for.
+		let small = FormattedValue(rawValue: 1.0, formatted: "1")
+		let large = FormattedValue(rawValue: 2.0, formatted: "2")
+		#expect(small < large)
+		#expect(small <= large)
+		#expect(large >= small)
+		#expect(large > small)
+		#expect(small <= small, "a value is at most itself")
+		#expect(small >= small, "and at least itself")
+	}
 }

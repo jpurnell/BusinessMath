@@ -86,6 +86,40 @@ extension FormattedValue: Comparable where T: Comparable {
     public static func < (lhs: FormattedValue, rhs: FormattedValue) -> Bool {
         lhs.rawValue < rhs.rawValue
     }
+
+    /// `<=` and `>=` are supplied rather than inherited, and that is the whole point of them.
+    ///
+    /// Swift synthesises the two inclusive operators from `<` as negations — `a <= b` becomes
+    /// `!(b < a)` and `a >= b` becomes `!(a < b)`. For a type wrapping a floating-point value
+    /// that inverts the IEEE answer: every comparison against a NaN is false, so the negation
+    /// is **true**. A wrapper supplying only `<` therefore reports that an unusable value is
+    /// both at least and at most any other, and a validation guard written `guard a >= b`
+    /// fails *open* — it admits the value it was written to reject.
+    ///
+    /// Measured on `Date`, which has exactly this shape and where it was a live defect:
+    ///
+    /// ```
+    /// raw Double : nan >= x            -> false
+    /// Date       : nanDate >= realDate -> TRUE
+    /// control    : Date(0) >= Date(1.7e9) -> false   // a real inversion is still rejected
+    /// ```
+    ///
+    /// `FormattedValue` is constrained to `T: FloatingPoint`, so unlike `Date` the hazard is
+    /// not conditional — every instantiation wraps a float. Delegating to the wrapped value's
+    /// own operators makes the wrapper answer what the number answers.
+    ///
+    /// Note `==` is already correct for the same reason and is deliberately left alone: it
+    /// delegates to `rawValue`, so a NaN is not equal to itself, exactly as the underlying
+    /// value is not. That does mean a NaN-valued instance is a poor `Set` member or dictionary
+    /// key — but so is a bare `Double`, and hiding the difference would be worse.
+    public static func <= (lhs: FormattedValue, rhs: FormattedValue) -> Bool {
+        lhs.rawValue <= rhs.rawValue
+    }
+
+    /// The other half of the pair. See ``<=(_:_:)`` for why both are written out.
+    public static func >= (lhs: FormattedValue, rhs: FormattedValue) -> Bool {
+        lhs.rawValue >= rhs.rawValue
+    }
 }
 
 // MARK: - Hashable
