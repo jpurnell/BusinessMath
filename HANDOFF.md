@@ -1,11 +1,11 @@
 # Handoff — 2026-09-29 (the contaminated-input campaign is CLOSED, all five phases)
 
-**8,883 tests / 828 suites. Gate 46/46, 0 errors, 0 warnings, 0 new findings gating.**
+**8,953 tests / 834 suites. Gate 46/46, 0 errors, 0 warnings, 0 new findings gating.**
 
 One defect class, swept to completion: **a guard that is correct while the value it returns is
 a claim landing at the favourable end of a scale the caller reads** — plus its cousin, `Int(x)`
-trapping the process. Roughly **1,200 sites read, ~200 real defects, 5 hard crashes**, across
-five phases and 29 commits.
+trapping the process. Roughly **1,200 sites read, ~215 real defects, 6 hard crashes**, across five
+phases and 32 commits. **The open list is empty.**
 
 ## The one fact underneath all of it
 
@@ -91,38 +91,46 @@ found" gets the campaign's worst defect free.
   `PowerAnalysis` promised `- Throws:` for a function that trapped. Not a missing decision — a
   missing implementation of a decision already made.
 
-## STILL OPEN — deliberately, with reasons
+## The exception to the one fact — found last, and it inverts the rule
 
-**Needs a decision, not a guard:**
-1. `FinancialModel.validate()` can never return `isValid == false` on its own — no branch
-   appends `.error` severity. Whether negative revenue is an error is a judgement about sign.
-2. `DriverOptimization.optimize` does no entry validation; `normalisationScale`'s guard answers
-   two questions ("driver pinned at zero" and "bound is not a number") identically.
-3. `ModelDebugger.validate(_:)` checks NaN only in `revenueComponents` — the same gap as
-   `findMissingData`, but *documented*, so it looks deliberate. Still returns "✅ Model is valid".
-4. `bottlenecks(threshold: .nan)` returns `[]` = "no bottlenecks"; a NaN warning threshold
-   silences every warning. Contaminated *parameter*, no room in the return type to say so.
-5. Three renderings of a NaN coexist in public output: `"NaN"`, `"∞"`, `"nan"`/`"inf"`. Each
-   documented at its own site; nobody has decided whether they should agree.
-6. `Date(timeIntervalSince1970: .nan)` **clamps** — year 4713; `+.infinity` gives 506713. The
-   wrong answer is manufactured at construction, where no `??` can see it. Needs its own probe.
+**`nan >= x` is false for a `Double`. It is `true` for a `Comparable` wrapper over one.**
+Swift synthesises `>=` as `!(lhs < rhs)` and `<=` as `!(rhs < lhs)`, so a type that supplies
+only `<` — `Date`, and `Period` one level above it — negates a false and answers **true**:
 
-**Located, unfixed, ordinary work:**
-- `Constraint.swift:650,654` — `Swift.max(0, value)` turns a NaN violation into "no violation".
-- `weightedBreakdownPoint.swift:38` — right action, wrong diagnosis (throws "total weight is
-  zero" for a NaN weight; §3.2 forbids that reuse).
-- `LogisticRegression.separatesByThreshold` — an all-NaN column returns `false` = "no
-  separation", so fitting proceeds.
-- `bayesianICC.swift:126` — `mergedICC.sorted()` drives the posterior median off an unspecified
-  order. Already throws, so §3.2 gives a clean answer.
-- `PercentileLocation` — `T: Comparable`, sorted then indexed; the clean detector is to verify
-  the postcondition (`zip(sorted, sorted.dropFirst()).allSatisfy { $0 <= $1 }`).
-- `Interpolation`: `VectorInterpolators.swift:30` lets `xs: [5, 1, nan, 1], ys: []` construct
-  successfully; the two-point `.clamped` spline discards the caller's endpoint slopes; no
-  divide-by-zero guard anywhere in the interpolation path.
-- `cdf(±infinity)` is `nan` for Beta, F and Pearson6 (they route through
-  `regularizedIncompleteBeta`, which throws on an infinity); `gammaCDF` returns `nan` for a
-  finite `x` below the support where the protocol promises 0.
+    raw Double : nan >= x            -> false
+    Date       : nanDate >= realDate -> TRUE
+    control    : Date(0) >= Date(1.7e9) -> false   (a real inversion IS still rejected)
+
+So `guard end >= start` does not fail closed. It fails **open**. Everywhere else in this
+campaign a NaN made a guard fall through to a bad fallback; here it makes the guard *succeed*.
+
+`Period.custom`, its decoder, `days()` and `TimeSeries.range(from:to:)` are fixed by screening
+the operands, since the comparison cannot. `Period.day(_:)` is deliberately not guarded and is
+pinned by a test — `Calendar.startOfDay(for:)` launders a NaN-backed date into the real
+4713-01-01, so its periods have working equality and ordering.
+
+**A third public type has the same shape and no validation guard using it yet:**
+`FormattedValue` (`Utilities/Formatting/FormattedValue.swift:86`, `Comparable where T: Comparable`,
+`<` on `rawValue`). Worth knowing before someone writes `guard a >= b` against it.
+
+## ALL DECIDED — nothing is open
+
+The six items that needed a judgement were put to the user and resolved:
+
+1. **Negative revenue is an error** (not a warning). Costs-without-revenue stays a warning —
+   a pre-revenue company is real. `FinancialModel.validate()` can now fail on its own.
+2. **`ModelDebugger.validate(_:)` widened** to scan costs, via a shared helper so the two
+   scans cannot drift apart again.
+3. **A non-finite profiler threshold traps.** `±∞` still compares and both are real answers,
+   so only NaN is refused.
+4. **Display formatters unified; the CSV spelling kept and documented.** The rename was
+   declined in favour of fixing the actual leak — three `FloatingPointFormatter` strategies
+   were emitting `nan`/`inf`, byte-identical to a CSV field.
+5. **`Date` clamping: investigated, and BusinessMath never constructs a `Date` from a number.**
+   Six grep hits, all comments. The investigation instead found the `Comparable` inversion
+   above, which is the real defect.
+6. **`DriverOptimization` screens at the door**, naming every offending field in one message
+   rather than reporting a generic infeasibility.
 
 ## Working notes
 
