@@ -399,6 +399,121 @@ public extension Logger {
 /// logger.info("Application started")
 /// logger.warning("Low memory condition")
 /// ```
+
+// MARK: - Message type for the fallback
+
+/// The privacy annotation `os.Logger` interpolation accepts.
+///
+/// Carried so every call site written for OSLog compiles unchanged. The value is not
+/// consulted: redaction on a platform with no unified log would withhold text from a
+/// developer reading their own console, which protects nobody.
+public struct OSLogPrivacy: Sendable {
+    /// Rendered in full.
+    public static let `public` = OSLogPrivacy()
+    /// Rendered in full here; see the type's note.
+    public static let `private` = OSLogPrivacy()
+    /// Rendered in full here; see the type's note.
+    public static let auto = OSLogPrivacy()
+}
+
+/// The numeric format `os.Logger` interpolation accepts.
+public struct OSLogFloatFormatting: Sendable {
+    let precision: Int?
+    /// Fixed-point with the given number of fraction digits.
+    /// - Parameter precision: Fraction digits to render.
+    /// - Returns: A format carrying that precision.
+    public static func fixed(precision: Int) -> OSLogFloatFormatting {
+        OSLogFloatFormatting(precision: precision)
+    }
+    /// The default format.
+    public static let fixed = OSLogFloatFormatting(precision: nil)
+}
+
+/// A log message assembled from a literal and its interpolations.
+///
+/// Exists because the previous fallback took a plain `String`, which cannot accept
+/// `\(value, privacy:)` or `\(value, format:)` — so every call site in this package failed
+/// to compile on Linux with "extra argument 'privacy' in call" even though a fallback logger
+/// was present. A fallback that the call sites cannot call is not a fallback.
+public struct BusinessMathLogMessage: ExpressibleByStringLiteral, ExpressibleByStringInterpolation,
+                                     CustomStringConvertible, Sendable {
+    /// The fully rendered text.
+    public let rendered: String
+
+    /// The rendered text, so the existing `print("… \(message)")` bodies below need no edit.
+    public var description: String { rendered }
+
+    /// Creates a message from a literal with no interpolations.
+    /// - Parameter value: The literal text.
+    public init(stringLiteral value: String) { rendered = value }
+
+    /// Creates a message from an interpolated literal.
+    /// - Parameter stringInterpolation: The accumulated segments.
+    public init(stringInterpolation: StringInterpolation) { rendered = stringInterpolation.text }
+
+    /// Accepts the interpolation shapes `os.Logger` accepts.
+    public struct StringInterpolation: StringInterpolationProtocol, Sendable {
+        var text: String
+
+        /// Creates the accumulator the compiler fills segment by segment.
+        /// - Parameters:
+        ///   - literalCapacity: Total length of the literal segments.
+        ///   - interpolationCount: How many interpolations follow.
+        public init(literalCapacity: Int, interpolationCount: Int) {
+            text = ""
+            text.reserveCapacity(literalCapacity + interpolationCount * 8)
+        }
+
+        /// Appends a literal segment.
+        /// - Parameter literal: The text between interpolations.
+        public mutating func appendLiteral(_ literal: String) { text += literal }
+
+        /// `\(value)` and `\(value, privacy:)` alike.
+        /// - Parameters:
+        ///   - value: The value to render.
+        ///   - privacy: Accepted and not consulted; see ``OSLogPrivacy``.
+        public mutating func appendInterpolation(_ value: Any, privacy: OSLogPrivacy = .public) {
+            text += Self.describe(value)
+        }
+
+        /// `\(value, format:)` and `\(value, format:, privacy:)`.
+        /// - Parameters:
+        ///   - value: The value to render.
+        ///   - format: Fraction digits to apply when the value is a floating-point number.
+        ///   - privacy: Accepted and not consulted; see ``OSLogPrivacy``.
+        public mutating func appendInterpolation(
+            _ value: Any,
+            format: OSLogFloatFormatting,
+            privacy: OSLogPrivacy = .public
+        ) {
+            if let precision = format.precision, let number = Self.asDouble(value) {
+                // `formatted(.number…)` rather than `String(format:)`: the C printf ABI takes a
+                // C string pointer for %s and fails at runtime rather than compile time, which
+                // is why the safety checker refuses it — and it refused this line when it was
+                // written that way.
+                text += number.formatted(.number.precision(.fractionLength(precision)))
+            } else {
+                text += Self.describe(value)
+            }
+        }
+
+        private static func describe(_ value: Any) -> String {
+            if let text = value as? String { return text }
+            if let convertible = value as? any CustomStringConvertible { return convertible.description }
+            return String(describing: value)
+        }
+
+        private static func asDouble(_ value: Any) -> Double? {
+            switch value {
+            case let d as Double: return d
+            case let f as Float: return Double(f)
+            case let i as Int: return Double(i)
+            default: return nil
+            }
+        }
+    }
+}
+
 public struct Logger: Sendable {
     let subsystem: String
     let category: String
@@ -419,7 +534,7 @@ public struct Logger: Sendable {
     /// Outputs to console with `[category] DEBUG:` prefix.
     ///
     /// - Parameter message: The message to log.
-    public func debug(_ message: String) {
+    public func debug(_ message: BusinessMathLogMessage) {
         print("[\(category)] DEBUG: \(message)") // logging: Linux fallback — os.Logger unavailable on non-Darwin platforms
     }
 
@@ -429,7 +544,7 @@ public struct Logger: Sendable {
     /// Outputs to console with `[category] INFO:` prefix.
     ///
     /// - Parameter message: The message to log.
-    public func info(_ message: String) {
+    public func info(_ message: BusinessMathLogMessage) {
         print("[\(category)] INFO: \(message)") // logging: Linux fallback — os.Logger unavailable on non-Darwin platforms
     }
 
@@ -439,7 +554,7 @@ public struct Logger: Sendable {
     /// Outputs to console with `[category] NOTICE:` prefix.
     ///
     /// - Parameter message: The message to log.
-    public func notice(_ message: String) {
+    public func notice(_ message: BusinessMathLogMessage) {
         print("[\(category)] NOTICE: \(message)") // logging: Linux fallback — os.Logger unavailable on non-Darwin platforms
     }
 
@@ -449,7 +564,7 @@ public struct Logger: Sendable {
     /// Outputs to console with `[category] WARNING:` prefix.
     ///
     /// - Parameter message: The message to log.
-    public func warning(_ message: String) {
+    public func warning(_ message: BusinessMathLogMessage) {
         print("[\(category)] WARNING: \(message)") // logging: Linux fallback — os.Logger unavailable on non-Darwin platforms
     }
 
@@ -459,7 +574,7 @@ public struct Logger: Sendable {
     /// Outputs to console with `[category] ERROR:` prefix.
     ///
     /// - Parameter message: The message to log.
-    public func error(_ message: String) {
+    public func error(_ message: BusinessMathLogMessage) {
         print("[\(category)] ERROR: \(message)") // logging: Linux fallback — os.Logger unavailable on non-Darwin platforms
     }
 
@@ -469,7 +584,7 @@ public struct Logger: Sendable {
     /// Only outputs in DEBUG builds to avoid performance impact.
     ///
     /// - Parameter message: The message to log.
-    public func trace(_ message: String) {
+    public func trace(_ message: BusinessMathLogMessage) {
         // Trace is very verbose, only in debug builds
         #if DEBUG
         print("[\(category)] TRACE: \(message)") // logging: Linux fallback — os.Logger unavailable on non-Darwin platforms
@@ -534,7 +649,7 @@ public struct Logger: Sendable {
     ///   - field: Optional field name that triggered the warning.
     public func validationWarning(_ message: String, field: String? = nil) {
         if let field = field {
-            warning("\(field): \(message)")
+            warning("\(field): \(message.rendered)")
         } else {
             warning(message)
         }
@@ -547,7 +662,7 @@ public struct Logger: Sendable {
     ///   - field: Optional field name that failed validation.
     public func validationError(_ message: String, field: String? = nil) {
         if let field = field {
-            error("\(field): \(message)")
+            error("\(field): \(message.rendered)")
         } else {
             error(message)
         }
