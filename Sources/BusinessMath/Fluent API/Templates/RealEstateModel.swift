@@ -442,8 +442,12 @@ public struct RealEstateModel: Sendable {
         // same loan at a term of 0 returned **+infinity** on either branch — which then
         // multiplied out through `annualMortgagePayment` and every cash-flow metric built on
         // it. A loan repaid over no time is not a loan.
-        precondition(loanTermYears > 0, "A mortgage needs a positive term; got \(loanTermYears) years.")
+        //
+        // The condition is stated on the divisor itself, which is the same condition —
+        // twelve times a positive whole number of years — placed where the two divisions
+        // below can be read against it.
         let numberOfPayments = Double(loanTermYears * 12)
+        precondition(numberOfPayments > 0, "A mortgage needs a positive term; got \(loanTermYears) years.")
 
         if monthlyRate == 0 {
             return principal / numberOfPayments

@@ -732,6 +732,10 @@ public func modiglianiMillerValue(
 }
 
 /// Black-Scholes option pricing model (simplified for equity options)
+///
+/// - Returns: The call price, or `.nan` when `strikePrice` is not positive. The model
+///   prices on `log(stockPrice / strikePrice)`, which has no value at a strike of zero
+///   and none below it.
 public func bs(
     stockPrice: Double,
     strikePrice: Double,
@@ -741,6 +745,12 @@ public func bs(
 ) -> Double {
     // Simplified Black-Scholes for call option
     // For full implementation, would need normal distribution functions
+    //
+    // A strike of zero made the log-moneyness `+inf`, and the function answered with the
+    // stock price: a finite, plausible figure for an option the model cannot price. A
+    // negative strike already came back `nan` by way of `log` of a negative; this says
+    // so for both, in one place, before the division rather than as a side effect of it.
+    guard strikePrice > 0 else { return .nan }
     let d1 = (log(stockPrice / strikePrice) + (riskFreeRate + 0.5 * volatility * volatility) * timeToExpiration) / (volatility * sqrt(timeToExpiration))
     let d2 = d1 - volatility * sqrt(timeToExpiration)
 

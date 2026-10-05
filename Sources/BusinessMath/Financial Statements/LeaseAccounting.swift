@@ -481,9 +481,16 @@ public struct Lease {
     }
 
     /// Calculate depreciation expense for a period
+    ///
+    /// - Returns: The straight-line charge per period, or `.nan` for a lease with no
+    ///   payments: there is no term to spread the asset over.
     public func depreciation(period: Period) -> Double {
         let rouAsset = rightOfUseAsset()
         let leaseTerm = Double(payments.count)
+        // An empty schedule made this `0 / 0`, or `+inf` as soon as direct costs or a
+        // prepayment gave the asset a value — an unbounded expense for a lease that
+        // charges nothing.
+        guard leaseTerm > 0 else { return .nan }
         return rouAsset / leaseTerm
     }
 
@@ -568,16 +575,25 @@ public struct Lease {
     }
 
     /// Calculate carrying value (book value) of ROU asset for a period
+    ///
+    /// - Returns: The asset less straight-line depreciation through `period`; the asset as
+    ///   first recognised when `period` is not on the schedule; `.nan` when the period is
+    ///   on the schedule but the lease has no payments to depreciate over.
     public func carryingValue(period: Period) -> Double {
         let rouAsset = rightOfUseAsset()
-        let leaseTerm = Double(payments.count)
-        let depreciationPerPeriod = rouAsset / leaseTerm
 
         // Find period index
         guard let periods = periods,
               let periodIndex = periods.firstIndex(of: period) else {
             return rouAsset
         }
+
+        // After the lookup, not before it: a period that is not on the schedule has always
+        // answered with the undepreciated asset, without using the per-period charge at
+        // all, and dividing first only manufactured an infinity to throw away.
+        let leaseTerm = Double(payments.count)
+        guard leaseTerm > 0 else { return .nan }
+        let depreciationPerPeriod = rouAsset / leaseTerm
 
         let periodsElapsed = Double(periodIndex + 1)
         let accumulatedDepreciation = depreciationPerPeriod * periodsElapsed

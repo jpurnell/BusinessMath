@@ -647,12 +647,19 @@ public enum AntiDilutionType {
 }
 
 /// Apply full ratchet anti-dilution adjustment
+///
+/// - Returns: The adjusted share count, or `.nan` when `newPrice` is not positive. Both
+///   adjustments are built on `originalPrice / newPrice`, and a round priced at zero or
+///   below has no such ratio.
 public func applyAntiDilution(
     originalShares: Double,
     originalPrice: Double,
     newPrice: Double,
     type: AntiDilutionType
 ) -> Double {
+    // At a new price of zero both branches returned `+inf` shares, and at a negative one
+    // a negative share count — finite, signed, and ready to be added into a cap table.
+    guard newPrice > 0 else { return .nan }
     switch type {
     case .fullRatchet:
         // New shares = original shares × (original price / new price)
