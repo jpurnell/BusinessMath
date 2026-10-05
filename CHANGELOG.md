@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
-### [Unreleased]
+### [3.0.0-alpha.11] - 2026-10-04
 
 **Twenty-two divisions nothing had checked, and three functions that were answering.** A wider
 `fp-division-unguarded` rule — one that follows a divisor back through `let d = Double(n)` and

@@ -11,18 +11,19 @@ Build DCF models, optimize portfolios, run Monte Carlo simulations, and value se
 
 ---
 
-## Pre-release: 3.0.0-alpha.10
+## Pre-release: 3.0.0-alpha.11
 
 **The breaking set shipped first, in alpha.1 and alpha.2** — the items that had been waiting
 for a major since August. Everything since has been correctness work and one protocol
-requirement, and the last three alphas are source-compatible: alpha.8, alpha.9 and alpha.10 add
-no API at all. What breaks, breaks below; it has not moved since alpha.7.
+requirement, and the last four alphas are source-compatible: alpha.8 through alpha.11 add no
+API at all. What breaks, breaks below; it has not moved since alpha.7. alpha.11 does change
+four *answers*: see below.
 
 `from:` ranges **exclude pre-releases**, so if your `Package.swift` says
 `from: "2.7.0"` you stay on 2.18.0 and nothing changes. To try the alpha, ask for it by name:
 
 ```swift
-.package(url: "https://github.com/jpurnell/BusinessMath.git", exact: "3.0.0-alpha.10")
+.package(url: "https://github.com/jpurnell/BusinessMath.git", exact: "3.0.0-alpha.11")
 ```
 
 What breaks:
@@ -67,7 +68,7 @@ zero, and `EOQModel` overflowed to a non-finite order quantity with no error. It
 `ModifiedZScoreAnomalyDetector` and `IQRAnomalyDetector`, and a `seed:` on
 `runFinancialSimulation`.
 
-**alpha.8, alpha.9 and alpha.10 add no API and are not source-breaking.** alpha.8 closes the
+**alpha.8 through alpha.11 add no API and are not source-breaking.** alpha.8 closes the
 contaminated-input campaign: ~1,200 sites read, ~215 real defects and 6 hard crashes, in 32
 commits, against one class — *a guard that is correct while the value it returns is a claim
 landing at the favourable end of a scale the caller reads.* The principle it produced:
@@ -85,6 +86,14 @@ it had not compiled since December, behind `#if !canImport(OSLog)` where no macO
 alpha.10 gives `FormattedValue` explicit `<=` and `>=`. Swift synthesises them as negations of
 `<`, and every comparison against a NaN is false, so both answer **true** — a guard written
 `guard a >= b` fails *open*. Prophylactic here; the same shape was live in `Date`.
+
+alpha.11 makes three public functions refuse a divisor of zero instead of answering for it.
+`bs(stockPrice:strikePrice:…)` returned the stock price for a strike of zero;
+`applyAntiDilution` returned infinitely many shares for a new price of zero, and a negative
+count for a negative one; `Lease.depreciation` returned `0/0` or infinity for a lease with no
+payments. Each now returns `.nan`, which is how those files already say a figure cannot be
+computed. No signature changed. Eighteen further divisions were already safe and now say so
+where the division is.
 
 **alpha.7 adds one protocol requirement and fixes a density that was computing a CDF.**
 

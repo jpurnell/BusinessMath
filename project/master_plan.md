@@ -38,6 +38,13 @@ suite depends on it.
 
 ## Current Status
 
+**3.0.0-alpha.11 shipped 2026-10-04** — twenty-two divisions a wider `fp-division-unguarded`
+reads (a divisor followed back through `let d = Double(n)`, and a `Double` parameter as a divisor
+in its own right). Eighteen were already safe and now carry the bound where the division is.
+Four sat in three public functions that answered for a zero divisor — `bs`, `applyAntiDilution`,
+`Lease.depreciation` — and now return `.nan`; `Lease.carryingValue` looks the period up before it
+divides. No signature changed. 8,975 tests / 837 suites.
+
 **3.0.0-alpha.10 shipped 2026-09-30** — `FormattedValue` supplies `<=` and `>=` rather than
 letting Swift synthesise them as negations, which invert on a NaN. Prophylaxis: the type
 constrains `T: FloatingPoint`, so the hazard is never conditional, but no validation guard uses
@@ -778,7 +785,11 @@ The earlier table was about *scope*; this one is about *what is being measured*.
 
 ---
 
-**Last Updated:** 2026-09-30 — reconciled for 3.0.0-alpha.8, alpha.9 and alpha.10 together,
+**Last Updated:** 2026-10-04 — reconciled for 3.0.0-alpha.11: added to Current Status, the
+CHANGELOG's `[Unreleased]` block promoted to the release, and the README's pre-release notice,
+install line and source-compatibility claim moved to alpha.11 with the four changed answers named.
+
+**Previously, 2026-09-30** — reconciled for 3.0.0-alpha.8, alpha.9 and alpha.10 together,
 because none of the three had been recorded. Added all three to Current Status with the design
 principle the contaminated-input campaign produced, and carved the CHANGELOG's `[Unreleased]`
 block into the releases it had actually shipped as. Checked two older irregularities and found
