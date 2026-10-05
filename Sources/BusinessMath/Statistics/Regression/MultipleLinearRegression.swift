@@ -313,7 +313,7 @@ public func multipleLinearRegression(
     let fStatisticPValue: Double
 
     if degreesOfFreedom > 0 {
-        let residualDivisor = Double(Swift.max(degreesOfFreedom, 1))
+        let residualDivisor = Swift.max(Double(degreesOfFreedom), 1)
         residualVariance = RSS / residualDivisor
         residualStandardError = sqrt(residualVariance)
 
@@ -349,8 +349,8 @@ public func multipleLinearRegression(
         // `p` is at least 1 from the guard at the top of this function, and
         // `degreesOfFreedom` at least 1 wherever this branch runs; both are written so the
         // checker can see it rather than asserted in a comment.
-        let predictorDivisor = Double(Swift.max(p, 1))
-        let errorDivisor = Double(Swift.max(degreesOfFreedom, 1))
+        let predictorDivisor = Swift.max(Double(p), 1)
+        let errorDivisor = Swift.max(Double(degreesOfFreedom), 1)
         let MSR = (TSS - RSS) / predictorDivisor
         let MSE = RSS / errorDivisor
         fStatistic = MSR / MSE
@@ -444,7 +444,7 @@ private func validateRegressionInputs(
     // emptiness guard above, and this puts that where the compiler and a reader can both
     // see it. Of the seven suppressions this function carried, every one was written with
     // no reason after it — the shape that hid a process crash elsewhere in this package.
-    let sampleCount = Double(Swift.max(n, 1))
+    let sampleCount = Swift.max(Double(n), 1)
     let yMean = y.reduce(0.0, +) / sampleCount
     let yVariance = y.map { pow($0 - yMean, 2) }.reduce(0.0, +) / sampleCount
     guard yVariance > 1e-15 else {

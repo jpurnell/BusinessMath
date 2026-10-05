@@ -532,7 +532,8 @@ public struct AsyncRollingVarianceSequence<Base: AsyncSequence>: AsyncSequence w
                     return nil
                 }
                 buffer.append(value)
-                let n = Double(buffer.count)
+                // The append on the line above makes the count at least one.
+                let n = Swift.max(Double(buffer.count), 1)
                 let delta = value - runningMean
                 runningMean += delta / n
                 let delta2 = value - runningMean
@@ -587,7 +588,8 @@ public struct AsyncRollingVarianceSequence<Base: AsyncSequence>: AsyncSequence w
 
                 // Forward Welford: add new value
                 buffer.append(nextValue)
-                let newN = Double(buffer.count)
+                // As in the fill loop: just appended to, so at least one.
+                let newN = Swift.max(Double(buffer.count), 1)
                 let delta = nextValue - runningMean
                 runningMean += delta / newN
                 let delta2 = nextValue - runningMean

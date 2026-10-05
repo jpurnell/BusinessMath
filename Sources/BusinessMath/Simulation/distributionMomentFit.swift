@@ -302,7 +302,12 @@ public struct DistributionMomentFit: ContinuousDistribution, Sendable {
 	// MARK: - The standardised members
 
 	/// `W = f((z − γ)/δ)` for the selected member.
+	///
+	/// - Returns: The transformed variate, or `nan` when `delta` is not positive. Every
+	///   shape the solver returns has a positive `delta`; a zero one would put an infinity
+	///   inside `exp`, which answers `0` for one sign of it.
 	static func transform(family: JohnsonFamily, z: Double, gamma: Double, delta: Double) -> Double {
+		guard delta > 0 else { return .nan }
 		let inner: Double = (z - gamma) / delta
 		switch family {
 		case .normal: return z
@@ -360,10 +365,13 @@ public struct DistributionMomentFit: ContinuousDistribution, Sendable {
 	/// `E[e^{t(a + bZ)}] = e^{ta + t²b²/2}`. Exact, and much better conditioned than
 	/// integrating `sinh⁴` against a density.
 	///
-	/// - Returns: `raw[0...4]`, with `raw[0]` equal to one.
+	/// - Returns: `raw[0...4]`, with `raw[0]` equal to one — or five `nan`s when `delta` is not
+	///   positive, which no caller passes: the shape solve carries `delta` as a logarithm and
+	///   rejects a non-positive one before it gets here.
 	static func exponentialRawMoments(
 		family: JohnsonFamily, gamma: Double, delta: Double
 	) -> [Double] {
+		guard delta > 0 else { return [Double](repeating: .nan, count: 5) }
 		var raw = [Double](repeating: 0, count: 5)
 		raw[0] = 1
 		// Both are exponentials of a normal, so every raw moment is a finite sum

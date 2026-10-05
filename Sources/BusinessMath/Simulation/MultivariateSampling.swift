@@ -93,7 +93,9 @@ public struct MultivariateResample: Sendable {
 		for row in rows {
 			for index in 0..<dimension { totals[index] += row[index] }
 		}
-		let count = Double(rows.count)
+		// `init` refuses an empty dataset, so there is at least one row; the bound is
+		// written on the divisor so that fact is here and not only forty lines up.
+		let count = Swift.max(Double(rows.count), 1)
 		return totals.map { $0 / count }
 	}
 }

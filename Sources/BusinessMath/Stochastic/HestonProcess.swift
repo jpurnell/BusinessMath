@@ -286,7 +286,11 @@ public struct HestonProcess: Sendable {
         timeToExpiry: Double,
         initialVariance: Double
     ) -> Double {
-        let logMoneyness = Double.log(spot / strike) // fp-safety:disable — strike validated positive by caller (option pricing)
+        // `europeanCallPrice` screens a non-positive strike before it calls this. The check
+        // is repeated here because this is where the division is, and a marker saying the
+        // caller had done it was a statement about a different function.
+        guard strike > 0 else { return .nan }
+        let logMoneyness = Double.log(spot / strike)
         let numSteps = 2000
         let upperLimit = 500.0
         let dphi = upperLimit / Double(numSteps) // fp-safety:disable — numSteps is constant 2000
