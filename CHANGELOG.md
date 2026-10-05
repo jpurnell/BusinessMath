@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [Unreleased]
+
+#### Tests
+
+- **`ComparableInversionTests` no longer raises a compiler warning under `--strict`.** The raw
+  half of the mechanism test was written `Double.nan >= 1.7e9`, which Swift answers at compile
+  time and says so: "comparison with '.nan' using '>=' is always false". It now compares the two
+  `Double`s that back the test's own `Date` fixtures, so the raw and the wrapped comparison are of
+  the same values and differ only in whose `>=` answers. The fixture is also asserted to still
+  carry a NaN, so the test cannot pass on a `Date` that quietly stopped preserving one.
+
 ### [3.0.0-alpha.11] - 2026-10-04
 
 **Twenty-two divisions nothing had checked, and three functions that were answering.** A wider

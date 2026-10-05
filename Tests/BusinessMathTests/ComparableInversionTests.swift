@@ -35,7 +35,12 @@ struct ComparableInversionTests {
 	@Test("Date's derived operators answer true where the raw Double answers false")
 	func derivedOperatorsInvertOnANaN() {
 		// If a future toolchain changes how Comparable is synthesised, this is where it shows.
-		let rawAtLeast: Bool = Double.nan >= 1.7e9
+		// The operands are the two Doubles backing the Dates below, so the raw and the wrapped
+		// comparison are of the same values and differ only in whose `>=` answers.
+		let rawNaN: Double = Self.nanDate.timeIntervalSinceReferenceDate
+		let rawReal: Double = Self.realDate.timeIntervalSinceReferenceDate
+		#expect(rawNaN.isNaN, "the fixture must still carry the NaN it claims to")
+		let rawAtLeast: Bool = rawNaN >= rawReal
 		#expect(rawAtLeast == false, "the campaign's governing fact, on a bare Double")
 
 		let dateAtLeast: Bool = Self.nanDate >= Self.realDate
