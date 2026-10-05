@@ -263,7 +263,7 @@ public struct ScenarioAnalysis {
         // thing that hid a process crash one file over. `Swift.max(_:, 1)` puts the same
         // fact where both the compiler and a reader can see it, and changes nothing: the
         // only value it could alter is the one the guard has already returned on.
-        let divisor = Double(Swift.max(count, 1))
+        let divisor = Swift.max(Double(count), 1)
 
         let sum = values.reduce(0, +)
         let mean = sum / divisor
@@ -464,7 +464,7 @@ public struct ScenarioAnalysisBuilder {
         // One step needs no branch of its own: the only index used is 0, and `0 * stepSize`
         // is zero whatever the step size turns out to be, so the single multiplier is the
         // range's lower bound. That is the same answer `Vary` gives when asked for one step.
-        let divisor = Double(Swift.max(sensitivity.steps - 1, 1))
+        let divisor = Swift.max(Double(sensitivity.steps - 1), 1)
         let stepSize = span / divisor
         let multipliers = (0..<sensitivity.steps).map { lower + Double($0) * stepSize }
 

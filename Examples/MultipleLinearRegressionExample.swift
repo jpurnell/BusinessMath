@@ -60,6 +60,15 @@ let prices = [180.0, 240.0, 210.0, 280.0, 340.0, 300.0, 420.0, 295.0]
 
 let X2 = zip(sizes, ages).map { [$0, $1] }
 
+/// The mean of the absolute values, or zero for an empty series.
+///
+/// A model fitted with no residuals has no mean residual to report; guarding the divisor
+/// keeps that case from becoming a NaN that reads like a real figure.
+func meanAbsolute(_ values: [Double]) -> Double {
+    let count = Double(values.count)
+    return count > 0 ? values.map(abs).reduce(0, +) / count : 0.0
+}
+
 do {
     let result = try multipleLinearRegression(X: X2, y: prices)
 
@@ -106,12 +115,7 @@ do {
     // Residual analysis
     print("\nResidual Analysis:")
     print("  Residual Std Error: \(result.residualStandardError.number(2))")
-    // A model fitted with no residuals has no mean residual to report; guarding the
-    // divisor keeps that case from becoming a NaN that reads like a real figure.
-    let residualCount = Double(result.residuals.count)
-    let meanAbsResidual = residualCount > 0
-        ? result.residuals.map(abs).reduce(0, +) / residualCount
-        : 0.0
+    let meanAbsResidual = meanAbsolute(result.residuals)
     print("  Mean Absolute Residual: \(meanAbsResidual.number(2))")
 
     // Check for outliers

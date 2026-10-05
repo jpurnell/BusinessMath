@@ -206,7 +206,7 @@ public struct Vary {
         // the code instead of in a comment asserting the code is safe. At one step the only
         // index used is 0, so `0 * stepSize` is zero whatever the step size is and the single
         // value is `min` — the same answer the special case gave.
-        let divisor = Double(Swift.max(steps - 1, 1))
+        let divisor = Swift.max(Double(steps - 1), 1)
         let stepSize = (max - min) / divisor
         self.values = (0..<steps).map { min + Double($0) * stepSize }
     }

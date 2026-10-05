@@ -9,6 +9,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [Unreleased]
+
+**Twenty-two divisions nothing had checked, and three functions that were answering.** A wider
+`fp-division-unguarded` rule — one that follows a divisor back through `let d = Double(n)` and
+treats a `Double` parameter as a divisor in its own right — reports 22 sites here. Most were
+already safe and now say so where the division is. Four of them sat in three public functions
+that returned a figure for a divisor of zero.
+
+#### Fixed
+
+- **`bs(stockPrice:strikePrice:…)` returns `.nan` for a strike that is not positive.** At a strike
+  of zero the log-moneyness was `+inf` and the function answered with the stock price — finite,
+  plausible, and not something the model computed. A negative strike already came back `nan`
+  through `log` of a negative number; both are now refused in one place, before the division.
+
+- **`applyAntiDilution` returns `.nan` for a new price that is not positive.** Both the full
+  ratchet and the weighted average are built on `originalPrice / newPrice`.
+
+      newPrice:  0.0  ->  +inf shares        (both types)
+      newPrice: -1.0  ->  -10,000,000 shares (full ratchet), -2,500,000 (weighted average)
+
+  The negative count is the worse of the two: it is finite and signed, and would add into a cap
+  table without complaint.
+
+- **`Lease.depreciation(period:)` returns `.nan` for a lease with no payments.** An empty schedule
+  made the charge `0 / 0`, or `+inf` as soon as direct costs or a prepayment gave the
+  right-of-use asset a value. `Lease.carryingValue(period:)` divided by the same count before
+  looking the period up; it now looks first, so a period that is not on the schedule still
+  answers with the asset as first recognised — as it always did — and only a scheduled period on
+  a lease with no payments is `.nan`.
+
+#### Changed
+
+- **The divisors that were safe by an argument made somewhere else now carry it
+  themselves.** No result changes for any input that reached these lines before.
+  - `multipleLinearRegression` and its input validation, the DSL's `Vary` and
+    `ScenarioAnalysis`, `MultivariateResample.columnMeans` and the rolling-variance iterator bound
+    a count as `Double(Swift.max(n, 1))` or relied on an `append` one line up. The bound is now
+    on the `Double` — `Swift.max(Double(n), 1)` — which is the same number and is the thing
+    being divided by.
+  - `DistributionMomentFit.transform` and `exponentialRawMoments` refuse a non-positive `delta`
+    with `nan`. The shape solve carries `delta` as a logarithm and never passes one.
+  - `RealEstateModel`'s zero-term `precondition` is stated on `numberOfPayments`, the divisor,
+    rather than on `loanTermYears`. Same condition, same trap, same message.
+  - `HestonProcess.computeP` checks `strike > 0` itself. It carried an `fp-safety:disable`
+    marker saying the caller had — a statement about a different function.
+  - `Examples/MultipleLinearRegressionExample.swift` moves its guarded mean into a function.
+    The guard was already there; at file scope the checker does not read one.
+
+#### Tests
+
+- `ZeroDivisorRefusalTests` (9 tests) and `MomentFitZeroScaleTests` (4 tests): each refusal,
+  and beside each one a sound input pinned to the value it had before.
+
 ### [3.0.0-alpha.10] - 2026-09-30
 
 **A `Comparable` wrapper inverts on a NaN, and Swift's synthesis is why.** One fix, and it is
