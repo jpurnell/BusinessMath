@@ -2608,6 +2608,68 @@ measured before it was fixed.
   fails if the two are transposed. The existing `symmetricCase` is *invariant* under that
   swap and never could.
 
+#### Simulation: phase 1 of the simulation test review
+
+*Added to this entry on 2026-10-05.* These seven commits (`88af88d7` through `e417c78b`) shipped
+in alpha.5 and none of them touched this file, so the headline above counts neither them nor the
+breaking change among them. They are recorded here from the commit messages, not from memory.
+
+- **A GPU batch with a failed iteration now throws. Breaking in effect, not in signature.**
+  The Metal kernel could not report an error, so `sqrt(-1)`, `log(-1)`, `0/0` and an honest NaN
+  were indistinguishable in the output. The kernel now tests the operand before the operation
+  and records a code per iteration, and `runSimulation` throws
+  `GPUError.iterationsFailed(count:firstIteration:reason:)` with a `GPUIterationError` reason.
+  A batch that used to return values with an `inf` or a NaN among them throws unless
+  `onIterationError: .collect` is passed, which returns the values together with the errors.
+  The default matches the CPU interpreter, which refuses to return a number it cannot stand
+  behind. Measured cost at 100,000 iterations: 408 ms to 414 ms, about 1.3%, inside a run-to-run
+  spread of 374–625 ms.
+
+- **The antithetic standard error measures pairs, not paths.** `MonteCarloEngine.price` pooled
+  the 2N antithetic paths as 2N independent observations, so the reported standard error showed
+  no reduction and the promised 95% interval was about 40% too wide. Over 200 fixed seeds,
+  reported over realised spread was **1.449** before and 1.079 after; plain sampling is 0.954
+  both ways. Prices are bit-identical, only the standard error changes. The estimator moved to
+  Welford's algorithm, because `E[X²] − E[X]²` loses every significant digit when the pairs
+  cancel exactly. A single-path antithetic request no longer returns a NaN price with a
+  `pathCount` of 0: one pair is the floor.
+
+- **`distributionUniform` no longer rounds onto a lattice, and `distributionGeometric` no longer
+  traps.** Every draw was rounded down to seven decimal digits, a bias of about 5e-8 that always
+  pointed toward zero. It also sent one draw in ten million to exactly 0.0, and
+  `distributionGeometric` took the logarithm of that and then `Int(_:)` of an infinity: a trap,
+  exit 133, confirmed in isolation. Seeded streams through `distributionUniform` change.
+
+- **The bytecode optimizer no longer changes an answer.** `a * 0 → 0` returned 0 for an infinite
+  or NaN `a`, and `+0.0` for a negative one. Constant folding evaluated `1 / 0`, `sqrt(-1)` and
+  `log(0)` at compile time, so each returned a value optimized and threw unoptimized; composed,
+  `log(0) * 0` returned 0 where the unoptimized model throws. The rewrite is removed and the
+  folder declines those three. The additive identities now read the sign of the zero: `a + (-0.0)`
+  and `a - (+0.0)` simplify, the other two spellings do not, because they turn `-0.0` into
+  `+0.0`. The simplification pass now has no rewrite that can change a result in any bit.
+
+- **The CPU and the GPU share one opcode table.** The numbering was written twice, as literals in
+  `toGPUFormat` and as `case 6:` in the kernel source, and checked nowhere; renumbering one side
+  compiled and computed a different expression. `GPUOpcode` now holds the numbers once and
+  generates the kernel's declarations. `GPUBytecodeValidator` rejects, before dispatch, a model
+  deeper than the kernel's stack, an operation with too few operands, a stream that does not end
+  in one value, an input slot past the buffer, and an opcode the kernel has no case for.
+  `gpuNarrowingIssues()` names constants that narrow to an infinity or to zero in Float32.
+
+- **The kernel is compiled with safe math.** Fast and safe math were measured to agree on every
+  row tested, so this is not a correction. It removes a standing licence for the compiler to
+  fold the arithmetic the error reporting sits beside.
+
+- **Tests.** Seventeen GPU test sites spelled "our kernel failed to compile" as a pass. Measured
+  by breaking the generated kernel source on purpose, across three suites of 29 tests: 4
+  failures before, 16 after. All 22 kernel operations are now computed on the CPU and the GPU
+  from the same inputs and compared. `antitheticReducesStandardError` asserted
+  `antiSE < plainSE`, which held on 109 of 200 seeds, and is replaced by an exact oracle.
+
+Still open from this work: `MonteCarloCommon.h` is a hand-maintained mirror of the kernel that
+nothing checks, and the equality opcodes use `1e-6f` in the kernel against `1e-10`
+in the interpreter, so two values 1e-8 apart are equal on the GPU and unequal on the CPU.
+
 #### Known issue
 
 `cuttingRounds` and `totalCutsGenerated` count different things — a cut is counted when
