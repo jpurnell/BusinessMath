@@ -11,7 +11,98 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+Intended for release as 3.0.0-alpha.12.
+
+**A number from a caller could end the process, and the function that was supposed to stop it
+was hiding a project instead.** `CapitalAllocationOptimizer.optimizeIntegerProjects` sizes a
+dynamic-programming table from `budget` and each project's `capitalRequired`. Both are plain
+floating-point arguments, and a consumer forwards them from a network request.
+
+#### Security
+
+- **The 0-1 knapsack no longer traps on, or allocates for, a number it cannot size.** Measured
+  against the previous source, by running it:
+
+      capitalRequired: -5                        Fatal error: Index out of range
+      one project, capitalRequired: .nan         Fatal error: Range requires lowerBound <= upperBound
+      capitalRequired: .nan among clean projects the project silently left out; answer looks normal
+      budget: .nan, +inf, -1, 1e300              "fund nothing", totalNPV 0
+
+  and, not run because running it means asking for the memory, a finite `budget` of `1e12`
+  requested an 8 TB table. The earlier guard (alpha.8) screened non-finite and
+  larger-than-`Int` values only; a negative cost passed it and indexed past the row, a list it
+  had emptied crashed on `1...0`, and nothing bounded the table at all.
+
+#### Added
+
+- **`optimizeIntegerProjects(validating:budget:)`** — the same computation, throwing. It refuses,
+  with a `BusinessMathError` that names the argument (`budget`, `projects[3].capitalRequired`,
+  `projects[3].npv`):
+
+  | input | error |
+  |---|---|
+  | not finite | `.invalidInput(message: "… must be a finite number", value:, expectedRange:)` |
+  | negative `budget` or `capitalRequired` | `.negativeValue(name:value:context:)` |
+  | above `maximumAmount` | `.outOfRange(value:min:max:context:)` |
+  | table above `maximumTableCells` | `.resourceExhausted(resource:limit:context:)` |
+
+  Nothing is clamped, rounded into range or left out. A budget of zero and an empty list remain
+  valid questions answered with zero.
+
+- **`CapitalAllocationOptimizer.maximumAmount`** = 2^53, and **`.maximumTableCells`** =
+  10,000,000. Both are limits of representation and resource, not judgements about capital:
+  2^53 is where a `Double` stops telling adjacent whole units apart, and ten million cells
+  measured 0.21–0.34 s of one core with an 11 MB peak in a release build. A problem over the
+  cell limit is one stated in too fine a unit — the error says to use thousands or millions.
+
+#### Changed
+
+- **`optimizeIntegerProjects(projects:budget:)` marks what it cannot size instead of dropping
+  it.** The signature is unchanged and it still cannot throw, so for input the validating form
+  refuses it returns no selection and **`nan` for `totalNPV` and `capitalUsed`**. Before, an
+  unsizable project was filtered out and the rest allocated as though it had never been
+  proposed, and an unusable budget answered with zeroes — both a figure a caller would act on.
+  The comment that justified the drop ("with a non-throwing signature dropping it is the only
+  option") was wrong, and `IntegerAllocation_DoesNotTrapOnAnUnsizableProject`, which pinned the
+  drop, is rewritten to pin the mark.
+
+- **The table is as wide as the money the projects can spend, not as wide as the budget**, and
+  keeps one bit per cell rather than one value. A budget of a trillion over projects costing 77
+  in total is now a 78-column problem instead of a refusal. This is a change of storage, not of
+  arithmetic: see below.
+
+- **Valid input answers the same bits.** `CapitalAllocationCharacterisationTests` was committed
+  on its own, green, before the source changed: 216 generated cases through both allocators plus
+  27 with budgets far above total cost, each reduced to the selection order and the IEEE bit
+  patterns of every figure, with no tolerance. The finished fixture file was then run against
+  the pre-change source in a second checkout and passes there too.
+
+#### Not fixed, recorded
+
+- **Fractional costs are sized by truncation.** `Int(capitalRequired)` gives a project costing
+  0.5 no room in the table, so with a budget of 6.5 and costs of 1, 2, 3.75 and 0.5 the knapsack
+  funds all four and reports 7.25 spent. This predates the change, is now pinned by the
+  characterisation suite and documented on the method, and is left alone here precisely because
+  this release promises valid input the same answer.
+- **The greedy allocator `optimize(projects:budget:)` is untouched.** It has no integer
+  conversion and no table, so nothing in it traps. It does still accept a negative
+  `capitalRequired`, which *raises* the remaining budget as it is "funded".
+
+#### Baseline
+
+- One `.quality-gate-baseline.json` record retired: `fallback.int-conversion-unguarded` on
+  `let cost = Int(project.capitalRequired)`, which covered two findings (the fill loop and the
+  walk back). The ledger goes from 61 records to 60 and the gate from 68 covered debts to 66,
+  with no new finding adopted.
+
 #### Tests
+
+- **`TrappingDistributionTests` no longer raises a compiler warning in the Xcode build.**
+  `distribution.quantile(1e-320)` drew "'1e-320' underflows and loses precision during
+  conversion to 'Double'", which `swift build` does not report for this file and the gate's
+  `xcode-build` checker does — so `--check all`, which is what the pre-push hook runs, carried
+  one warning on `main`. The argument is now `Double.leastNonzeroMagnitude * 2024`, asserted to
+  be the same bit pattern, so the test asks the quantile the same question.
 
 - **`ComparableInversionTests` no longer raises a compiler warning under `--strict`.** The raw
   half of the mechanism test was written `Double.nan >= 1.7e9`, which Swift answers at compile

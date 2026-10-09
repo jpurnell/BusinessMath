@@ -102,7 +102,16 @@ struct TrappingDistributionTests {
 		let distribution = try #require(DistributionNegativeBinomial(successes: 1, p: tiny))
 
 		// P(X = 0) is `tiny` itself, which is above the argument, so the first step answers.
-		#expect(distribution.quantile(1e-320) == 0)
+		//
+		// The argument is 1e-320, built rather than written. As a literal it draws "'1e-320'
+		// underflows and loses precision during conversion to 'Double'" from the compiler — a
+		// subnormal has fewer than 53 significant bits, which is the point of using one here —
+		// and the `xcode-build` checker reports that warning. 2024 steps of the smallest
+		// subnormal is the same value to the bit, and is asserted to be.
+		let subnormal: Double = Double.leastNonzeroMagnitude * 2024
+		#expect(subnormal.bitPattern == 2024)
+		#expect(subnormal < tiny)
+		#expect(distribution.quantile(subnormal) == 0)
 	}
 
 	/// CLEAN CONTROL. Negative binomial with `s = 3, p = 0.5`, whose mass function is exact
