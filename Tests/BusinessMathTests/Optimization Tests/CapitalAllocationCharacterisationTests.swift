@@ -162,6 +162,48 @@ struct CapitalAllocationCharacterisationTests {
         }
     }
 
+    // MARK: - Budgets the projects cannot exhaust
+
+    /// Small projects under a large budget: 3 counts × 3 budgets × 3 seeds = 27 cases, up to a
+    /// 7 × 300,001 table in the source these were measured from.
+    ///
+    /// Added with the change that stopped the table being as wide as the budget, and for that
+    /// reason: the main grid ties each cost to its budget, so it seldom leaves money unspent.
+    /// These digests were measured from the same pre-change source as the rest — the tree at
+    /// `fae3f8f0`, with only this file replaced — not from the code they now check.
+    private static func slackGrid() -> [(label: String, projects: [P], budget: Double)] {
+        var cases: [(label: String, projects: [P], budget: Double)] = []
+        for count in [1, 3, 6] {
+            for budget in [500.0, 20_000, 300_000] {
+                for seed in 0..<UInt64(3) {
+                    let mixed = UInt64(count) &* 2_000_003 &+ UInt64(budget) &* 31 &+ seed
+                    // Costs are drawn as if the budget were 26, so they total far less than it.
+                    cases.append((label: "slack n=\(count) budget=\(budget) seed=\(seed)",
+                                  projects: projects(count: count, budget: 26, seed: mixed),
+                                  budget: budget))
+                }
+            }
+        }
+        return cases
+    }
+
+    @Test("Knapsack_BudgetAboveTotalCost_BitIdentical")
+    func knapsackBudgetAboveTotalCostBitIdentical() throws {
+        let optimizer = CapitalAllocationOptimizer<Double>()
+        let cases = Self.slackGrid()
+        try #require(cases.count == 27)
+        try #require(Self.slackGolden.count == 27, "one measured digest per case")
+        var spentLessThanBudget = 0
+        for (index, entry) in cases.enumerated() {
+            let result = optimizer.optimizeIntegerProjects(projects: entry.projects, budget: entry.budget)
+            let line = Self.record(result)
+            #expect(Self.digest(line) == Self.slackGolden[index], "\(entry.label): \(line)")
+            if result.capitalUsed < entry.budget / 2 { spentLessThanBudget += 1 }
+        }
+        // Every case must really leave most of its budget unspent, or this is the main grid again.
+        #expect(spentLessThanBudget == 27, "got \(spentLessThanBudget)")
+    }
+
     // MARK: - Cases spelled out
 
     /// The type's own documentation example, at the size its DocC uses: a 3 × 120,001 table.
@@ -318,6 +360,16 @@ struct CapitalAllocationCharacterisationTests {
         0x70490503B684BCD9, 0x045FAAF337D3320B, 0x7ACE79A6913C36F3, 0xB102CFFE88D4DE6B,
         0x4DC98898898206D7, 0x52DC9D12AF0F5B5F, 0x8A1D79156D721ECD, 0x5B5650A5B6BA2629,
         0xD44BF672887CC549, 0x5E438E7F30304868, 0x9B496086AF88AB2A, 0x108814122F82DAE5,
+    ]
+
+    private static let slackGolden: [UInt64] = [
+        0x28A095669F9ACB39, 0x686631C187279EE3, 0x0573BFA4FE98C7A2, 0x30C6C5B4CB7ACEE4,
+        0xA3A526AA237AE80A, 0x149FCC1B0EECB0D2, 0x726515910C0267DF, 0xE2978C523110E4D4,
+        0x78FDD5F6081529CA, 0xC75625D4A1773927, 0x50249FD999CF5A2A, 0x3F19562AE89050F0,
+        0xEB853B94AA6A3282, 0x3CE070E779DE2A43, 0x210222F41440C37D, 0xF54CBAE6E83293B9,
+        0xB00E621F6ADED17F, 0x33892E45086335DC, 0xC1AAEE7EC81D899B, 0xCAC3D9CF970D0139,
+        0x3097FA0A8AF6F834, 0x616B0DD68F1AF06C, 0xFB10B7694F7BF9E9, 0xFAA1BE8749ED1D1D,
+        0xD0E40964C67A6CCE, 0x8B95F66238EB2B23, 0xD61239E6DB724F96,
     ]
 
     private static let greedyGolden: [UInt64] = [

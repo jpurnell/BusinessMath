@@ -69,9 +69,17 @@ struct ContaminatedInferenceTests {
                 "a value-destroying project keeps its real, negative ROI")
     }
 
-    /// A non-finite project must not take the knapsack down with it.
-    @Test("IntegerAllocation_DoesNotTrapOnAnUnsizableProject")
-    func integerAllocationDoesNotTrapOnAnUnsizableProject() {
+    /// A non-finite project must not take the knapsack down with it — and must not vanish
+    /// from it either.
+    ///
+    /// Until 3.0.0-alpha.12 this test asserted that the unsizable project was dropped and the
+    /// answer matched the two-project control. That was the fix for the trap, made on the
+    /// reasoning that a non-throwing signature left no alternative, and it is the first thing
+    /// the contamination contract forbids: a caller who funds `["A"]` cannot tell that a third
+    /// project was never weighed. The result now says so with `nan` totals, and
+    /// `optimizeIntegerProjects(validating:budget:)` says which argument.
+    @Test("IntegerAllocation_UnsizableProject_IsMarkedNotDroppedAndNotFatal")
+    func integerAllocationUnsizableProjectIsMarkedNotDroppedAndNotFatal() {
         typealias P = CapitalAllocationOptimizer<Double>.Project
         let optimizer = CapitalAllocationOptimizer<Double>()
         let a = P(name: "A", npv: 100, capitalRequired: 50)
@@ -81,10 +89,12 @@ struct ContaminatedInferenceTests {
         let withUnsizable = optimizer.optimizeIntegerProjects(
             projects: [a, unsizable, d], budget: 60)
         let control = optimizer.optimizeIntegerProjects(projects: [a, d], budget: 60)
-        #expect(withUnsizable.projectsSelected == control.projectsSelected,
-                "got \(withUnsizable.projectsSelected) against \(control.projectsSelected)")
-        #expect(withUnsizable.totalNPV.isEqual(to: control.totalNPV))
-        #expect(!control.projectsSelected.isEmpty, "and the control really does allocate")
+        #expect(withUnsizable.totalNPV.isNaN, "got \(withUnsizable.totalNPV)")
+        #expect(withUnsizable.capitalUsed.isNaN, "got \(withUnsizable.capitalUsed)")
+        #expect(withUnsizable.projectsSelected.isEmpty,
+                "got \(withUnsizable.projectsSelected)")
+        #expect(control.projectsSelected == ["A"], "and the control really does allocate")
+        #expect(control.totalNPV.isEqual(to: 100))
     }
 
     // MARK: - Credit and curves

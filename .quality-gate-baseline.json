@@ -147,13 +147,6 @@
     "ruleId" : "fallback.clamp-absorbs-nan"
   },
   {
-    "contentHash" : "179c008cbd5b564fa3ca6a9c58c3534d800e9e89eac345666c308b0b24eecb37",
-    "expiresAt" : "2027-03-28T02:26:17Z",
-    "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Optimization\/CapitalAllocationOptimizer.swift",
-    "recordedAt" : "2026-09-29T02:26:17Z",
-    "ruleId" : "fallback.int-conversion-unguarded"
-  },
-  {
     "contentHash" : "3edce017016afbaba7f6274369cb16f3a9c6087d06f9f31e476a0a75a30f24c1",
     "expiresAt" : "2027-03-28T02:26:17Z",
     "filePath" : "\/Users\/jpurnell\/Dropbox\/Computer\/Development\/Swift\/Playgrounds\/Math\/BusinessMath\/Sources\/BusinessMath\/Optimization\/Heuristic\/NelderMead.swift",

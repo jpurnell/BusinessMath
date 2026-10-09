@@ -785,7 +785,15 @@ The earlier table was about *scope*; this one is about *what is being measured*.
 
 ---
 
-**Last Updated:** 2026-10-04 — reconciled for 3.0.0-alpha.11: added to Current Status, the
+**Last Updated:** 2026-10-09 — a security hotfix, unreleased and intended as 3.0.0-alpha.12:
+`CapitalAllocationOptimizer.optimizeIntegerProjects` could be made to trap or to request an
+arbitrarily large table by one caller-supplied number. Added
+`optimizeIntegerProjects(validating:budget:)` with typed refusals, `maximumAmount` (2^53) and
+`maximumTableCells` (10,000,000); the non-throwing form now marks unusable input with `nan`
+totals rather than dropping a project. Recorded in the CHANGELOG's `[Unreleased]` block; Current
+Status is not advanced because nothing has been tagged. One baseline record retired (61 → 60).
+
+**Previously, 2026-10-04** — reconciled for 3.0.0-alpha.11: added to Current Status, the
 CHANGELOG's `[Unreleased]` block promoted to the release, and the README's pre-release notice,
 install line and source-compatibility claim moved to alpha.11 with the four changed answers named.
 
