@@ -532,11 +532,40 @@ they have not moved while the rest of the suite was swept. What follows is not c
 
 - **`Period.<` compares granularity before start date**, so a `TimeSeries` mixing annual and
   quarterly points is stored out of chronological order. Pinned in a test, not fixed.
-- **Three `BusinessMathError` cases still have no producer** — `negativeValue` (E301),
+- ~~**Three `BusinessMathError` cases still have no producer** — `negativeValue` (E301),
   `outOfRange` (E302), `resourceExhausted` (E400). E301/E302 are refactors that belong with a
   consolidation of the four parallel validation vocabularies (`BusinessMathError`,
   `Validation/ValidationTypes`, `StandardValidation`'s unused rules, and the macro-generated one),
-  not standalone work. E400 is undocumented as well as unwired and needs a decision.
+  not standalone work. E400 is undocumented as well as unwired and needs a decision.~~
+  **All three have a producer as of 2026-10-09**, and it arrived as standalone work after all:
+  `CapitalAllocationOptimizer.optimizeIntegerProjects(validating:budget:)` throws each of them
+  (released in 3.0.0-alpha.12, 2026-10-10). The entry above said E301/E302 were
+  "not standalone work" and that E400 "needs a decision"; a caller-reachable crash made the
+  decision. What it did **not** do is the consolidation — the four vocabularies are still four,
+  and that is what remains of this item.
+- **Traps, unbounded loops and unbounded allocations reachable from a caller's number**, found
+  2026-10-09 by auditing the MCP server that forwards caller numbers into this library. None is
+  fixed here; the server now refuses each input before it arrives. Each is a public function
+  taking a plain number, so any other consumer is exposed the same way:
+  - `augmentedDickeyFuller(lag: 0)` forms `1...0` (`Time Series/Diagnostics/Stationarity.swift:117`)
+    — the plain Dickey-Fuller test stops the process — and `p + 4` overflows for a lag near
+    `Int.max`.
+  - `combination(_:c:)` and `permutation(_:p:)` multiply in `Int` and trap on overflow
+    (`combination.swift:56`, `permutation.swift:51`): `combination(100, c: 50)` does, and so
+    `binomialPMF(n: 100, k: 50, p: 0.5)` does. The `Checked` and `Double` forms exist; the
+    probability mass function does not use them.
+  - `seasonalIndices(values:periodsPerYear:)` computes `periodsPerYear * 2` before bounding it
+    (`Seasonality.swift:242`).
+  - `RiskAggregator.aggregateVaR`, `marginalVaR` and `componentVaR` answer a matrix or a weights
+    array of the wrong shape with `preconditionFailure` (`Risk/RiskAggregation.swift:144`).
+  - `MultivariateGradientDescent.minimize` loops over `0..<maxIterations`, which cannot be
+    formed for a negative count; it, `goalSeek` and `TwoStageDDM.valuePerShare()` run for as long
+    as an unbounded count says, with no convergence exit when the tolerance is zero or `nan`.
+  - `InventorySimulator.simulate` and every `MonteCarloSimulation` run path call
+    `reserveCapacity(iterations)` with no ceiling on `iterations`.
+  - `PortfolioOptimizer.efficientFrontier` took 41 s for ten assets and 316 s for twenty-five at
+    twenty points, and `maximumSharpePortfolio` 19 s for twenty-five, in a debug build. Not a
+    trap; a caller cannot tell it from one.
 - **Documented API that does not exist**, catalogued in
   `project/plans/proposals/IntendedSurface.md` §2. `3.15`'s ingestion subsystem and
   `Period.custom` are resolved; remaining are `FinancialModel`'s balance-sheet surface,
@@ -685,7 +714,10 @@ The CHANGELOG heading and the README's `from:` pin both moved to `2.6.0` in the 
 - [x] Wire `numericalInstability` (E004), `invalidDriver` (E200), `inconsistentData` (E202) to the
       sites that already detected those conditions
 - [x] Rewrite `3.15` around the boundary that exists rather than an ingestion subsystem that does not
-- [ ] `negativeValue`, `outOfRange`, `resourceExhausted` — with the validation-vocabulary consolidation
+- [ ] `negativeValue`, `outOfRange`, `resourceExhausted` — with the validation-vocabulary consolidation.
+      *Partly shipped, out of the order planned (3.0.0-alpha.12, 2026-10-10):* all three are thrown
+      by `optimizeIntegerProjects(validating:budget:)`. The consolidation is not done, so the
+      box stays open; the first half is the struck-through entry earlier in this file.
 - [ ] The remaining `IntendedSurface.md` §2 items: build or retract
 
 ### Phase 0 of Excel coverage — the distribution contract (done, 2.10.0)
@@ -785,7 +817,20 @@ The earlier table was about *scope*; this one is about *what is being measured*.
 
 ---
 
-**Last Updated:** 2026-10-09 — a security hotfix, unreleased and intended as 3.0.0-alpha.12:
+**Last Updated:** 2026-10-10 — tagged v3.0.0-alpha.12: the CHANGELOG's `[Unreleased]` block
+is the release, and the README's pre-release notice and install line name it. Before that,
+2026-10-09 (second pass) — release preparation for the hotfix below, with nothing tagged. Reconciled against the source rather than against the CHANGELOG: the README said
+3.0.0-alpha.8 through alpha.11 "add no API and are not source-breaking", and alpha.8 changes a
+dozen public signatures — found when the MCP server, pinned at alpha.7, stopped compiling in
+three places the CHANGELOG had not named. The README now lists what alpha.8 breaks and carries
+the unreleased hotfix; the CHANGELOG's alpha.8 entry has a dated addendum; a doc comment that
+dated `DistributionGeometric`'s failable initialiser to alpha.7 says alpha.8. Known Issues: the
+"three error cases have no producer" entry is struck through, because the hotfix produces all
+three, and an entry is added for the traps and unbounded loops that the same audit found in
+other public functions and did not fix. Roadmap Phase 1's matching item is annotated as partly
+shipped. Current Status is still not advanced.
+
+**Previously, 2026-10-09** — a security hotfix, unreleased and intended as 3.0.0-alpha.12:
 `CapitalAllocationOptimizer.optimizeIntegerProjects` could be made to trap or to request an
 arbitrarily large table by one caller-supplied number. Added
 `optimizeIntegerProjects(validating:budget:)` with typed refusals, `maximumAmount` (2^53) and

@@ -9,9 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
-### [Unreleased]
-
-Intended for release as 3.0.0-alpha.12.
+### [3.0.0-alpha.12] - 2026-10-10
 
 **A number from a caller could end the process, and the function that was supposed to stop it
 was hiding a project instead.** `CapitalAllocationOptimizer.optimizeIntegerProjects` sizes a
@@ -240,6 +238,32 @@ oracle work and a divisor sweep that stopped looking only at divisors.
 Roughly **1,200 sites read, ~215 real defects, 6 hard crashes**, in 32 commits. One defect class:
 **a guard that is correct while the value it returns is a claim landing at the favourable end of
 a scale the caller reads.**
+
+#### Addendum, 2026-10-09 — source-breaking changes this entry did not name
+
+Found by moving a consumer from alpha.7 to the next release: it stopped compiling in three
+places, and none of the three is described below. They are recorded here rather than left for
+the next reader to find the same way. The README's pre-release notice, which said this release
+"adds no API and is not source-breaking", is corrected with it.
+
+- **`DebtInstrument.schedule()` is now `throws`.** A `.custom` amortization whose payment count
+  does not equal the number of periods between its dates throws
+  `BusinessMathError.mismatchedDimensions`; a short array used to index past its end and a long
+  one had its tail dropped. Every other amortization type computes as before, but every call
+  site needs `try`.
+- **`DistributionGeometric.init(_:)` is now failable**, returning `nil` unless `0 < p ≤ 1`. Its
+  doc comment said "Failable since `v3.0.0-alpha.7`"; the alpha.7 tag has the non-failable
+  initialiser, and the comment now says alpha.8.
+- **`ExperimentError` gains `unrepresentableSampleSize(Double)`**, thrown by
+  `Experiment.sampleSizePerArm` for a design whose per-arm size is infinite or past `Int.max`.
+  An exhaustive `switch` over the enum no longer compiles without it.
+
+Also source-breaking and described only by behaviour, not by signature: `piotroskiScore` and
+`piotroskiFScore` are `throws`; `FinancialPeriodSummary`'s six balance-sheet ratios are `T?`;
+`MultiPeriodReport.currentRatioTrend()` and `debtToEquityTrend()` return `[T?]`; and the
+`LiquidationWaterfallBuilder` and `CashFlowModelBuilder` result builders build from arrays and
+finish with `buildFinalResult`. `varianceTDist`, `SaaSModel`, `SubscriptionBoxModel` and
+`MarketplaceModel` are covered where they are fixed, below.
 
 #### The one fact underneath all of it
 

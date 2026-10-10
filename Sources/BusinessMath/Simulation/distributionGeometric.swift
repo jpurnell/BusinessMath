@@ -92,7 +92,7 @@ public struct DistributionGeometric: DistributionRandom, Sendable {
 
 	/// Creates a geometric distribution generator.
 	///
-	/// Failable since `v3.0.0-alpha.7`. It previously stored whatever it was handed, alone
+	/// Failable since `v3.0.0-alpha.8`. It previously stored whatever it was handed, alone
 	/// among its family: ``DistributionNegativeBinomial/init(successes:p:)``,
 	/// `DistributionLogarithmic.init(_:)` and ``DistributionPoisson/init(lambda:)`` all
 	/// screen their parameter and return `nil`. The cost of the difference was not

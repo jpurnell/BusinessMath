@@ -11,19 +11,23 @@ Build DCF models, optimize portfolios, run Monte Carlo simulations, and value se
 
 ---
 
-## Pre-release: 3.0.0-alpha.11
+## Pre-release: 3.0.0-alpha.12
 
 **The breaking set shipped first, in alpha.1 and alpha.2** — the items that had been waiting
 for a major since August. Everything since has been correctness work and one protocol
-requirement, and the last four alphas are source-compatible: alpha.8 through alpha.11 add no
-API at all. What breaks, breaks below; it has not moved since alpha.7. alpha.11 does change
-four *answers*: see below.
+requirement. **alpha.8 is source-breaking again**, in a handful of signatures listed below;
+alpha.9 through alpha.12 are source-compatible; alpha.11 changes four *answers*, and alpha.12
+adds a validating form of one optimiser and bounds its table.
+
+This notice said until 2026-10-09 that alpha.8 through alpha.11 "add no API at all" and that
+what breaks "has not moved since alpha.7". Neither was true of alpha.8, and a consumer pinned
+at alpha.7 found out by failing to compile: see *What alpha.8 breaks* below.
 
 `from:` ranges **exclude pre-releases**, so if your `Package.swift` says
 `from: "2.7.0"` you stay on 2.18.0 and nothing changes. To try the alpha, ask for it by name:
 
 ```swift
-.package(url: "https://github.com/jpurnell/BusinessMath.git", exact: "3.0.0-alpha.11")
+.package(url: "https://github.com/jpurnell/BusinessMath.git", exact: "3.0.0-alpha.12")
 ```
 
 What breaks:
@@ -68,7 +72,7 @@ zero, and `EOQModel` overflowed to a non-finite order quantity with no error. It
 `ModifiedZScoreAnomalyDetector` and `IQRAnomalyDetector`, and a `seed:` on
 `runFinancialSimulation`.
 
-**alpha.8 through alpha.11 add no API and are not source-breaking.** alpha.8 closes the
+**alpha.8 is source-breaking; alpha.9 through alpha.12 are not.** alpha.8 closes the
 contaminated-input campaign: ~1,200 sites read, ~215 real defects and 6 hard crashes, in 32
 commits, against one class — *a guard that is correct while the value it returns is a claim
 landing at the favourable end of a scale the caller reads.* The principle it produced:
@@ -79,6 +83,31 @@ landing at the favourable end of a scale the caller reads.* The principle it pro
 Concretely, `ModelValidator` printed `✅ Validation PASSED — 0 errors, 0 warnings` for a
 projection with NaN assets and NaN revenue; `[1,2,3,nan,5,6,7,8].rank()` put the largest element
 last; `altmanZScore` returned `0.00`, the distress zone, for a solvent and profitable company.
+
+**What alpha.8 breaks.** Moving from alpha.7 to anything later, these stop compiling:
+
+- **`varianceTDist(_:)` is deleted.** Use `variance(_:)`.
+- **Now `throws`:** `DebtInstrument.schedule()` (for a custom schedule whose payment count does
+  not match its dates — it used to trap or drop the tail); `piotroskiScore` and
+  `piotroskiFScore`; `SaaSModel.calculateMRR`, `calculateARR`, `calculateCustomerCount`,
+  `calculateGrowthRate`, `projectMRR`, `projectCustomerCount` and `project`; the initialisers of
+  `SubscriptionBoxModel` and of the projecting `MarketplaceModel`.
+- **`DistributionGeometric.init(_:)` is failable** — `nil` unless `0 < p ≤ 1`.
+- **`ExperimentError` gains `unrepresentableSampleSize(Double)`**, so an exhaustive `switch`
+  over it needs the case. `Experiment.sampleSizePerArm` throws it where it used to trap.
+- **Optional where a zero divisor used to answer zero:** `FinancialPeriodSummary`'s
+  `currentRatio`, `quickRatio`, `cashRatio`, `debtToEquityRatio`, `debtToAssetsRatio` and
+  `equityRatio` are `T?`; `MultiPeriodReport.currentRatioTrend()` and `debtToEquityTrend()`
+  return `[T?]`.
+- **Result builders:** `LiquidationWaterfallBuilder` and `CashFlowModelBuilder` build from
+  arrays and finish with `buildFinalResult`; code that calls the `build*` functions directly
+  no longer matches.
+
+It also adds API — `kendallsTau(_:vs:)`, `CovenantStatus`, `VectorN.normalizedToSumOne()`,
+`BondMarketData.isSchedulable` — and flips one default: `BranchAndBoundSolver` shifts variables
+unless told not to (`enableVariableShifting`). The CHANGELOG's alpha.8 entry describes the
+campaign by defect class rather than by signature, and three of the changes above were not in
+it until an addendum of 2026-10-09.
 
 alpha.9 compiles the Linux fallback logger on every platform, so a Mac typechecks and tests it —
 it had not compiled since December, behind `#if !canImport(OSLog)` where no macOS build reads it.
@@ -94,6 +123,18 @@ count for a negative one; `Lease.depreciation` returned `0/0` or infinity for a 
 payments. Each now returns `.nan`, which is how those files already say a figure cannot be
 computed. No signature changed. Eighteen further divisions were already safe and now say so
 where the division is.
+
+**alpha.12: a number from a caller could end the process.** `CapitalAllocationOptimizer.optimizeIntegerProjects` sizes a table from `budget`
+and each project's `capitalRequired`; a negative cost indexed past it, a `nan` could not be
+converted, and a finite budget of a trillion was simply allocated. There is now a throwing
+form, `optimizeIntegerProjects(validating:budget:)`, which refuses with a `BusinessMathError`
+that names the argument, and two stated limits — `maximumAmount` (2^53) and
+`maximumTableCells` (10,000,000). The form that cannot throw answers refused input with an
+empty selection and **`nan` totals** rather than dropping the project or reporting zeroes, so
+**a problem it used to answer can now come back `nan`**: three projects against a budget of
+five million whole units is a twenty-million-cell table. Use the validating form for any
+number that arrives from outside the program, and a coarser unit for a large one. Input both
+forms accept is answered with the same bits as before. Source-compatible.
 
 **alpha.7 adds one protocol requirement and fixes a density that was computing a CDF.**
 
