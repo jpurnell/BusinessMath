@@ -155,6 +155,67 @@ struct ConcordanceReferenceTests {
         #expect(rGap < 1e-12, "R χ² \(testCase.rChiSquare), this \(result.chiSquare)")
     }
 
+    /// `friedmanCorrected` is the number SciPy's `friedmanchisquare` and R's `friedman.test`
+    /// both report: the classic statistic divided by `1 − Σ(t³ − t) / (m(n³ − n))`.
+    @Test("friedmanCorrected matches SciPy and R", arguments: ConcordanceReferenceTests.cases)
+    func friedmanCorrected(testCase: ConcordanceCase) throws {
+        let result = try concordanceAnalysis(testCase.rankings)
+        let sciPyGap: Double = Self.relativeGap(result.friedmanCorrected, testCase.sciPyChiSquare)
+        let rGap: Double = Self.relativeGap(result.friedmanCorrected, testCase.rChiSquare)
+        #expect(sciPyGap < 1e-12, "SciPy χ² \(testCase.sciPyChiSquare), this \(result.friedmanCorrected)")
+        #expect(rGap < 1e-12, "R χ² \(testCase.rChiSquare), this \(result.friedmanCorrected)")
+    }
+
+    /// `friedman` keeps the meaning it shipped with — the classic, *uncorrected* statistic,
+    /// `12/(mn(n+1))·ΣR² − 3m(n+1)` — so existing callers see no change. On the tied cases it
+    /// is therefore below the references, by exactly the correction factor; on the control it
+    /// equals them.
+    @Test("friedman stays the uncorrected statistic", arguments: ConcordanceReferenceTests.cases)
+    func friedmanUncorrected(testCase: ConcordanceCase) throws {
+        let result = try concordanceAnalysis(testCase.rankings)
+        let m: Double = Double(result.judges)
+        let n: Double = Double(result.items)
+        let cubeLessN: Double = n * n * n - n
+        let factor: Double = 1 - result.totalTieCorrection / (m * cubeLessN)
+        let expected: Double = testCase.sciPyChiSquare * factor
+        let gap: Double = Self.relativeGap(result.friedman, expected)
+        #expect(gap < 1e-12, "uncorrected χ² \(expected), this \(result.friedman)")
+    }
+
+    // MARK: - Every judge ties everything
+
+    /// A panel in which every judge ties every item expressed no preference at all, and the
+    /// tie-corrected denominator is `m²(n³ − n) − m·m(n³ − n) = 0`: W is `0/0`. All three
+    /// references say so:
+    ///
+    ///     scipy.stats.friedmanchisquare([2,2,2],[2,2,2],[2,2,2])   statistic=nan, pvalue=nan
+    ///     friedman.test(matrix(2.5, 3, 4))                         chi-squared = NaN, p-value = NA
+    ///     irr::kendall(t(matrix(2.5, 3, 4)), correct = TRUE)       W NaN, chi2 NaN, p NaN
+    ///
+    /// This package used to fall back to the uncorrected W — zero — and so reported
+    /// "no agreement, p = 1": a confident finding about a panel that measured nothing. The
+    /// uncorrected `w` stays zero (its formula is defined: the rank sums are identical); every
+    /// tie-corrected figure, and everything derived from one, is undefined.
+    @Test("A panel that ties everything is undefined, as in SciPy and R")
+    func everyJudgeTiesEverything() throws {
+        let rankings: [[Double]] = Array(repeating: [2.5, 2.5, 2.5, 2.5], count: 3)
+        let result = try concordanceAnalysis(rankings)
+        #expect(result.w.isEqual(to: 0), "uncorrected W is defined here: \(result.w)")
+        #expect(result.wCorrected.isNaN, "wCorrected \(result.wCorrected)")
+        #expect(result.chiSquare.isNaN, "chiSquare \(result.chiSquare)")
+        #expect(result.friedmanCorrected.isNaN, "friedmanCorrected \(result.friedmanCorrected)")
+        #expect(result.pValue.isNaN, "pValue \(result.pValue)")
+        #expect(result.fStatistic.isNaN, "fStatistic \(result.fStatistic)")
+    }
+
+    /// `F = (n − 1)W / (1 − W)` guarded its division with `abs(1 − W) > ulp`, which is false
+    /// for a NaN, so an undefined W came back as an *infinite* F — maximal agreement.
+    @Test("fStatistic of an undefined W is undefined, not infinite")
+    func fStatisticOfNaN() {
+        let f: Double = fStatistic(kendallW: Double.nan, items: 4)
+        #expect(f.isNaN, "got \(f)")
+    }
+
     @Test("P-value matches SciPy and R", arguments: ConcordanceReferenceTests.cases)
     func pValue(testCase: ConcordanceCase) throws {
         let result = try concordanceAnalysis(testCase.rankings)

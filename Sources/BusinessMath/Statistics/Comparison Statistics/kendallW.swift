@@ -157,18 +157,65 @@ public func kendallWFromRankSums<T: Real>(rankSums: [T], judges: Int, items: Int
 ///
 /// Provides Kendall's W (both raw and tie-corrected), chi-squared and Friedman test statistics,
 /// degrees of freedom, p-value, and F-statistic for assessing inter-rater agreement.
+///
+/// ## Which figures account for ties
+///
+/// With `m` judges, `n` items, and `t` the size of each group of tied ranks within a judge:
+///
+/// | Property | Tie-corrected | Formula |
+/// |---|---|---|
+/// | ``w`` | no | `12S / (m²(n³ − n))` |
+/// | ``wCorrected`` | yes | `12S / (m²(n³ − n) − m·Σ(t³ − t))` |
+/// | ``chiSquare`` | yes | `m(n − 1)·wCorrected` |
+/// | ``friedman`` | no | `12/(mn(n + 1))·ΣR² − 3m(n + 1)` |
+/// | ``friedmanCorrected`` | yes | `friedman / (1 − Σ(t³ − t) / (m(n³ − n)))` |
+/// | ``pValue`` | yes | upper tail of χ²(n − 1) at ``chiSquare`` |
+/// | ``fStatistic`` | yes | `(n − 1)·wCorrected / (1 − wCorrected)` |
+///
+/// ``chiSquare`` and ``friedmanCorrected`` are the same statistic reached two ways, and both
+/// equal what SciPy's `scipy.stats.friedmanchisquare` and R's `friedman.test` report; ``wCorrected``
+/// equals R's `irr::kendall(..., correct = TRUE)`. The package's tests pin all of these to
+/// recorded SciPy and R values on tied data.
+///
+/// The correction assumes tied items carry the **average** of the ranks they span (two items
+/// tied for second and third both get 2.5). Ties are detected as equal values within a judge's
+/// row, so ranks assigned any other way — both tied items given 2, say — are corrected as
+/// though averaged, and the result will not match a tool that re-ranks the row itself.
+///
+/// When every judge ties every item there is no preference to measure: the corrected
+/// denominator is zero, and every tie-corrected figure is `nan`, as it is in SciPy and R.
 public struct ConcordanceResult<T: Real>: Sendable where T: Sendable {
     /// Kendall's W coefficient of concordance (uncorrected for ties).
     public let w: T
     /// Kendall's W corrected for tied ranks within judges.
+    ///
+    /// `nan` when every judge ties every item, because the corrected denominator is then zero.
     public let wCorrected: T
-    /// Chi-squared statistic for testing significance of agreement.
+    /// Chi-squared statistic for testing significance of agreement, `m(n − 1)·wCorrected`.
+    ///
+    /// This is the tie-corrected Friedman statistic; it equals ``friedmanCorrected``.
     public let chiSquare: T
-    /// Friedman test statistic derived from the rank sums.
+    /// The classic Friedman statistic, `12/(mn(n + 1))·ΣR² − 3m(n + 1)`, **not** corrected for ties.
+    ///
+    /// Kept with the meaning it has always had. With tied ranks it is smaller than the
+    /// statistic SciPy and R report; use ``friedmanCorrected`` to match them.
     public let friedman: T
+    /// The Friedman statistic corrected for tied ranks, as reported by SciPy's
+    /// `scipy.stats.friedmanchisquare` and R's `friedman.test`.
+    ///
+    /// `friedman / C`, where `C = 1 − Σ(t³ − t) / (m(n³ − n))` and `t` runs over each group of
+    /// tied ranks within each judge. Without ties `C = 1` and this equals ``friedman``. It is the
+    /// same number as ``chiSquare``, `m(n − 1)·wCorrected`, reached through the Friedman form.
+    ///
+    /// `nan` when every judge ties every item (`C = 0`), as in SciPy and R. From
+    /// ``concordanceAnalysisFromRankSums(rankSums:judges:items:)``, which never sees the judges'
+    /// rows and so cannot detect ties, it equals ``friedman``.
+    public let friedmanCorrected: T
     /// Degrees of freedom for the chi-squared test (items - 1).
     public let degreesOfFreedom: Int
-    /// P-value for the null hypothesis of no agreement.
+    /// P-value for the null hypothesis of no agreement, from ``chiSquare``.
+    ///
+    /// `nan` when ``chiSquare`` is `nan`: an undefined statistic has no tail probability.
     public let pValue: T
     /// F-statistic approximation for small-sample significance testing.
     public let fStatistic: T
@@ -186,6 +233,27 @@ public struct ConcordanceResult<T: Real>: Sendable where T: Sendable {
 ///
 /// Computes Kendall's W, chi-squared statistic, Friedman statistic, p-value,
 /// and F-statistic. Automatically detects and corrects for tied ranks.
+///
+/// Tied items should carry the average of the ranks they span (2.5 and 2.5 for a tie across
+/// second and third). The tie-corrected figures — ``ConcordanceResult/wCorrected``,
+/// ``ConcordanceResult/chiSquare``, ``ConcordanceResult/friedmanCorrected``,
+/// ``ConcordanceResult/pValue`` — match SciPy's `friedmanchisquare`, R's `friedman.test` and
+/// R's `irr::kendall(correct = TRUE)`; ``ConcordanceResult/friedman`` is the classic
+/// uncorrected statistic. See ``ConcordanceResult`` for the formulas.
+///
+/// ```swift
+/// // Four judges, five wines; the second judge could not separate wines 2 and 3.
+/// let rankings: [[Double]] = [
+///     [1, 2,   3,   4, 5],
+///     [1, 2.5, 2.5, 4, 5],
+///     [2, 1,   3,   5, 4],
+///     [1, 3,   2,   4, 5],
+/// ]
+/// let result = try concordanceAnalysis(rankings)
+/// // result.wCorrected        ≈ 0.870253  (irr::kendall, correct = TRUE)
+/// // result.friedmanCorrected ≈ 13.924051 (scipy friedmanchisquare, R friedman.test)
+/// // result.pValue            ≈ 0.007541
+/// ```
 ///
 /// - Parameter rankings: A 2D array where rows are judges and columns are items.
 /// - Returns: A ``ConcordanceResult`` with all agreement statistics.
@@ -255,7 +323,12 @@ public func concordanceAnalysis<T: Real & Sendable>(_ rankings: [[T]]) throws ->
         let rawCorrected = (T(12) * s) / denomCorrected
         wCorrected = rawCorrected.isNaN ? rawCorrected : max(T(0), min(T(1), rawCorrected))
     } else {
-        wCorrected = w
+        // Only reachable when every judge ties every item: Σ(t³ − t) per judge is at most
+        // n³ − n, so the corrected denominator is zero exactly then. W is 0/0. This used to fall
+        // back to the uncorrected `w` — zero — and the p-value below to 1, reporting "no
+        // agreement, certainly not significant" about a panel that expressed no preference at
+        // all. SciPy's `friedmanchisquare`, R's `friedman.test` and `irr::kendall` all answer NaN.
+        wCorrected = T.nan
     }
 
     let chi2 = mT * (nT - T(1)) * wCorrected
@@ -269,21 +342,35 @@ public func concordanceAnalysis<T: Real & Sendable>(_ rankings: [[T]]) throws ->
     // a W of 1.0 claiming perfect concordance. Same tidy-up, same trap as `friedmanChiSquare`.
     let friedman = rawFriedman.isNaN ? rawFriedman : max(T(0), rawFriedman)
 
-    let pValue: T
-    if chi2 > T(0) && df > 0 {
-        let cdf = try chiSquaredCDF(x: chi2, df: df)
-        pValue = T(1) - cdf
-    } else {
-        pValue = T(1)
-    }
+    // Tie-corrected Friedman: divide by C = 1 − Σ(t³ − t) / (m(n³ − n)), the form SciPy and R
+    // use. C is zero only when every judge ties everything, the same case as above.
+    let cubeLessN: T = nT * nT * nT - nT
+    let tieShare: T = totalT / (mT * cubeLessN)
+    let tieFactor: T = T(1) - tieShare
+    let friedmanCorrected: T = tieFactor > T.ulpOfOne ? friedman / tieFactor : T.nan
+
+    let pValue = try concordancePValue(chiSquare: chi2, degreesOfFreedom: df)
 
     let f = fStatistic(kendallW: wCorrected, items: n)
 
     return ConcordanceResult(
         w: w, wCorrected: wCorrected, chiSquare: chi2, friedman: friedman,
+        friedmanCorrected: friedmanCorrected,
         degreesOfFreedom: df, pValue: pValue, fStatistic: f,
         judges: m, items: n, totalTieCorrection: totalT
     )
+}
+
+/// Upper-tail chi-squared probability for a concordance statistic.
+///
+/// Shared by the three concordance entry points. A `nan` statistic has no tail probability:
+/// `nan > 0` is false, so the guard below used to send it to the `else` arm and report
+/// p = 1, a confident "not significant" about a statistic that could not be computed.
+private func concordancePValue<T: Real>(chiSquare chi2: T, degreesOfFreedom df: Int) throws -> T {
+    guard !chi2.isNaN else { return T.nan }
+    guard chi2 > T(0) && df > 0 else { return T(1) }
+    let cdf: T = try chiSquaredCDF(x: chi2, df: df)
+    return T(1) - cdf
 }
 
 // MARK: - Concordance Analysis (From Rank Sums)
@@ -292,7 +379,9 @@ public func concordanceAnalysis<T: Real & Sendable>(_ rankings: [[T]]) throws ->
 ///
 /// Use this when you have already computed column-wise rank sums externally
 /// (e.g., from an `Array2D`). Since individual judge rows are not available,
-/// tie correction is not applied.
+/// tie correction is not applied: `wCorrected` equals `w`, `friedmanCorrected` equals
+/// `friedman`, and both will be below what SciPy or R report if the judges tied any items.
+/// Use ``concordanceAnalysis(_:)`` with the full matrix when ties are possible.
 ///
 /// - Parameters:
 ///   - rankSums: Array of rank sums for each item.
@@ -341,18 +430,12 @@ public func concordanceAnalysisFromRankSums<T: Real & Sendable>(
     // a W of 1.0 claiming perfect concordance. Same tidy-up, same trap as `friedmanChiSquare`.
     let friedman = rawFriedman.isNaN ? rawFriedman : max(T(0), rawFriedman)
 
-    let pValue: T
-    if chi2 > T(0) && df > 0 {
-        let cdf = try chiSquaredCDF(x: chi2, df: df)
-        pValue = T(1) - cdf
-    } else {
-        pValue = T(1)
-    }
+    let pValue = try concordancePValue(chiSquare: chi2, degreesOfFreedom: df)
 
     let f = fStatistic(kendallW: w, items: items)
 
     return ConcordanceResult(
-        w: w, wCorrected: w, chiSquare: chi2, friedman: friedman,
+        w: w, wCorrected: w, chiSquare: chi2, friedman: friedman, friedmanCorrected: friedman,
         degreesOfFreedom: df, pValue: pValue, fStatistic: f,
         judges: judges, items: items, totalTieCorrection: T(0)
     )
@@ -431,18 +514,12 @@ public func concordanceAnalysisNA<T: Real & Sendable>(_ rankings: [[T?]]) throws
     let chi2 = mEffT * (nT - T(1)) * w
     let df = totalItems - 1
 
-    let pValue: T
-    if chi2 > T(0) && df > 0 {
-        let cdf = try chiSquaredCDF(x: chi2, df: df)
-        pValue = T(1) - cdf
-    } else {
-        pValue = T(1)
-    }
+    let pValue = try concordancePValue(chiSquare: chi2, degreesOfFreedom: df)
 
     let f = fStatistic(kendallW: w, items: totalItems)
 
     return ConcordanceResult(
-        w: w, wCorrected: w, chiSquare: chi2, friedman: chi2,
+        w: w, wCorrected: w, chiSquare: chi2, friedman: chi2, friedmanCorrected: chi2,
         degreesOfFreedom: df, pValue: pValue, fStatistic: f,
         judges: m, items: totalItems, totalTieCorrection: T(0)
     )
