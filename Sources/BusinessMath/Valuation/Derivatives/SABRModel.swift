@@ -68,7 +68,8 @@ public struct SABRParameters: Sendable {
     ///   - timeToExpiry: Time to expiration in years. Must be positive.
     /// - Returns: The SABR-implied Black volatility; `nan` when any argument or `alpha` is
     ///   `nan`, and `0` for a non-positive forward, strike, expiry or `alpha`, which are
-    ///   outside the model's domain.
+    ///   outside the model's domain. Also `nan` at the money when `forward^(1 − β)` is so small
+    ///   that its square underflows, where the expansion cannot be evaluated in `Double`.
     public func impliedVol(forward: Double, strike: Double, timeToExpiry: Double) -> Double {
         // Contamination is diverted before the domain guard so each keeps its own meaning —
         // the same order as `JumpDiffusionProcess.step` and `CapitalAllocationOptimizer.roi`.
@@ -124,8 +125,12 @@ public struct SABRParameters: Sendable {
         let oneBeta = 1.0 - beta
         let fBeta = Double.pow(forward, oneBeta)
 
-        let term1 = oneBeta * oneBeta / 24.0 * alpha * alpha // fp-safety:disable — fBeta = forward^(1-beta), forward > 0 from guard
-            / (fBeta * fBeta)
+        // `forward > 0` keeps fBeta positive but not its square: at forward = 1e-200, β = 0,
+        // fBeta² underflows to zero and term1 became +∞, an infinite implied volatility.
+        let fBetaSquared: Double = fBeta * fBeta
+        guard fBetaSquared > 0, fBetaSquared.isFinite else { return Double.nan }
+
+        let term1 = oneBeta * oneBeta / 24.0 * alpha * alpha / fBetaSquared
         let term2 = 0.25 * rho * beta * nu * alpha / fBeta // fp-safety:disable — fBeta > 0
         let term3 = (2.0 - 3.0 * rho * rho) / 24.0 * nu * nu
         let correction = 1.0 + (term1 + term2 + term3) * timeToExpiry

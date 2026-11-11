@@ -12,7 +12,8 @@
 //
 //  Measured:
 //      raw Double : nan >= x            -> false
-//      Date       : nanDate >= realDate -> TRUE
+//      Date       : nanDate >= realDate -> TRUE    (through Swift 6.4; FALSE on Apple Swift 6.4.2,
+//                                                   see derivedOperatorsInvertOnANaN)
 //      control    : Date(0) >= Date(1.7e9) -> false   (a real inversion is still rejected)
 //
 //  `Period.day(_:)` is deliberately not covered here: `Calendar.startOfDay(for:)` launders a
@@ -43,10 +44,18 @@ struct ComparableInversionTests {
 		let rawAtLeast: Bool = rawNaN >= rawReal
 		#expect(rawAtLeast == false, "the campaign's governing fact, on a bare Double")
 
+		// It did change. Through Swift 6.4 (and on the CI toolchain, 6.2.1) Date's `>=` and `<=`
+		// were the synthesised `!(<)` forms and both answered TRUE here. Apple Swift 6.4.2's
+		// Foundation (macOS 27 SDK) answers FALSE for both, measured 2026-11-11 with a bare
+		// `swift` script: `n>=r false n<=r false n<r false n>r false`. So whether a NaN-backed
+		// Date fails open is now a property of the toolchain, which is exactly why the guards
+		// below were rewritten not to depend on either answer. What this still pins is that the
+		// two derived operators move together: one inverting without the other would be a third
+		// behaviour that none of those guards was written against.
 		let dateAtLeast: Bool = Self.nanDate >= Self.realDate
 		let dateAtMost: Bool = Self.nanDate <= Self.realDate
-		#expect(dateAtLeast, "Date's >= is !(<), so it negates a false")
-		#expect(dateAtMost, "and so is <=")
+		#expect(dateAtLeast == dateAtMost,
+				"Date's >= and <= on a NaN must agree (both synthesised, or both IEEE)")
 
 		// The strict operators are not derived, so they behave as expected.
 		let strictlyGreater: Bool = Self.nanDate > Self.realDate

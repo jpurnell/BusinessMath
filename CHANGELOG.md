@@ -9,6 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [Unreleased]
+
+#### Fixed
+
+- **SABR at-the-money implied vol is `nan`, not `+∞`, when `forward^(1 − β)` squares to zero.**
+  The domain guard admits any positive forward, but at `forward = 1e-200`, `β = 0` the square
+  underflows. The correction term `α²/24 / fBeta²` was then infinite. Found by the gate's
+  `fp-safety` checker: the division had no guard of its own, and the suppression comment on
+  the line above it did not cover it. That comment is gone, replaced by a real guard.
+- **`SimulatedAnnealing` no longer converts an unchecked `Double` to `Int`.**
+  `Int(scaledGaussian * 1_000_000)` traps on a NaN, an infinity or anything past `Int.max`, and
+  nothing bounds `perturbationScale`. It is now `Int(exactly:)` of the same truncated value,
+  which is identical for every representable input. An unrepresentable perturbation leaves that
+  coordinate where it was. Flagged as an error by the `fallback` checker in the gate binary of
+  2026-11-10.
+
+#### Tests
+
+- `ComparableInversionTests.derivedOperatorsInvertOnANaN` was failing on `main` under Apple
+  Swift 6.4.2. That toolchain's Foundation answers `false` for both `nanDate >= realDate` and
+  `nanDate <= realDate`, where earlier toolchains (and CI's 6.2.1) answered `true` through the
+  synthesised `!(<)`. The test was written to be the place a toolchain change shows up, and it
+  did. It now pins that the two derived operators agree with each other rather than pinning one
+  toolchain's answer. The guards it motivated were already written not to depend on either answer.
+
 ### [3.0.0-alpha.12] - 2026-10-10
 
 **A number from a caller could end the process, and the function that was supposed to stop it

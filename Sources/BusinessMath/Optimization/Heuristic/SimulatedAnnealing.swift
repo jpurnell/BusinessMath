@@ -423,7 +423,16 @@ public struct SimulatedAnnealing<V: VectorSpace>: MultivariateOptimizer where V.
 
             // Scale perturbation (convert through Int for generic safety)
             let scaledGaussian = config.perturbationScale * coolingFactor * gaussian
-            let scaledInt = Int(scaledGaussian * 1_000_000)
+            // `Int(_:)` truncates toward zero and traps on a NaN, an infinity, or anything past
+            // Int.max — and nothing above bounds `perturbationScale`. The same truncation,
+            // spelled so an unrepresentable value is refused rather than fatal. Refused means
+            // this coordinate is not moved: the one perturbation guaranteed to stay inside the
+            // search space, and the acceptance test below treats the neighbour as usual.
+            let scaledMicros: Double = (scaledGaussian * 1_000_000).rounded(.towardZero)
+            guard let scaledInt = Int(exactly: scaledMicros) else {
+                neighborComponents.append(currentArray[d])
+                continue
+            }
             let perturbation = V.Scalar(scaledInt) / V.Scalar(1_000_000) * range
 
             // Apply perturbation and clamp
