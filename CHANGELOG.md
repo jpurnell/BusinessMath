@@ -11,6 +11,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+**Tie-corrected concordance is now checked against SciPy and R, and has a tie-corrected
+Friedman figure.** A tasting app that lets judges tie needs `concordanceAnalysis` to agree with
+the tools a statistician would reach for. Until now nothing compared it to any of them.
+
+#### Added
+
+- **`ConcordanceReferenceTests`**: seven recorded cases (a no-ties control, a tied pair, a
+  three-way tie, one judge tying everything, ties in every judge, strong agreement with ties,
+  and an 11 × 10 integer-score panel the size of the Judgment of Paris). Each pins `wCorrected`,
+  `chiSquare` and `pValue` to SciPy 1.18.1, R 4.6.2 `friedman.test` and
+  `irr` 0.85 `kendall(correct = TRUE)`. Statistics are compared at a relative 1e-12 and p-values
+  at 1e-9. The existing `wCorrected`, `chiSquare` and `pValue` already agreed on every case.
+- `Scripts/reference-fixtures/generate_concordance.py` (calls `generate_concordance.R`) and
+  `concordance_cases.txt` regenerate the numbers. The tests need neither Python nor R.
 #### Fixed
 
 - **SABR at-the-money implied vol is `nan`, not `+∞`, when `forward^(1 − β)` squares to zero.**
