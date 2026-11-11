@@ -9,6 +9,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## BusinessMath Library
 
+### [Unreleased]
+
+### [3.0.0-alpha.13] - 2026-11-11
+
+**Tie-corrected concordance is now checked against SciPy and R, and has a tie-corrected
+Friedman figure.** A tasting app that lets judges tie needs `concordanceAnalysis` to agree with
+the tools a statistician would reach for. Until now nothing compared it to any of them.
+
+#### Added
+
+- **`ConcordanceResult.friedmanCorrected`**: the Friedman statistic corrected for tied ranks,
+  `friedman / (1 − Σ(t³ − t) / (m(n³ − n)))`. This is the number SciPy's
+  `scipy.stats.friedmanchisquare` and R's `friedman.test` report, and it equals `chiSquare`
+  (`m(n − 1)·wCorrected`). It is additive: `friedman` keeps its meaning as the classic,
+  uncorrected statistic, so existing callers see no change. From
+  `concordanceAnalysisFromRankSums`, which never sees the judges' rows, it equals `friedman`.
+- **`ConcordanceReferenceTests`**: seven recorded cases (a no-ties control, a tied pair, a
+  three-way tie, one judge tying everything, ties in every judge, strong agreement with ties,
+  and an 11 × 10 integer-score panel the size of the Judgment of Paris). Each pins `wCorrected`,
+  `chiSquare`, `friedmanCorrected` and `pValue` to SciPy 1.18.1, R 4.6.2 `friedman.test` and
+  `irr` 0.85 `kendall(correct = TRUE)`. Statistics are compared at a relative 1e-12 and p-values
+  at 1e-9. The existing `wCorrected`, `chiSquare` and `pValue` already agreed on every case.
+- `Scripts/reference-fixtures/generate_concordance.py` (calls `generate_concordance.R`) and
+  `concordance_cases.txt` regenerate the numbers. The tests need neither Python nor R.
+- DocC: `ConcordanceResult` now has a table of which figures are tie-corrected and by what
+  formula, and it states that ties must carry averaged ranks.
+
+#### Fixed
+
+- **A panel in which every judge ties every item is now undefined, as it is in SciPy and R.**
+  The corrected denominator `m²(n³ − n) − m·Σ(t³ − t)` is zero exactly then, so W is 0/0.
+  `wCorrected` used to fall back to the uncorrected `w`, which is zero. That gave a χ² of 0 and
+  p = 1: "no agreement, certainly not significant", about a panel that expressed no preference.
+  `wCorrected`, `chiSquare`, `friedmanCorrected`, `pValue` and `fStatistic` are now `nan`.
+  The uncorrected `w` stays 0, because its formula is defined there.
+- **`pValue` is `nan` when `chiSquare` is `nan`**, in all three concordance entry points. A `nan`
+  statistic failed `chi2 > 0` and fell through to `p = 1`.
+- **`fStatistic(kendallW: .nan, items:)` returns `nan`, not `+∞`.** The `W = 1` guard
+  `abs(1 − W) > ulpOfOne` is false for a `nan`, so an undefined W was reported as infinite F.
+
+- **SABR at-the-money implied vol is `nan`, not `+∞`, when `forward^(1 − β)` squares to zero.**
+  The domain guard admits any positive forward, but at `forward = 1e-200`, `β = 0` the square
+  underflows. The correction term `α²/24 / fBeta²` was then infinite. Found by the gate's
+  `fp-safety` checker: the division had no guard of its own, and the suppression comment on
+  the line above it did not cover it. That comment is gone, replaced by a real guard.
+- **`SimulatedAnnealing` no longer converts an unchecked `Double` to `Int`.**
+  `Int(scaledGaussian * 1_000_000)` traps on a NaN, an infinity or anything past `Int.max`, and
+  nothing bounds `perturbationScale`. It is now `Int(exactly:)` of the same truncated value,
+  which is identical for every representable input. An unrepresentable perturbation leaves that
+  coordinate where it was. Flagged as an error by the `fallback` checker in the gate binary of
+  2026-11-10.
+
+#### Tests
+
+- `ComparableInversionTests.derivedOperatorsInvertOnANaN` was failing on `main` under Apple
+  Swift 6.4.2. That toolchain's Foundation answers `false` for both `nanDate >= realDate` and
+  `nanDate <= realDate`, where earlier toolchains (and CI's 6.2.1) answered `true` through the
+  synthesised `!(<)`. The test was written to be the place a toolchain change shows up, and it
+  did. It now pins that the two derived operators agree with each other rather than pinning one
+  toolchain's answer. The guards it motivated were already written not to depend on either answer.
+
 ### [3.0.0-alpha.12] - 2026-10-10
 
 **A number from a caller could end the process, and the function that was supposed to stop it

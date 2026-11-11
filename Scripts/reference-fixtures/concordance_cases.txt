@@ -1,0 +1,62 @@
+# Concordance reference cases, read by generate_concordance.py and generate_concordance.R.
+#
+# One case per block: a `case <name>` line, then one line per judge with that judge's
+# values for every item, space-separated. Blocks end at a blank line. Values may be
+# averaged ranks or raw scores: SciPy, R and this generator all re-rank within each judge
+# (average method), so an already-ranked row is unchanged and a score row becomes the
+# averaged ranks that the Swift tests then feed to `concordanceAnalysis`.
+
+case no ties (control)
+1 2 3 4
+2 1 3 4
+1 3 2 4
+
+case one tied pair
+1 2 3 4 5
+1 2.5 2.5 4 5
+2 1 3 5 4
+1 3 2 4 5
+
+case three-way tie
+1 2 3 4 5 6
+1 3 3 3 5 6
+2 1 3 4 6 5
+1 2 4 3 5 6
+2 1 3 5 4 6
+
+case one judge ties everything
+1 2 3 4
+2 1 3 4
+1 2 4 3
+2.5 2.5 2.5 2.5
+
+case ties in every judge
+1.5 1.5 3 4 5.5 5.5 7 8
+1 2 3.5 3.5 5 6 7.5 7.5
+2 2 2 4 5 6 7 8
+1.5 1.5 3.5 3.5 5.5 5.5 7.5 7.5
+1 3 3 3 6 6 6 8
+2 1 3 4 5 7 7 7
+
+case strong agreement with ties
+1 2 3 4 5 6 7
+1 2 3 4 5 6.5 6.5
+1.5 1.5 3 4 5 6 7
+1 2 3 5 4 6 7
+1 2 3.5 3.5 5 6 7
+2 1 3 4 5 6 7
+1 2 3 4 6 5 7
+1 2 3 4 5 6 7
+
+case Paris-sized panel, 11 judges x 10 wines, integer scores
+18 11 15 16 14 16 11 14 11 9
+14 15 16 15 11 15 8 14 9 9
+14 14 14 15 15 14 14 12 9 9
+17 17 16 16 14 14 13 10 12 11
+18 14 11 12 10 13 11 11 7 13
+16 16 13 16 10 12 12 10 14 9
+17 18 18 14 15 12 10 10 9 9
+16 15 17 11 13 11 15 15 12 11
+17 13 19 12 11 10 11 11 13 12
+17 11 16 15 10 9 10 13 13 13
+17 14 13 10 11 14 11 11 10 12

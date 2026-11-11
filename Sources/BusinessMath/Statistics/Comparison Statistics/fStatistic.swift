@@ -52,6 +52,7 @@ import Numerics
 /// - Returns: The F-statistic value.
 ///   Returns 0 when W = 0.
 ///   Returns infinity when W approaches 1.
+///   Returns NaN when W is NaN or `items` is below 2.
 ///
 /// - Complexity: O(1).
 ///
@@ -60,6 +61,10 @@ public func fStatistic<T: Real>(kendallW w: T, items: Int) -> T {
     guard items >= 2 else {
         return T.nan
     }
+
+    // `abs(1 - nan) > ulpOfOne` is false, so an undefined W used to fall into the W = 1 guard
+    // below and come back as an infinite F: maximal agreement, from no measurement at all.
+    guard !w.isNaN else { return T.nan }
 
     let m = T(items)
 
