@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+### [3.0.0-alpha.13] - 2026-11-11
+
 **Tie-corrected concordance is now checked against SciPy and R, and has a tie-corrected
 Friedman figure.** A tasting app that lets judges tie needs `concordanceAnalysis` to agree with
 the tools a statistician would reach for. Until now nothing compared it to any of them.
