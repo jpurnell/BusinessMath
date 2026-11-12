@@ -37,6 +37,9 @@ This section bridges the gap between calculation and insight. Whether you're eva
 ### Model Validation
 - <doc:2.5-ModelValidationGuide>
 
+### Panels and Rankings
+- <doc:2.6-RankSumSignificance>
+
 ## Prerequisites
 
 Before diving into Part II, you should be comfortable with time series operations, basic financial calculations, and the fluent API patterns from Part I. If you skipped Part I, at minimum review chapters 1.1-1.3 before proceeding.
