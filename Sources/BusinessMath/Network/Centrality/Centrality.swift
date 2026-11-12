@@ -211,32 +211,55 @@ public extension Graph {
 	/// separates nodes that degree and PageRank rank alike.
 	///
 	/// - Parameters:
-	///   - tolerance: Convergence threshold for the power iteration.
+	///   - tolerance: Convergence threshold: the iteration stops when no component of the
+	///     L2-normalised vector moves by `tolerance` or more between passes.
 	///   - maxIterations: The budget.
-	/// - Returns: An L2-normalised vector, or `nil` when the measure is not meaningful.
+	/// - Returns: An L2-normalised vector (unit length, all entries positive), or `nil` when
+	///   the measure is not meaningful or the iteration did not converge.
 	///
-	/// ## The localisation refusal
+	/// ## The shift
 	///
-	/// `nil` on a **disconnected** graph, and this is a refusal rather than a limitation.
-	/// Each component has its own leading eigenvector, the power iteration converges to
-	/// whichever the starting vector happens to favour, and the result is stable, plausible
-	/// and a property of the initial guess rather than of the graph. Running it per
-	/// component is the meaningful thing to do, and the caller has to choose that.
+	/// Plain power iteration on the adjacency matrix `A` does not converge on a bipartite
+	/// graph — every tree, star and even cycle — because the spectrum is symmetric: `−λ`
+	/// ties `+λ` in modulus, so the iterate oscillates between two vectors and the answer
+	/// depends on whether the iteration count is odd or even. This iterates on
+	/// `A + sI` instead. It has the same eigenvectors as `A`, with eigenvalues moved up by
+	/// `s`, so `−λ` becomes `s − λ`, strictly smaller in modulus than `λ + s` whenever
+	/// `s > 0`. The shift `s` is the mean degree `edgeCount / nodeCount`, so it scales
+	/// with the graph; any `s` in `(0, ∞)` is correct, and a larger one only slows the
+	/// convergence of the remaining eigenvalues.
 	///
-	/// Also `nil` for a graph with no edges, which has no leading eigenvector at all.
+	/// ## When it returns `nil`
+	///
+	/// - On a **disconnected** graph, and this is a refusal rather than a limitation.
+	///   Each component has its own leading eigenvector, the power iteration converges to
+	///   whichever the starting vector happens to favour, and the result is stable,
+	///   plausible and a property of the initial guess rather than of the graph. Running
+	///   it per component is the meaningful thing to do, and the caller has to choose
+	///   that.
+	/// - For a graph with no edges, which has no leading eigenvector at all.
+	/// - When the iteration has not converged to `tolerance` within `maxIterations`. The
+	///   last iterate of an unconverged iteration is a vector with no meaning and no marker
+	///   saying so, so it is not returned.
+	///
+	/// Edge direction is read as it is stored: score flows along each stored edge from its
+	/// source to its target, so for a directed graph this is the leading eigenvector of
+	/// the transpose of the adjacency matrix.
 	func eigenvectorCentrality(tolerance: Double = 1e-12,
 							   maxIterations: Int = 1000) -> [Node: Double]? {
 		guard !nodes.isEmpty, edgeCount > 0 else { return nil }
 		guard isWeaklyConnected else { return nil }
 
 		let count = Double(nodes.count)
+		let shift: Double = Double(edgeCount) / count
 		let start = 1 / count.squareRoot()
 		var vector: [Node: Double] = [:]
 		for node in nodes { vector[node] = start }
 
 		for _ in 0..<maxIterations {
+			// (A + sI) v: the shift is each node keeping s times its own score.
 			var next: [Node: Double] = [:]
-			for node in nodes { next[node] = 0 }
+			for node in nodes { next[node] = shift * (vector[node] ?? 0) }
 			for node in nodes {
 				for target in neighbors(of: node) {
 					next[target] = (next[target] ?? 0) + (vector[node] ?? 0)
@@ -256,7 +279,7 @@ public extension Graph {
 			vector = next
 			if movement < tolerance { return vector }
 		}
-		return vector
+		return nil
 	}
 
 	/// Whether every node reaches every other when edge direction is ignored.
