@@ -11,7 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
-Proposed as **3.0.0-alpha.14**. Additive: no existing API changes.
+### [3.0.0-alpha.14] - 2026-11-12
+
+Additive: no existing API changes.
 
 **Exact, tie-aware rank-sum critical values.** A tasting app tests each wine's rank sum across
 the panel (Kramer's rank-sum test). Until now the only critical values available were the

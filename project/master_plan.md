@@ -817,7 +817,9 @@ The earlier table was about *scope*; this one is about *what is being measured*.
 
 ---
 
-**Last Updated:** 2026-11-11 — tagged v3.0.0-alpha.13: the CHANGELOG's `[Unreleased]` block (tie-corrected concordance checked against SciPy and R, `friedmanCorrected`, an all-tied panel is `nan`, SABR ATM and `SimulatedAnnealing` guards) became the release; the README notice and install line name it. Planning tables reconciled against the CHANGELOG; nothing in Current Status advanced.
+**Last Updated:** 2026-11-12 — tagged v3.0.0-alpha.14: the CHANGELOG's `[Unreleased]` block (exact, tie-aware rank-sum distribution and critical values, `rankSumDistribution` and `rankSumCriticalValues`, checked against brute force, exact Python integers, NumPy, R and Monte Carlo) became the release; the README notice and install line name it. Nothing in Current Status advanced.
+
+**Previously, 2026-11-11 — tagged v3.0.0-alpha.13: the CHANGELOG's `[Unreleased]` block (tie-corrected concordance checked against SciPy and R, `friedmanCorrected`, an all-tied panel is `nan`, SABR ATM and `SimulatedAnnealing` guards) became the release; the README notice and install line name it. Planning tables reconciled against the CHANGELOG; nothing in Current Status advanced.
 
 **Previously, 2026-10-10 — tagged v3.0.0-alpha.12: the CHANGELOG's `[Unreleased]` block
 is the release, and the README's pre-release notice and install line name it. Before that,
