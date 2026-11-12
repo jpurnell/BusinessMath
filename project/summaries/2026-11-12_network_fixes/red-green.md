@@ -60,3 +60,18 @@ Test run with 6 tests in 1 suite failed after 8.985 seconds with 7 issues.
 ### Mutation-closing tests added after the first green (red under the named mutant, green on the real code)
 
 budgetIsExact and toleranceIsStrict were written after mutation testing showed iteration-count and tolerance-comparison mutants surviving. They were verified red against the mutants in the scratch package (see summary.md table), then green on the real code (15 tests, 0.135s, scratch package).
+
+## Task 2 Louvain: GREEN (real contraction)
+
+Scratch package run, then worktree run: `swift test --filter "LouvainMultiLevelTests|ProjectionAndCommunityTests|EigenvectorCentralityBipartiteTests|CentralityTests|GraphTests|MarkovTests"`
+```
+Suite "Projection and community" passed after 0.014 seconds.
+Suite "Graph, components and ordering" passed after 0.014 seconds.
+Suite "Markov chains" passed after 0.014 seconds.
+Suite "Centrality" passed after 0.014 seconds.
+Suite "Eigenvector centrality on bipartite graphs" passed after 0.172 seconds.
+Suite "Louvain multi-level" passed after 2.437 seconds.
+Test run with 70 tests in 6 suites passed after 2.437 seconds.
+```
+
+Tests that passed on the OLD Community.swift too (written as guards after the fix, so NOT red-first): maxPasses monotone, never-below-single-level, self-loop, properties, relabelling, exhaustive-optimum bound. Red-first on old code: ring of 12 triangles, ring of 16 K4, production-vs-reference on rings (7 issues, output above).

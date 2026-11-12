@@ -74,17 +74,16 @@ struct EigenvectorCentralityBipartiteTests {
 		return undirected(pairs)
 	}
 
-	private func expectVector(_ got: [String: Double]?, _ wanted: [String: Double],
-							  tolerance: Double = 1e-9) {
-		guard let got else {
-			Issue.record("eigenvectorCentrality returned nil, expected \(wanted)")
-			return
+	/// The largest absolute difference from `wanted`, or infinity when the result is `nil`,
+	/// has a different size, or lacks a wanted node.
+	private static func deviation(_ got: [String: Double]?, _ wanted: [String: Double]) -> Double {
+		guard let got, got.count == wanted.count else { return .infinity }
+		var worst: Double = 0
+		for (node, value) in wanted {
+			guard let actual = got[node] else { return .infinity }
+			worst = Swift.max(worst, Swift.abs(actual - value))
 		}
-		#expect(got.count == wanted.count)
-		for (node, value) in wanted.sorted(by: { $0.key < $1.key }) {
-			let actual: Double = got[node] ?? .nan
-			#expect(Swift.abs(actual - value) < tolerance, "\(node): \(actual), expected \(value)")
-		}
+		return worst
 	}
 
 	// MARK: - Dense reference solver (independent of the production loop)
@@ -155,17 +154,19 @@ struct EigenvectorCentralityBipartiteTests {
 	@Test("Path of 3 is (1/2, 1/sqrt2, 1/2)")
 	func pathOfThree() {
 		let root: Double = 1 / 2.0.squareRoot()
-		expectVector(Self.path(3).eigenvectorCentrality(),
-					 ["p0": 0.5, "p1": root, "p2": 0.5])
+		let worst = Self.deviation(Self.path(3).eigenvectorCentrality(),
+								   ["p0": 0.5, "p1": root, "p2": 0.5])
+		#expect(worst < 1e-9, "max deviation \(worst)")
 	}
 
 	@Test("Path of 5 is sin(k pi/6) over sqrt3")
 	func pathOfFive() {
 		let root3: Double = 3.0.squareRoot()
-		expectVector(Self.path(5).eigenvectorCentrality(), [
+		let worst = Self.deviation(Self.path(5).eigenvectorCentrality(), [
 			"p0": 0.5 / root3, "p1": (root3 / 2) / root3, "p2": 1 / root3,
 			"p3": (root3 / 2) / root3, "p4": 0.5 / root3,
 		])
+		#expect(worst < 1e-9, "max deviation \(worst)")
 	}
 
 	@Test("Path of 4 still right")
@@ -175,7 +176,8 @@ struct EigenvectorCentralityBipartiteTests {
 		let reference = Self.jacobiLeading(Self.denseAdjacency(graph)).vector
 		var wanted: [String: Double] = [:]
 		for (i, node) in graph.nodes.enumerated() { wanted[node] = reference[i] }
-		expectVector(graph.eigenvectorCentrality(), wanted)
+		let worst = Self.deviation(graph.eigenvectorCentrality(), wanted)
+		#expect(worst < 1e-9, "max deviation \(worst)")
 	}
 
 	@Test("Stars: hub 1/sqrt2, each leaf 1/sqrt(2n)", arguments: [2, 3, 6, 10])
@@ -184,7 +186,8 @@ struct EigenvectorCentralityBipartiteTests {
 		let leaf: Double = 1 / (2.0 * Double(leaves)).squareRoot()
 		var wanted: [String: Double] = ["hub": hub]
 		for i in 0..<leaves { wanted["leaf\(i)"] = leaf }
-		expectVector(Self.star(leaves: leaves).eigenvectorCentrality(), wanted)
+		let worst = Self.deviation(Self.star(leaves: leaves).eigenvectorCentrality(), wanted)
+		#expect(worst < 1e-9, "max deviation \(worst)")
 	}
 
 	@Test("Cycles, even and odd, are uniform 1/sqrt(n)", arguments: [3, 4, 5, 6, 7, 8])
@@ -192,16 +195,18 @@ struct EigenvectorCentralityBipartiteTests {
 		let each: Double = 1 / Double(count).squareRoot()
 		var wanted: [String: Double] = [:]
 		for i in 0..<count { wanted["c\(i)"] = each }
-		expectVector(Self.cycle(count).eigenvectorCentrality(), wanted)
+		let worst = Self.deviation(Self.cycle(count).eigenvectorCentrality(), wanted)
+		#expect(worst < 1e-9, "max deviation \(worst)")
 	}
 
 	@Test("K(2,3): 2-side 1/2, 3-side 1/sqrt6")
 	func completeBipartite23() {
 		let small: Double = 0.5
 		let large: Double = 1 / 6.0.squareRoot()
-		expectVector(Self.completeBipartite(2, 3).eigenvectorCentrality(), [
+		let worst = Self.deviation(Self.completeBipartite(2, 3).eigenvectorCentrality(), [
 			"l0": small, "l1": small, "r0": large, "r1": large, "r2": large,
 		])
+		#expect(worst < 1e-9, "max deviation \(worst)")
 	}
 
 	// MARK: - Invariances
@@ -244,7 +249,8 @@ struct EigenvectorCentralityBipartiteTests {
 			"a": 0.3348052733, "b": 0.3348052733, "c": 0.4496177297,
 			"d": 0.3838092108, "e": 0.4496177297, "f": 0.3348052733, "g": 0.3348052733,
 		]
-		expectVector(bridged.eigenvectorCentrality(), wanted, tolerance: 1e-6)
+		let worst = Self.deviation(bridged.eigenvectorCentrality(), wanted)
+		#expect(worst < 1e-6, "max deviation \(worst)")
 	}
 
 	@Test("Nil conditions are kept")
@@ -320,8 +326,8 @@ struct EigenvectorCentralityBipartiteTests {
 		for graph in [Self.path(size), Self.star(leaves: size), Self.completeBipartite(2, size)] {
 			let needed = try #require(Self.passesNeeded(graph, tolerance: 1e-9))
 			#expect(needed > 2, "fixture converges too fast to pin the budget")
-			#expect(graph.eigenvectorCentrality(tolerance: 1e-9, maxIterations: needed) != nil,
-					"\(needed) passes should be enough")
+			let enough = graph.eigenvectorCentrality(tolerance: 1e-9, maxIterations: needed)
+			#expect(enough?.count == graph.nodes.count, "\(needed) passes should be enough")
 			#expect(graph.eigenvectorCentrality(tolerance: 1e-9, maxIterations: needed - 1) == nil,
 					"\(needed - 1) passes should not be enough")
 		}
@@ -331,7 +337,7 @@ struct EigenvectorCentralityBipartiteTests {
 	func toleranceIsStrict() {
 		// The uniform start is already the eigenvector of a cycle, so every pass moves nothing.
 		#expect(Self.cycle(5).eigenvectorCentrality(tolerance: 0) == nil)
-		#expect(Self.cycle(5).eigenvectorCentrality(tolerance: 1e-300) != nil)
+		#expect(Self.cycle(5).eigenvectorCentrality(tolerance: 1e-300)?.count == 5)
 	}
 
 	// MARK: - Properties against the dense reference

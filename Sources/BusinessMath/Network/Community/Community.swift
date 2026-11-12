@@ -75,9 +75,20 @@ public extension Graph {
 
 	/// Communities found by greedy modularity maximisation.
 	///
-	/// The Louvain method: repeatedly move each node to the neighbouring community that
-	/// most improves modularity, then contract each community to a single node and repeat
-	/// on the smaller graph, until no move helps.
+	/// The Louvain method, in both of its phases. **Local moving:** repeatedly move each
+	/// node to the neighbouring community that most improves modularity, until no move
+	/// helps. **Contraction:** collapse each community into a single weighted super-node
+	/// (edges between two communities summed into one weighted edge, edges inside a
+	/// community becoming a self-weight) and run local moving again on the smaller graph.
+	/// The two phases alternate until a round of local moving changes nothing or
+	/// `maxPasses` rounds have run.
+	///
+	/// Contraction is what lets whole communities merge. A single node cannot make that
+	/// move — leaving its own densely connected group for a neighbouring one loses more
+	/// than it gains — but a super-node standing for the whole group can. On a ring of
+	/// twelve triangles joined by single edges, local moving alone stops at one community
+	/// per triangle with `Q = 3/4 − 1/12 ≈ 0.667`, while contraction pairs adjacent
+	/// triangles and reaches `Q = 7/8 − 2/12 ≈ 0.708`.
 	///
 	/// ## Greedy, and honest about it
 	///
@@ -94,67 +105,157 @@ public extension Graph {
 	///
 	/// ## Determinism
 	///
-	/// Nodes are visited in ``nodes`` order, which ``Graph`` fixed at construction. A
-	/// greedy method that visited them in `Dictionary` order would give different
+	/// Nodes are visited in ``nodes`` order, which ``Graph`` fixed at construction, and at
+	/// every level super-nodes are numbered by the lowest original node they contain. A
+	/// node moves only when another community is *strictly* better, and candidates are
+	/// examined in ascending community number, so ties resolve the same way on every run.
+	/// A greedy method that visited nodes in `Dictionary` order would give different
 	/// partitions on different runs of the same program — correct-looking every time and
-	/// never the same twice.
+	/// never the same twice. The communities are returned ordered by their lowest node.
 	///
-	/// - Parameter maxPasses: How many contraction rounds to allow.
+	/// - Parameter maxPasses: How many contraction rounds to allow. Each round is a full
+	///   local-moving phase followed by a contraction; the loop also stops as soon as a
+	///   phase moves nothing.
 	/// - Returns: The communities, or `nil` for a graph with no edges, which has no
 	///   modularity to maximise.
 	func louvainCommunities(maxPasses: Int = 20) -> [Set<Node>]? {
 		guard !nodes.isEmpty, edgeCount > 0 else { return nil }
 
-		// Start with every node in its own community, then improve.
-		var assignment: [Node: Int] = [:]
-		for (index, node) in nodes.enumerated() { assignment[node] = index }
+		let view = undirectedView(of: nodes)
+		guard view.twiceEdges > 0 else { return nil }
+		let twiceEdges = view.twiceEdges
 
-		let graph = undirectedView(of: nodes)
-		let undirected = graph.adjacency
-		let degree = graph.degree
-		let twiceEdges = graph.twiceEdges
-		guard twiceEdges > 0 else { return nil }
-
-		var communityDegree: [Int: Double] = [:]
-		for node in nodes {
-			guard let group = assignment[node], let k = degree[node] else { continue }
-			communityDegree[group, default: 0] += k
+		// Level 0: one super-node per original node, in `nodes` order.
+		var index: [Node: Int] = [:]
+		for (position, node) in nodes.enumerated() { index[node] = position }
+		var level = LouvainLevel(count: nodes.count)
+		for (position, node) in nodes.enumerated() {
+			for other in (view.adjacency[node] ?? []).sorted() {
+				guard let target = index[other] else { continue }
+				if target == position {
+					level.selfWeight[position] += 1
+				} else {
+					level.neighbours[position].append((target, 1))
+				}
+			}
 		}
 
-		for _ in 0..<maxPasses {
-			var moved = false
-			for node in nodes {
-				guard let current = assignment[node], let k = degree[node] else { continue }
-				let neighbours = undirected[node] ?? []
+		// Which super-node of the current level each original node sits inside.
+		var membership = Array(0..<nodes.count)
 
-				// Edges from this node into each candidate community.
-				var links: [Int: Double] = [:]
-				for other in neighbours.sorted() {
-					guard let group = assignment[other] else { continue }
-					links[group, default: 0] += 1
+		for _ in 0..<Swift.max(maxPasses, 1) {
+			let label = Self.localMoving(level, twiceEdges: twiceEdges)
+			guard let (contracted, renumber) = level.contracted(by: label) else { break }
+			for position in membership.indices {
+				membership[position] = renumber[label[membership[position]]] ?? membership[position]
+			}
+			level = contracted
+		}
+
+		var grouped: [Int: Set<Node>] = [:]
+		for (position, node) in nodes.enumerated() {
+			grouped[membership[position], default: []].insert(node)
+		}
+		let communities = grouped.keys.sorted().compactMap { grouped[$0] }
+		return communities.isEmpty ? nil : communities
+	}
+
+	/// One level of the contraction: a weighted graph whose nodes are numbered `0..<count`.
+	///
+	/// `neighbours` excludes the node itself; weight a node has to itself — edges inside the
+	/// community it stands for, each counted from both ends, plus any self-loop — lives in
+	/// `selfWeight`. The degree of a node is its self-weight plus its neighbour weights,
+	/// which is what keeps `2m` unchanged from one level to the next.
+	private struct LouvainLevel {
+		var neighbours: [[(node: Int, weight: Double)]]
+		var selfWeight: [Double]
+
+		init(count: Int) {
+			neighbours = Array(repeating: [], count: count)
+			selfWeight = Array(repeating: 0, count: count)
+		}
+
+		var count: Int { selfWeight.count }
+
+		func degree(of node: Int) -> Double {
+			var total: Double = selfWeight[node]
+			for edge in neighbours[node] { total += edge.weight }
+			return total
+		}
+
+		/// The graph with each group of `label` collapsed to one node.
+		///
+		/// - Parameter label: A group number for every node of this level.
+		/// - Returns: The contracted level and the renumbering of group numbers to
+		///   `0..<groups` (by lowest member), or `nil` if every node is alone, in which
+		///   case there is nothing to contract.
+		func contracted(by label: [Int]) -> (LouvainLevel, [Int: Int])? {
+			var renumber: [Int: Int] = [:]
+			for group in label where renumber[group] == nil { renumber[group] = renumber.count }
+			guard renumber.count < count else { return nil }
+
+			var next = LouvainLevel(count: renumber.count)
+			var between: [[Int: Double]] = Array(repeating: [:], count: renumber.count)
+			for node in 0..<count {
+				guard let from = renumber[label[node]] else { continue }
+				next.selfWeight[from] += selfWeight[node]
+				for edge in neighbours[node] {
+					guard let to = renumber[label[edge.node]] else { continue }
+					if to == from {
+						next.selfWeight[from] += edge.weight
+					} else {
+						between[from][to, default: 0] += edge.weight
+					}
 				}
+			}
+			for from in 0..<renumber.count {
+				next.neighbours[from] = between[from].sorted { $0.key < $1.key }
+					.map { (node: $0.key, weight: $0.value) }
+			}
+			return (next, renumber)
+		}
+	}
+
+	/// Local moving: starting from every node alone, move nodes to their best neighbouring
+	/// community until a full sweep moves none.
+	///
+	/// - Parameters:
+	///   - level: The weighted graph at this level.
+	///   - twiceEdges: `2m` for the whole graph, unchanged by contraction.
+	/// - Returns: A community number for every node, each drawn from `0..<level.count`.
+	private static func localMoving(_ level: LouvainLevel, twiceEdges: Double) -> [Int] {
+		var label = Array(0..<level.count)
+		var communityDegree: [Int: Double] = [:]
+		var degree = [Double](repeating: 0, count: level.count)
+		for node in 0..<level.count {
+			degree[node] = level.degree(of: node)
+			communityDegree[node] = degree[node]
+		}
+
+		// Each sweep that moves a node strictly raises modularity, so this terminates; the
+		// bound is a backstop against floating-point ties, not part of the method.
+		for _ in 0..<1000 {
+			var moved = false
+			for node in 0..<level.count {
+				let current = label[node]
+				let k = degree[node]
+				var links: [Int: Double] = [:]
+				for edge in level.neighbours[node] { links[label[edge.node], default: 0] += edge.weight }
 				communityDegree[current, default: 0] -= k
 
-				let bestGroup = Self.bestCommunity(
+				let bestGroup = bestCommunity(
 					for: current, links: links, communityDegree: communityDegree,
 					nodeDegree: k, twiceEdges: twiceEdges)
 
 				communityDegree[bestGroup, default: 0] += k
 				if bestGroup != current {
-					assignment[node] = bestGroup
+					label[node] = bestGroup
 					moved = true
 				}
 			}
 			if !moved { break }
 		}
-
-		var grouped: [Int: Set<Node>] = [:]
-		for node in nodes {
-			guard let group = assignment[node] else { continue }
-			grouped[group, default: []].insert(node)
-		}
-		let communities = grouped.keys.sorted().compactMap { grouped[$0] }
-		return communities.isEmpty ? nil : communities
+		return label
 	}
 
 	/// The graph as an undirected one, with each node's degree and the total edge weight.
