@@ -11,6 +11,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+Proposed as **3.0.0-alpha.14**. Additive: no existing API changes.
+
+**Exact, tie-aware rank-sum critical values.** A tasting app tests each wine's rank sum across
+the panel (Kramer's rank-sum test). Until now the only critical values available were the
+untied published tables, which are wrong for a tasting with ties. This release computes the
+exact null distribution for any panel, ties included, and makes the critical-value decision
+in exact integer arithmetic.
+
+#### Added
+
+- **`rankSumDistribution(judgeRanks:)` → `RankSumDistribution<T>`**: the exact null
+  distribution of one item's rank sum. Under H0 each judge's ranking is a random arrangement
+  of that judge's own averaged ranks, so the sum is a convolution of one discrete uniform per
+  judge. The distribution is held over doubled sums, where averaged ranks are integers. It
+  provides the pmf, `probability(ofSum:)`, `probability(atMost:)`, `probability(atLeast:)`,
+  the mean `m(n + 1)/2`, and the tie-corrected variance `Σ[(n² − 1)/12 − Σ(t³ − t)/(12n)]`.
+  The input is the same as `concordanceAnalysis`'s.
+- **`rankSumCriticalValues(judgeRanks:alpha:method:)`** and
+  **`RankSumDistribution.criticalValues(alpha:)`** → `RankSumCriticalValues<T>`. `lower` is
+  the largest attainable sum with `P(S ≤ L) ≤ α/2` and `upper` the smallest with
+  `P(S ≥ U) ≤ α/2`; a sum at or beyond either is significant (`isSignificant(_:)`). Each
+  result carries the tail probabilities it achieves and `nonSignificantRange`, the attainable
+  sums strictly between the bounds, for callers that match a table printed the other way.
+  Either bound is `nil` when nothing is extreme enough. That happens when the panel is too
+  small, and when every judge tied everything (`isDegenerate`: every sum is fixed, so nothing
+  is significant). This is reported, not thrown.
+- **The exactness guarantee.** Counts of the `n^m` outcomes are kept in fixed-width multi-limb
+  integers. A tail is compared with α/2 as `count · 2^(k+1) ≤ M · n^m`, where `α = M/2^k`
+  exactly, so the bounds are the true critical values for any panel the method accepts.
+  Floating point would not be: two judges and twenty wines give `P(S ≤ 5) = 0.025` exactly,
+  and a float64 pmf with `≤` puts the lower bound at 4. Each judge's ranks are convolved as runs, using
+  sliding sums, which are exact in integers. Release build, Apple silicon: 100 judges × 50
+  wines takes 0.03 s untied and 0.1–0.5 s with ties, in about 10 MB; 500 × 50 takes 6–23 s and
+  1000 × 50 untied 44 s (152 MB). Panels whose table would
+  pass 2²⁶ limbs (512 MiB) are refused with `BusinessMathError.resourceExhausted` before
+  allocating.
+- **`RankSumCriticalValueMethod.normalApproximation`**: `mean ∓ z·σ` with the tie-corrected
+  variance. It is labelled as an approximation, and it never builds the distribution.
+- DocC article **Rank-Sum Significance with Ties** (`2.6-RankSumSignificance`). It covers the
+  method, ties, the convention, the guarantee, sizes, and the multiple-comparison caveat:
+  testing every wine at α flags some wine in about 44% of null 24 × 12 tied panels. That is
+  stated, not corrected.
+
+#### Validation
+
+- Brute-force enumeration of every per-judge position combination, and of every permutation
+  of every judge's row, for panels up to 5 wines × 4 judges, tied and untied. The pmf matches
+  to 1e-15.
+- `Scripts/reference-fixtures/generate_rank_sum.py` (+ `generate_rank_sum.R`,
+  `rank_sum_cases.txt`, `kramer_1963_5pct.txt`) writes `Fixtures/rankSumDistribution.json`.
+  It uses exact Python-integer convolution, NumPy float64 convolution, base R 4.6.2, and a
+  Monte Carlo run of 400,000 row permutations (SciPy 1.18.1, NumPy 2.5.4). Sixteen panels are
+  covered, up to 100 × 50 and 200 × 20, tied and untied. Every critical value at α = 0.05,
+  0.10 and 0.01 equals the exact reference, and R's critical values agree too.
+- **Kramer (1963) does not match the exact per-wine test.** WineTaster's copy of the 5% table
+  was compared cell by cell, after its one-row offset. Read as non-significant ranges, 54 of
+  165 cells equal the exact 5% values and 82 equal the exact 10% values. Ten cells are
+  asymmetric slips. Most of the remaining cells are one or two narrower on each side than
+  exact 5%. `RankSumReferenceTests` pins these counts.
+
 ### [3.0.0-alpha.13] - 2026-11-11
 
 **Tie-corrected concordance is now checked against SciPy and R, and has a tie-corrected
