@@ -1,0 +1,71 @@
+# Rank-sum distribution reference cases, read by generate_rank_sum.py and generate_rank_sum.R.
+#
+# One case per block: a `case <name>` line, then one line per judge with that judge's
+# values for every wine, space-separated. Blocks end at a blank line. Values may be
+# averaged ranks or raw scores: the generator re-ranks within each judge with
+# `scipy.stats.rankdata` (average method, ascending), so an already-ranked row is unchanged
+# and a score row becomes the averaged ranks the Swift tests then feed to
+# `rankSumDistribution`. Which direction a score is ranked in does not matter here: the
+# null distribution depends only on each judge's multiset of ranks, not on which wine got
+# which rank.
+#
+# The larger panels (Monte Carlo, timing) are built in generate_rank_sum.py from a fixed
+# seed rather than written out here.
+
+case no ties, 3 judges x 4 wines
+1 2 3 4
+2 1 3 4
+1 3 2 4
+
+case no ties, 2 judges x 5 wines
+1 2 3 4 5
+5 4 3 2 1
+
+case one tied pair
+1 2 3 4 5
+1 2.5 2.5 4 5
+2 1 3 5 4
+1 3 2 4 5
+
+case three-way tie
+1 2 3 4 5 6
+1 3 3 3 5 6
+2 1 3 4 6 5
+1 2 4 3 5 6
+2 1 3 5 4 6
+
+case one judge ties everything
+1 2 3 4
+2 1 3 4
+1 2 4 3
+2.5 2.5 2.5 2.5
+
+case every judge ties everything
+2.5 2.5 2.5 2.5
+2.5 2.5 2.5 2.5
+2.5 2.5 2.5 2.5
+
+case ties in every judge
+1.5 1.5 3 4 5.5 5.5 7 8
+1 2 3.5 3.5 5 6 7.5 7.5
+2 2 2 4 5 6 7 8
+1.5 1.5 3.5 3.5 5.5 5.5 7.5 7.5
+1 3 3 3 6 6 6 8
+2 1 3 4 5 7 7 7
+
+case Paris-sized panel, 11 judges x 10 wines, integer scores
+18 11 15 16 14 16 11 14 11 9
+14 15 16 15 11 15 8 14 9 9
+14 14 14 15 15 14 14 12 9 9
+17 17 16 16 14 14 13 10 12 11
+18 14 11 12 10 13 11 11 7 13
+16 16 13 16 10 12 12 10 14 9
+17 18 18 14 15 12 10 10 9 9
+16 15 17 11 13 11 15 15 12 11
+17 13 19 12 11 10 11 11 13 12
+17 11 16 15 10 9 10 13 13 13
+17 14 13 10 11 14 11 11 10 12
+
+case boundary exactly at alpha/2, 2 judges x 20 wines
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1
