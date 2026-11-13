@@ -36,6 +36,32 @@ ADR-006). Nothing else from that plan is in this change.
   identity, bridge round trip). `Tests/TestSupport/ReferenceGraphs.swift` holds the kite and karate-club edge lists.
 - ADR-006: weighted graphs and graph measures live in `Network/`.
 
+**Metric registry and stored-record layer (step 3 of the plan, ADR-006, ADR-008).** `MetricRegistry`, `MetricRecord`,
+`AnyGraphMetric` and the eleven standard metrics, ported from the ClassGraph package with every identifier, version and
+`Codable` shape unchanged, so a metric record stored by that package decodes here and what is encoded here is byte-for-byte
+what it wrote. The metrics are wired to the weighted measures in `Network/Weighted/`, not to the unweighted
+`eigenvectorCentrality` and `pageRank` (plan alternative 4: those would move stored numbers). No measure's behaviour changes.
+
+#### Added (metric registry)
+
+- **`MetricRegistry<Node>`** (`standard`, `available`, `metric(for:)`, `run(_:on:)`, `record(_:on:context:now:)`,
+  `registering(_:)`), **`MetricRecord<Context>`** (metric, version, caller's context, clock, envelope) and
+  **`AnyGraphMetric<Node>`**, in `Network/Metrics/Protocol/`.
+- **Standard metrics** (`Network/Metrics/StandardMetrics.swift`, `BurtConstraint` beside `Brokerage`): `degree` v1,
+  `eigenvector-centrality` v4 (returns `DiagnosedScores`, with a convergence report), `pagerank` v2,
+  `betweenness-centrality`, `closeness-centrality`, `k-core`, `louvain`, `harmonic-centrality`, `clustering`,
+  `components`, `burt-constraint`, each v1. `SeedSelector` stays out of `standard` (it needs a model, budget, trials
+  and seed) and is registered with `registering(_:)`.
+- Tests: the prior package's registry, eigenvector-diagnostics, value-type mutation, Burt registry/descriptor/envelope
+  and weight-consumer suites; a seed-selector registry round trip; and a **golden stored-record test** (`MetricRecordGoldenTests`):
+  the full `MetricRecord` and bare envelope of every standard metric over 20 fixtures (path, star, cycles, karate,
+  weighted, disconnected, edgeless, single, empty, zero-weight, seeded random), as JSON and as Double bit patterns,
+  plus the descriptor listing, computed by the prior package's own registry before the port (generator kept in
+  `project/summaries/2026-11-13_network_metric_registry/golden/`). Decode tests for version 2, 3 and 4 eigenvector records
+  (a record without a convergence report reads as "unknown"), a version 1 PageRank record and a record of an unknown metric.
+  Red-first and mutation records in `project/summaries/2026-11-13_network_metric_registry/`.
+- ADR-008: the registry is wired to the weighted measures; versions and identifiers are a stored-format contract.
+
 **Diffusion and siting core (step 3, part 1).** Cascade simulation, Monte Carlo spread estimation and the
 p-median, ported from the ClassGraph package with public names, behaviour, tie-breaking and every random draw
 unchanged, so a stored seed selection or site choice reproduces. The seed selector, the sensitivity sweep and the

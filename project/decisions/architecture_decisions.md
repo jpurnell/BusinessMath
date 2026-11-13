@@ -355,3 +355,49 @@ supersedes: null
 amends: null
 superseded_by: null
 ```
+
+---
+
+```yaml
+id: ADR-008
+date: 2026-11-13
+status: accepted
+category: architecture
+title: The metric registry is wired to the weighted measures; identifiers and versions are a stored-format contract
+context: |
+  Step 3 of ADR-006 moves MetricRegistry, MetricRecord, AnyGraphMetric and the standard metrics
+  from SwiftGraphMetrics. Network/ already has an unweighted eigenvectorCentrality and pageRank,
+  so the registry could have been pointed at those. They differ from the ported loops in
+  normalisation (max versus L2), tolerance, iteration ceiling and return type (nil versus a
+  vector), and the unweighted eigenvector refuses a disconnected graph where the ported one does
+  not. A metric record already stored under "eigenvector-centrality" v4 or "pagerank" v2 would
+  change meaning.
+decision: |
+  Every standard metric calls the weighted measure in Network/Weighted/ (Centrality, Community,
+  Brokerage). Identifiers, versions, descriptor texts and the Codable shape of every value are
+  preserved exactly and pinned by a golden test generated from the prior package's own registry
+  (full MetricRecord and envelope, JSON text and Double bit patterns, over 20 fixtures). BurtConstraint,
+  the metric struct, lives beside Brokerage. SeedSelector is not in MetricRegistry.standard; a caller
+  registers it. Behaviour changes to any measure are made only by a version bump with its own test
+  (ADR-007, step 4).
+rationale: |
+  - A stored record's meaning is its identifier and version; routing to a different implementation
+    under the same identifier would silently break it.
+  - The golden test is generated outside this repository by the code being replaced, so it cannot
+    share a mistake with the port.
+consequences: |
+  Positive: records stored by the prior package decode and re-encode byte for byte; the registry
+  can be extended without touching existing call sites.
+  Negative: two eigenvector and two PageRank implementations coexist until step 4 and a later
+  protocol over both graph types; the registry's eigenvector accepts disconnected graphs.
+alternatives_rejected:
+  - "Route the registry to the unweighted eigenvectorCentrality and pageRank: changes stored numbers (plan alternative 4)."
+  - "Include SeedSelector in standard: it has no defaults worth hiding."
+affected_files:
+  - Sources/BusinessMath/Network/Metrics/
+  - Sources/BusinessMath/Network/Weighted/BurtConstraint.swift
+  - Tests/BusinessMathTests/Network Tests/Metrics/
+supersedes: null
+amends: null
+superseded_by: null
+```

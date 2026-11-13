@@ -118,3 +118,43 @@ public enum Brokerage {
 		return NodeScores(scores)
 	}
 }
+
+/// Burt's constraint — who spans structural holes.
+///
+/// A ``GraphMetric`` wrapper over ``Brokerage/constraint(_:)``. Low constraint marks a
+/// broker, a node whose contacts are not connected to one another; high constraint marks
+/// a node embedded in a tight cluster. Nodes with no ties are omitted from the scores.
+///
+/// ```swift
+/// import BusinessMath
+///
+/// let graph = WeightedGraph(unweightedEdges: [("a", "b"), ("b", "c")])
+/// let scores = try BurtConstraint<String>().compute(on: graph)
+/// print(scores["b"] ?? 0)   // 0.5, the middle of a path is the broker
+/// print(scores["a"] ?? 0)   // 1.0
+/// ```
+public struct BurtConstraint<Node: Hashable & Comparable & Sendable & Codable>: GraphMetric {
+	/// What this metric answers, and how to read it.
+	public static var descriptor: MetricDescriptor {
+		MetricDescriptor(
+			identifier: "burt-constraint", version: 1, title: "Burt's Constraint",
+			interpretation: "How far a node's contacts are tied to each other, after Burt "
+				+ "(1992). It measures the structure around a person, not their influence.",
+			highMeans: "Embedded: most of this person's ties go to one contact or to "
+				+ "contacts who know each other, so they reach little that their contacts "
+				+ "do not already reach. This does not mean they are unimportant or "
+				+ "uninfluential, only that their position is closed.",
+			lowMeans: "Spans structural holes: their contacts are largely unconnected to "
+				+ "one another, so they are a broker between groups. This does not mean "
+				+ "they are influential, well liked or well connected, and a person with "
+				+ "few ties can score low. People with no recorded ties are omitted, "
+				+ "not scored."
+		)
+	}
+	/// Creates the metric. Stateless.
+	public init() {}
+	/// Computes it over the graph.
+	public func compute(on graph: WeightedGraph<Node>) throws -> NodeScores<Node> {
+		Brokerage.constraint(graph)
+	}
+}

@@ -1,0 +1,306 @@
+//
+//  MetricRecordGoldenTests.swift
+//  BusinessMath
+//
+//  The stored-record contract of the registry layer (ADR-006 step 3). GoldenRecordData.swift holds,
+//  for a spread of fixtures, the full MetricRecord and bare envelope that SwiftGraphMetrics's own
+//  registry produced for every standard metric, as JSON text (JSONEncoder .sortedKeys, a fixed
+//  clock) and as Double bit patterns; plus the registry's descriptor listing. The ported registry
+//  must reproduce each byte and each bit. The generating program is kept at
+//  project/summaries/2026-11-13_network_metric_registry/golden/. If a test here fails, a stored
+//  record has changed meaning: fix the code, never the constant.
+//
+//  The records stored by older versions (version 2 and 3 eigenvector records, which carry no
+//  convergence) are written out by hand below and must keep decoding, as 'unknown'.
+//
+
+import Foundation
+import Testing
+import TestSupport
+@testable import BusinessMath
+
+/// The caller's provenance in every golden record. Mirrors the scratch program's type.
+private struct GoldenContext: Codable, Sendable, Hashable {
+	let fixture: String
+	let weighting: String
+	let minimumEdgeWeight: Double
+}
+
+private let goldenClock = Date(timeIntervalSince1970: 1_770_000_000)
+
+private func encoder() -> JSONEncoder {
+	let encoder = JSONEncoder()
+	encoder.outputFormatting = [.sortedKeys]
+	return encoder
+}
+
+private func text<T: Encodable>(_ value: T) throws -> String {
+	String(decoding: try encoder().encode(value), as: UTF8.self)
+}
+
+private func bitHex(_ value: Double) -> String { String(value.bitPattern, radix: 16) }
+
+private func scoreTokens<N: Hashable & Comparable>(_ scores: NodeScores<N>, _ nodes: [N]) -> String {
+	nodes.map { scores.scores[$0].map(bitHex) ?? "-" }.joined(separator: " ")
+}
+
+private func partitionTokens<N: Hashable & Comparable>(_ partition: NodePartition<N>, _ nodes: [N]) -> String {
+	nodes.map { partition.communities[$0].map(String.init) ?? "-" }.joined(separator: " ")
+}
+
+/// Bit-pattern rendering of whatever the envelope holds. Identical to the scratch program's.
+private func tokens<N: Hashable & Comparable & Sendable & Codable>(
+	_ envelope: MetricEnvelope, _ nodes: [N], diagnosed wantsDiagnosis: Bool
+) throws -> String {
+	if !wantsDiagnosis, let plain = try envelope.value(as: NodeScores<N>.self) {
+		return scoreTokens(plain, nodes)
+	}
+	if let diagnosed = try envelope.value(as: DiagnosedScores<N>.self) {
+		var line = scoreTokens(diagnosed.scores, nodes)
+		if let report = diagnosed.convergence {
+			let flag = report.converged ? 1 : 0
+			line += " | \(report.iterations) \(flag) \(bitHex(report.residual)) \(bitHex(report.tolerance)) \(report.maxIterations)"
+		} else {
+			line += " | unknown"
+		}
+		return line
+	}
+	if let partition = try envelope.value(as: NodePartition<N>.self) {
+		return partitionTokens(partition, nodes)
+	}
+	return "?"
+}
+
+private func isEigenvector(_ identifier: String) -> Bool { identifier == "eigenvector-centrality" }
+
+@Suite("Stored-record golden: the registry listing")
+struct RegistryListingGoldenTests {
+
+	@Test("The descriptor listing encodes to exactly the stored text")
+	func listingText() throws {
+		let listing = try text(MetricRegistry<String>.standard.available)
+		#expect(listing == GoldenRecordData.registryListing)
+	}
+
+	@Test("The stored listing decodes to the descriptors the registry lists, in order")
+	func listingDecodes() throws {
+		let stored = try JSONDecoder().decode(
+			[MetricDescriptor].self, from: Data(GoldenRecordData.registryListing.utf8))
+		#expect(stored == MetricRegistry<String>.standard.available)
+		#expect(try text(stored) == GoldenRecordData.registryListing)
+	}
+
+	@Test("Identifiers and versions are exactly the stored ones, with no metric added or dropped")
+	func identifiersAndVersions() {
+		let found = MetricRegistry<String>.standard.available.map { "\($0.identifier)@\($0.version)" }
+		let stored = GoldenRecordData.identifiersAndVersions.map { "\($0.0)@\($0.1)" }
+		#expect(found == stored)
+		#expect(stored.count == 11)
+	}
+
+	@Test("The same listing comes from a registry of integer nodes")
+	func integerRegistryListing() throws {
+		let listing = try text(MetricRegistry<Int>.standard.available)
+		#expect(listing == GoldenRecordData.registryListing)
+	}
+}
+
+@Suite("Stored-record golden: every standard metric's record over every fixture")
+struct MetricRecordGoldenTests {
+
+	static let fixtureNames: [String] = GoldenRecordData.cases.map(\.name)
+
+	private func graph(_ golden: GoldenRecordCase) throws -> WeightedGraph<String> {
+		try WeightedGraph(edges: golden.edges, isolatedNodes: golden.isolated)
+	}
+
+	@Test("The fixture set covers the cases the plan names")
+	func coverage() {
+		let names = Set(Self.fixtureNames)
+		for expected in [
+			"path7", "star7", "evenCycle6", "karate", "weighted12", "twoComponents",
+			"edgeless4", "single", "empty", "random1", "random4",
+		] {
+			#expect(names.contains(expected), "missing \(expected)")
+		}
+	}
+
+	@Test("Each fixture stores a record for every registered metric", arguments: GoldenRecordData.cases)
+	func everyMetricStored(golden: GoldenRecordCase) {
+		let stored = golden.records.map(\.0)
+		let listed = MetricRegistry<String>.standard.available.map(\.identifier)
+		#expect(stored == listed, "\(golden.name)")
+	}
+
+	@Test("The record the registry makes is byte-for-byte the stored record", arguments: GoldenRecordData.cases)
+	func recordText(golden: GoldenRecordCase) throws {
+		let graph = try graph(golden)
+		let context = GoldenContext(fixture: golden.name, weighting: "golden", minimumEdgeWeight: 0.02)
+		for (identifier, expected, _, _) in golden.records {
+			let record = try #require(
+				try MetricRegistry<String>.standard.record(identifier, on: graph, context: context, now: goldenClock))
+			#expect(try text(record) == expected, "\(golden.name) \(identifier)")
+		}
+	}
+
+	@Test("The bare envelope the registry returns is byte-for-byte the stored envelope", arguments: GoldenRecordData.cases)
+	func envelopeText(golden: GoldenRecordCase) throws {
+		let graph = try graph(golden)
+		for (identifier, _, expected, _) in golden.records {
+			let envelope = try #require(try MetricRegistry<String>.standard.run(identifier, on: graph))
+			#expect(try text(envelope) == expected, "\(golden.name) \(identifier)")
+		}
+	}
+
+	@Test("Every score, convergence figure and community number matches bit for bit", arguments: GoldenRecordData.cases)
+	func bitPatterns(golden: GoldenRecordCase) throws {
+		let graph = try graph(golden)
+		for (identifier, _, _, expected) in golden.records {
+			let envelope = try #require(try MetricRegistry<String>.standard.run(identifier, on: graph))
+			let found = try tokens(envelope, graph.nodes, diagnosed: isEigenvector(identifier))
+			#expect(found == expected, "\(golden.name) \(identifier)")
+		}
+	}
+
+	@Test("A stored record decodes to the record the registry makes, and re-encodes to the same bytes",
+		  arguments: GoldenRecordData.cases)
+	func decodeAndReencode(golden: GoldenRecordCase) throws {
+		let graph = try graph(golden)
+		let context = GoldenContext(fixture: golden.name, weighting: "golden", minimumEdgeWeight: 0.02)
+		for (identifier, stored, _, _) in golden.records {
+			let decoded = try JSONDecoder().decode(MetricRecord<GoldenContext>.self, from: Data(stored.utf8))
+			let fresh = try #require(
+				try MetricRegistry<String>.standard.record(identifier, on: graph, context: context, now: goldenClock))
+			#expect(decoded == fresh, "\(golden.name) \(identifier)")
+			#expect(try text(decoded) == stored, "\(golden.name) \(identifier)")
+			#expect(decoded.metric == identifier)
+		}
+	}
+
+	@Test("A stored envelope decodes to the typed value of its kind", arguments: GoldenRecordData.cases)
+	func storedEnvelopeTyped(golden: GoldenRecordCase) throws {
+		for (identifier, _, stored, _) in golden.records {
+			let envelope = try JSONDecoder().decode(MetricEnvelope.self, from: Data(stored.utf8))
+			switch identifier {
+			case "louvain", "components":
+				#expect(envelope.kind == "partition")
+				_ = try #require(try envelope.value(as: NodePartition<String>.self))
+			case "eigenvector-centrality":
+				let typed = try #require(try envelope.value(as: DiagnosedScores<String>.self))
+				_ = try #require(typed.convergence)
+				#expect(envelope.convergence == typed.convergence)
+			default:
+				#expect(envelope.kind == "scores")
+				_ = try #require(try envelope.value(as: NodeScores<String>.self))
+				#expect(envelope.convergence == nil)
+			}
+		}
+	}
+
+	@Test("Eigenvector envelopes at non-default ceilings and tolerances match the stored text and bits")
+	func eigenvectorSettings() throws {
+		for (name, ceiling, tolerance, expectedText, expectedBits) in GoldenRecordData.eigenvectorSettings {
+			let golden = try #require(GoldenRecordData.cases.first { $0.name == name })
+			let graph = try graph(golden)
+			let output = try EigenvectorMetric<String>(maxIterations: ceiling, tolerance: tolerance).compute(on: graph)
+			let envelope = try MetricEnvelope(output)
+			#expect(try text(envelope) == expectedText, "\(name) \(ceiling) \(tolerance)")
+			#expect(try tokens(envelope, graph.nodes, diagnosed: true) == expectedBits, "\(name) \(ceiling) \(tolerance)")
+		}
+	}
+
+	@Test("The long path misses the default ceiling and says so in the stored record")
+	func pathStoredMiss() throws {
+		let golden = try #require(GoldenRecordData.cases.first { $0.name == "path60" })
+		let record = try #require(golden.records.first { $0.0 == "eigenvector-centrality" })
+		let envelope = try JSONDecoder().decode(MetricEnvelope.self, from: Data(record.2.utf8))
+		let report = try #require(envelope.convergence)
+		#expect(report.converged == false)
+		#expect(report.iterations == 200)
+	}
+
+	@Test("Karate on integer nodes matches the stored values bit for bit, by every registered metric")
+	func integerNodes() throws {
+		let graph = WeightedGraph(unweightedEdges: ReferenceGraphs.karateEdges)
+		let registry = MetricRegistry<Int>.standard
+		let stored = GoldenRecordData.karateIntTokens
+		#expect(stored.map(\.0) == registry.available.map(\.identifier))
+		for (identifier, expected) in stored {
+			let envelope = try #require(try registry.run(identifier, on: graph))
+			let found = try tokens(envelope, graph.nodes, diagnosed: isEigenvector(identifier))
+			#expect(found == expected, "\(identifier)")
+			// The integer-keyed payload also survives a JSON round trip.
+			let wire = try JSONDecoder().decode(MetricEnvelope.self, from: try JSONEncoder().encode(envelope))
+			#expect(wire == envelope, "\(identifier)")
+		}
+	}
+}
+
+@Suite("Stored-record golden: records written by earlier versions still decode")
+struct OldRecordDecodeTests {
+
+	private struct Context: Codable, Sendable, Hashable {
+		let note: String
+	}
+
+	private func decode(_ stored: String) throws -> MetricRecord<Context> {
+		try JSONDecoder().decode(MetricRecord<Context>.self, from: Data(stored.utf8))
+	}
+
+	@Test("A version 2 eigenvector record, with no convergence, decodes and reads as unknown")
+	func version2() throws {
+		let stored = #"{"computedAt":791692800,"context":{"note":"v2"},"metric":"eigenvector-centrality","metricVersion":2,"output":{"kind":"scores","payload":{"scores":{"a":0.5773502691896258,"b":0.5773502691896258,"c":0.5773502691896258}}}}"#
+		let record = try decode(stored)
+		#expect(record.metricVersion == 2)
+		#expect(record.output.convergence == nil)
+		let typed = try #require(try record.output.value(as: DiagnosedScores<String>.self))
+		#expect(typed.convergence == nil)
+		#expect(typed.scores.scores.count == 3)
+		#expect(ConvergenceNote.sentence(record.output.convergence) == "Convergence was not recorded for this result.")
+		#expect(try text(record) == stored)
+	}
+
+	@Test("A version 3 eigenvector record decodes, reads as plain scores, and re-encodes to the stored bytes")
+	func version3() throws {
+		let stored = #"{"computedAt":0,"context":{"note":"v3"},"metric":"eigenvector-centrality","metricVersion":3,"output":{"kind":"scores","payload":{"scores":{"a":0.5,"b":0.7071067811865476,"c":0.5}}}}"#
+		let record = try decode(stored)
+		#expect(record.metricVersion == 3)
+		#expect(record.output.convergence == nil)
+		let plain = try #require(try record.output.value(as: NodeScores<String>.self))
+		#expect(plain["b"]?.isEqual(to: 0.7071067811865476) == true)
+		#expect(try text(record) == stored)
+	}
+
+	@Test("A version 4 record with a report decodes and keeps the report")
+	func version4() throws {
+		let stored = #"{"computedAt":0,"context":{"note":"v4"},"metric":"eigenvector-centrality","metricVersion":4,"output":{"kind":"scores","payload":{"convergence":{"converged":false,"iterations":200,"maxIterations":200,"residual":0.047,"tolerance":1e-10},"scores":{"a":1}}}}"#
+		let record = try decode(stored)
+		let report = try #require(record.output.convergence)
+		#expect(report.converged == false)
+		#expect(report.iterations == 200)
+		#expect(report.maxIterations == 200)
+		#expect(report.residual.isEqual(to: 0.047))
+		#expect(try text(record) == stored)
+	}
+
+	@Test("A record for a metric this build does not know decodes and re-encodes unchanged")
+	func unknownMetric() throws {
+		let stored = #"{"computedAt":0,"context":{"note":"future"},"metric":"from-the-future","metricVersion":9,"output":{"kind":"mystery","payload":{"x":[1,2,{"y":null}]}}}"#
+		let record = try decode(stored)
+		#expect(record.metric == "from-the-future")
+		#expect(record.metricVersion == 9)
+		#expect(record.output.kind == "mystery")
+		#expect(try text(record) == stored)
+		#expect(try MetricRegistry<String>.standard.run(record.metric, on: WeightedGraph(unweightedEdges: [("a", "b")])) == nil)
+	}
+
+	@Test("A version 1 pagerank record decodes as 1, distinct from the version 2 the registry writes now")
+	func pagerankV1() throws {
+		let stored = #"{"computedAt":0,"context":{"note":"old"},"metric":"pagerank","metricVersion":1,"output":{"kind":"scores","payload":{"scores":{"a":0.5,"b":0.5}}}}"#
+		let record = try decode(stored)
+		#expect(record.metricVersion == 1)
+		let fresh = try #require(try MetricRegistry<String>.standard.record(
+			"pagerank", on: WeightedGraph(unweightedEdges: [("a", "b")]), context: Context(note: "new"), now: goldenClock))
+		#expect(fresh.metricVersion == 2)
+	}
+}
