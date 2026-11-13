@@ -11,7 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
-Proposed as **3.0.0-alpha.16**. Additive: no existing API changes. (Two private helpers in
+### [3.0.0-alpha.16] - 2026-11-13
+
+Additive: no existing API changes. (Two private helpers in
 `RankSumCriticalValues.swift`, `exactHalfAlphaCount` and `validateRankSumAlpha`, became
 `internal` so the Spearman code can share them.)
 

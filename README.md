@@ -11,17 +11,19 @@ Build DCF models, optimize portfolios, run Monte Carlo simulations, and value se
 
 ---
 
-## Pre-release: 3.0.0-alpha.15
+## Pre-release: 3.0.0-alpha.16
 
 **The breaking set shipped first, in alpha.1 and alpha.2** — the items that had been waiting
 for a major since August. Everything since has been correctness work and one protocol
 requirement. **alpha.8 is source-breaking again**, in a handful of signatures listed below;
-alpha.9 through alpha.15 are source-compatible; alpha.11 changes four *answers*, alpha.12
+alpha.9 through alpha.16 are source-compatible; alpha.11 changes four *answers*, alpha.12
 adds a validating form of one optimiser and bounds its table, alpha.13 adds
 `ConcordanceResult.friedmanCorrected` and changes what an all-tied panel answers (`nan`, as in
 SciPy and R, where it was a χ² of 0 and p = 1), and alpha.14 adds exact, tie-aware rank-sum
 critical values (`rankSumDistribution`, `rankSumCriticalValues`), and alpha.15 adds
-`wilsonInterval`, `medianAbsoluteDeviation` and `poissonSurvival` for the Diagnostics Hub.
+`wilsonInterval`, `medianAbsoluteDeviation` and `poissonSurvival` for the Diagnostics Hub, and alpha.16 adds exact,
+tie-aware Spearman critical values and p-values (`spearmanDistribution`, `spearmanCriticalValues`,
+`spearmanTest`).
 
 This notice said until 2026-10-09 that alpha.8 through alpha.11 "add no API at all" and that
 what breaks "has not moved since alpha.7". Neither was true of alpha.8, and a consumer pinned
@@ -31,7 +33,7 @@ at alpha.7 found out by failing to compile: see *What alpha.8 breaks* below.
 `from: "2.7.0"` you stay on 2.18.0 and nothing changes. To try the alpha, ask for it by name:
 
 ```swift
-.package(url: "https://github.com/jpurnell/BusinessMath.git", exact: "3.0.0-alpha.15")
+.package(url: "https://github.com/jpurnell/BusinessMath.git", exact: "3.0.0-alpha.16")
 ```
 
 What breaks:
@@ -76,7 +78,7 @@ zero, and `EOQModel` overflowed to a non-finite order quantity with no error. It
 `ModifiedZScoreAnomalyDetector` and `IQRAnomalyDetector`, and a `seed:` on
 `runFinancialSimulation`.
 
-**alpha.8 is source-breaking; alpha.9 through alpha.15 are not.** alpha.8 closes the
+**alpha.8 is source-breaking; alpha.9 through alpha.16 are not.** alpha.8 closes the
 contaminated-input campaign: ~1,200 sites read, ~215 real defects and 6 hard crashes, in 32
 commits, against one class — *a guard that is correct while the value it returns is a claim
 landing at the favourable end of a scale the caller reads.* The principle it produced:
