@@ -106,7 +106,12 @@ struct SitingTests {
 		let three = try PMedian().select(weighted, count: 3)
 		#expect(three.chosen == [0, 4, 9])
 		#expect(abs(three.totalWeightedCost - 1) < 1e-12)
-		#expect(three.loads.map(\.weight) == [5, 1 + 1, 5])
+		let loadWeights: [Double] = three.loads.map { $0.weight }
+		let expectedLoads: [Double] = [5, 2, 5]
+		#expect(loadWeights.count == expectedLoads.count)
+		for (got, want) in zip(loadWeights, expectedLoads) {
+			#expect(abs(got - want) < 1e-12)
+		}
 	}
 
 	private func randomSiteInstance(

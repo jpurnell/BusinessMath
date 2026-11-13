@@ -18,8 +18,13 @@ enum DiffusionFixtures {
 
 	/// Star with `leaves` leaves; centre is "c", leaves are "l00", "l01", ...
 	static func star(leaves: Int) -> WeightedGraph<String> {
-		WeightedGraph(
-			unweightedEdges: (0..<leaves).map { ("c", "l" + (($0 < 10) ? "0" : "") + String($0)) })
+		var edges: [(String, String)] = []
+		for index in 0..<leaves {
+			let padding: String = index < 10 ? "0" : ""
+			let leaf: String = "l" + padding + String(index)
+			edges.append(("c", leaf))
+		}
+		return WeightedGraph(unweightedEdges: edges)
 	}
 
 	/// Path "p0" - "p1" - ... - "p(n-1)".
