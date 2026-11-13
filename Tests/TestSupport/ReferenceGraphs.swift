@@ -54,4 +54,23 @@ public enum ReferenceGraphs {
 		(32, 33), (32, 34),
 		(33, 34),
 	]
+
+	/// Published degrees for the kite graph.
+	public static let kiteDegrees: [String: Int] = [
+		"Diane": 6, "Fernando": 5, "Garth": 5, "Andre": 4, "Beverly": 4,
+		"Carol": 3, "Ed": 3, "Heather": 3, "Ike": 2, "Jane": 1,
+	]
+
+	/// The faction each karate-club member actually joined, as Zachary recorded it.
+	///
+	/// Node 1 is the instructor, node 34 the administrator. Node 9 is the famous awkward case:
+	/// he joined the officer's club for reasons outside the network.
+	public static let karateInstructorFaction: Set<Int> = [
+		1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 13, 14, 17, 18, 20, 22,
+	]
+
+	/// Published degrees for the well-known karate club members.
+	public static let karateDegrees: [Int: Int] = [
+		34: 17, 1: 16, 33: 12, 3: 10, 2: 9, 32: 6, 4: 6, 24: 5,
+	]
 }

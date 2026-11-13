@@ -265,3 +265,93 @@ supersedes: null
 amends: null
 superseded_by: null
 ```
+
+---
+
+```yaml
+id: ADR-007
+date: 2026-11-12
+status: accepted
+category: behaviour
+title: Burt's constraint ignores zero-weight ties; topology measures count them; scheduled behaviour changes
+context: |
+  The weighted measures (Centrality, Community, Brokerage) were ported from SwiftGraphMetrics
+  (SGM) in step 2 of ADR-006 with behaviour, tie-breaking, tolerances, ceilings, normalisation and
+  public names unchanged, because stored metric records (eigenvector-centrality v4, pagerank v2,
+  and the rest) depend on them. Two things in that code need a recorded decision rather than a
+  silent inheritance. First, SGM's own ADR-003 chose that a tie recorded with weight zero is not a
+  tie for Burt's constraint, while the topology measures read the same edge as a tie, so one graph
+  answers "is a-c a tie?" differently depending on the measure. Second, several behaviours would
+  be rejected by the fail-silent principle in coding_rules.md if written fresh. They are ported
+  as they are, and this record lists them so they are known, scheduled and closed on purpose.
+decision: |
+  1. Burt's constraint (Brokerage.constraint) ignores zero-weight ties. A contact is a neighbour
+     with a tie of positive weight; adding a zero-weight edge to a graph changes no node's
+     constraint, and a node whose every tie is zero is omitted from the result like an isolate.
+     This follows Burt (1992) and differs from networkx.constraint, which counts a zero-weight
+     neighbour as a contact that receives only indirect investment (for a-b = 1, a-c = 0, b-c = 1,
+     networkx gives a the constraint 1.25; this gives 1). The dense-matrix oracle in the tests
+     reads it the same way, and the reference fixtures that compare with networkx must exclude
+     graphs containing zero-weight ties.
+  2. Degree (which sums weights, so a zero-weight tie adds nothing), clustering, k-core, connected
+     components, betweenness, closeness and harmonic closeness count a zero-weight edge as an
+     edge, because WeightedGraph stores it as one and they read topology. This is a recorded
+     inconsistency, not a design: a zero-weight edge is a tie to the topology measures and not a
+     tie to Burt. It is kept because changing either side moves stored records; WeightedGraph
+     documents that a zero weight is a recorded tie that carries no strength.
+  3. Known fail-silent behaviours ported as they are, each closed explicitly, with a metric-version
+     bump and its own red test, in the step shown (phasing table of NetworkWeightedGraph.md):
+     - PageRank returns the last iterate at its ceiling, converged or not, with no flag
+       (pagerank v2): step 4, measured first (PageRankConvergence plan; at defaults 200 passes
+       suffice, so this bites only for damping near 1 or a small maxIterations).
+     - PageRank clamps damping into [0, 0.999] instead of refusing it: step 4.
+     - PageRank with a NaN damping returns NaN scores: step 4 (NaN damping rejection).
+     - Modularity skips nodes absent from the partition, and does not notice nodes the graph does
+       not have, where the unweighted Graph.modularity(of:) returns nil: step 4 (partition
+       validation).
+     - Eigenvector centrality does not refuse a disconnected graph: it scores the dominant
+       component and leaves every other node near zero (not exactly zero: the others decay with
+       each pass), where the unweighted version returns nil
+       (listed in section 6 of the plan; the phasing table row for step 4 names three of these
+       and this one rides with them): step 4.
+     - Eigenvector centrality at its iteration ceiling returns the last iterate without a marker
+       from eigenvector(_:maxIterations:tolerance:); eigenvectorConvergence reports it, and the
+       registered metric reports it through the convergence record: closed by the metric layer in
+       step 3, not by a change here.
+     Recorded without a scheduled change, for review in step 4: Louvain does not validate
+     resolution (NaN or negative) and treats maxPasses below one as one; an edgeless graph scores 1
+     for every node under eigenvector centrality (documented as the absence of a ranking); Louvain
+     builds each contracted level's adjacency from a Dictionary, so neighbour order, and with it
+     the floating-point summation order of a super-node's degree, depends on the per-process hash
+     seed. The 1e-12 move threshold absorbs this on every fixture tested, but the order is not
+     fixed by the code.
+rationale: |
+  - Stored records must not move silently: a measure that changes its answer inside a code move
+    makes every older record incomparable with newer ones.
+  - Leaving the behaviours unrecorded would let the port read as an endorsement of them. Listing
+    them with the step that closes each keeps the plan honest about where it departs from the
+    fail-silent principle.
+  - Ignoring zero-weight ties in Burt is what the source text defines (contacts are the people a
+    node has a tie to) and what a zero-strength tie means; counting them in the topology measures
+    is what an undirected graph that stores the edge does. Choosing one reading for both would
+    have changed stored values on one side.
+consequences: |
+  Positive: the port is verifiably identical to the source (bit-for-bit golden test), the
+  inconsistencies are written down, and each has an owner step.
+  Negative: until step 4, a caller can get a plausible number from an unconverged PageRank, a
+  clamped damping, a partial partition or a disconnected eigenvector; the doc comment of each
+  measure says so. Burt and the topology measures disagree about zero-weight ties.
+alternatives_rejected:
+  - "Fix the fail-silent behaviours during the port: moves stored records inside a code move, which the plan's phasing exists to prevent."
+  - "Make Burt count zero-weight ties like networkx: changes stored constraint values and departs from Burt (1992)."
+  - "Make every topology measure ignore zero-weight edges: changes stored degree, k-core, component and path-based records, and zero-weight edges are legitimately recorded ties."
+affected_files:
+  - Sources/BusinessMath/Network/Weighted/WeightedCentrality.swift
+  - Sources/BusinessMath/Network/Weighted/WeightedCommunity.swift
+  - Sources/BusinessMath/Network/Weighted/BurtConstraint.swift
+  - Tests/BusinessMathTests/Network Tests/Weighted/
+  - project/plans/upcoming/NetworkWeightedGraph.md
+supersedes: null
+amends: null
+superseded_by: null
+```

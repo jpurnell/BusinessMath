@@ -55,6 +55,30 @@ No measure, registry or `GraphMetric` yet.
   stored-record test whose JSON constants were produced by SwiftGraphMetrics's own encoder.
   Mutation check and red-first record in `project/summaries/2026-11-12_network_values_protocol/`.
 
+**Weighted graph measures.** Step 2 of the same plan: the centrality, community and brokerage measures
+over `WeightedGraph`, ported from SwiftGraphMetrics with behaviour, tie-breaking, tolerances, ceilings,
+normalisation and public names unchanged (stored metric records depend on them).
+
+#### Added
+
+- **`Centrality`** (`Network/Weighted/WeightedCentrality.swift`): `degree`, `eigenvector`,
+  `eigenvectorConvergence`, `pageRank`, `betweenness`, `closeness` (Wasserman-Faust), `harmonic`, `clustering`.
+- **`Community`** (`WeightedCommunity.swift`): `modularity`, `louvain(resolution:maxPasses:)` (multi-level),
+  `kCore`, `connectedComponents`.
+- **`Brokerage.constraint`** (`BurtConstraint.swift`): Burt's constraint; a zero-weight tie is not a tie.
+- Known fail-silent behaviours are ported as they are and stated in each doc comment (PageRank returns the
+  last iterate at its ceiling and clamps damping; NaN damping gives NaN; modularity skips nodes absent from
+  the partition; eigenvector does not refuse a disconnected graph). They are scheduled for explicit,
+  version-bumped closure in step 4. ADR-007 records them and the Burt/topology zero-weight inconsistency.
+- Tests: the ported mutation-audit, reference-value, Burt, convergence and cross-check suites; a permanent
+  cross-check of the unweighted `Graph` measures against these on symmetrised graphs; and a bit-for-bit
+  golden test against values computed by SwiftGraphMetrics itself. The independent implementations and
+  reference-graph extras live in `Tests/TestSupport`, not the library. Red-first and mutation records in
+  `project/summaries/2026-11-12_network_weighted_measures/`.
+- Finding: unweighted `Graph.louvainCommunities` uses a strict `>` move rule with no tie margin, so exact
+  ties are decided by rounding and on rare graphs it differs from the weighted Louvain (1 of 300 seeded
+  random graphs, plus the pinned `random3`). Pinned as a known issue in the cross-check; not changed here.
+
 #### Fixed
 
 - **`eigenvectorCentrality(tolerance:maxIterations:)` no longer returns wrong values on bipartite

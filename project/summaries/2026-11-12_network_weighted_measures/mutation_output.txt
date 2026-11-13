@@ -1,0 +1,129 @@
+E01 shift: 2*total/n to total/n: KILLED  One pass from the uniform start, by hand
+E02 shift dropped (plain A): KILLED  Path of three: the middle node leads, the ends are 1/sqrt(2)
+E03 start vector 1/n to 1: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+E04 default ceiling 200 to 100 (eigenvectorConvergence): KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+E05 default tolerance 1e-10 to 1e-9 (convergence): KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+E06 default ceiling of eigenvector 200 to 150: KILLED  The defaults are 200 iterations and a tolerance of 1e-10
+E07 default tolerance of eigenvector 1e-10 to 1e-8: KILLED  The defaults are 200 iterations and a tolerance of 1e-10
+E08 max(1, maxIterations) to maxIterations: KILLED  A zero ceiling still runs one pass, as eigenvector does
+E09 L2 norm to L1 norm: KILLED  Does not claim convergence when the ceiling is too small, and does when it is large
+E10 normalisation skipped: KILLED  Once converged the residual is the final change and sits under the tolerance
+E11 delta L1 to L-inf: KILLED  Stops when the change per pass falls below the tolerance, exactly as documented
+E12 stop test < to <=: SURVIVED  
+E13 stop test < to >: KILLED  The component with the larger eigenvalue takes all the weight
+E14 iterations not counted: KILLED  Does not claim convergence when the ceiling is too small, and does when it is large
+E15 residual not recorded: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+E16 converged never set on tolerance: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+E17 break dropped after convergence: KILLED  Once converged the residual is the final change and sits under the tolerance
+E18 max-normalisation of output dropped: KILLED  An edgeless graph scores every node exactly 1, the tied largest
+E19 peak > 0 to peak >= 0: SURVIVED  
+E20 single node score 1 to 0: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+E21 count > 1 guard to >= 1: KILLED  Degenerate graphs have nothing to iterate: converged, zero residual
+E22 norm == 0 branch: converged true to false: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+E23 norm == 0 branch: iteration not counted: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+E24 adjacency weight ignored in product: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+E25 empty graph converged true to false: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+P01 damping clamp upper 0.999 to 1.0: KILLED  Damping zero is uniform; out-of-range damping is clamped
+P02 damping clamp lower dropped: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+P03 damping clamp upper 0.999 to 0.99: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+P04 teleport (1-d)/n to (1-d): KILLED  Path of three matches the closed form
+P05 dangling test <= 0 to < 0: KILLED  PageRank agrees to 1e-10, including dangling nodes (isolates)
+P06 dangling mass not spread: KILLED  The empty graph has no scores; a single node holds all the rank
+P07 dangling spread without damping: KILLED  Agrees with a direct linear solve on random weighted graphs, isolates and light weights in
+P08 dangling spread not divided by n: KILLED  PageRank agrees to 1e-10, including dangling nodes (isolates)
+P09 share not divided by degree: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+P10 edge weight ignored: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+P11 default damping 0.85 to 0.9: KILLED  PageRank agrees to 1e-10, including dangling nodes (isolates)
+P12 default tolerance 1e-12 to 1e-6: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+P13 default ceiling 200 to 100 (pageRank): KILLED  PageRank agrees to 1e-10, including dangling nodes (isolates)
+P14 pageRank stop test < to <=: SURVIVED  
+P15 pageRank stop never fires: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+P16 pageRank max(1, ) dropped: KILLED  The iteration ceiling is honoured and floored at one pass
+P17 pageRank delta L1 to L-inf: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+B01 distance init -1 test < 0 to <= 0: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+B02 predecessor distance + 1 to + 2: KILLED  Brandes betweenness agrees with brute-force path enumeration on the kite
+B03 path count not accumulated: KILLED  Brandes betweenness agrees with brute-force path enumeration on the kite
+B04 dependency (1 + d) to d: KILLED  Brandes betweenness agrees with brute-force path enumeration on the kite
+B05 dependency ratio inverted: KILLED  Brandes agrees with brute-force enumeration on random graphs, isolates included
+B06 source credited too: KILLED  Path of four: inner nodes 2 raw, 2/3 normalised
+B07 stack not reversed: KILLED  Degree and betweenness disagree on the kite, as published
+B08 pairs (n-1)(n-2) to (n-1)n: KILLED  Brandes betweenness agrees with brute-force path enumeration on the kite
+B09 halving dropped: KILLED  Brandes betweenness agrees with brute-force path enumeration on the kite
+B10 normalisation divisor pairs/2 to pairs: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+B11 normalised flag ignored: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+B12 small-graph guard count > 2 to > 3: KILLED  Path of three: the middle node carries the only pair, so 1 normalised and 1 raw
+B13 default normalized true to false: KILLED  Betweenness agrees to 1e-12
+W01 Wasserman-Faust fraction dropped: KILLED  Closeness discounts what cannot be reached, and an isolate scores zero
+W02 divisor n-1 to n: KILLED  Closeness and harmonic agree with Floyd-Warshall distances on random graphs
+W03 mean distance divisor reached to n: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+W04 distance total not accumulated: KILLED  Closeness discounts what cannot be reached, and an isolate scores zero
+W05 reached not counted: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+W06 closeness small-graph guard > 1 to > 2: KILLED  Closeness of a lone edge is one
+W07 harmonic reciprocal 1/hops to 1/(hops+1): KILLED  Harmonic centrality matches a hand computation
+W08 harmonic divisor n-1 to n: KILLED  Harmonic centrality matches a hand computation
+W09 harmonic distance not incremented: KILLED  Harmonic closeness agrees to 1e-12
+K01 clustering denominator d(d-1) to d(d+1): KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+K02 clustering degree guard > 1 to > 2: KILLED  Triangle with a pendant
+K03 clustering counts the node itself: SURVIVED  
+K04 clustering counts non-neighbours: KILLED  Bow-tie centre
+K05 clustering links halved: KILLED  A complete graph is fully clustered and a star not at all
+K06 degree: weighted degree to neighbour count: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+Q01 modularity: internal edge halving dropped: KILLED  Louvain: the partitions are the same sets of nodes and have the same modularity
+Q02 modularity: expected term 2m to m: KILLED  Modularity of the same partition agrees to 1e-12: the weighted Louvain result, the compone
+Q03 modularity: minus to plus: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+Q04 modularity: edgeless guard total > 0 to >= 0: KILLED  A graph with no edges has modularity zero
+Q05 modularity: same-community test inverted: KILLED  Modularity of the same partition agrees to 1e-12: the weighted Louvain result, the compone
+Q06 modularity: degree sum omitted: KILLED  Two four-cliques joined by one edge split at the bridge
+Q07 modularity: edgeless communities penalty dropped: KILLED  Modularity of every-node-alone is negative
+Q08 modularity: edgeless-community filter inverted: KILLED  Louvain: the partitions are the same sets of nodes and have the same modularity
+Q09 modularity: weight ignored in internal sum: KILLED  A heavy link pairs its ends; a light link leaves the triangles whole
+L01 tie margin 1e-12 to 0: KILLED  Differences below the 1e-12 tolerance are ties, and differences above it are not
+L02 tie margin 1e-12 to 1e-3: KILLED  Uniform weight scaling by a power of two, up or down, gives the identical partition
+L03 move test > to >=: SURVIVED  
+L04 candidates unsorted-reversed: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+L05 resolution ignored for own community: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+L06 resolution ignored for candidates: KILLED  Agrees move for move with an independent dense Louvain
+L07 expected term 2m to m: KILLED  Agrees move for move with an independent dense Louvain
+L08 sweeps ceiling 50 to 1: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+L09 sweeps ceiling 50 to 2: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+L10 community totals not updated on move: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+L11 own community not removed before scoring: KILLED  Resolution: huge keeps every node alone, zero merges a connected graph
+L12 improved flag never set: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+L13 improved guard removed: SURVIVED  
+L14 renumber guard newCount < levelCount to <=: SURVIVED  
+L15 contraction self-loop weight/2 to weight: KILLED  A second pass merges what the first leaves, and scores strictly higher
+L16 contraction carries old self-loops: dropped: KILLED  More passes never lower modularity; zero passes behaves as one
+L17 contraction inter-community weight not summed: KILLED  The same graph always produces the same partition, across processes
+L18 degree self-loop factor 2 to 1: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+L19 membership not followed through collapse: BUILD ERROR  Swift/ContiguousArrayBuffer.swift:695: Fatal error: Index out of range | Swift/ContiguousArrayBuffer.swift:695: Fatal error: Index out of range | Swift/ContiguousArrayBuffer.swift:695: Fatal error: In
+L20 renumbering order: first appearance to last: KILLED  Louvain: the partitions are the same sets of nodes and have the same modularity
+L21 maxPasses max(1,) dropped: KILLED  A second pass merges what the first leaves, and scores strictly higher
+L22 default maxPasses 20 to 1: KILLED  Louvain: the partitions are the same sets of nodes and have the same modularity
+L23 default resolution 1.0 to 1.5: KILLED  Louvain: the partitions are the same sets of nodes and have the same modularity
+L24 edgeless: every node alone to all together: KILLED  Without edges each node is its own community, numbered in node order
+L25 edgeless guard totalWeight > 0 to >= 0: SURVIVED  
+L26 level totalWeight guard > 0 removed: SURVIVED  
+R01 kCore: degree decrement guard > to >=: KILLED  Agrees with literal peeling on random graphs, and is bounded by degree
+R02 kCore: removed check dropped: SURVIVED  
+R03 kCore: lowest selection < to <=: SURVIVED  
+R04 kCore: core records degree not lowest: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+R05 kCore: peeled node not marked removed: KILLED  k-core of paths, stars and cycles
+R06 kCore: decrement by 2: KILLED  The kite's pendant node is in the zero or one core
+R07 kCore: core number is running max dropped (uses 0): KILLED  Core numbers agree with literal repeated peeling
+N01 components: unvisited test < 0 to <= 0: BUILD ERROR  
+N02 components: next label not incremented: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+N03 components: BFS does not enqueue: KILLED  The karate club is one connected component
+T01 Burt: indirect uses strengthQ replaced by strength: KILLED  Weighted triangle matches the hand derivation
+T02 Burt: positive-weight contact test > 0 to >= 0 (stamp loop): SURVIVED  
+T03 Burt: positive-weight test dropped (total loop): KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+T04 Burt: indirect q loop zero-weight filter dropped: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+T05 Burt: strength guard > 0 to >= 0: KILLED  Empty graph and single node give empty scores
+T06 Burt: square dropped: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+T07 Burt: indirect omitted: KILLED  Agrees with the dense transcription on graphs mixing zero and positive weights
+T08 Burt: direct share weight not divided: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+T09 Burt: self excluded test j != i dropped: SURVIVED  
+T10 Burt: stamp test dropped: SURVIVED  
+T11 Burt: indirect reset dropped: KILLED  Agrees with the dense-matrix transcription on the kite and the karate club
+T12 Burt: indirect uses weightIQ instead of share: KILLED  Agrees with the dense transcription on a weighted, irregular graph
+
+TOTAL 127  killed 111  survived 14  not-counted 2
