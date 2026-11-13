@@ -36,6 +36,27 @@ ADR-006). Nothing else from that plan is in this change.
   identity, bridge round trip). `Tests/TestSupport/ReferenceGraphs.swift` holds the kite and karate-club edge lists.
 - ADR-006: weighted graphs and graph measures live in `Network/`.
 
+**Diffusion and siting core (step 3, part 1).** Cascade simulation, Monte Carlo spread estimation and the
+p-median, ported from the ClassGraph package with public names, behaviour, tie-breaking and every random draw
+unchanged, so a stored seed selection or site choice reproduces. The seed selector, the sensitivity sweep and the
+metric-value conformances arrive with the metric layer (part 2).
+
+#### Added (diffusion and siting)
+
+- **`Network/Diffusion/`**: `DiffusionModel` (one-trial protocol; `hasSubmodularTrials`, default `false`),
+  `IndependentCascade` (uniform or weight-scaled edge probability, `EdgeProbability`), `LinearThreshold`,
+  `DiffusionGraph` (compressed-row adjacency), `TrialRandomness` (draws keyed by seed, trial and edge or node, from
+  `SplitMix64`, so any scheduling gives bit-identical results and candidate seed sets compare on common random
+  numbers), `SpreadEstimator` and `SpreadEstimate` (mean and standard error), `DiffusionError`.
+- **`Network/Siting/`**: `SiteProblem` and `SiteError`, `SiteSelector`, `PMedian` (exact by enumeration up to
+  `enumerationLimit` subsets, otherwise greedy plus Teitz-Bart swaps, the result saying which), `SiteAssignment`
+  (a plain `Codable` value for now).
+- Tests: the prior package's suites (per-trial exact oracles for both cascade models, closed-form spread checks,
+  the `TrialRandomness` golden master, exhaustive and brute-force p-median oracles); a seed-for-seed golden test
+  of draws, per-trial activated sets, estimates and p-median answers, computed by the prior package before the
+  port and compared bit for bit; and an independent oracle for `PMedian` that solves the same instances as an
+  integer program with `BranchAndBoundSolver`. Record: `project/summaries/2026-11-12_network_diffusion_siting_core/`.
+
 #### Fixed
 
 - **`eigenvectorCentrality(tolerance:maxIterations:)` no longer returns wrong values on bipartite
