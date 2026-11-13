@@ -64,6 +64,49 @@ ADR-006). Nothing else from that plan is in this change.
   result type, determinism and `nil` for a graph with no edges are unchanged; communities are
   returned ordered by their lowest node.
 
+### [3.0.0-alpha.15] - 2026-11-12
+
+Additive: no existing API changes.
+
+**Three statistics for the Diagnostics Hub's analysis slice.** The Hub's owner set the rule
+that it carries no private copy of a formula: what it needs is added here first, tested and
+tagged, and then consumed. These are the three its design (Analysis.md §3.0) found missing.
+
+#### Added
+
+- **`wilsonInterval(successes:trials:confidence:)` → `WilsonInterval<T>`** (`value`, `lower`,
+  `upper`, `confidence`): the Wilson score interval for a binomial proportion, **without**
+  continuity correction, the interval R's `prop.test(correct = FALSE)`, `binom::binom.wilson`
+  and SciPy's `proportion_ci(method = "wilson")` report. `value` is the observed `x/n`. At
+  `x = 0` the lower bound is exactly 0 and at `x = n` the upper is exactly 1, which is where a
+  healthy crash-free rate lives and where the normal-approximation interval collapses to a
+  point. Confidence defaults to 0.95. Zero trials throws `insufficientData`; negative counts,
+  `successes > trials`, and a confidence that is not finite and strictly inside (0, 1) throw
+  `invalidInput`.
+- **`medianAbsoluteDeviation(_:scale:)`** and **`MedianAbsoluteDeviationScale`**: the MAD,
+  `median(|x − median(x)|)`. The default `.raw` is R's `mad(x, constant = 1)`.
+  `.normalConsistent` multiplies by the exact `1/Φ⁻¹(3/4) = 1.482602218505602` (SciPy's
+  `scale="normal"`); R's default `mad(x)` rounds that to 1.4826, a relative difference of
+  1.5e-6. An empty sample throws `insufficientData`; a `nan` or infinite value throws
+  `invalidInput`.
+- **`poissonSurvival(k:lambda:)`**: `P(X ≥ k)`, `k` included (R's
+  `ppois(k - 1, λ, lower.tail = FALSE)`). Summed directly from whichever side of the mean is
+  small, so a deep tail keeps its digits: `P(X ≥ 20 | λ = 1) = 1.59e-19`, where
+  `1 − poissonCDF` returns rounding noise. `k = 0` is 1 for every rate; `λ = 0` gives 0 for
+  every `k ≥ 1`. A negative `k`, or a negative, `nan` or infinite rate, throws `invalidInput`.
+- DocC: the three are in the Statistical Distributions guide (robust spread, proportions,
+  rare counts) and its Key Functions.
+
+#### Validation
+
+- Reference values from R 4.6.2 (base R only) and SciPy 1.17.1, written by
+  `Scripts/reference-fixtures/generate_hub_statistics.R` and `.py`; the two agree with each
+  other to 4e-16 (Wilson), exactly (MAD), and to a relative 1.1e-13 (Poisson).
+- Wilson: 0/10, 1/10, 10/10, 0/5, 3/1000 and five more, to 1e-12 absolute (and to four
+  decimals as the Hub's proposal states them). Poisson: λ from 0.001 to 100 000, tails to
+  1e-215, relative 1e-12 for λ ≤ 10, 1e-11 at λ = 1000, 1e-9 at λ = 100 000.
+
+
 ### [3.0.0-alpha.14] - 2026-11-12
 
 Additive: no existing API changes.
