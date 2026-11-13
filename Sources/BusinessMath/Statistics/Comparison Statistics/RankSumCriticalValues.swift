@@ -293,7 +293,7 @@ private func rankSumNormalCriticalValues<T: Real & Sendable>(
 /// `alpha` is decomposed exactly as `M / 2^k` (doubling is exact in binary floating point, so
 /// `alpha · 2^k` is computed without rounding until it is an integer), and then
 /// `C ≤ α·total/2 ⇔ C ≤ ⌊M·total / 2^(k+1)⌋`, the right shift of an exact product.
-private func exactHalfAlphaCount<T: Real>(_ alpha: T, total: [UInt64]) throws -> [UInt64] {
+internal func exactHalfAlphaCount<T: Real>(_ alpha: T, total: [UInt64]) throws -> [UInt64] {
     var scaled: T = alpha
     var exponent: Int = 0
     while scaled.rounded(.towardZero) != scaled {
@@ -320,7 +320,7 @@ private func exactHalfAlphaCount<T: Real>(_ alpha: T, total: [UInt64]) throws ->
 }
 
 /// Refuses a level outside the open interval (0, 1), and `nan`.
-private func validateRankSumAlpha<T: Real>(_ alpha: T) throws {
+internal func validateRankSumAlpha<T: Real>(_ alpha: T) throws {
     guard alpha > T(0), alpha < T(1) else {
         throw BusinessMathError.invalidInput(
             message: "The significance level must lie strictly between 0 and 1",
