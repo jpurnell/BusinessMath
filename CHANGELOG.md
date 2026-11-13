@@ -36,6 +36,25 @@ ADR-006). Nothing else from that plan is in this change.
   identity, bridge round trip). `Tests/TestSupport/ReferenceGraphs.swift` holds the kite and karate-club edge lists.
 - ADR-006: weighted graphs and graph measures live in `Network/`.
 
+**Metric result values and the stored-record envelope.** Step 2 foundation of the same plan: the
+result types that later measures return, ported from SwiftGraphMetrics with public names, `kind`
+strings and Codable shapes unchanged (a stored `MetricEnvelope` decodes identically after the move).
+No measure, registry or `GraphMetric` yet.
+
+#### Added
+
+- **`MetricValue`** (`Network/Metrics/Protocol/`): `Sendable, Codable, Hashable` with a static `kind`.
+- **`MetricEnvelope`** and **`JSONValue`**: `{ "kind", "payload" }`, typed access with `value(as:)`,
+  unknown kinds decode and re-encode unchanged, and `convergence` reads a stored scores payload
+  without knowing its node type (`nil` for version-3 records, other kinds, or unreadable reports).
+- **`NodeScores`** (kind `"scores"`; `ranked` is score descending then node ascending; `top`, `bottom`),
+  **`NodePartition`** (`"partition"`), **`NodeSelection`** with `Pick` (`"selection"`),
+  **`DiagnosedScores`** (`"scores"`, `convergence` key omitted when `nil`), **`ConvergenceReport`**,
+  **`ConvergenceNote`** (`Network/Metrics/Values/`).
+- Tests: ported value and envelope tests, seeded round-trip and ordering properties, and a golden
+  stored-record test whose JSON constants were produced by SwiftGraphMetrics's own encoder.
+  Mutation check and red-first record in `project/summaries/2026-11-12_network_values_protocol/`.
+
 #### Fixed
 
 - **`eigenvectorCentrality(tolerance:maxIterations:)` no longer returns wrong values on bipartite
