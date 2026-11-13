@@ -389,7 +389,10 @@ internal func edgeworthTail<T: Real>(items: Int, s: T, lowerTail: Bool) -> T {
     let n3: T = n * (n * n - T(1)) / T(3)
     guard s <= n3 else { return lowerTail ? T(1) : T(0) }
     let b: T = T(1) / n
-    let x: T = (T(6) * (s - T(1)) * b / (n * n - T(1)) - T(1)) * (n - T(1)).squareRoot()
+    // Split into steps: as one expression it exceeds the Linux type-checker's time limit.
+    let nSquaredMinusOne: T = n * n - T(1)
+    let scaled: T = T(6) * (s - T(1)) * b / nSquaredMinusOne
+    let x: T = (scaled - T(1)) * (n - T(1)).squareRoot()
     let y: T = x * x
     let inner: T = c[8] - c[9] * b + y * b * (c[10] - c12 * y)
     let middle: T = c[6] + c[7] * b - y * inner
