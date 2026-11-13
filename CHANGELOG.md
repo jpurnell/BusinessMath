@@ -11,7 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
-Intended for **3.0.0-alpha.15**. Additive: no existing API changes.
+### [3.0.0-alpha.15] - 2026-11-12
+
+Additive: no existing API changes.
 
 **Three statistics for the Diagnostics Hub's analysis slice.** The Hub's owner set the rule
 that it carries no private copy of a formula: what it needs is added here first, tested and
