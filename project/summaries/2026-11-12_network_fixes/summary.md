@@ -69,9 +69,9 @@ stays within 0.1 of it); property tests on 40 seeded random graphs (Q in [-0.5, 
 Relabelling invariance is asserted on a planted-structure graph only: greedy local moving is legitimately order dependent
 on unstructured graphs, so asserting it there would assert something false.
 
-Not done: mutation testing of the Louvain code (not requested in the brief; I did not run it).
+Louvain mutation pass: see `mutation-louvain-classification.md` (25 mutants, 10 survived the first suite; 5 closed red-first, 5 classified equivalent).
 
-## What I could not verify
+## What I could not verify (original list; see the final report for the follow-up run)
 
 - Linux / Swift 6.2.1 CI. Everything ran on macOS (local Swift toolchain, `swift test`), so type-checker timeouts on the Linux
   toolchain are untested. Expressions in the new code were kept to at most three operators and intermediates are explicitly typed.
@@ -81,3 +81,10 @@ Not done: mutation testing of the Louvain code (not requested in the brief; I di
 ## Quality gate
 
 See the final report; the pre-commit hook runs the repo's quality gate and the commit was blocked or accepted by it.
+
+## Follow-up (owner decisions)
+
+- Default `maxIterations` stays 1000 with `nil` on non-convergence; documented in the doc comment and CHANGELOG, with
+  characterisation tests (not red-first). The measured passes-needed table for the shipped shift differs from the owner's
+  (shipped shift is the mean degree, twice `m/n`): a path of 30 nodes needs 1016 passes, 61 nodes 3773.
+- Louvain mutation pass done; outputs committed in this directory.

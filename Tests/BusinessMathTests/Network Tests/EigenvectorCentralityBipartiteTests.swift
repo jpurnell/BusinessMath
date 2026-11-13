@@ -25,6 +25,24 @@
 //  x/y = √(q/p). Unit length: p·x² + q·y² = 1 gives **x = 1/√(2p), y = 1/√(2q)**.
 //  K(2,3): x = 1/2, y = 1/√6, λ = √6.
 //
+//  Path of n nodes, in general: v_k = sin(kπ/(n+1)) for k = 1...n, and
+//  Σ sin²(kπ/(n+1)) = (n+1)/2, so the unit vector is v_k = sin(kπ/(n+1)) · √(2/(n+1)).
+//
+//  ## The default budget
+//
+//  Convergence on a path is slow because the shifted spectrum is crowded near the top. Passes
+//  needed at tolerance 1e-12 by the shipped code (s = edgeCount / nodeCount = mean degree,
+//  smallest maxIterations that returns non-nil, found by bisection):
+//  path of 5 nodes 36, 10 nodes 135, 20 nodes 481, 25 nodes 726, 29 nodes 954, 30 nodes 1016,
+//  33 nodes 1211, 40 nodes 1728, 61 nodes 3773, 100 nodes 9422; star of 50 leaves 50; ring of 60: 1.
+//  So a path of 30 or more nodes returns nil at the default maxIterations of 1000.
+//
+//  The owner's independent measurement used s = m/n (undirected edge count over nodes, half the
+//  mean degree), which gives smaller counts (path of 61: 2876, threshold about 33 nodes). The
+//  shipped shift is the mean degree, so the table above is the one that is true of the code.
+//  The tests at the end of the suite characterise this existing behaviour: they pass on the code
+//  as committed and were not red-first.
+//
 
 import Testing
 import Foundation
@@ -338,6 +356,39 @@ struct EigenvectorCentralityBipartiteTests {
 		// The uniform start is already the eigenvector of a cycle, so every pass moves nothing.
 		#expect(Self.cycle(5).eigenvectorCentrality(tolerance: 0) == nil)
 		#expect(Self.cycle(5).eigenvectorCentrality(tolerance: 1e-300)?.count == 5)
+	}
+
+	// MARK: - The default budget on long paths (characterisation, not red-first)
+
+	/// The closed-form unit eigenvector of a path of `count` nodes, keyed by node name.
+	private static func pathClosedForm(_ count: Int) -> [String: Double] {
+		let scale: Double = (2.0 / Double(count + 1)).squareRoot()
+		var wanted: [String: Double] = [:]
+		for k in 1...count {
+			let angle: Double = Double(k) * Double.pi / Double(count + 1)
+			wanted[Self.pathName(k - 1, of: count)] = Foundation.sin(angle) * scale
+		}
+		return wanted
+	}
+
+	/// Path nodes are named `p0`, `p1`, ... by `path(_:)`.
+	private static func pathName(_ index: Int, of count: Int) -> String { "p\(index)" }
+
+	@Test("A 29-node path converges at the default maxIterations (954 passes needed)")
+	func longPathConvergesAtDefault() {
+		let worst = Self.deviation(Self.path(29).eigenvectorCentrality(), Self.pathClosedForm(29))
+		#expect(worst < 1e-8, "max deviation \(worst)")
+	}
+
+	@Test("A 30-node path (1016 passes) and a 61-node path (3773) return nil at the default, the closed form at 10_000")
+	func longPathsNeedALargerBudget() {
+		for count in [30, 61] {
+			let graph = Self.path(count)
+			#expect(graph.eigenvectorCentrality() == nil, "path of \(count) must not return at 1000 passes")
+			let worst = Self.deviation(graph.eigenvectorCentrality(maxIterations: 10_000),
+									   Self.pathClosedForm(count))
+			#expect(worst < 1e-8, "path of \(count): max deviation \(worst)")
+		}
 	}
 
 	// MARK: - Properties against the dense reference

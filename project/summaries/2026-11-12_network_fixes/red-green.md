@@ -75,3 +75,13 @@ Test run with 70 tests in 6 suites passed after 2.437 seconds.
 ```
 
 Tests that passed on the OLD Community.swift too (written as guards after the fix, so NOT red-first): maxPasses monotone, never-below-single-level, self-loop, properties, relabelling, exhaustive-optimum bound. Red-first on old code: ring of 12 triangles, ring of 16 K4, production-vs-reference on rings (7 issues, output above).
+
+## Owner decision A: default budget on long paths (characterisation tests)
+
+longPathConvergesAtDefault (29-node path) and longPathsNeedALargerBudget (30- and 61-node paths nil at 1000, closed form sin(k pi/(n+1))*sqrt(2/(n+1)) at 10_000) PASS ON THE EXISTING CODE. They characterise current behaviour and were NOT written red-first. Run in scratch package: 17 tests passed.
+
+Discrepancy with the owner's table: the shipped shift is edgeCount/nodeCount = the mean degree (directed edge count over nodes), twice m/n, so passes needed are higher than the owner's (path 61: 3773 vs 2876; threshold 30 nodes vs ~33; 30-node path needs 1016 and returns nil at the default). The doc comment, CHANGELOG and tests state the measured numbers for the shipped code. Switching the shift to m/n would reproduce the owner's table; that is a one-line change not made without a decision.
+
+## Louvain mutation follow-up
+
+New tests, each red against its mutant in `mutation-louvain-first-pass.txt` (mutant survived the old suite) and killed in `mutation-louvain-final.txt`: zeroPassesIsOnePass (L04), bondedRingsMatchReference (L05), plantedMatchesReference (L08, L24), orderedByLowestNode (L10). All green on the real code: 15 tests in 1 suite, scratch package.

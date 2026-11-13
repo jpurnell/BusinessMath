@@ -88,7 +88,7 @@ struct LouvainMultiLevelTests {
 						   count: graph.nodes.count)
 		for node in graph.nodes {
 			for target in graph.neighbors(of: node) {
-				if let i = index[node], let j = index[target], i != j { m[i][j] = 1; m[j][i] = 1 }
+				if let i = index[node], let j = index[target] { m[i][j] = 1; m[j][i] = 1 }
 			}
 		}
 		return m
@@ -328,5 +328,130 @@ struct LouvainMultiLevelTests {
 		let q = try #require(graph.modularity(of: found), "result is not a partition")
 		#expect(q >= -0.5 && q < 1)
 		#expect(found.reduce(0) { $0 + $1.count } == graph.nodes.count)
+	}
+
+	// MARK: - Closed by mutation testing (each written red-first against the named mutant)
+
+	/// Planted partition: `groups` groups of `size` nodes, dense inside, sparse between, with
+	/// a few self-loops, all drawn from a seeded generator.
+	private static func planted(rng: SeededRNG, groups: Int, size: Int, loops: Int) -> Graph<String> {
+		var pairs: [(String, String)] = []
+		let total = groups * size
+		for a in 0..<total {
+			for b in (a + 1)..<total where total > 1 {
+				let same = a / size == b / size
+				if rng.next() < (same ? 0.7 : 0.06) { pairs.append((name(a), name(b))) }
+			}
+		}
+		for _ in 0..<loops {
+			let a = Int(rng.next() * Double(total))
+			pairs.append((name(a), name(a)))
+		}
+		pairs.append((name(0), name(total - 1)))
+		return undirected(pairs)
+	}
+
+	@Test("Planted-partition graphs with self-loops reach the multi-level reference's modularity")
+	func plantedMatchesReference() throws {
+		let rng = SeededRNG(seed: 31337)
+		for trial in 0..<30 {
+			let graph = Self.planted(rng: rng, groups: 4 + trial % 4, size: 5, loops: trial % 5)
+			let dense = Self.denseAdjacency(graph)
+			let reference = Self.denseModularity(dense, Self.referenceMultiLevel(dense))
+			let found = try #require(graph.louvainCommunities())
+			let q = Self.denseModularity(dense, Self.labelling(found, graph))
+			#expect(q >= reference - 1e-9, "trial \(trial): Q = \(q), reference \(reference)")
+			let reported = try #require(graph.modularity(of: found))
+			#expect(Swift.abs(reported - q) < 1e-9, "trial \(trial): modularity(of:) \(reported) vs dense \(q)")
+		}
+	}
+
+	@Test("Fewer than one round is treated as one round")
+	func zeroPassesIsOnePass() throws {
+		let graph = Self.ringOfCliques(count: 12, size: 3)
+		let zero = try #require(graph.louvainCommunities(maxPasses: 0))
+		let one = try #require(graph.louvainCommunities(maxPasses: 1))
+		#expect(zero == one, "maxPasses 0 gave \(zero.count) communities, 1 gave \(one.count)")
+		let q = try #require(graph.modularity(of: zero))
+		#expect(Swift.abs(q - (0.75 - 1.0 / 12.0)) < 1e-9, "Q = \(q)")
+	}
+
+	@Test("Communities are returned ordered by their lowest node")
+	func orderedByLowestNode() throws {
+		let graph = Self.ringOfCliques(count: 12, size: 3)
+		let found = try #require(graph.louvainCommunities())
+		let lowest = found.compactMap { $0.min() }
+		#expect(lowest == lowest.sorted(), "order was \(lowest)")
+		#expect(lowest.count == found.count)
+	}
+
+	@Test("The partition equals the reference's, not just its modularity, on rings of cliques")
+	func partitionEqualsReference() throws {
+		for (count, size) in [(12, 3), (16, 4), (24, 3), (9, 5)] {
+			let graph = Self.ringOfCliques(count: count, size: size)
+			let dense = Self.denseAdjacency(graph)
+			let reference = Self.referenceMultiLevel(dense)
+			var groups: [Int: Set<String>] = [:]
+			for (i, node) in graph.nodes.enumerated() { groups[reference[i], default: []].insert(node) }
+			let found = try #require(graph.louvainCommunities())
+			#expect(Set(found) == Set(groups.values), "ring \(count)x\(size)")
+		}
+	}
+
+	/// Three-level hierarchical planted partition: `macro` blocks of `mid` blocks of `leaf`
+	/// nodes, with edge probability falling by level, from a seeded generator.
+	private static func hierarchical(rng: SeededRNG, macro: Int, mid: Int, leaf: Int) -> Graph<String> {
+		var pairs: [(String, String)] = []
+		let total = macro * mid * leaf
+		for a in 0..<total {
+			for b in (a + 1)..<total {
+				let probability: Double
+				if a / leaf == b / leaf { probability = 0.9 }
+				else if a / (leaf * mid) == b / (leaf * mid) { probability = 0.3 }
+				else { probability = 0.05 }
+				if rng.next() < probability { pairs.append((name(a), name(b))) }
+			}
+		}
+		for node in 1..<total { pairs.append((name(node - 1), name(node))) }
+		return undirected(pairs)
+	}
+
+	@Test("Hierarchical planted graphs, where contraction runs for several levels, reach the reference's modularity")
+	func hierarchicalMatchesReference() throws {
+		let rng = SeededRNG(seed: 555)
+		for trial in 0..<20 {
+			let graph = Self.hierarchical(rng: rng, macro: 3 + trial % 3, mid: 3 + trial % 2, leaf: 4)
+			let dense = Self.denseAdjacency(graph)
+			let reference = Self.denseModularity(dense, Self.referenceMultiLevel(dense))
+			let found = try #require(graph.louvainCommunities())
+			let q = Self.denseModularity(dense, Self.labelling(found, graph))
+			#expect(q >= reference - 1e-9, "trial \(trial): Q = \(q), reference \(reference)")
+		}
+	}
+
+	/// Ring of cliques whose neighbours are joined by `bonds` parallel edges between distinct node pairs.
+	private static func bondedRing(count: Int, size: Int, bonds: Int) -> Graph<String> {
+		var pairs: [(String, String)] = []
+		for c in 0..<count {
+			let base = c * size
+			for i in 0..<size { for j in (i + 1)..<size {
+				pairs.append((name(base + i), name(base + j)))
+			} }
+			let next = ((c + 1) % count) * size
+			for b in 0..<bonds { pairs.append((name(base + b), name(next + size - 1 - b))) }
+		}
+		return undirected(pairs)
+	}
+
+	@Test("Rings whose neighbours share several edges: weights survive repeated contraction")
+	func bondedRingsMatchReference() throws {
+		for (count, size, bonds) in [(32, 5, 3), (24, 6, 4), (40, 5, 2), (30, 4, 3), (48, 6, 5)] {
+			let graph = Self.bondedRing(count: count, size: size, bonds: bonds)
+			let dense = Self.denseAdjacency(graph)
+			let reference = Self.denseModularity(dense, Self.referenceMultiLevel(dense))
+			let found = try #require(graph.louvainCommunities())
+			let q = Self.denseModularity(dense, Self.labelling(found, graph))
+			#expect(q >= reference - 1e-9, "ring \(count)x\(size) bonds \(bonds): Q = \(q), reference \(reference)")
+		}
 	}
 }

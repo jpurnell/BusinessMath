@@ -242,6 +242,17 @@ public extension Graph {
 	///   last iterate of an unconverged iteration is a vector with no meaning and no marker
 	///   saying so, so it is not returned.
 	///
+	/// ## The default budget on long paths
+	///
+	/// The shift removes the oscillation but not the slow convergence of long, thin graphs: on
+	/// a path the shifted spectrum is crowded at the top. Passes needed at the default
+	/// `tolerance` of `1e-12` (the smallest `maxIterations` that returns a vector): a path of
+	/// 5 nodes 36, 10 nodes 135, 20 nodes 481, 29 nodes 954, 30 nodes 1016, 40 nodes 1728,
+	/// 61 nodes 3773, 100 nodes 9422; a star of 50 leaves 50; a cycle 1. So **a path of 30
+	/// or more nodes returns `nil` at the default `maxIterations` of 1000**. That `nil` is
+	/// the iteration reporting that it has not converged, not a statement about the graph:
+	/// callers with long, thin graphs should pass a larger `maxIterations`.
+	///
 	/// Edge direction is read as it is stored: score flows along each stored edge from its
 	/// source to its target, so for a directed graph this is the leading eigenvector of
 	/// the transpose of the adjacency matrix.

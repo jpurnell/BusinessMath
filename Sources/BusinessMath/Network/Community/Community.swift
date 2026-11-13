@@ -113,7 +113,7 @@ public extension Graph {
 	/// partitions on different runs of the same program — correct-looking every time and
 	/// never the same twice. The communities are returned ordered by their lowest node.
 	///
-	/// - Parameter maxPasses: How many contraction rounds to allow. Each round is a full
+	/// - Parameter maxPasses: How many contraction rounds to allow; a value below 1 is treated as 1. Each round is a full
 	///   local-moving phase followed by a contraction; the loop also stops as soon as a
 	///   phase moves nothing.
 	/// - Returns: The communities, or `nil` for a graph with no edges, which has no

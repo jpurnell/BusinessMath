@@ -24,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   converged within `maxIterations`, instead of the last iterate. Results on non-bipartite graphs
   are unchanged to within the tolerance. Signature, L2 normalisation, and `nil` for a graph with no
   edges or a disconnected graph are unchanged.
+  **Callers with long, thin graphs should pass a larger `maxIterations`.** At the default 1000
+  and tolerance 1e-12, a path of 30 or more nodes returns `nil`. Passes needed (smallest
+  `maxIterations` that returns a vector): path of 5 nodes 36, 10 nodes 135, 20 nodes 481, 29 nodes
+  954, 30 nodes 1016, 40 nodes 1728, 61 nodes 3773, 100 nodes 9422; star of 50 leaves 50; cycle 1.
 - **`louvainCommunities(maxPasses:)` now actually contracts communities between passes**, as its
   documentation said it did. The shipped loop was single-level local moving: it never built the
   contracted graph, so whole communities could never merge. On a ring of 12 triangles joined by
