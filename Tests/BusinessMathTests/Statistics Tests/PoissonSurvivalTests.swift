@@ -104,9 +104,11 @@ struct PoissonSurvivalTests {
         // P(X ≥ 20 | λ = 1) = 1.59e-19. The CDF below it is 1 to within a rounding of the
         // sum, so the complement is that rounding, of order 1e-16: not one correct digit, and
         // about a thousand times too large (or zero, "impossible"). Either way the size is lost.
+        // Which one is the platform's rounding: macOS leaves noise, Linux (CI) leaves exactly 0,
+        // a relative error of 1. "Not one correct digit" is a relative error of at least 0.5.
         let truth: Double = 1.5875276010732626e-19
         let complement: Double = 1 - poissonCDF(19.0, µ: 1.0)
-        #expect(abs(complement - truth) / truth > 100, "complement \(complement)")
+        #expect(abs(complement - truth) / truth >= 0.5, "complement \(complement)")
         let survival: Double = try poissonSurvival(k: 20, lambda: 1.0)
         #expect(abs(survival - truth) / truth < 1e-12)
     }
