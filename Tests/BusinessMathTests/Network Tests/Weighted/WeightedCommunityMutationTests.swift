@@ -213,7 +213,11 @@ struct ModularityMutationTests {
 	func weighted() throws {
 		let g = try WeightedGraph(edges: [("a", "b", 3.0), ("b", "c", 1.0)])
 		let q = Community.modularity(g, partition: partition([["a", "b"], ["c"]]))
-		#expect(close(q, (3.0 / 4.0 - 49.0 / 64.0) + (0 - 1.0 / 64.0)))
+		let inside: Double = 3.0 / 4.0
+		let squareAB: Double = 49.0 / 64.0
+		let squareC: Double = 1.0 / 64.0
+		let expectedQ: Double = (inside - squareAB) - squareC
+		#expect(close(q, expectedQ))
 		#expect(close(q, -1.0 / 32.0))
 	}
 
