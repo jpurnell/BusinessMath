@@ -39,6 +39,7 @@ This section bridges the gap between calculation and insight. Whether you're eva
 
 ### Panels and Rankings
 - <doc:2.6-RankSumSignificance>
+- <doc:2.7-SpearmanSignificance>
 
 ## Prerequisites
 

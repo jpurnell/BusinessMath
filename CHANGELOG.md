@@ -64,6 +64,84 @@ ADR-006). Nothing else from that plan is in this change.
   result type, determinism and `nil` for a graph with no edges are unchanged; communities are
   returned ordered by their lowest node.
 
+### [3.0.0-alpha.16] - 2026-11-13
+
+Additive: no existing API changes. (Two private helpers in
+`RankSumCriticalValues.swift`, `exactHalfAlphaCount` and `validateRankSumAlpha`, became
+`internal` so the Spearman code can share them.)
+
+**Exact, tie-aware significance for Spearman's rho.** A tasting app tests each pair of
+judges' agreement with Spearman's rho, usually over 4–12 wines. Its cutoff has been
+`correlationBreakpoint`, which uses Fisher's z with the 1.06 variance factor and is rough at
+these sizes. Exact Spearman tables used to be the reference, but nothing in the package
+reproduced them. This release computes the exact null distribution, ties included, and
+decides p-values and critical values in exact integer arithmetic.
+
+#### Added
+
+- **`spearmanDistribution(items:)`** and **`spearmanDistribution(_:vs:)`** →
+  `SpearmanDistribution<T>`: the exact null distribution of rho. One judge's ranking is
+  fixed and the other's is a uniformly random permutation of its own averaged ranks. Both
+  tie structures are conditioned on as observed. The distribution is counted, not summed:
+  a dynamic programme over positions, with the multiset of values used so far as the state
+  (recursions of the kind van de Wiel & Di Bucchianico 2001 use). Counts are multi-limb integers. It gives the attainable
+  rho values, `S = Σd²` and probabilities, plus `probability(atMost:)`,
+  `probability(atLeast:)` and the exact two-sided `pValue(rho:)`.
+- **`spearmanCriticalValues(items:alpha:method:)`** (the untied table),
+  **`spearmanCriticalValues(_:vs:alpha:method:)`** (two judges' own ties) and
+  **`SpearmanDistribution.criticalValues(alpha:)`** → `SpearmanCriticalValues<T>`. `upper`
+  is the smallest attainable rho with `P(ρ ≥ U) ≤ α/2` and `lower` the largest with
+  `P(ρ ≤ L) ≤ α/2`. The result also carries the tails achieved, both bounds as `S`,
+  `nonSignificantRange`, `canReachSignificance` (four untied wines cannot reach 5%) and
+  `isDegenerate`. The comparison with α/2 is in exact integers, as in alpha.14.
+- **`spearmanTest(_:vs:alpha:method:)`** → `SpearmanTestResult<T>`: rho, `S`, the two-sided
+  p-value (`min(1, 2·min tail)`, as R and SciPy), the critical values, and `isSignificant`.
+  Under the exact method the decision is made on the integer statistic.
+- **A judge who tied everything** makes rho `0/0`. The result reports `rho == nil`,
+  `pValue == nil` and `isComputable == false`, never zero agreement.
+- **`SpearmanSignificanceMethod`**: `.exact` (the default); `.edgeworth`, R's AS 89 series,
+  ported from `prho.c` for untied input only, so results can be reproduced against R;
+  `.tDistribution`, the t approximation of R's `exact = FALSE` and SciPy's `spearmanr`,
+  which accepts ties. The two approximations are labelled and never chosen silently.
+- **Size:** without ties the state space is `2ⁿ`. A layer over 2²¹ states, or two layers
+  over 2²⁵ limbs (256 MiB), is refused with `resourceExhausted` before any count table is
+  allocated. Untied, that means 17 items at most: release build, Apple silicon, 17 items
+  take 0.3 s and 163 MB, 16 take 0.12 s and 66 MB, and 12 or fewer take under 5 ms in under
+  10 MB. Ties shrink the state space, so tied panels go further: 30 wines scored 1–5 by
+  both judges take 0.5 s.
+- DocC article **Spearman Significance with Ties** (`2.7-SpearmanSignificance`), linked from
+  Part II.
+
+#### Findings
+
+- **R is not exact where WineTaster works.** R 4.6.2's
+  `cor.test(method = "spearman", exact = TRUE)` enumerates only for n ≤ 9 without ties.
+  For 10 ≤ n ≤ 1290 it uses the AS 89 Edgeworth series, off by up to 1.1e-3 in p at n = 10.
+  With ties it uses t, off by up to 0.013 at n = 10 untied.
+- **The Fisher-z breakpoint disagrees with the exact 5% test at small n.** It flags rho = 1
+  with 4 wines (exact p = 0.083), 0.9 with 5 (0.083), 0.829 with 6 (0.058) and 0.683 with 9
+  (0.050). From 13 wines it misses one or two values that are significant. Decisions agree at
+  7, 8, 10, 11 and 12 wines, untied.
+- **Zar (1984) Table B.19** equals the exact values in all 117 cells for n = 4–16, at nine
+  levels. At n = 17–18 seven of 18 cells differ by 0.002–0.005, apparently from an
+  approximation. Lee's York table equals the exact values in all 90 cells through n = 18.
+
+#### Validation
+
+- Brute force over all `n!` permutations: in the tests for nine panels up to n = 8, tied and
+  untied, and in Python for every fixture case up to n = 10. An independent exact recursion
+  in Python integers covers 30 cases up to n = 20. Mean 0 and variance `1/(n − 1)` hold
+  exactly.
+- `Scripts/reference-fixtures/generate_spearman.py` (+ `generate_spearman.R`,
+  `zar_1984_table_b19.txt`, `lee_york_spearman_upper.txt`) writes
+  `Fixtures/spearmanDistribution.json`, using R 4.6.2, SciPy 1.18.1 and NumPy 2.5.4.
+  - The exact p-values equal R's for n ≤ 9, and SciPy's exact `permutation_test` for every
+    n ≤ 8 observation, tied included.
+  - `.edgeworth` reproduces R's `exact = TRUE` for n ≥ 10, and `.tDistribution` reproduces R's
+    `exact = FALSE` and SciPy's `spearmanr`.
+  - On tied panels too large to count (24 and 30 wines, 10⁶ permutations), t is within
+    0.0033 of the permutation p-value.
+
 ### [3.0.0-alpha.15] - 2026-11-12
 
 Additive: no existing API changes.

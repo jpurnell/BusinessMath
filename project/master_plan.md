@@ -817,7 +817,9 @@ The earlier table was about *scope*; this one is about *what is being measured*.
 
 ---
 
-**Last Updated:** 2026-11-12 — tagged v3.0.0-alpha.15: the CHANGELOG's `[Unreleased]` block (`wilsonInterval`, `medianAbsoluteDeviation`, `poissonSurvival` for the Diagnostics Hub's analysis slice, checked against R and SciPy, and an assessment of the library's anomaly detectors against the hub's spike rule) became the release; the README notice and install line name it. Nothing in Current Status advanced.
+**Last Updated:** 2026-11-13 — tagged v3.0.0-alpha.16: the CHANGELOG's `[Unreleased]` block (exact, tie-aware Spearman's ρ distribution, critical values and test, checked against brute force, an independent exact programme, R, SciPy, Monte Carlo and Zar's table) became the release, with alpha.15 merged in; the README notice and install line name it. Nothing in Current Status advanced.
+
+**Previously, 2026-11-12 — tagged v3.0.0-alpha.15: the CHANGELOG's `[Unreleased]` block (`wilsonInterval`, `medianAbsoluteDeviation`, `poissonSurvival` for the Diagnostics Hub's analysis slice, checked against R and SciPy, and an assessment of the library's anomaly detectors against the hub's spike rule) became the release; the README notice and install line name it. Nothing in Current Status advanced.
 
 **Previously, 2026-11-12 — tagged v3.0.0-alpha.14: the CHANGELOG's `[Unreleased]` block (exact, tie-aware rank-sum distribution and critical values, `rankSumDistribution` and `rankSumCriticalValues`, checked against brute force, exact Python integers, NumPy, R and Monte Carlo) became the release; the README notice and install line name it. Nothing in Current Status advanced.
 
