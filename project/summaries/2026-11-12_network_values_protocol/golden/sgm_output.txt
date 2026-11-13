@@ -1,0 +1,34 @@
+report	{"converged":true,"iterations":151,"maxIterations":200,"residual":8.2e-11,"tolerance":1e-10}
+missReport	{"converged":false,"iterations":200,"maxIterations":200,"residual":0.047,"tolerance":1e-10}
+scores	{"scores":{"a":3,"b":1.5,"c":0.25}}
+intScores	{"scores":{"7":0.5}}
+emptyScores	{"scores":{}}
+partition	{"communities":{"a":0,"b":0,"c":1}}
+selection	{"picks":[{"marginalGain":3.5,"node":"b"},{"marginalGain":1.25,"node":"a"}]}
+emptySelection	{"picks":[]}
+diagWith	{"convergence":{"converged":true,"iterations":151,"maxIterations":200,"residual":8.2e-11,"tolerance":1e-10},"scores":{"a":3,"b":1.5,"c":0.25}}
+diagMiss	{"convergence":{"converged":false,"iterations":200,"maxIterations":200,"residual":0.047,"tolerance":1e-10},"scores":{"a":3,"b":1.5,"c":0.25}}
+diagWithout	{"scores":{"a":3,"b":1.5,"c":0.25}}
+envScores	{"kind":"scores","payload":{"scores":{"a":3,"b":1.5,"c":0.25}}}
+envIntScores	{"kind":"scores","payload":{"scores":{"7":0.5}}}
+envPartition	{"kind":"partition","payload":{"communities":{"a":0,"b":0,"c":1}}}
+envSelection	{"kind":"selection","payload":{"picks":[{"marginalGain":3.5,"node":"b"},{"marginalGain":1.25,"node":"a"}]}}
+envDiagWith	{"kind":"scores","payload":{"convergence":{"converged":true,"iterations":151,"maxIterations":200,"residual":8.2e-11,"tolerance":1e-10},"scores":{"a":3,"b":1.5,"c":0.25}}}
+envDiagMiss	{"kind":"scores","payload":{"convergence":{"converged":false,"iterations":200,"maxIterations":200,"residual":0.047,"tolerance":1e-10},"scores":{"a":3,"b":1.5,"c":0.25}}}
+envDiagWithout	{"kind":"scores","payload":{"scores":{"a":3,"b":1.5,"c":0.25}}}
+envUnknown	{"kind":"assignment","payload":{"cost":5.2078,"none":null,"ok":true,"sites":["x","y"]}}
+convWith	Optional(SwiftGraphMetrics.ConvergenceReport(iterations: 151, converged: true, residual: 8.2e-11, tolerance: 1e-10, maxIterations: 200))
+convWithout	nil
+sentenceOK	Converged in 151 passes (final change 8.20E-11, tolerance 1.00E-10).
+sentenceMiss	Did not converge: stopped at the 200-pass ceiling with a final change of 4.70E-2 against a tolerance of 1.00E-10, so these scores may be far from the true eigenvector. Raise maxIterations to check.
+sentenceNil	Convergence was not recorded for this result.
+kinds	scores partition selection scores
+nan	throws EncodingError
+inf	throws EncodingError
+rawnan	throws EncodingError
+nanRanked	["c", "f", "a", "b", "d", "e"]
+s1	Converged in 1 pass (final change 0.00E0, tolerance 1.00E-10).
+s2	Converged in 0 passes (final change 0.00E0, tolerance 1.00E-3).
+s3	Converged in 2 passes (final change 1.23E5, tolerance 5.00E-1).
+s4	Did not converge: stopped at the 1-pass ceiling with a final change of 1.00E-3 against a tolerance of 1.00E-10, so these scores may be far from the true eigenvector. Raise maxIterations to check.
+s5	Did not converge: stopped at the 5-pass ceiling with a final change of 9.99E-1 against a tolerance of 1.00E-10, so these scores may be far from the true eigenvector. Raise maxIterations to check.

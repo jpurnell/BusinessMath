@@ -1,0 +1,18 @@
+// swift-tools-version: 6.0
+import PackageDescription
+// Mutation lab: only the code under mutation, WeightedGraph (its one dependency) and the ported tests,
+// so that one mutant compiles and runs in seconds. The module is called BusinessMath so the tests are untouched.
+let package = Package(
+	name: "mutlab",
+	platforms: [.macOS(.v14)],
+	dependencies: [.package(path: "/Users/jpurnell/Dropbox/Computer/Development/Swift/Tools/SwiftDeterminism")],
+	targets: [
+		.target(name: "BusinessMath",
+			dependencies: [.product(name: "SwiftDeterminism", package: "SwiftDeterminism")],
+			path: "Sources/BusinessMath", swiftSettings: [.swiftLanguageMode(.v6)]),
+		.target(name: "TestSupport", path: "Tests/TestSupport", swiftSettings: [.swiftLanguageMode(.v6)]),
+		.testTarget(name: "BusinessMathTests",
+			dependencies: ["BusinessMath", "TestSupport", .product(name: "SwiftDeterminism", package: "SwiftDeterminism")],
+			path: "Tests/BusinessMathTests", swiftSettings: [.swiftLanguageMode(.v6)]),
+	]
+)

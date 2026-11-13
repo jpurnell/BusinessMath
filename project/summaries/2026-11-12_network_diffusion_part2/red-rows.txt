@@ -1,0 +1,69 @@
+FAILED|SeedSelectorTests.swift|Descriptor is exploratory, generic and states high and low
+FAILED|SeedSelectorTests.swift|Star at p = 1: the centre is picked first with gain n + 1
+passed|SeedSelectorTests.swift|Empty graph yields an empty selection
+FAILED|SeedSelectorTests.swift|Budget 0 yields no picks; negative budget throws
+passed|SeedSelectorTests.swift|Budget above node count returns at most node count picks, all distinct
+FAILED|SeedSelectorTests.swift|Isolated nodes are pickable and gain exactly 1 each
+FAILED|SeedSelectorTests.swift|trials = 0 throws a clear error
+FAILED|SeedSelectorTests.swift|Identical configuration gives identical selections; different seed may differ
+passed|SeedSelectorTests.swift|The parallel first pass agrees bit-for-bit with the async task-group version
+FAILED|SeedSelectorTests.swift|A selection round-trips through its stored-record envelope, filed under "selection"
+FAILED|SeedSelectorTests.swift|Greedy spread >= (1 - 1/e) x brute-force optimum, k = 1...3, several small graphs
+FAILED|SeedSelectorTests.swift|k = 1 pick equals the brute-force best single node
+passed|SeedSelectorTests.swift|The linear threshold model also selects, deterministically, and beats a random-ish set
+FAILED|SeedSelectorTests.swift|Reports one selection per probability, in order
+passed|SeedSelectorTests.swift|Frequencies are the fraction of sweep points in which a node was picked
+FAILED|SeedSelectorTests.swift|Jaccard overlap: matrix is symmetric, unit diagonal, hand-checked values
+FAILED|SeedSelectorTests.swift|A single sweep point has mean Jaccard 1 (no pairs to disagree)
+FAILED|SeedSelectorTests.swift|Empty sweep and invalid probabilities throw
+passed|SeedSelectorTests.swift|Sweeps are deterministic
+not-run|SeedSelectorTests.swift|Benchmark: karate, k = 10, 200 trials
+not-run|SeedSelectorTests.swift|Benchmark: ~1,100 nodes / ~15,000 edges, k = 10, 200 trials
+FAILED(param)|SeedSelectionOracleTests.swift|Lazy CELF selection equals plain greedy, node for node and gain for gain
+FAILED(param)|SeedSelectionOracleTests.swift|Weight-scaled cascades select like plain greedy too
+FAILED(param)|SeedSelectionOracleTests.swift|Lazy selection equals plain greedy under linear threshold on three fixed seeds
+FAILED(param)|SeedSelectionOracleTests.swift|Marginal gains telescope to the spread of the chosen set, for both models
+passed|SeedSelectionOracleTests.swift|The linear threshold selection is deterministic and no worse than the worst-connected nodes
+FAILED|SeedSelectionOracleTests.swift|Ties resolve to the lowest node index; zero probability picks nodes in order
+FAILED|SeedSelectionOracleTests.swift|Marginal gain is zero for a node already reached with certainty
+FAILED(param)|SeedSelectionOracleTests.swift|The async selection equals the dispatch selection on random graphs
+not-run|SeedSelectionOracleTests.swift|NodeSelection round-trips through JSON and its envelope, for seeded arbitrary picks
+FAILED|SeedSelectionOracleTests.swift|Hand-checked stability summary: partial overlaps, the always-picked set, an empty pick
+FAILED|SeedSelectionOracleTests.swift|Degenerate sweeps: no points, one point
+FAILED(param)|SeedSelectionOracleTests.swift|Jaccard matrix: symmetric, unit diagonal, in [0, 1], equal to set arithmetic, for seeded random picks
+FAILED|SeedSelectionOracleTests.swift|Each sweep point is the selector run at that probability with the same master seed
+FAILED|SeedSelectionOracleTests.swift|A custom model builder is used at every probability: each point equals the selector run with that model
+FAILED|SeedSelectionOracleTests.swift|A single trial is a valid trial count for the selector, the estimator and the sweep
+not-run|LazyGreedyTests.swift|Independent cascade is submodular in every single trial: gains never grow with the seed set
+passed|LazyGreedyTests.swift|Linear threshold is NOT submodular in a single trial: two half-weight neighbours can jointly activate a node neither does alone
+FAILED(param)|LazyGreedyTests.swift|Linear threshold: the selector equals plain greedy even with the laziest refresh batch, over many seeded graphs
+FAILED(param)|LazyGreedyTests.swift|Independent cascade: lazy evaluation is exact at every refresh batch size
+FAILED|LazyGreedyTests.swift|At its default batch size the selector equals plain greedy on graphs bigger than the batch, for both models
+passed|LazyGreedyTests.swift|Independent cascade declares it; linear threshold and an undeclared model do not
+passed|LazyGreedyTests.swift|An undeclared model gets exact plain greedy even when asked to be as lazy as possible
+FAILED(param)|SweepCodableTests.swift|A sweep round-trips through JSON exactly, for seeded arbitrary sweeps
+FAILED(param)|SweepCodableTests.swift|A sweep round-trips through its stored-record envelope, filed under "seed-sweep"
+not-run|SweepCodableTests.swift|A single point round-trips, including on String nodes
+FAILED|SweepCodableTests.swift|A sweep produced by SeedSelector.sweep round-trips, derived summary included
+FAILED|SweepCodableTests.swift|Only the points are stored: the stability summary is recomputed, so it cannot disagree with them
+passed|SweepCodableTests.swift|A point whose probability is NaN cannot be encoded, and says so rather than storing garbage
+FAILED(param)|SeedSelectionGuaranteeTests.swift|Both models, several budgets (including over-budget) and refresh batches: exact pick and gain equality
+FAILED(param)|SeedSelectionGuaranteeTests.swift|A model that does not declare submodular trials has every candidate refreshed every round, however lazy the batch
+FAILED|SeedSelectionGuaranteeTests.swift|The same model declared submodular is allowed to skip: it runs fewer trials, and picks the same nodes
+FAILED|SeedSelectionGuaranteeTests.swift|A declared model is refreshed in batches no larger than the batch asked for
+FAILED(param)|SeedSelectionGuaranteeTests.swift|Greedy is within (1 - 1/e) of the brute-force optimum on unseen trials, up to 4 standard errors, k = 1...3
+passed|SeedSelectionGuaranteeTests.swift|The guarantee is not vacuous: on a graph with one hub, greedy keeps most of the optimum, not just 63%
+FAILED|SeedSelectionGoldenTests.swift|Every recorded selection is reproduced exactly: picks, gains, spread, JSON, envelope
+FAILED|SeedSelectionGoldenTests.swift|The task-group version reproduces the same recorded selections
+FAILED|SeedSelectionGoldenTests.swift|Every recorded sweep is reproduced exactly: picks, summary, JSON, envelope
+FAILED|SeedSelectionGoldenTests.swift|The stability summary is derived the same way from every recorded set of points
+FAILED|SeedSelectionGoldenTests.swift|A stored sweep reads back equal, with the summary recomputed
+FAILED|SeedSelectionGoldenTests.swift|The descriptor encodes to exactly the text the original produced
+FAILED|SiteAssignmentGoldenTests.swift|The JSON and the envelope of every recorded p-median answer are reproduced exactly
+FAILED|SiteAssignmentGoldenTests.swift|Siting from NodeScores reproduces the original's answers, totals and JSON exactly
+not-run|WeightConsumerDiffusionTests.swift|Seed selection and a probability sweep pick real, distinct nodes
+FAILED(param)|WeightConsumerDiffusionTests.swift|Siting on NodeScores built from weighted degree stays finite
+FAILED|SitingTests.swift|Round-trips through its envelope
+FAILED|SitingTests.swift|NodeScores become demand weights
+FAILED|SitingTests.swift|NodeScores demand: the weights are the scores, and a non-positive total is refused
+not-run|SitingTests.swift|Round trip: encode then decode returns the original, as JSON and as an envelope

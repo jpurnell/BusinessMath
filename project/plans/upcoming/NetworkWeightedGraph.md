@@ -1,6 +1,8 @@
 # Design Proposal: Weighted graphs and graph metrics in `Network/`
 
-**Status:** Approved by the owner 2026-11-12; step 1 in progress.
+**Status:** Approved by the owner 2026-11-12. Steps 0 to 3 done on the integration branch (step 3, the metric registry and
+stored-record golden test, 2026-11-13, ADR-008); step 4 is next. Step 4 also covers: the Louvain tie margin on the unweighted
+`Graph` (the cross-check's known issue, `random3`), and eigenvector centrality refusing a disconnected graph.
 **Owner decisions already given (2026-11-12):** the licence question is settled (the code moves under
 BusinessMath's AGPLv3 / commercial dual licence); ClassGraph accepts a dependency on the full
 BusinessMath package; the weighted graph is added beside `Graph`, not in place of it; the eigenvector and
@@ -333,6 +335,6 @@ Every public symbol carries DocC with a compiling example (the quality gate comp
 | 1 | Collision check; ADR-006; `WeightedGraph`, `GraphError`, bridges; `GraphTests`, `WeightValidationTests` | ported tests green; round trip `Graph` <-> `WeightedGraph` |
 | 2 | Port weighted measures with their suites and independent implementations; cross-check test against the unweighted measures | ported suites; cross-check; Linux CI |
 | 3 | Port the metric protocol layer; golden stored-record test; keep identifiers and versions | golden JSON byte-identical; v3 eigenvector decode |
-| 4 | Make silent behaviours explicit with version bumps: PageRank convergence (see SGM `PageRankConvergence.md`, measure first), modularity partition validation, damping NaN rejection | each its own red test, ADR note |
+| 4 | Make silent behaviours explicit with version bumps: PageRank convergence (see SGM `PageRankConvergence.md`, measure first), modularity partition validation, damping NaN rejection, eigenvector refusing a disconnected graph; and the Louvain tie margin on the unweighted `Graph` (cross-check known issue) | each its own red test, ADR note |
 | 5 | Port diffusion and siting; siting tests add BusinessMath's integer-programming solver as an independent oracle; seed-for-seed golden test | golden seeds and spreads identical; PMedian optimum equals the IP optimum on small instances |
 | 6 | ClassGraph cutover (typealiases, `Package.swift`), full ClassGraph suite; archive SGM with a pointer | ClassGraph tests and gate green; stored-record sample identical before and after |

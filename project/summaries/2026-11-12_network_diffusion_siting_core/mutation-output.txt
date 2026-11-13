@@ -1,0 +1,137 @@
+# Mutation run 1: all 101 mutants against the suite as first ported (2026-11-12)
+T1: KILLED [9s] trial not scaled by the golden-ratio increment: neighbouring (seed, trial) pairs collide -- Draws match values computed independently, bit for bit; Every recorded edge draw is reproduced bit for bit; Every recorded node draw is reproduced bit for bit; Mean and standard error are bit-identical, through both estimator overloads (+2 more)
+T2: KILLED [7s] seed combined with xor instead of addition -- Draws match values computed independently, bit for bit; Every recorded edge draw is reproduced bit for bit; Every recorded node draw is reproduced bit for bit; Mean and standard error are bit-identical, through both estimator overloads (+1 more)
+T3: KILLED [7s] edge draws share the node salt -- Draws match values computed independently, bit for bit; Every recorded edge draw is reproduced bit for bit; Mean and standard error are bit-identical, through both estimator overloads; Per-trial counts and exact activated sets match, for both models on three graphs (+2 more)
+T4: KILLED [7s] edge packing shifts by 31 instead of 32 -- Draws match values computed independently, bit for bit; Every recorded edge draw is reproduced bit for bit; Mean and standard error are bit-identical, through both estimator overloads; Per-trial counts and exact activated sets match, for both models on three graphs (+2 more)
+T5: KILLED [6s] target index masked to 16 bits -- Draws match values computed independently, bit for bit; Every recorded edge draw is reproduced bit for bit; TrialRandomness: draws are in [0, 1), reproducible, and sensitive to every input
+T6: KILLED [7s] draw uses 52 bits: range [0, 1/2) -- A neighbour whose whole weight is active always activates (share = 1); A single trial reports zero standard error rather than dividing byode 1099511627776
+􀄵  draw.bitPattern == row.bits → false
+􀄵    draw.bitPattern → 4601700882993851350
+􀄵    row.bits → 4606204482621221847
+􀢄  Test ; Draws match values computed independently, bit for bit; Edge and node draws are uniform on [0, 1): mean, spread and bucket counts (+12 more)
+T7: KILLED [5s] draw scaled to [0, 2) -- crash; A leaf at p = 1 reaches the whole star; at p = 0 only itself; A lone edge under linear threshold always spreads to both ends, with zero variance; An edge fires on draw < p strictly: p equal to its draw does not fire, the next value up does
+T8: KILLED [6s] key combined with salt by addition instead of xor -- Draws match values computed independently, bit for bit; Every recorded edge draw is reproduced bit for bit; Every recorded node draw is reproduced bit for bit; Mean and standard error are bit-identical, through both estimator overloads (+2 more)
+T9: KILLED [7s] slot not scaled by the golden-ratio increment -- Draws match values computed independently, bit for bit; Every recorded edge draw is reproduced bit for bit; Every recorded node draw is reproduced bit for bit; Mean and standard error are bit-identical, through both estimator overloads (+2 more)
+T10: KILLED [7s] trial key is the second output of the generator, not the first -- Draws match values computed independently, bit for bit; Every recorded edge draw is reproduced bit for bit; Every recorded node draw is reproduced bit for bit; Every recordedecorded an issue at DiffusionGoldenTests.swift:68:4: Expectation failed: draw.bitPattern == row.bits
+􀄵  seed 2028 trial 17 node 1000
+􀄵  draw.bitPattern == row.bits → false
+􀄵    draw.bitPattern → 4601898515890272512
+􀄵    row.bits → 4602723429445260064
+􀢄  Test  (+3 more)
+C1: KILLED [7s] seed 0 is not a valid seed -- A graph of one node is simulated, not skipped: a seed counts as 1 under every model; A lone edge under linear threshold always spreads to both ends, with zero variance; A neighbour whose whole weight is active always activates (share = 1); A node whose incident weights are all zero has no share to give and never activates (+24 more)
+C2: KILLED [6s] seed == nodeCount accepted -- crash; 
+C3: KILLED [8s] duplicate seeds counted twice -- Empty seed set spreads to nothing; out-of-range and duplicate seeds are ignored; Independent cascade equals reachability over the fired edges, trial by trial; Linear threshold equals the threshold fixed point, trial by trial; Mean and standard error are bit-identical, through both estimator overloads (+3 more)
+C4: KILLED [8s] draw <= p instead of draw < p -- An edge fires on draw < p strictly: p equal to its draw does not fire, the next value up does
+C5: KILLED [7s] edge draw taken in the reverse direction -- An edge fires on draw < p strictly: p equal to its draw does not fire, the next value up does; Independent cascade equals reachability over the fired edges, trial by trial; Mean and standard error are bit-identical, through both estimator overloads; Per-trial counts and exact activated sets match, for both models on three graphs (+1 more)
+C6: KILLED [5s] node draw used for an edge -- An edge fires on draw < p strictly: p equal to its draw does not fire, the next value up does; Independent cascade equals reachability over the fired edges, trial by trial; Mean and standard error are bit-identical, through both estimator overloads; Per-trial counts and exact activated sets match, for both models on three graphs (+1 more)
+C7: KILLED [6s] cascade may re-activate an active node -- A large graph finishes within a time limit; A leaf at p = 1 reaches the whole star; at p = 0 only itself; An edge fires on draw < p strictly: p equal to its draw does not fire, the next value up does; Empty seed set spreads to nothing; out-of-range and duplicate seeds are ignored (+14 more)
+C8: SURVIVED [6s] weight-scaled probability not capped at 1 -- 
+C9: KILLED [6s] scale is maxWeight, not its reciprocal -- Independent cascade equals reachability over the fired edges, trial by trial; Mean and standard error are bit-identical, through both estimator overloads; Per-trial counts and exact activated sets match, for both models on three graphs; The generator overload keys the trial from one Xoshiro256StarStar draw, as before
+C10: SURVIVED [7s] scale 1 when no edge has weight -- 
+C11: KILLED [5s] a one-node graph is skipped by the cascade -- A graph of one node is simulated, not skipped: a seed counts as 1 under every model
+C12: SURVIVED [5s] cascade queue walk stops one position early -- 
+C13: SURVIVED [4s] isFinite check removed from probability validation -- 
+C14: KILLED [5s] probability 0 rejected -- A leaf at p = 1 reaches the whole star; at p = 0 only itself; Models validate probabilities at the boundaries and expose what they were given; Seed handling at the boundaries: 0 and n-1 count, n and -1 do not, repeats count once; Spread is monotone in the seed set and in the probability, exactly, on common trials (+1 more)
+C15: KILLED [6s] probability 1 rejected -- A graph of one node is simulated, not skipped: a seed counts as 1 under every model; A leaf at p = 1 reaches the whole star; at p = 0 only itself; A weight-scaled cascade on an edgeless graph, and any model on the empty graph, spread to nothing; Empty seed set spreads to nothing; out-of-range and duplicate seeds are ignored (+8 more)
+C16: SURVIVED [7s] IndependentCascade stops declaring submodular trials -- 
+C17: SURVIVED [7s] protocol default becomes true -- 
+C18: KILLED [9s] generator overload uses trial 1 -- The generator overload keys one trial from exactly one draw of the generator; The generator overload keys the trial from one Xoshiro256StarStar draw, as before
+C19: KILLED [9s] generator overload ignores the generator -- The generator overload keys one trial from exactly one draw of the generator; The generator overload keys the trial from one Xoshiro256StarStar draw, as before
+L1: KILLED [9s] tolerance 1e-9 -- The threshold rule is share + 1e-12 >= theta: inside the tolerance activates, outside does not
+L2: KILLED [10s] tolerance sign flipped -- The threshold rule is share + 1e-12 >= theta: inside the tolerance activates, outside does not
+L3: KILLED [7s] threshold comparison strict -- The threshold rule is share + 1e-12 >= theta: inside the tolerance activates, outside does not
+L4: KILLED [5s] threshold drawn for the source node -- Linear threshold equals the threshold fixed point, trial by trial; Mean and standard error are bit-identical, through both estimator overloads; Per-trial counts and exact activated sets match, for boated sets match, for both models on three graphs; Per-trial counts and exact activated sets match, for both models on three graphs (+4 more)
+L5: KILLED [6s] share ignores the edge weight -- Linear threshold equals the threshold fixed point, trial by trial; Mean and standard error are bit-identical, through both estimator overloads; Per-trial counts and exact activated sets match, for both models on three graphs; The generator overload keys the trial from one Xoshiro256StarStar draw, as before (+4 more)
+L6: KILLED [7s] share not divided by weighted degree -- A neighbour whose whole weight is active always activates (share = 1); Linear threshold equals the threshold fixed point, trial by trial; Mean and standard error are bit-identical, through both estimator overloads; One of two neighbours activates the shared node with probability 1/2 (+6 more)
+L7: KILLED [6s] linear threshold may re-activate an active node -- A lone edge under linear threshold always spreads to both ends, with zero variance; A neighbour whose whole weight is active always activates (share = 1); An isolated node is never activated by others and counts when seeded; Extreme legal weights never trap or hang, and the count stays in range (+10 more)
+L8: SURVIVED [5s] zero-degree guard removed -- 
+L9: KILLED [5s] a one-node graph is skipped by the threshold model -- A graph of one node is simulated, not skipped: a seed counts as 1 under every model
+E1: KILLED [5s] zero trials accepted -- trials = 0 and negative trials throw a clear error
+E2: KILLED [6s] one trial rejected -- A single trial is a valid trial count for the estimator: a whole number of nodes, no spread; A single trial reports zero standard error rather than dividing by zero; Mean and standard error are bit-identical, through both estimator overloads; Mean and standard error are the two-pass sample statistics of the per-trial counts
+E3: KILLED [5s] last trial skipped -- A leaf at p = 1 reaches the whole star; at p = 0 only itself; A lone edge under linear threshold always spreads to both ends, with zero variance; A neighbour whose whole weight is active always activates (share = 1); A single trial is a valid trial count for the estimator: a whole number of nodes, no spread (+13 more)
+E4: KILLED [6s] trials indexed from one -- Mean and standard error are bit-identical, through both estimator overloads; Mean and standard error are the two-pass sample statistics of the per-trial counts; The estimator reads the same trials as TrialRandomness(masterSeed:, trial:) in order, and the flat and unflattened overloads agree
+E5: KILLED [5s] sum of squares uses the count -- Mean and standard error are bit-identical, through both estimator overloads; Mean and standard error are the two-pass sample statistics of the per-trial counts; One of two neighbours activates the shared node with probability 1/2; Path from an end under linear threshold: mean 2 with variance 1.875 (+4 more)
+E6: KILLED [6s] zero-trial guard weakened -- summarise: hand-checked values, a degenerate run, and zero trials
+E7: KILLED [5s] two trials report zero error -- For seeded random trial counts the standard error is finite, non-negative and matches the two-pass formula; Mean and standard error are the two-pass sample statistics of the per-trial counts
+E8: KILLED [5s] variance numerator sign -- A lone edge under linear threshold always spreads to both ends, with zero variance; For seeded random trial counts the standard error is finite, non-negative and matches the two-pass formula; Mean and standard error are bit-identical, through both estimator overloads; Mean and standard error are the two-pass sample statistics of the per-trial counts (+5 more)
+E9: KILLED [4s] population variance instead of sample variance -- For seeded random trial counts the standard error is finite, non-negative and matches the two-pass formula; Mean and standard error are bit-identical, through both estimator overloads; Mean and standard error are the two-pass sample statistics of the per-trial counts; summarise: hand-checked values, a degenerate run, and zero trials
+E10: KILLED [5s] standard deviation instead of standard error -- For seeded random trial counts the standard error is finite, non-negative and matches the two-pass formula; Mean and standard error are bit-identical, through both estimator overloads; Mean and standard error are the two-pass sample statistics of the per-trial counts; Path from an end under linear threshold: mean 2 with variance 1.875 (+3 more)
+E11: SURVIVED [5s] non-strict sign test on the numerator -- 
+G1: KILLED [5s] maxWeight takes the minimum -- DiffusionGraph is the weighted graph's adjacency in compressed rows; Independent cascade equals reachability over the fired edges, trial by trial; Mean and standard error are bit-identical, through both estimator overloads; Per-trial counts and exact activated sets match, for both models on three graphs (+4 more)
+G2: KILLED [5s] weighted degree counts edges -- DiffusionGraph is the weighted graph's adjacency in compressed rows; Linear threshold equals the threshold fixed point, trial by trial; Mean and standard error are bit-identical, through both estimator overloads; Per-trial counts and exact activated sets match, for both models on three graphs (+4 more)
+G3: KILLED [3s] offsets shifted -- crash; 
+G4: KILLED [5s] node 0 has no neighbours -- DiffusionGraph is the weighted graph's adjacency in compressed rows; neighbours(of:) is empty out of bounds and valid at both ends
+G5: KILLED [3s] node == nodeCount reads past the offsets -- crash; 
+G6: KILLED [5s] weights flattened to one -- DiffusionGraph is the weighted graph's adjacency in compressed rows; Independent cascade equals reachability over the fired edges, trial by trial; Linear threshold equals the threshold fixed point, 6]
+􀄵  got == want → false
+􀄵    got → 11
+􀄵    want → 14
+􀢄  Test ; Linear threshold equals the threshold fixed point, trial by trial (+7 more)
+S1: KILLED [5s] zero demand weight rejected -- Edge cases
+S2: KILLED [5s] non-finite demand weight accepted -- Invalid weights, costs and counts are each rejected with the offending value named
+S3: KILLED [5s] all-zero demand accepted -- Edge cases
+S4: KILLED [5s] no candidate sites accepted -- Edge cases
+S5: KILLED [5s] duplicate sites accepted -- Edge cases
+S6: KILLED [6s] zero cost rejected -- A large heuristic problem finishes, is not exact, and is swap-optimal; A result is exact precisely when C(sites, k) <= enumerationLimit; Every recorded selection is reproduced exactly, exact and heuristic branches alike; Exact result: structure, and the lexicographically first optimum, even with ties (+7 more)
+S7: KILLED [5s] infinite cost accepted -- Invalid weights, costs and counts are each rejected with the offending value named
+S8: KILLED [4s] cost not weighted -- Golden path: cash cost picks a different winner; Golden path: travel hours; Invalid weights, costs and counts are each rejected with the offending value named; k = 1 is never worse than any single site, and equals the best one
+S9: KILLED [5s] mean cost not divided by weight -- Golden path: cash cost picks a different winner; Golden path: travel hours; Invalid weights, costs and counts are each rejected with the offending value named
+S10: KILLED [4s] empty demand accepted -- Invalid weights, costs and counts are each rejected with the offending value named
+P1: KILLED [3s] count 0 accepted -- crash; 
+P2: KILLED [5s] count equal to the site count rejected -- A result is exact precisely when C(sites, k) <= enumerationLimit; Edge cases; Exact result: structure, and the lexicographically first optimum, even with ties; Invalid weights, costs and counts are each rejected with the offending value named (+1 more)
+P3: KILLED [5s] candidate order not normalised -- Edge cases; Input order of the candidate list never changes the answer
+P4: KILLED [5s] objective ignores the demand weights -- A heuristic result that needs no swaps lists the sites in greedy pick order, unsorted; A large heuristic problem finishes, is not exact, and is swap-optimal; Every recorded selection is reproduced exactly, exact and heuristic branches alike; Exact branch equals brute force; heuristic is never worse than greedy (+4 more)
+P5: SURVIVED [5s] non-strict minimum -- 
+P6: KILLED [5s] exact decision strict at the limit -- A result is exact precisely when C(sites, k) <= enumerationLimit
+P7: KILLED [22s] saturation returns cap, not cap + 1 -- A heuristic result that needs no swaps lists the sites in greedy pick order, unsorted; A large heuristic problem finishes, is not exact, and is swap-optimal; A result is exact precisely when C(sites, k) <= enumerationLimit; Every recorded selection is reproduced exactly, exact and heuristic branches alike (+4 more)
+P8: KILLED [5s] binomial not folded to the smaller side -- A result is exact precisely when C(sites, k) <= enumerationLimit; subsetCount is the binomial coefficient, symmetric, saturating and overflow-safe
+P9: KILLED [4s] overflow ignored -- subsetCount is the binomial coefficient, symmetric, saturating and overflow-safe
+P10: KILLED [3s] k above n not reported as zero subsets -- crash; 
+P11: KILLED [5s] last subset never visited -- Every recorded selection is reproduced exactly, exact and heuristic branches alike; Exact branch equals brute force; heuristic is never worse than greedy; Exact result: structure, and the lexicographically first optimum, even with ties; Golden path: cash cost picks a different winner (+2 more)
+P12: SURVIVED [4s] one extra enumeration step -- 
+P13: KILLED [5s] enumeration keeps the last of equal subsets -- Every recorded selection is reproduced exactly, exact and heuristic branches alike; Exact result: structure, and the lexicographically first optimum, even with ties; Hand cases on a line: k = 1, 2, 3; Ties are stable: equal-cost sites resolve to the lower site, every run (+1 more)
+P14: KILLED [3s] successor subset skips sites -- crash; 
+P15: SURVIVED [4s] successor test non-strict (>= for ==) -- 
+P16: KILLED [5s] greedy ties go to the highest index -- A heuristic result that needs no swaps lists the sites in greedy pick order, unsorted; Every recorded selection is reproduced exactly, exact and heuristic branches alike; Ties are stable: equal-cost sites resolve to the lower site, every run; greedy adds the best site each round, lowest index on ties, and stops when none are left
+P17: KILLED [5s] greedy may pick a chosen site again -- greedy adds the best site each round, lowest index on ties, and stops when none are left
+P18: KILLED [5s] greedy appends a missing site -- greedy adds the best site each round, lowest index on ties, and stops when none are left
+P19: KILLED [4s] swap tolerance 1e-9 -- swapSearch accepts an improvement only when it exceeds 1e-12 x max(1, |current|)
+P20: KILLED [4s] swap tolerance without the floor of 1 -- swapSearch accepts an improvement only when it exceeds 1e-12 x max(1, |current|)
+P21: KILLED [4s] swap acceptance non-strict -- An improvement exactly equal to the tolerance is not taken (the comparison is strict)
+P22: SURVIVED [4s] tolerance scaled by the candidate, not the current value -- 
+P23: KILLED [242s] current objective never updated after a swap -- hang (timeout)
+P24: KILLED [8s] one swap pass only -- A large heuristic problem finishes, is not exact, and is swap-optimal; Heuristic branch: structure, no better than the optimum, no worse than greedy, swap-optimal; swapSearch takes the best single swap until none improves by more than rounding
+P25: KILLED [9s] only the first position is swapped -- A large heuristic problem finishes, is not exact, and is swap-optimal; Heuristic branch: structure, no better than the optimum, no worse than greedy, swap-optimal; swapSearch takes the best single swap until none improves by more than rounding
+P26: KILLED [8s] swap may bring in a chosen site -- swapSearch takes the best single swap until none improves by more than rounding
+P27: KILLED [8s] assignment ties go to the later site -- Every recorded selection is reproduced exactly, exact and heuristic branches alike; Exact result: structure, and the lexicographically first optimum, even with ties; Heuristic branch: structure, no better than the optimum, no worse than greedy, swap-optimal; Ties are stable: equal-cost sites resolve to the lower site, every run
+P28: SURVIVED [8s] exact result not re-sorted -- 
+P29: KILLED [8s] heuristic result sorted, losing pick order -- A heuristic result that needs no swaps lists the sites in greedy pick order, unsorted; Every recorded selection is reproduced exactly, exact and heuristic branches alike
+P30: KILLED [8s] negative limit kept -- A result is exact precisely when C(sites, k) <= enumerationLimit
+P31: KILLED [14s] default limit changed -- A result is exact precisely when C(sites, k) <= enumerationLimit
+A1: KILLED [13s] total ignores weights -- A large heuristic problem finishes, is not exact, and is swap-optimal; A result with no weight reports mean 0, not NaN; Edge cases; Every recorded selection is reproduced exactly, exact and heuristic branches alike (+9 more)
+A2: KILLED [7s] zero-weight mean is NaN -- A result with no weight reports mean 0, not NaN
+A3: KILLED [7s] assignments not sorted by demand -- SiteAssignment sorts by demand and site whatever order it is built in, and re-sorting is a no-op
+A4: KILLED [7s] loads sorted descending -- Every recorded selection is reproduced exactly, exact and heuristic branches alike; Exact result: structure, and the lexicographically first optimum, even with ties; Heuristic branch: structure, no better than the optimum, no worse than greedy, swap-optimal; SiteAssignment sorts by demand and site whatever order it is built in, and re-sorting is a no-op
+A5: KILLED [8s] loads sum costs -- A result with no weight reports mean 0, not NaN; Every recorded selection is reproduced exactly, exact and heuristic branches alike; Exact result: structure, and the lexicographically first optimum, even with ties; Hand cases on a line: k = 1, 2, 3 (+1 more)
+
+TOTAL 101  KILLED 88  SURVIVED 13  INVALID/BUILD-ERROR 0
+SURVIVOR C8 weight-scaled probability not capped at 1
+SURVIVOR C10 scale 1 when no edge has weight
+SURVIVOR C12 cascade queue walk stops one position early
+SURVIVOR C13 isFinite check removed from probability validation
+SURVIVOR C16 IndependentCascade stops declaring submodular trials
+SURVIVOR C17 protocol default becomes true
+SURVIVOR L8 zero-degree guard removed
+SURVIVOR E11 non-strict sign test on the numerator
+SURVIVOR P5 non-strict minimum
+SURVIVOR P12 one extra enumeration step
+SURVIVOR P15 successor test non-strict (>= for ==)
+SURVIVOR P22 tolerance scaled by the candidate, not the current value
+SURVIVOR P28 exact result not re-sorted
+
+# Mutation run 2: the three survivors that were closed by new tests, re-run against the suite with those tests
+C16: KILLED [10s] IndependentCascade stops declaring submodular trials -- Only the independent cascade declares submodular trials; the default assumes nothing
+C17: KILLED [12s] protocol default becomes true -- Only the independent cascade declares submodular trials; the default assumes nothing
+P22: KILLED [8s] tolerance scaled by the candidate, not the current value -- swapSearch scales its tolerance by the objective being improved on, not by the best candidate
+
+TOTAL 3  KILLED 3  SURVIVED 0  INVALID/BUILD-ERROR 0

@@ -1,0 +1,16 @@
+// swift-tools-version: 6.0
+import PackageDescription
+let package = Package(
+	name: "golden",
+	platforms: [.macOS(.v14)],
+	dependencies: [
+		.package(path: "/Users/jpurnell/Dropbox/Computer/Development/Swift/Tools/SwiftGraphMetrics"),
+		.package(path: "/Users/jpurnell/Dropbox/Computer/Development/Swift/Tools/SwiftDeterminism"),
+	],
+	targets: [
+		.executableTarget(name: "golden", dependencies: [
+			.product(name: "SwiftGraphMetrics", package: "SwiftGraphMetrics"),
+			.product(name: "SwiftDeterminism", package: "SwiftDeterminism"),
+		], swiftSettings: [.swiftLanguageMode(.v5)])
+	]
+)

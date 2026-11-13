@@ -1,0 +1,18 @@
+// swift-tools-version: 6.0
+import PackageDescription
+// Mutation lab (part 2): the code under mutation, its dependencies and the ported tests, so one mutant
+// compiles and runs quickly. The module is called BusinessMath so the tests are untouched.
+let package = Package(
+	name: "mutlab2",
+	platforms: [.macOS(.v14)],
+	dependencies: [.package(path: "/Users/jpurnell/Dropbox/Computer/Development/Swift/Tools/SwiftDeterminism")],
+	targets: [
+		.target(name: "BusinessMath",
+			dependencies: [.product(name: "SwiftDeterminism", package: "SwiftDeterminism")],
+			path: "Sources/BusinessMath", swiftSettings: [.swiftLanguageMode(.v6)]),
+		.target(name: "TestSupport", path: "Tests/TestSupport", swiftSettings: [.swiftLanguageMode(.v6)]),
+		.testTarget(name: "BusinessMathTests",
+			dependencies: ["BusinessMath", "TestSupport", .product(name: "SwiftDeterminism", package: "SwiftDeterminism")],
+			path: "Tests/BusinessMathTests", swiftSettings: [.swiftLanguageMode(.v6)]),
+	]
+)

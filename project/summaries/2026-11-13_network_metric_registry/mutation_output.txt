@@ -1,0 +1,86 @@
+V degree version 1 to 2: KILLED  The descriptor listing encodes to exactly the stored text
+V eigenvector-centrality version 4 to 3: KILLED  Identifiers and versions are exactly the stored ones, with no metric added or dropped
+V pagerank version 2 to 1: KILLED  A version 1 pagerank record decodes as 1, distinct from the version 2 the registry writes 
+V pagerank version 2 to 3: KILLED  A version 1 pagerank record decodes as 1, distinct from the version 2 the registry writes 
+V betweenness-centrality version 1 to 2: KILLED  The record the registry makes is byte-for-byte the stored record
+V closeness-centrality version 1 to 2: KILLED  Moved metrics keep the versions they had; eigenvector is at 4
+V k-core version 1 to 2: KILLED  The record the registry makes is byte-for-byte the stored record
+V louvain version 1 to 2: KILLED  Identifiers and versions are exactly the stored ones, with no metric added or dropped
+V harmonic-centrality version 1 to 2: KILLED  The same listing comes from a registry of integer nodes
+V clustering version 1 to 2: KILLED  The descriptor listing encodes to exactly the stored text
+V components version 1 to 2: KILLED  The record the registry makes is byte-for-byte the stored record
+V burt-constraint version 1 to 2: KILLED  Round-trips through the registry as a scores envelope
+I degree identifier to degrees: KILLED  Records the context and metric version alongside the numbers
+I eigenvector-centrality identifier to eigenvector: KILLED  A consumer that only knows NodeScores still reads a version 4 envelope
+I pagerank identifier to page-rank: KILLED  Identifiers and versions are exactly the stored ones, with no metric added or dropped
+I betweenness-centrality identifier to betweenness: KILLED  Identifiers and versions are exactly the stored ones, with no metric added or dropped
+I closeness-centrality identifier to closeness: KILLED  The same listing comes from a registry of integer nodes
+I k-core identifier to kcore: KILLED  Karate on integer nodes matches the stored values bit for bit, by every registered metric
+I louvain identifier to louvain-communities: KILLED  Round-trips through Codable so a record survives to be compared later
+I harmonic-centrality identifier to harmonic: KILLED  The descriptor listing encodes to exactly the stored text
+I clustering identifier to clustering-coefficient: KILLED  Every added measure is in the registry, and there are exactly eleven
+I components identifier to connected-components: KILLED  Each fixture stores a record for every registered metric
+I burt-constraint identifier to burt: KILLED  Ships the metrics the design calls for
+D degree title changed: KILLED  The descriptor listing encodes to exactly the stored text
+D k-core lowMeans loses its call-and-ask wording: KILLED  The descriptor listing encodes to exactly the stored text
+D descriptor interpretation of pagerank emptied: KILLED  Every metric states what a low score does and does not mean
+E01 default ceiling 200 to 100: KILLED  The record the registry makes is byte-for-byte the stored record
+E02 default tolerance 1e-10 to 1e-9: KILLED  The record the registry makes is byte-for-byte the stored record
+E03 reported ceiling max(1, n) to n: KILLED  Eigenvector envelopes at non-default ceilings and tolerances match the stored text and bit
+E04 reported tolerance fixed at 1e-10: KILLED  Eigenvector envelopes at non-default ceilings and tolerances match the stored text and bit
+E05 reported iterations is the ceiling: KILLED  The bare envelope the registry returns is byte-for-byte the stored envelope
+E06 reported converged always true: KILLED  The bare envelope the registry returns is byte-for-byte the stored envelope
+E07 reported residual always zero: KILLED  A long path hits the ceiling, with a residual far above the tolerance
+E08 ceiling not passed to the iteration: KILLED  Eigenvector envelopes at non-default ceilings and tolerances match the stored text and bit
+E09 tolerance not passed to the iteration: KILLED  Eigenvector envelopes at non-default ceilings and tolerances match the stored text and bit
+E10 scores emptied: KILLED  Karate on integer nodes matches the stored values bit for bit, by every registered metric
+W01 pagerank wired to eigenvector: KILLED  Every score, convergence figure and community number matches bit for bit
+W02 pagerank at damping 0.9: KILLED  Every standard metric's envelope is the value its function returns, wrapped
+W03 betweenness unnormalised: KILLED  Every score, convergence figure and community number matches bit for bit
+W04 closeness wired to harmonic: KILLED  The bare envelope the registry returns is byte-for-byte the stored envelope
+W05 harmonic wired to closeness: KILLED  Every standard metric's envelope is the value its function returns, wrapped
+W06 clustering wired to degree: KILLED  The bare envelope the registry returns is byte-for-byte the stored envelope
+W07 k-core wired to degree: KILLED  The bare envelope the registry returns is byte-for-byte the stored envelope
+W08 louvain wired to components: KILLED  The record the registry makes is byte-for-byte the stored record
+W09 components wired to louvain: KILLED  The record the registry makes is byte-for-byte the stored record
+W10 degree wired to clustering: KILLED  Every score, convergence figure and community number matches bit for bit
+W11 burt wired to degree: KILLED  An isolate is omitted from the registered metric's scores, as from the measure
+W12 louvain at resolution 2: KILLED  The record the registry makes is byte-for-byte the stored record
+W13 louvain with one pass: KILLED  Karate on integer nodes matches the stored values bit for bit, by every registered metric
+R01 first wins to last wins: KILLED  When two metrics share an identifier the first wins, in the initialiser and in registering
+R02 registering puts the new metric first: KILLED  When two metrics share an identifier the first wins, in the initialiser and in registering
+R03 available not sorted: KILLED  Each fixture stores a record for every registered metric
+R04 available sorted descending: KILLED  The descriptor listing encodes to exactly the stored text
+R05 registering returns self: KILLED  A new metric can be added without touching existing code
+R06 metric(for:) always nil: KILLED  Every metric states what a low score does and does not mean
+R07 record version bumped: KILLED  A version 1 pagerank record decodes as 1, distinct from the version 2 the registry writes 
+R08 record clock ignored: KILLED  Uses the clock it was given rather than reading the wall clock
+R09 record uses the argument as the metric name (equivalent): SURVIVED  
+R10 record output is a different metric's run: KILLED  A record's output is what run returns for the same graph
+R11 run swallows errors: KILLED  A metric that throws makes the registry throw, not return nil
+R12 unknown record identifier gives a record anyway: KILLED  An unknown identifier records nothing
+M01 standard registry drops DegreeMetric: KILLED  Uses the clock it was given rather than reading the wall clock
+M02 standard registry drops EigenvectorMetric: KILLED  Identifiers and versions are exactly the stored ones, with no metric added or dropped
+M03 standard registry drops PageRankMetric: KILLED  The registry lists its metrics in identifier order, once each
+M04 standard registry drops BetweennessMetric: KILLED  Identifiers and versions are exactly the stored ones, with no metric added or dropped
+M05 standard registry drops ClosenessMetric: KILLED  Every score, convergence figure and community number matches bit for bit
+M06 standard registry drops KCoreMetric: KILLED  Ships the metrics the design calls for
+M07 standard registry drops LouvainMetric: KILLED  Round-trips through Codable so a record survives to be compared later
+M08 standard registry drops HarmonicMetric: KILLED  The same listing comes from a registry of integer nodes
+M09 standard registry drops ClusteringMetric: KILLED  Identifiers and versions are exactly the stored ones, with no metric added or dropped
+M10 standard registry drops ComponentsMetric: KILLED  Karate on integer nodes matches the stored values bit for bit, by every registered metric
+M11 standard registry drops BurtConstraint: KILLED  The bare envelope the registry returns is byte-for-byte the stored envelope
+A01 erased descriptor version bumped: KILLED  Moved metrics keep the versions they had; eigenvector is at 4
+A02 erased compute returns an empty envelope: KILLED  The record the registry makes is byte-for-byte the stored record
+Q01 record keeps no metric name: KILLED  The record the registry makes is byte-for-byte the stored record
+Q02 record version fixed at 1: KILLED  A stored record decodes to the record the registry makes, and re-encodes to the same bytes
+Q03 record clock dropped: KILLED  The record initialiser keeps every field it is given
+Q04 record output kind lost: KILLED  The record the registry makes is byte-for-byte the stored record
+G01 eigenvector shift halved: KILLED  The bare envelope the registry returns is byte-for-byte the stored envelope
+G02 pagerank default damping 0.85 to 0.9: KILLED  The record the registry makes is byte-for-byte the stored record
+G03 betweenness halving dropped: KILLED  The record the registry makes is byte-for-byte the stored record
+G04 closeness fraction dropped: KILLED  The bare envelope the registry returns is byte-for-byte the stored envelope
+G05 eigenvector L2 to L1 norm: KILLED  Eigenvector envelopes at non-default ceilings and tolerances match the stored text and bit
+G06 pagerank share not divided by degree: KILLED  The bare envelope the registry returns is byte-for-byte the stored envelope
+
+TOTAL 84  killed 83  survived 1  not-counted 0

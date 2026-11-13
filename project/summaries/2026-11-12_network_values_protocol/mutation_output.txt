@@ -1,0 +1,54 @@
+M01 ranked: score comparator > to <: KILLED
+M02 ranked: tie-break < to >: KILLED
+M03 ranked: tie test == to !=: KILLED
+M04 top: prefix to suffix: KILLED
+M05 top: off by one (count+1): KILLED
+M06 top: off by one (count-1): KILLED
+M07 top: max(0,) dropped: KILLED
+M08 bottom: reversed dropped: KILLED
+M09 bottom: off by one (count+1): KILLED
+M10 bottom: max(0,) dropped: KILLED
+M11 NodeScores kind string: KILLED
+M12 NodePartition kind string: KILLED
+M13 NodeSelection kind string: KILLED
+M14 DiagnosedScores kind string: KILLED
+M15 groups: size order > to <: KILLED
+M16 groups: community tie-break < to >: KILLED
+M17 groups: members unsorted: KILLED
+M18 communityCount: keys instead of values: KILLED
+M19 groups: missing-community fallback -1 to 0: SURVIVED
+M20 totalGain: ignores gain: KILLED
+M21 nodes: reversed: KILLED
+M22 init(picks:) swaps nothing but drops last: KILLED
+M23 DiagnosedScores: coding key 'scores' renamed: KILLED
+M24 DiagnosedScores: decodeIfPresent to decode: KILLED
+M25 DiagnosedScores: encodeIfPresent to encode: KILLED
+M26 DiagnosedScores: convergence dropped on decode: KILLED
+M27 DiagnosedScores: convergence dropped on encode: KILLED
+M28 envelope.convergence: kind guard removed: KILLED
+M29 envelope.convergence: key renamed: KILLED
+M30 envelope.convergence: try? to fatal-free default report: KILLED
+M31 envelope.value: kind guard inverted: KILLED
+M32 envelope.value: kind guard removed: KILLED
+M33 envelope init: kind taken from payload type name: KILLED
+M34 JSONValue: bool decode skipped: KILLED
+M35 JSONValue: number rounded to Int on encode: KILLED
+M36 JSONValue: null decodes to empty object: KILLED
+M37 note: converged branch flipped: KILLED
+M38 note: singular 'pass' condition == 1 to == 0: KILLED
+M39 note: singular 'pass' condition == 1 to <= 1: KILLED
+M40 note: ceiling text uses iterations: KILLED
+M41 note: change and tolerance swapped: KILLED
+M42 note: nil sentence text: KILLED
+M43 note: 'Did not converge' text: KILLED
+M44 note: three significant digits to four: KILLED
+M45 note: locale POSIX to French: KILLED
+M46 note: scientific notation to automatic: KILLED
+M47 note: advice text dropped: KILLED
+
+Totals: 47 mutants, 46 KILLED, 1 SURVIVED (M19, equivalent), 0 compile errors after rerun.
+M20 and M23 first produced compile errors (invalid mutants); the script was corrected and they
+were rerun (run 2), both KILLED.
+M19 (equivalent): `groups` groups `communities.keys` by `communities[$0] ?? -1`. The key comes from
+`communities.keys`, so the lookup never returns nil and the `-1` fallback is unreachable;
+changing it to `0` cannot change any result. No test can kill it.
