@@ -1,0 +1,36 @@
+M01 NaN/inf check dropped (isFinite removed) => KILLED by 2: A NaN, infinite or negative weight is refused, naming the ed; The weight of a self-loop is checked even though the loop is
+M02 NaN-only: !isNaN instead of isFinite => KILLED by 2: A NaN, infinite or negative weight is refused, naming the ed; The weight of a self-loop is checked even though the loop is
+M03 negative check dropped => KILLED by 3: A NaN, infinite or negative weight is refused, naming the ed; Hostile weights are refused wherever they sit in a seeded ra
+M04 negative check flipped to >0 (zero refused) => KILLED by 7: Adjacency is symmetric: every tie is recorded at both ends w; Edge order does not change the graph
+M05 negative check weakened to >= -1 => KILLED by 3: A NaN, infinite or negative weight is refused, naming the ed; Hostile weights are refused wherever they sit in a seeded ra
+M06 overflow: total check dropped => KILLED by 2: A single edge of the largest finite weight is refused: the t; Finite weights that sum past the largest finite number are r
+M07 overflow: degree check dropped => SURVIVED
+M08 overflow: whole guard negated => KILLED by 18: A graph built from valid weights is unchanged by validating ; A single edge of the largest finite weight is refused: the t
+M09 self-loop drop removed => KILLED by 2: Adjacency is symmetric: every tie is recorded at both ends w; Self-loops are dropped but the node survives
+M10 self-loop node dropped too (names inserted after guard) => KILLED by 1: Self-loops are dropped but the node survives
+M11 dedupe overwrites instead of sums (forward) => KILLED by 5: A graph built from valid weights is unchanged by validating ; Adjacency is symmetric: every tie is recorded at both ends w
+M12 dedupe overwrites (reverse) => KILLED by 5: A graph built from valid weights is unchanged by validating ; Adjacency is symmetric: every tie is recorded at both ends w
+M13 reverse direction not recorded => KILLED by 22: A graph built from valid weights is unchanged by validating ; A self-loop in a Graph is dropped by the bridge, as Weighted
+M14 nodes unsorted-by-name (descending) => KILLED by 5: Any Comparable node type works, not only strings; Isolated vertices survive, in both directions
+M15 adjacency sort dropped => KILLED by 1: Adjacency lists are sorted by neighbour index
+M16 edgeCount off by one => SURVIVED
+M17 edgeCount not halved => KILLED by 13: A graph built from valid weights is unchanged by validating ; A self-loop in a Graph is dropped by the bridge, as Weighted
+M18 totalWeight not halved => KILLED by 11: A graph built from valid weights is unchanged by validating ; A self-loop in a Graph is dropped by the bridge, as Weighted
+M19 weightedDegree sum wrong (count) => KILLED by 4: A graph built from valid weights is unchanged by validating ; Duplicate pairs merge by summing, in either direction
+M20 weightedDegree off by index => KILLED by 7: A graph built from valid weights is unchanged by validating ; Any Comparable node type works, not only strings
+M21 weightedDegree max instead of sum => KILLED by 6: A graph built from valid weights is unchanged by validating ; Any Comparable node type works, not only strings
+M22 isolated nodes ignored => KILLED by 4: Isolated nodes are kept and have zero degree; Isolated vertices survive, in both directions
+M23 unweighted weight 2 => KILLED by 8: A self-loop in a Graph is dropped by the bridge, as Weighted; Any Comparable node type works, not only strings
+M24 degree(of:) returns 0 for unknown => KILLED by 1: Isolated nodes are kept and have zero degree
+M25 neighbourCount off by one => KILLED by 2: Isolated nodes are kept and have zero degree; Isolated vertices survive, in both directions
+M26 invalidWeight names edge swapped => KILLED by 1: A NaN, infinite or negative weight is refused, naming the ed
+M27 invalidWeight reports weight 0 => KILLED by 1: A NaN, infinite or negative weight is refused, naming the ed
+M28 validation skips first edge => KILLED by 2: Hostile weights are refused wherever they sit in a seeded ra; The weight of a self-loop is checked even though the loop is
+M29 validation skips self-loops => KILLED by 2: Hostile weights are refused wherever they sit in a seeded ra; The weight of a self-loop is checked even though the loop is
+M30 bridge: weight 2 => COMPILE ERROR
+M31 bridge: isolated nodes dropped => KILLED by 3: Isolated vertices survive, in both directions; Round trip on a symmetric graph returns the input
+M32 bridge: self-loops kept (no from != to) => SURVIVED
+M33 bridge: reciprocal edges doubled (no dedupe) => KILLED by 2: Edges listed in both directions still weigh one, not two; The bridge on a random symmetric graph round-trips to the sa
+M34 bridge back: one direction only => KILLED by 6: Round trip of the karate club is exact; Round trip on a directed graph returns its undirected closur
+M35 bridge back: isolated dropped => KILLED by 3: Isolated vertices survive, in both directions; Round trip on a symmetric graph returns the input
+M36 bridge back: zero-weight ties dropped => KILLED by 1: Zero-weight ties survive the trip to Graph, which has no wei
