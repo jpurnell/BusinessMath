@@ -1,0 +1,10 @@
+M4 shift fixed at 1: KILLED by "maxIterations is exactly the number of passes allowed" with 3 test cases;"A 30-node path (1016 passes) and a 61-node path (3773) return nil at the default, the closed form at 10_000";run with 17 tests in 1 suite;
+M7 tolerance <=: KILLED by "The tolerance is a strict bound: a movement of exactly zero does not beat tolerance 0";run with 17 tests in 1 suite;
+M8 iterations off by one (-1): KILLED by "maxIterations is exactly the number of passes allowed" with 3 test cases;run with 17 tests in 1 suite;
+M9 iterations off by one (+1): KILLED by "maxIterations is exactly the number of passes allowed" with 3 test cases;run with 17 tests in 1 suite;
+M16 no-edges guard removed: SURVIVED (􀟈  Test run started.
+􁁛  Test run with 17 tests in 1 suite passed after 2.615 seconds.)
+M17 movement uses sum not max: KILLED by "maxIterations is exactly the number of passes allowed" with 3 test cases;"A 29-node path converges at the default maxIterations (954 passes needed)";run with 17 tests in 1 suite;
+M19 start vector not unit (start=1): SURVIVED (􀟈  Test run started.
+􁁛  Test run with 17 tests in 1 suite passed after 2.347 seconds.)
+M20 edgeCount-based shift uses nodes/2: KILLED by "maxIterations is exactly the number of passes allowed" with 3 test cases;"A 29-node path converges at the default maxIterations (954 passes needed)";"A 30-node path (1016 passes) and a 61-node path (3773) return nil at the default, the closed form at 10_000";run with 17 tests in 1 suite;
