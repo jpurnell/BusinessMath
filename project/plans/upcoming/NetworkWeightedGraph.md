@@ -1,6 +1,6 @@
 # Design Proposal: Weighted graphs and graph metrics in `Network/`
 
-**Status:** Proposed, awaiting owner approval. Nothing in sections 3 to 9 has been built.
+**Status:** Approved by the owner 2026-11-12; step 1 in progress.
 **Owner decisions already given (2026-11-12):** the licence question is settled (the code moves under
 BusinessMath's AGPLv3 / commercial dual licence); ClassGraph accepts a dependency on the full
 BusinessMath package; the weighted graph is added beside `Graph`, not in place of it; the eigenvector and
