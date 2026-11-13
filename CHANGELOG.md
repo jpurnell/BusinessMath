@@ -11,6 +11,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+Additive: no existing API changes.
+
+**`WeightedGraph`: a validated undirected weighted graph beside `Graph`.** Step 1 of the plan to
+bring the weighted graph measures in from the ClassGraph package (`project/plans/upcoming/NetworkWeightedGraph.md`,
+ADR-006). Nothing else from that plan is in this change.
+
+#### Added
+
+- **`WeightedGraph<Node>`** (`Network/Weighted/`): undirected, `Double` weights, index-based adjacency, nodes
+  in sorted order. `init(edges:isolatedNodes:)` throws; `init(unweightedEdges:isolatedNodes:)` cannot.
+  Duplicate edges sum, self-loops are validated and then dropped, zero weight is legal.
+  Also `nodes`, `indexOf`, `adjacency`, `nodeCount`, `edgeCount`, `totalWeight`, `degree(of:)`,
+  `weightedDegree(_:)`, `neighbourCount(_:)`.
+- **`GraphError`**: `invalidWeight(from:to:weight:)` for a NaN, infinite or negative weight, and
+  `weightSumOverflow` for finite weights whose merged sum, a node's degree or the total is not finite.
+  A single edge of `Double.greatestFiniteMagnitude` is refused for the same reason (the total is
+  accumulated from both ends before halving); this is the prior package's behaviour, kept and pinned.
+- **Bridges**: `WeightedGraph(_ graph: Graph)` symmetrises with weight one (the undirected closure; loops
+  dropped); `Graph(_ weighted: WeightedGraph)` gives both directions of every edge and drops the weights.
+  The second is lossy and documented as such.
+- Tests: the structural and weight-validation suites from the prior package, bridge tests, and seeded
+  property tests (relabelling invariance, edge-order independence, duplicate-edge summation, handshake
+  identity, bridge round trip). `Tests/TestSupport/ReferenceGraphs.swift` holds the kite and karate-club edge lists.
+- ADR-006: weighted graphs and graph measures live in `Network/`.
+
 ### [3.0.0-alpha.14] - 2026-11-12
 
 Additive: no existing API changes.

@@ -218,3 +218,50 @@ supersedes: null
 amends: null
 superseded_by: null
 ```
+
+```yaml
+id: ADR-006
+date: 2026-11-12
+status: accepted
+category: architecture
+title: Weighted graphs and graph measures live in Network/
+context: |
+  The ClassGraph app carries its own MIT-licensed package (SwiftGraphMetrics) that duplicates
+  part of Network/ and adds a validated undirected weighted graph, weighted measures, Burt's
+  constraint, diffusion, p-median siting and a metric record layer. The NetworkAnalysis plan
+  (section 8) already said graph algorithms belong in BusinessMath; the duplication was an
+  oversight. The owner decided on 2026-11-12 that the code moves under BusinessMath's licence
+  and that ClassGraph may depend on the full package.
+decision: |
+  WeightedGraph<Node> is a new type beside Graph in Sources/BusinessMath/Network/Weighted/.
+  Graph is not modified. Weights stay Double so stored records reproduce bit for bit. Public
+  type and member names, metric identifiers, metric versions and the Codable shape of every
+  record are preserved from the prior package, so later steps and the ClassGraph cutover are
+  source-compatible. Weights are validated once, at construction (NaN, infinite and negative
+  are refused; sums that overflow are refused; zero is legal). Behaviour the prior package
+  changed silently is changed here only by explicit metric-version bumps, each with its own
+  test and ADR note. The 19 proposed type names were checked for collisions by grep on
+  2026-11-12 and none collides; if one does later, the fallback is a caseless namespace
+  (Network.Centrality), decided here rather than ad hoc. Test support moves to Tests/TestSupport.
+rationale: |
+  - One implementation of each measure to keep correct, under this repository's gate.
+  - Additive: no existing public API changes, so adoption is incremental.
+  - Index-based adjacency keeps the inner loops fast; a protocol over both graph types would
+    put dispatch in them.
+consequences: |
+  Positive: the duplicate package can be retired; weighted ties are representable.
+  Negative: a larger module; two graph types with partly duplicated algorithms until a shared
+  protocol is justified. WeightedGraph<T: Real> later would be source-breaking (recorded
+  trade-off). Nothing here has been built on Linux CI at the time of writing.
+alternatives_rejected:
+  - "Add weights and an isDirected flag to Graph: changes a public struct used by DependencyGraph and BipartiteProjection and forces every algorithm to be re-specified."
+  - "A GraphProtocol over both graph types: protocol dispatch in hot loops and a larger rewrite; may be revisited once both types exist."
+  - "Keep a separate package: recreates the duplication the NetworkAnalysis plan rejected."
+affected_files:
+  - Sources/BusinessMath/Network/Weighted/
+  - Tests/BusinessMathTests/Network Tests/Weighted/
+  - project/plans/upcoming/NetworkWeightedGraph.md
+supersedes: null
+amends: null
+superseded_by: null
+```
