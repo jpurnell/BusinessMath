@@ -36,6 +36,34 @@ ADR-006). Nothing else from that plan is in this change.
   identity, bridge round trip). `Tests/TestSupport/ReferenceGraphs.swift` holds the kite and karate-club edge lists.
 - ADR-006: weighted graphs and graph measures live in `Network/`.
 
+#### Fixed
+
+- **`eigenvectorCentrality(tolerance:maxIterations:)` no longer returns wrong values on bipartite
+  graphs.** Plain power iteration on the adjacency matrix does not converge when the graph is
+  bipartite (every tree, star, even cycle) because `-lambda` ties `+lambda` in modulus; the iterate
+  oscillated and the last iterate, whichever parity the iteration count had, was returned with no
+  signal. A path a-b-c returned (0.577, 0.577, 0.577) where the L2-normalised answer is
+  (0.5, 0.7071, 0.5), and a 3-leaf star returned all 0.5 where the hub is 0.7071 and each leaf
+  0.4082. It now iterates on `A + sI`, which has the same eigenvectors, with `s` the mean degree
+  (`edgeCount / nodeCount`). **Behaviour change:** it now returns `nil` when the iteration has not
+  converged within `maxIterations`, instead of the last iterate. Results on non-bipartite graphs
+  are unchanged to within the tolerance. Signature, L2 normalisation, and `nil` for a graph with no
+  edges or a disconnected graph are unchanged.
+  **Callers with long, thin graphs should pass a larger `maxIterations`.** At the default 1000
+  and tolerance 1e-12, a path of 30 or more nodes returns `nil`. Passes needed (smallest
+  `maxIterations` that returns a vector): path of 5 nodes 36, 10 nodes 135, 20 nodes 481, 29 nodes
+  954, 30 nodes 1016, 40 nodes 1728, 61 nodes 3773, 100 nodes 9422; star of 50 leaves 50; cycle 1.
+- **`louvainCommunities(maxPasses:)` now actually contracts communities between passes**, as its
+  documentation said it did. The shipped loop was single-level local moving: it never built the
+  contracted graph, so whole communities could never merge. On a ring of 12 triangles joined by
+  single edges it stopped at one community per triangle (Q = 3/4 - 1/12 = 0.667) where adjacent
+  pairs give Q = 7/8 - 2/12 = 0.708. It now alternates local moving with contraction into a
+  weighted super-node graph until a round moves nothing or `maxPasses` rounds have run. Results can
+  differ from earlier versions on graphs where merging communities raises modularity; modularity
+  never decreases. `maxPasses` now counts contraction rounds (its documented meaning). Signature,
+  result type, determinism and `nil` for a graph with no edges are unchanged; communities are
+  returned ordered by their lowest node.
+
 ### [3.0.0-alpha.14] - 2026-11-12
 
 Additive: no existing API changes.
