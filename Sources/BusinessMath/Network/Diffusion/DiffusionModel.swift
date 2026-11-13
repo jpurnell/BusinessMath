@@ -10,16 +10,15 @@ import SwiftDeterminism
 ///
 /// A model simulates **one trial**: given the nodes that start active and the trial's random
 /// numbers, it says how many nodes end up active. Averaging many trials is
-/// ``SpreadEstimator``'s job, and choosing seeds is the job of the greedy seed selector that
-/// builds on this protocol.
+/// ``SpreadEstimator``'s job, and choosing seeds is ``SeedSelector``'s.
 ///
 /// ## What a model assumes
 ///
 /// Every model needs parameters nobody can observe — how likely a tie is to carry influence,
 /// or how much influence a person needs before acting. This package ships the two standard
 /// models, ``IndependentCascade`` and ``LinearThreshold``. A result is only ever as good as
-/// the parameters fed in, which is why the seed selector offers a sensitivity sweep over the
-/// probability.
+/// the parameters fed in, which is why ``SeedSelector/sweep(on:probabilities:budget:trials:seed:model:)``
+/// exists.
 ///
 /// ## Writing a model
 ///
@@ -58,7 +57,7 @@ public protocol DiffusionModel: Sendable {
 	/// Whether, for any one trial's randomness, adding a seed to a larger seed set never gains
 	/// more than adding it to a smaller one.
 	///
-	/// The seed selector may skip re-evaluating a candidate whose last gain was already too small
+	/// ``SeedSelector`` may skip re-evaluating a candidate whose last gain was already too small
 	/// to lead (lazy evaluation) only if this is `true`, because only then is an old gain an
 	/// upper bound on the current one. The default is `false`, which is always safe: the
 	/// selector then re-scores every candidate every round and returns exactly plain greedy.

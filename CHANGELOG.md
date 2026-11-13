@@ -57,6 +57,35 @@ metric-value conformances arrive with the metric layer (part 2).
   port and compared bit for bit; and an independent oracle for `PMedian` that solves the same instances as an
   integer program with `BranchAndBoundSolver`. Record: `project/summaries/2026-11-12_network_diffusion_siting_core/`.
 
+**Diffusion and siting (step 3, part 2): seed selection and the stored-record conformances.** Greedy influence
+maximisation (lazy greedy where it is sound), its probability sweep, and the `MetricValue` conformances part 1
+left out, ported from the ClassGraph package with public names, behaviour, tie-breaking, stream derivation, refresh
+batching and every numeric detail unchanged, so a stored seed selection reproduces.
+
+#### Added (seed selection)
+
+- **`SeedSelector<Node>`** (`Network/Diffusion/`): `compute(on:)` (first pass across threads with
+  `DispatchQueue.concurrentPerform`) and `computeAsync(on:)` (a task group), bit-identical to each other. Lazy
+  evaluation (CELF) is used only for a model that declares `hasSubmodularTrials` (the independent cascade); every
+  other model, `LinearThreshold` included, has every candidate re-scored every round, which is exactly plain greedy
+  (ADR-005 of the prior package). Ties go to the lower node index.
+- **`SeedSelector.sweep(on:probabilities:budget:trials:seed:model:)`**, **`SeedSweep`** (kind `"seed-sweep"`; only
+  `results` is stored, `topKFrequency`, `pairwiseJaccard`, `meanPairwiseJaccard` and `alwaysPicked` are derived and
+  rebuilt on decode) and **`SweepPoint`**.
+- **`GraphMetric`** and **`MetricDescriptor`** (`Network/Metrics/Protocol/`), ported unchanged because `SeedSelector`
+  conforms to the first and describes itself with the second. No registry yet.
+- `extension SiteAssignment: MetricValue` (kind `"site-assignment"`; the synthesised `Codable` shape is the same
+  as before, so stored records are unaffected) and `SiteProblem.init(demand: NodeScores<Demand>, sites:, cost:)`.
+- Tests: the prior package's selector, sweep, lazy-greedy and `Codable` suites, the envelope halves of the siting
+  tests, and four additions. (1) A seed-for-seed golden test: picks in order, marginal gains, spread of the chosen
+  set, sweep summaries and the sorted-keys JSON of selections, sweeps, `SiteAssignment` and their envelopes were
+  computed by the prior package before the port and are compared bit for bit and character for character. (2) A
+  lazy-greedy soundness test against a plain-greedy oracle (both models, many seeded graphs, several budgets and
+  refresh batches, picks and gains equal exactly), and a test that a model not declared submodular has every
+  candidate refreshed every round, counting the trials run. (3) Greedy against the brute-force optimum under the
+  independent cascade on trials the selector never saw, with a tolerance of four summed standard errors.
+  Record: `project/summaries/2026-11-12_network_diffusion_part2/`.
+
 **Metric result values and the stored-record envelope.** Step 2 foundation of the same plan: the
 result types that later measures return, ported from SwiftGraphMetrics with public names, `kind`
 strings and Codable shapes unchanged (a stored `MetricEnvelope` decodes identically after the move).

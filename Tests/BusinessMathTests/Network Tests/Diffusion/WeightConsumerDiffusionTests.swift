@@ -4,7 +4,7 @@
 //
 //  What the diffusion models, the estimator and siting do with the weights that remain legal
 //  (zero, tiny, huge). Ported from SwiftGraphMetrics's WeightConsumerTests and
-//  SummariseNeverNaNTests. The metric-registry and seed-selection cases arrive with those types.
+//  SummariseNeverNaNTests. The metric-registry cases arrive with the registry.
 //
 
 import Foundation
@@ -50,6 +50,37 @@ struct WeightConsumerDiffusionTests {
 			#expect(estimate.mean.isFinite && estimate.mean >= 1 && estimate.mean <= ceiling)
 			#expect(estimate.standardError.isFinite && estimate.standardError >= 0)
 		}
+	}
+
+	@Test("Seed selection and a probability sweep pick real, distinct nodes", arguments: patterns)
+	func selectionFinite(weights: [Double]) throws {
+		let graph = try graph(weights: weights)
+		let models: [any DiffusionModel] = [try IndependentCascade(weightScaledProbability: 0.7), LinearThreshold()]
+		for model in models {
+			let selection = try SeedSelector<String>(model: model, budget: 3, trials: 20, seed: 5).compute(on: graph)
+			#expect(selection.nodes.count == 3)
+			#expect(Set(selection.nodes).count == 3)
+			#expect(selection.picks.allSatisfy { $0.marginalGain.isFinite && $0.marginalGain >= 0 })
+		}
+		let sweep = try SeedSelector<String>.sweep(
+			on: graph, probabilities: [0.2, 0.9], budget: 2, trials: 20, seed: 5,
+			model: { try IndependentCascade(weightScaledProbability: $0) })
+		#expect(sweep.meanPairwiseJaccard.isFinite)
+	}
+
+	@Test("Siting on NodeScores built from weighted degree stays finite", arguments: patterns)
+	func sitingFromScoresFinite(weights: [Double]) throws {
+		let graph = try graph(weights: weights)
+		var table: [String: Double] = [:]
+		for node in graph.nodes {
+			let degree: Double = graph.degree(of: node) ?? 0
+			table[node] = degree.isFinite ? degree + 1 : 1
+		}
+		let problem = try SiteProblem(
+			demand: NodeScores(table), sites: ["n0", "n2"], cost: { demand, site in demand == site ? 0 : 1 })
+		let assignment = try PMedian().select(problem, count: 1)
+		#expect(assignment.meanWeightedCost.isFinite)
+		#expect(assignment.meanWeightedCost >= 0 && assignment.meanWeightedCost <= 1)
 	}
 
 	/// Demand is each node's weighted degree plus a unit floor: a graph whose every tie is zero

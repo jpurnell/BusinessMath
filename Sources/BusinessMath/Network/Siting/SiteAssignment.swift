@@ -10,8 +10,7 @@ import Foundation
 /// Deterministic: assignments are sorted by demand, loads by site, and a demand point
 /// equidistant from two chosen sites goes to the one that sorts first.
 ///
-/// The stored-record shape (the `"site-assignment"` kind of the metric value layer) is declared
-/// where that layer lives; this type is a plain `Codable` value without it.
+/// Conforms to ``MetricValue`` (kind `"site-assignment"`).
 ///
 /// ```swift
 /// let problem = try SiteProblem(
@@ -23,7 +22,10 @@ import Foundation
 public struct SiteAssignment<
 	Demand: Hashable & Sendable & Comparable & Codable,
 	Site: Hashable & Sendable & Comparable & Codable
->: Sendable, Codable, Hashable {
+>: MetricValue {
+
+	/// `"site-assignment"`.
+	public static var kind: String { "site-assignment" }
 
 	/// One demand point's assignment.
 	public struct Assignment: Sendable, Codable, Hashable {

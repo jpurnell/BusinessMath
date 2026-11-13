@@ -4,7 +4,7 @@
 //
 //  Site selection (p-median). Ported from SwiftGraphMetrics. Reference truth: businessMath
 //  weighted-average results computed earlier in the project, hand arithmetic, and a brute
-//  force written here. The envelope and node-score cases arrive with the metric value layer.
+//  force written here.
 //
 
 import Foundation
@@ -247,6 +247,29 @@ struct SitingTests {
 		let two = try PMedian().select(tie, count: 2)
 		#expect(two.chosen == ["a", "m"])
 		#expect(two.assignments.allSatisfy { $0.site == "a" })
+	}
+
+	@Test("Round-trips through its envelope")
+	func codable() throws {
+		let result = try PMedian().select(try classProblem(cash), count: 2)
+		let envelope = try MetricEnvelope(result)
+		#expect(envelope.kind == "site-assignment")
+		#expect(SiteAssignment<String, String>.kind == "site-assignment")
+		let back = try envelope.value(as: SiteAssignment<String, String>.self)
+		#expect(back == result)
+		#expect(try envelope.value(as: NodeScores<String>.self) == nil)
+	}
+
+	@Test("NodeScores become demand weights")
+	func nodeScores() throws {
+		let scores = NodeScores(["a": 3.0, "b": 1.0])
+		let problem = try SiteProblem(
+			demand: scores, sites: ["x", "y"],
+			cost: { node, site in node == "a" ? (site == "x" ? 1 : 4) : (site == "x" ? 5 : 0) })
+		#expect(problem.totalWeight == 4)
+		// x: 3*1+1*5 = 8 ; y: 3*4+0 = 12.
+		#expect(abs(try problem.weightedCost(at: "x") - 8) < 1e-12)
+		#expect(try PMedian().select(problem, count: 1).chosen == ["x"])
 	}
 }
 
@@ -644,7 +667,7 @@ struct SitingInvariantTests {
 		#expect(result.loads == [.init(site: 0, weight: 0)])
 	}
 
-	@Test("Round trip: encode then decode returns the original as JSON",
+	@Test("Round trip: encode then decode returns the original, as JSON and as an envelope",
 		  arguments: SitingInvariantTests.seeds)
 	func roundTrip(seed: UInt64) throws {
 		let instance = try SiteInstance(seed: seed, sites: 6, demands: 7, integerValued: seed % 2 == 0)
@@ -652,6 +675,30 @@ struct SitingInvariantTests {
 			let result = try PMedian(enumerationLimit: limit).select(instance.problem, count: 1 + Int(seed % 3))
 			let data = try JSONEncoder().encode(result)
 			#expect(try JSONDecoder().decode(SiteAssignment<Int, Int>.self, from: data) == result)
+			let envelope = try MetricEnvelope(result)
+			let wire = try JSONDecoder().decode(
+				MetricEnvelope.self, from: try JSONEncoder().encode(envelope))
+			#expect(wire == envelope)
+			#expect(try wire.value(as: SiteAssignment<Int, Int>.self) == result)
+		}
+	}
+
+	@Test("NodeScores demand: the weights are the scores, and a non-positive total is refused")
+	func nodeScoresDemand() throws {
+		let scores = NodeScores([1: 2.0, 2: 6.0])
+		let problem = try SiteProblem(demand: scores, sites: [10], cost: { d, _ in Double(d) })
+		#expect(problem.demand == [1: 2.0, 2: 6.0])
+		#expect(problem.sites == [10])
+		#expect(problem.totalWeight == 8)
+		#expect(throws: SiteError.noPositiveWeight) {
+			try SiteProblem(demand: NodeScores([1: 0.0]), sites: [10], cost: { _, _ in 1 })
+		}
+		// Scores are validated like any demand weight: negative and non-finite ones are refused.
+		#expect(throws: SiteError.invalidWeight(demand: "1")) {
+			try SiteProblem(demand: NodeScores([1: -2.0, 2: 5.0]), sites: [10], cost: { _, _ in 1 })
+		}
+		#expect(throws: SiteError.invalidWeight(demand: "1")) {
+			try SiteProblem(demand: NodeScores([1: Double.nan]), sites: [10], cost: { _, _ in 1 })
 		}
 	}
 }

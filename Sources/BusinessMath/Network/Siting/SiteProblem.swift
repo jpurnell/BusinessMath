@@ -46,6 +46,8 @@ public enum SiteError: Error, Sendable, Equatable {
 /// let best = try PMedian().select(problem, count: 1)
 /// print(best.chosen)   // ["Boston"]
 /// ```
+///
+/// Graph centrality becomes demand weight through ``init(demand:sites:cost:)-(NodeScores<Demand>,_,_)``.
 public struct SiteProblem<Demand: Hashable & Sendable, Site: Hashable & Sendable>: Sendable {
 
 	/// Weight (how much is served) by demand point.
@@ -88,6 +90,26 @@ public struct SiteProblem<Demand: Hashable & Sendable, Site: Hashable & Sendable
 		self.demand = demand
 		self.sites = sites
 		self.cost = cost
+	}
+
+	/// Creates a problem whose demand weights are node scores — the way a graph
+	/// centrality becomes demand.
+	///
+	/// ```swift
+	/// import BusinessMath
+	///
+	/// let scores = NodeScores(["a": 3.0, "b": 1.0])
+	/// let problem = try SiteProblem(
+	///     demand: scores, sites: ["x", "y"],
+	///     cost: { node, site in node == "a" && site == "x" ? 1 : 2 })
+	/// print(problem.totalWeight)   // 4.0
+	/// ```
+	public init(
+		demand scores: NodeScores<Demand>,
+		sites: [Site],
+		cost: @escaping @Sendable (Demand, Site) -> Double
+	) throws where Demand: Comparable {
+		try self.init(demand: scores.scores, sites: sites, cost: cost)
 	}
 
 	/// The sum of all demand weights; always positive.

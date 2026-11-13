@@ -1,0 +1,103 @@
+􀟈  Test run started.
+􀢄  Test "Ties resolve to the lowest node index; zero probability picks nodes in order" failed after 0.049 seconds with 2 issues.
+􀢄  Test "Marginal gain is zero for a node already reached with certainty" failed after 0.049 seconds with 1 issue.
+􁁛  Test "Edge cases" passed after 0.050 seconds.
+􁁛  Test "The linear threshold selection is deterministic and no worse than the worst-connected nodes" passed after 0.050 seconds.
+􀢄  Test "Only the points are stored: the stability summary is recomputed, so it cannot disagree with them" failed after 0.050 seconds with 2 issues.
+􁁛  Test "Hand cases on a line: k = 1, 2, 3" passed after 0.054 seconds.
+􁁛  Test "NodeSelection round-trips through JSON and its envelope, for seeded arbitrary picks" with 4 test cases passed after 0.062 seconds.
+􁁛  Test "A single point round-trips, including on String nodes" with 20 test cases passed after 0.086 seconds.
+􀢄  Test "NodeScores become demand weights" failed after 0.096 seconds with 1 issue.
+􁁛  Test "Golden path: cash cost picks a different winner" passed after 0.096 seconds.
+􁁛  Test "Golden path: travel hours" passed after 0.115 seconds.
+􁁛  Test "One trial of any count has standard error exactly zero, never NaN" with 5 test cases passed after 0.115 seconds.
+􀢄  Test "A single sweep point has mean Jaccard 1 (no pairs to disagree)" failed after 0.115 seconds with 1 issue.
+􁁛  Test "Frequencies are the fraction of sweep points in which a node was picked" passed after 0.115 seconds.
+􀢄  Test "A declared model is refreshed in batches no larger than the batch asked for" failed after 0.115 seconds with 1 issue.
+􀢄  Test "Jaccard overlap: matrix is symmetric, unit diagonal, hand-checked values" failed after 0.115 seconds with 7 issues.
+􁁛  Test "Sweeps are deterministic" passed after 0.115 seconds.
+􀢄  Test "Reports one selection per probability, in order" failed after 0.123 seconds with 1 issue.
+􁁛  Test "subsetCount is the binomial coefficient, symmetric, saturating and overflow-safe" with 9 test cases passed after 0.407 seconds.
+􁁛  Test "Invalid weights, costs and counts are each rejected with the offending value named" passed after 0.553 seconds.
+􀢄  Test "Siting from NodeScores reproduces the original's answers, totals and JSON exactly" failed after 0.631 seconds with 1 issue.
+􀢄  Test "The same model declared submodular is allowed to skip: it runs fewer trials, and picks the same nodes" failed after 0.705 seconds with 2 issues.
+􁁛  Test "For seeded random trial counts the standard error is finite, non-negative and matches the two-pass formula" passed after 0.758 seconds.
+􁁛  Test "Round trip: encode then decode returns the original, as JSON and as an envelope" with 12 test cases passed after 0.781 seconds.
+􀢄  Test "NodeScores demand: the weights are the scores, and a non-positive total is refused" failed after 0.974 seconds with 1 issue.
+􁁛  Test "SiteAssignment sorts by demand and site whatever order it is built in, and re-sorting is a no-op" with 12 test cases passed after 1.078 seconds.
+􀢄  Test "Round-trips through its envelope" failed after 1.233 seconds with 2 issues.
+􁁛  Test "swapSearch scales its tolerance by the objective being improved on, not by the best candidate" passed after 1.323 seconds.
+􁁛  Test "The guarantee is not vacuous: on a graph with one hub, greedy keeps most of the optimum, not just 63%" passed after 1.355 seconds.
+􁁛  Test "swapSearch takes the best single swap until none improves by more than rounding" passed after 1.490 seconds.
+􁁛  Test "A result with no weight reports mean 0, not NaN" passed after 1.491 seconds.
+􁁛  Test "greedy adds the best site each round, lowest index on ties, and stops when none are left" passed after 1.510 seconds.
+􁁛  Test "An undeclared model gets exact plain greedy even when asked to be as lazy as possible" passed after 1.520 seconds.
+􁁛  Test "Ties are stable: equal-cost sites resolve to the lower site, every run" passed after 1.520 seconds.
+􁁛  Test "Independent cascade declares it; linear threshold and an undeclared model do not" passed after 1.521 seconds.
+􀢄  Test "A sweep produced by SeedSelector.sweep round-trips, derived summary included" failed after 1.568 seconds with 2 issues.
+􁁛  Test "An improvement exactly equal to the tolerance is not taken (the comparison is strict)" passed after 1.620 seconds.
+􁁛  Test "enumerate visits every k-subset once, lexicographically, and keeps the first strict best" passed after 1.624 seconds.
+􁁛  Test "swapSearch accepts an improvement only when it exceeds 1e-12 x max(1, |current|)" with 8 test cases passed after 1.640 seconds.
+􁁛  Test "Every diffusion model keeps its count in range and the estimate finite" with 7 test cases passed after 1.650 seconds.
+􁁛  Test "enumerate stops at the last subset even when asked for more, and never reads past it" passed after 1.651 seconds.
+􁁛  Test "A result is exact precisely when C(sites, k) <= enumerationLimit" passed after 1.651 seconds.
+􁁛  Test "Seed selection and a probability sweep pick real, distinct nodes" with 7 test cases passed after 1.652 seconds.
+􀢄  Test "Empty sweep and invalid probabilities throw" failed after 1.656 seconds with 3 issues.
+􁁛  Test "A point whose probability is NaN cannot be encoded, and says so rather than storing garbage" passed after 1.658 seconds.
+􀢄  Test "A single trial is a valid trial count for the selector, the estimator and the sweep" failed after 1.699 seconds with 2 issues.
+􁁛  Test "Siting on degree-weighted demand stays finite" with 7 test cases passed after 1.726 seconds.
+􀢄  Test "The JSON and the envelope of every recorded p-median answer are reproduced exactly" failed after 1.727 seconds with 54 issues.
+􁁛  Test "Budget above node count returns at most node count picks, all distinct" passed after 1.774 seconds.
+􀢄  Test "Isolated nodes are pickable and gain exactly 1 each" failed after 1.774 seconds with 1 issue.
+􀢄  Test "Identical configuration gives identical selections; different seed may differ" failed after 1.774 seconds with 1 issue.
+􀢄  Test "trials = 0 throws a clear error" failed after 1.774 seconds with 1 issue.
+􀢄  Test "Star at p = 1: the centre is picked first with gain n + 1" failed after 1.774 seconds with 1 issue.
+􀢄  Test "Descriptor is exploratory, generic and states high and low" failed after 1.774 seconds with 5 issues.
+􀢄  Test "Budget 0 yields no picks; negative budget throws" failed after 1.774 seconds with 1 issue.
+􁁛  Test "The parallel first pass agrees bit-for-bit with the async task-group version" passed after 1.774 seconds.
+􁁛  Test "The linear threshold model also selects, deterministically, and beats a random-ish set" passed after 1.938 seconds.
+􁁛  Test "Independent cascade is submodular in every single trial: gains never grow with the seed set" with 25 test cases passed after 1.972 seconds.
+􁁛  Test "Linear threshold is NOT submodular in a single trial: two half-weight neighbours can jointly activate a node neither does alone" passed after 1.972 seconds.
+􀢄  Test "A custom model builder is used at every probability: each point equals the selector run with that model" failed after 1.971 seconds with 4 issues.
+􀢄  Test "Each sweep point is the selector run at that probability with the same master seed" failed after 1.971 seconds with 3 issues.
+􀢄  Test "Degenerate sweeps: no points, one point" failed after 1.971 seconds with 4 issues.
+􀢄  Test "Hand-checked stability summary: partial overlaps, the always-picked set, an empty pick" failed after 1.971 seconds with 8 issues.
+􀢄  Suite "SeedSweep and SweepPoint: Codable" failed after 2.021 seconds with 204 issues.
+􁁛  Test "Empty graph yields an empty selection" passed after 1.986 seconds.
+􁁛  Suite "SpreadEstimator.summarise: a standard error is never NaN" passed after 2.021 seconds.
+􀢄  Suite "SeedSelector sweep" failed after 2.021 seconds with 12 issues.
+􀢄  Suite "SiteAssignment and NodeScores siting: golden values from SwiftGraphMetrics" failed after 2.021 seconds with 55 issues.
+􀢄  Test "The stability summary is derived the same way from every recorded set of points" failed after 1.045 seconds with 46 issues.
+􀢄  Test "The task-group version reproduces the same recorded selections" failed after 1.045 seconds with 94 issues.
+􀢄  Test "The descriptor encodes to exactly the text the original produced" failed after 1.045 seconds with 2 issues.
+􀢄  Test "Every recorded sweep is reproduced exactly: picks, summary, JSON, envelope" failed after 1.046 seconds with 108 issues.
+􀢄  Test "A stored sweep reads back equal, with the summary recomputed" failed after 1.046 seconds with 66 issues.
+􁁛  Suite "DiffusionModel.hasSubmodularTrials" passed after 2.022 seconds.
+􀢄  Suite "Weight consumers: diffusion and siting" failed after 2.022 seconds with 7 issues.
+􀢄  Test "Every recorded selection is reproduced exactly: picks, gains, spread, JSON, envelope" failed after 1.046 seconds with 390 issues.
+􀢄  Suite "Diffusion: seed selection boundaries" failed after 2.022 seconds with 2 issues.
+􁁛  Suite "Lazy greedy: the soundness argument" passed after 2.029 seconds.
+􀢄  Suite "Diffusion: sweep" failed after 2.029 seconds with 96 issues.
+􁁛  Test "Exact branch equals brute force; heuristic is never worse than greedy" passed after 2.029 seconds.
+􀢄  Suite "SeedSelector: golden values from SwiftGraphMetrics" failed after 2.030 seconds with 706 issues.
+􁁛  Test "Scaling every weight, or every cost, by c scales the total by c and changes no choice" with 3 test cases passed after 2.029 seconds.
+􁁛  Test "Optimum never rises as k grows, and k = number of sites costs the cheapest-of-all" with 12 test cases passed after 2.029 seconds.
+􁁛  Test "Heuristic branch: structure, no better than the optimum, no worse than greedy, swap-optimal" with 12 test cases passed after 2.029 seconds.
+􁁛  Test "Exact result: structure, and the lexicographically first optimum, even with ties" with 12 test cases passed after 2.029 seconds.
+􁁛  Test "A heuristic result that needs no swaps lists the sites in greedy pick order, unsorted" passed after 2.029 seconds.
+􁁛  Test "Scale invariance holds at extreme magnitudes, where an offset would swallow every difference" with 4 test cases passed after 2.029 seconds.
+􁁛  Test "k = 1 is never worse than any single site, and equals the best one" with 12 test cases passed after 2.029 seconds.
+􁁛  Test "Input order of the candidate list never changes the answer" with 12 test cases passed after 2.029 seconds.
+􀢄  Test "k = 1 pick equals the brute-force best single node" failed after 1.995 seconds with 9 issues.
+􀢄  Suite "Diffusion: seed selection oracles" failed after 2.031 seconds with 1191 issues.
+􀢄  Suite "Seed selection: lazy greedy against a plain-greedy oracle" failed after 2.031 seconds with 2304 issues.
+􀢄  Suite "Site selection" failed after 2.031 seconds with 3 issues.
+􀢄  Suite "Seed selection: the submodularity gate (ADR-005)" failed after 2.031 seconds with 174 issues.
+􀢄  Test "At its default batch size the selector equals plain greedy on graphs bigger than the batch, for both models" failed after 2.447 seconds with 12 issues.
+􀢄  Suite "Lazy greedy: exact agreement with plain greedy" failed after 2.478 seconds with 372 issues.
+􁁛  Test "A large heuristic problem finishes, is not exact, and is swap-optimal" passed after 3.056 seconds.
+􀢄  Suite "Site selection: invariants" failed after 3.057 seconds with 1 issue.
+􀢄  Test "Greedy spread >= (1 - 1/e) x brute-force optimum, k = 1...3, several small graphs" failed after 4.063 seconds with 39 issues.
+􀢄  Suite "SeedSelector" failed after 4.097 seconds with 59 issues.
+􀢄  Suite "Seed selection: the (1 - 1/e) guarantee under independent cascade" failed after 9.614 seconds with 2 issues.
+􀢄  Test run with 100 tests in 19 suites failed after 9.614 seconds with 5188 issues.
