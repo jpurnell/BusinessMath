@@ -125,10 +125,6 @@ private let disconnectedFixtures: [CrossCheckFixture] = [
 
 private let allFixtures: [CrossCheckFixture] = connectedFixtures + disconnectedFixtures
 
-/// Fixtures on which the two Louvain implementations legitimately-but-undesirably differ; see
-/// `louvainTieRuleFinding`.
-private let louvainTieRuleDisagreements: Set<String> = ["random3"]
-
 private func louvainOutcome(_ fixture: CrossCheckFixture) throws -> (sameSets: Bool, modularityDifference: Double) {
 	let graph = fixture.weighted
 	let weighted = Community.louvain(graph)
@@ -269,32 +265,24 @@ struct UnweightedWeightedCrossCheckTests {
 	}
 
 	@Test("Louvain: the partitions are the same sets of nodes and have the same modularity",
-		  arguments: allFixtures.filter { !louvainTieRuleDisagreements.contains($0.name) })
+		  arguments: allFixtures)
 	func louvainAgrees(_ fixture: CrossCheckFixture) throws {
 		let outcome = try louvainOutcome(fixture)
 		#expect(outcome.sameSets)
 		#expect(outcome.modularityDifference < 1e-12)
 	}
 
-	/// FINDING, not a tolerance to loosen. On `random3` the two implementations return different
-	/// partitions (modularity 0.3615 unweighted, 0.3569 weighted). The cause is the move rule:
-	/// the weighted Louvain moves a node only if the gain beats the best by more than 1e-12, the
-	/// unweighted one if it is strictly greater, so a tie that is exact on paper is decided by
-	/// floating-point rounding there and kept as a tie here. Run on the same graph with the same
-	/// 1e-12 margin added to the unweighted rule, the partitions are identical, and over 300 other
-	/// seeded random connected graphs of 10 to 39 nodes exactly one more disagreed, for the same
-	/// reason. Both partitions are valid local optima; neither is wrong, but the unweighted one
-	/// is not reproducible against the weighted one on tied moves. This test pins the current
-	/// difference and fails as soon as it disappears, which is the signal to move `random3` back
-	/// into `louvainAgrees`.
-	@Test("Louvain, finding: random3 is split differently because the unweighted move rule has no tie margin")
-	func louvainTieRuleFinding() throws {
+	/// `random3` used to be split differently by the two implementations (modularity 0.3615 unweighted,
+	/// 0.3569 weighted): the weighted Louvain moves a node only if the gain beats the best by more than
+	/// 1e-12, the unweighted one if it was strictly greater, so a tie that is exact on paper was
+	/// decided by rounding there and kept as a tie here. It was pinned as a known issue until step 4
+	/// (ADR-009) gave the unweighted rule the same margin; it is a plain assertion now.
+	@Test("Louvain: random3 is split the same way by both, now that the unweighted move rule has the tie margin")
+	func louvainTieRuleRandom3() throws {
 		let fixture = try #require(allFixtures.first { $0.name == "random3" })
 		let outcome = try louvainOutcome(fixture)
-		withKnownIssue("unweighted Louvain decides exact ties by rounding; weighted uses a 1e-12 margin") {
-			#expect(outcome.sameSets)
-			#expect(outcome.modularityDifference < 1e-12)
-		}
+		#expect(outcome.sameSets)
+		#expect(outcome.modularityDifference < 1e-12)
 	}
 
 	@Test("Louvain on the karate club finds the same four communities in both")

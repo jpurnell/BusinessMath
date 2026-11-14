@@ -348,6 +348,7 @@ alternatives_rejected:
 affected_files:
   - Sources/BusinessMath/Network/Weighted/WeightedCentrality.swift
   - Sources/BusinessMath/Network/Weighted/WeightedCommunity.swift
+  - Sources/BusinessMath/Network/Community/Community.swift
   - Sources/BusinessMath/Network/Weighted/BurtConstraint.swift
   - Tests/BusinessMathTests/Network Tests/Weighted/
   - project/plans/upcoming/NetworkWeightedGraph.md
@@ -467,6 +468,15 @@ decision: |
      the partial partition and the test asserts the new outcome (refused) against it. UnweightedWeightedCrossCheckTests
      now asserts agreement (both refuse) where it used to assert a difference; the edgeless difference
      (nil unweighted, zero weighted) remains and is a documented, deliberate difference.
+  4. The unweighted Graph.louvainCommunities gets the weighted Louvain's tie margin (no version bump: Graph's
+     Louvain is not a registered metric). A candidate community must beat the best so far by more than
+     1e-12 / 2m, which is the weighted code's 1e-12 (in units of edge weight) expressed in the unweighted
+     gain's units (gain_unweighted = gain_weighted / 2m), so the two implementations call the same moves ties;
+     a raw 1e-12 in these units would be a 2m-times larger margin. Measured: over seeds 1 to 400 of random
+     connected graphs, five (39, 132, 270, 275, 297) were split differently before, none of 1 to 5,000 after.
+     The cross-check's known issue (random3) is removed and the test is a plain assertion. Louvain on a graph
+     where two moves differ by less than 1e-12/2m now resolves to the lower-numbered candidate or stays,
+     where before it moved by rounding: a result can change on such graphs, which is the point.
 rationale: |
   - Uniformity with eigenvector centrality, which has reported convergence since version 4: a reader
     should not have to remember which iterative metrics say so.

@@ -61,6 +61,15 @@ source-breaking and answer-changing; each says exactly what changes and for whom
 - **Source break**: add `try`. For whom: anyone scoring a hand-built or filtered partition; a partition from `Community.louvain` or
   `connectedComponents` is always valid. No version bump: no registered metric computes modularity, so no stored record changes.
 
+#### Fixed: the unweighted `Graph.louvainCommunities` has the weighted Louvain's tie margin (no version bump)
+
+- A node now moves to another community only if it is better by more than `1e-12 / 2m` (the weighted `Community.louvain`'s `1e-12`
+  in the unweighted gain's units); before, a strictly-greater comparison let rounding decide ties that are exact on paper. **Answer
+  change** on graphs with such ties: of 400 seeded random connected graphs, five were split differently from the weighted Louvain
+  before and none is after (none of 5,000). The cross-check's pinned known issue (`random3`) is removed and now passes for real.
+  For whom: callers of `Graph.louvainCommunities` on graphs with exact gain ties. `Graph`'s Louvain is not a registered metric, so
+  no stored record changes.
+
 Additive: no existing API changes.
 
 **`WeightedGraph`: a validated undirected weighted graph beside `Graph`.** Step 1 of the plan to

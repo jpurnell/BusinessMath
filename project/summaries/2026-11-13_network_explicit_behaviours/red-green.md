@@ -85,3 +85,16 @@ and the pre-existing community/cross-check suites (invariants; the stub changes 
 
 **Green.** Validation added; same suites, 94 tests passed with the 2 known issues that change 4 removes (`green3-run-full.txt`).
 Nothing edited between red and green.
+
+## Change 4: unweighted Louvain tie margin (no bump)
+
+**Baseline measured first** (`louvain-sweep-baseline.txt`): of 400 seeded random connected graphs the unweighted and weighted
+Louvain disagreed on 5 (39, 132, 270, 275, 297). **Stub.** `bestCommunity` made internal (no behaviour change) so the margin can
+be unit-tested; `louvainTieRuleDisagreements` and `withKnownIssue` removed from the cross-check, `random3` back in `louvainAgrees`,
+and the former finding test rewritten as a plain assertion. **Red (stub): 24 tests in 2 suites, 7 issues** (`red4-run-full.txt`):
+the two sub-margin unit cases (1e-14 and 4e-14), the 2m-scaling case, random3 (twice), and `louvainAgrees` on random3. Passed
+against the stub, [S]: the above-margin, clearly-better, tie and worse unit cases (they guard against over-margining).
+**Green.** Margin `1e-12 / 2m`; same suites, 25 tests passed (`green4-run-full.txt`), and the 5,000-seed sweep has no disagreement.
+The permanent 400-seed sweep test was added after the green (it is the baseline measurement turned into a test; its red is the
+recorded five disagreements, not a stub run). Choice recorded in ADR-009: scaled margin, not a raw 1e-12, because the two gains differ by a
+factor 2m; the raw form was not measured separately.

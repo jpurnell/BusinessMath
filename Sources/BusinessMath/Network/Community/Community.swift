@@ -107,7 +107,9 @@ public extension Graph {
 	///
 	/// Nodes are visited in ``nodes`` order, which ``Graph`` fixed at construction, and at
 	/// every level super-nodes are numbered by the lowest original node they contain. A
-	/// node moves only when another community is *strictly* better, and candidates are
+	/// node moves only when another community is better by more than a margin (`1e-12 / 2m`,
+	/// the weighted ``Community/louvain(_:resolution:maxPasses:)``'s `1e-12` in this gain's units),
+	/// so a tie that is exact on paper is not decided by rounding, and candidates are
 	/// examined in ascending community number, so ties resolve the same way on every run.
 	/// A greedy method that visited nodes in `Dictionary` order would give different
 	/// partitions on different runs of the same program — correct-looking every time and
@@ -289,11 +291,18 @@ public extension Graph {
 		return (undirected, degree, twiceEdges)
 	}
 
+	/// The margin, in units of edge weight, by which a candidate community must beat the best so far
+	/// to take a node: the same `1e-12` the weighted ``Community/louvain(_:resolution:maxPasses:)`` uses.
+	static var moveMargin: Double { 1e-12 }
+
 	/// Which community a node belongs in, given what it links to.
 	///
 	/// Staying put is the baseline rather than a special case: `current` is scored on the
 	/// same footing as every candidate, so a node moves only when another community is
-	/// strictly better. Candidates are visited in sorted order so ties resolve the same way
+	/// better by more than a margin of `1e-12 / 2m`, the weighted Louvain's `1e-12` expressed in
+	/// this gain's units (ADR-009). Without a margin a tie that is exact on paper is decided by
+	/// floating-point rounding, and the two implementations split such a graph differently.
+	/// Candidates are visited in sorted order so ties resolve the same way
 	/// on every run, whatever order the graph was assembled in.
 	///
 	/// - Parameters:
@@ -303,13 +312,17 @@ public extension Graph {
 	///   - nodeDegree: This node's degree.
 	///   - twiceEdges: `2m` for the whole graph.
 	/// - Returns: The community with the greatest modularity gain.
-	private static func bestCommunity(
+	static func bestCommunity(
 		for current: Int,
 		links: [Int: Double],
 		communityDegree: [Int: Double],
 		nodeDegree: Double,
 		twiceEdges: Double
 	) -> Int {
+		// The weighted Louvain moves a node only if a candidate beats the best so far by more than
+		// 1e-12 in units of edge weight (`Community.louvain`). This gain is that quantity divided by
+		// 2m, so the same margin is `1e-12 / 2m`: the two implementations then call the same moves ties.
+		let threshold: Double = twiceEdges > 0 ? moveMargin / twiceEdges : 0
 		var bestGroup = current
 		var bestGain = modularityGain(links: links[current] ?? 0,
 									  communityDegree: communityDegree[current] ?? 0,
@@ -318,7 +331,7 @@ public extension Graph {
 			let gain = modularityGain(links: weight,
 									  communityDegree: communityDegree[group] ?? 0,
 									  nodeDegree: nodeDegree, twiceEdges: twiceEdges)
-			if gain > bestGain {
+			if gain > bestGain + threshold {
 				bestGain = gain
 				bestGroup = group
 			}
