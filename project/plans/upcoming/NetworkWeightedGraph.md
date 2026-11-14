@@ -1,6 +1,6 @@
 # Design Proposal: Weighted graphs and graph metrics in `Network/`
 
-**Status:** Approved by the owner 2026-11-12. **Steps 0 to 4 done** on the integration line (step 3, the metric registry and
+**Status:** Approved by the owner 2026-11-12. **Released in 3.0.0-alpha.17 (2026-11-14); steps 5 (diffusion and siting) and 6 (ClassGraph cutover, SwiftGraphMetrics archived) are done too.** Follow-ups are recorded in ADR-010. History: **steps 0 to 4 done** on the integration line (step 3, the metric registry and
 stored-record golden test, 2026-11-13, ADR-008; step 4, the silent behaviours made explicit, 2026-11-13, ADR-009, branch
 `feature/network-explicit-behaviours`, five changes each with its own red, test, commit and version note). Steps 5 (diffusion and
 siting) and 6 (ClassGraph cutover) remain per the phasing table; step 6 now has to handle three source breaks (`pageRank`, `modularity`

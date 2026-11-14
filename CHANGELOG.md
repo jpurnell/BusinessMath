@@ -11,6 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+### [3.0.0-alpha.17] - 2026-11-14
+
+**The Network module gains weighted graphs and the graph measures that lived in the ClassGraph package** (ADR-006 to ADR-010; plan
+`project/plans/upcoming/NetworkWeightedGraph.md`). Almost all of it is new API: `WeightedGraph`, weighted centrality, community and
+brokerage measures, diffusion and seed selection, p-median siting, and a metric registry with a stored-record envelope. **Two existing
+functions change their answers**, and the entries below say exactly how: `Graph.eigenvectorCentrality` is now correct on bipartite
+graphs and returns `nil` when it has not converged within `maxIterations` (default 1000, so a path of 30 or more nodes returns `nil`
+unless the caller raises it), and `Graph.louvainCommunities` now contracts communities between passes and uses a tie margin, so
+its partitions can differ. Signatures are unchanged, so this is source-compatible for existing callers. The weighted measures that
+throw, and the metrics that were bumped (`pagerank` 3, `eigenvector-centrality` 5), are new in this release and break nobody who was on alpha.16.
+
 **Silent behaviours made explicit (step 4 of the plan, ADR-006, ADR-007, ADR-009).** Five behaviours the weighted measures
 inherited from the ClassGraph package, listed in ADR-007 as "known, scheduled, closed on purpose", are closed here, each with
 its own test and its own ADR-009 entry, and a metric-version bump where stored output changes. Some of these are
@@ -111,7 +122,7 @@ source-breaking and answer-changing; each says exactly what changes and for whom
   For whom: callers of `Graph.louvainCommunities` on graphs with exact gain ties. `Graph`'s Louvain is not a registered metric, so
   no stored record changes.
 
-Additive: no existing API changes.
+Additive within this step (it adds API only; the two changed answers are listed at the top of this release).
 
 **`WeightedGraph`: a validated undirected weighted graph beside `Graph`.** Step 1 of the plan to
 bring the weighted graph measures in from the ClassGraph package (`project/plans/upcoming/NetworkWeightedGraph.md`,
