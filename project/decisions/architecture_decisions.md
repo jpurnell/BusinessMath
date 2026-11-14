@@ -401,3 +401,68 @@ supersedes: null
 amends: null
 superseded_by: null
 ```
+
+---
+
+```yaml
+id: ADR-009
+date: 2026-11-13
+status: accepted
+category: behaviour
+title: The weighted measures' silent behaviours are made explicit; each change names its version bump
+context: |
+  ADR-007 listed behaviours the weighted measures inherited from SwiftGraphMetrics that the
+  fail-silent principle would refuse, ported unchanged in step 2 so stored records would not
+  move, and scheduled their closure for step 4 of NetworkWeightedGraph.md, each with its own test
+  and, where stored output changes, a metric-version bump. Step 4 closes them. This record is
+  extended change by change; the changes are independent and each is its own commit.
+decision: |
+  1. PageRank reports convergence (pagerank version 2 to 3).
+     Centrality.pageRankConvergence(_:damping:maxIterations:tolerance:) is the loop and returns
+     (iterations, converged, residual, scores); Centrality.pageRank delegates to it and returns
+     identical numbers (pinned against a frozen copy of the old loop, bit for bit). The registered
+     PageRankMetric returns DiagnosedScores (payload kind "scores" with an optional "convergence"
+     key) and takes damping, maxIterations and tolerance with the defaults 0.85, 200, 1e-12.
+     ConvergenceReport, DiagnosedScores and ConvergenceNote are reused unchanged. The tolerance
+     stays 1e-12 and the stopping rule stays an absolute L1 change. The a-priori bound
+     (L1 error after k passes <= 2 * damping^k, so ceil(ln(tol/2)/ln d) passes guarantee
+     convergence: 175 at 0.85, 269 at 0.9, 553 at 0.95, 2,819 at 0.99) is a test oracle, not the
+     user-facing report. The version is bumped because a version 2 record carries no convergence
+     figure and a version 3 record always does; scores are bit-identical, so only the shape and the
+     meaning of "not recorded" differ. Records already stored as version 2 decode unchanged as
+     "unknown" (golden test).
+     Measured (pagerank-measurement.md, reproduced in this repository in pagerank-remeasure-in-repo.txt):
+     the default call never misses the ceiling; damping 0.9 misses it on slow-mixing shapes and 0.99 on
+     most; and a star-like hub makes the change between passes bottom out above 1e-12 from about
+     11,000 nodes at damping 0.85, so a very large star reports "not converged" although its scores
+     are accurate to about 1e-12. The earlier proposal's claim that the floor is about n * 1e-16
+     for any graph is wrong and is not carried forward. The report keeps the residual so a reader can
+     tell that floor from slow convergence; no rule that treats a stuck residual as converged is added,
+     because the measurement could not justify a threshold (the envelope 0.12 * n * eps / (1 - d) was
+     fitted to stars only).
+rationale: |
+  - Uniformity with eigenvector centrality, which has reported convergence since version 4: a reader
+    should not have to remember which iterative metrics say so.
+  - Reporting the residual instead of silently accepting a noise floor keeps the stored figure a
+    measurement and not a judgement.
+consequences: |
+  Positive: damping above about 0.88 or a lowered ceiling can no longer return an unconverged answer
+  silently. Negative: PageRankMetric.compute returns a different type (source-breaking for direct
+  callers); a very large star reports a false "did not converge"; ConvergenceNote's wording ("far from
+  the true eigenvector. Raise maxIterations to check") is wrong for that case and is not changed here
+  because the golden test pins the sentence (open follow-up).
+alternatives_rejected:
+  - "Document the bound and do nothing (option 1 of the proposal): leaves non-default damping and the lowered ceiling unreported."
+  - "Report an a-priori guarantee instead of a measured flag (option 3): a second concept beside eigenvector's, and it would hide the star floor from the record."
+  - "Make the stopping rule relative: the measurement shows delta / L1-norm is the same number as the absolute rule, and delta / n accepts errors growing to 8e-8."
+affected_files:
+  - Sources/BusinessMath/Network/Weighted/WeightedCentrality.swift
+  - Sources/BusinessMath/Network/Metrics/StandardMetrics.swift
+  - Tests/BusinessMathTests/Network Tests/Weighted/PageRankConvergenceTests.swift
+  - Tests/BusinessMathTests/Network Tests/Metrics/MetricRecordGoldenTests.swift
+  - Tests/BusinessMathTests/Network Tests/Metrics/GoldenRecordData.swift
+  - Tests/TestSupport/DensePageRank.swift
+supersedes: null
+amends: ADR-007
+superseded_by: null
+```

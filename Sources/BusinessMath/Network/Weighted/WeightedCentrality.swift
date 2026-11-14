@@ -181,6 +181,12 @@ public enum Centrality {
 	/// PageRank — eigenvector centrality with damping, which behaves better on
 	/// sparse or disconnected graphs.
 	///
+	/// This is ``pageRankConvergence(_:damping:maxIterations:tolerance:)`` with the report
+	/// dropped: that function runs the loop and this one returns its `scores`, so the two cannot
+	/// drift apart. A result that stopped at the ceiling looks like any other here; ask
+	/// ``pageRankConvergence(_:damping:maxIterations:tolerance:)`` (or use the registered
+	/// ``PageRankMetric``, which reports it) to learn whether the iteration converged.
+	///
 	/// - Parameters:
 	///   - graph: The graph.
 	///   - damping: Probability of following an edge rather than teleporting.
@@ -190,11 +196,13 @@ public enum Centrality {
 	///
 	/// ## Current behaviour that a stricter measure would refuse
 	///
-	/// Recorded in ADR-007 and ported unchanged because stored records (pagerank v2) depend on it:
+	/// Recorded in ADR-007 and closed in step 4 (ADR-009); until the change that closes each is
+	/// merged, it is as follows:
 	///
-	/// - **The last iterate is returned at the ceiling**, converged or not, with no flag. At the
-	///   defaults the 200 passes suffice (the error after `k` passes is at most `2 * damping^k`),
-	///   but a damping near 1 or a tiny `maxIterations` can stop short and say nothing.
+	/// - **The last iterate is returned at the ceiling**, converged or not, with no flag, by this
+	///   function. At the defaults the 200 passes suffice (the error after `k` passes is at most
+	///   `2 * damping^k`), but a damping near 1 or a tiny `maxIterations` can stop short and say
+	///   nothing. ``pageRankConvergence(_:damping:maxIterations:tolerance:)`` reports it.
 	/// - **`damping` is clamped into `[0, 0.999]`** rather than refused, so `1.5` runs as `0.999`
 	///   and `-1` runs as `0`.
 	/// - **A `NaN` damping gives `NaN` scores**: the clamp does not catch it, and nothing refuses it.
@@ -211,13 +219,74 @@ public enum Centrality {
 		_ graph: WeightedGraph<Node>, damping: Double = 0.85,
 		maxIterations: Int = 200, tolerance: Double = 1e-12
 	) -> NodeScores<Node> {
+		pageRankConvergence(
+			graph, damping: damping, maxIterations: maxIterations, tolerance: tolerance).scores
+	}
+
+	/// PageRank together with how the iteration ended.
+	///
+	/// This *is* the iteration ``pageRank(_:damping:maxIterations:tolerance:)`` runs, not a copy
+	/// of it: `pageRank` calls this and returns `scores`, so the two cannot drift apart. Use it to
+	/// find out, on any graph and any damping, whether the ceiling was enough.
+	///
+	/// ## What to expect
+	///
+	/// PageRank is a contraction in the L1 norm with factor `damping`, whatever the graph, so the
+	/// distance to the fixed point after `k` passes is at most `2 * damping^k`. That fixes the
+	/// number of passes `ceil(ln(tolerance / 2) / ln(damping))` that guarantee convergence at a
+	/// given tolerance: 175 at the defaults, so the default ceiling of 200 is enough on every graph
+	/// (measured: no graph needed more); 269 at damping 0.9, 553 at 0.95 and 2,819 at 0.99,
+	/// where the default ceiling is not enough and this report says so. The bound is the worst
+	/// case; most graphs stop far sooner.
+	///
+	/// ## A false "did not converge"
+	///
+	/// The stopping rule is an absolute L1 change of `tolerance` between passes. On a star-like hub,
+	/// where one node sums very many equal contributions, rounding error keeps the change above
+	/// `1e-12` however long the loop runs, so a star of about eleven thousand nodes or more reports
+	/// `converged == false` at the ceiling although its scores are accurate to about `1e-11` (measured; see
+	/// `project/summaries/2026-11-13_network_explicit_behaviours/pagerank-measurement.md`).
+	/// That is why the report carries the `residual` and not only the flag: a residual a small
+	/// multiple of the tolerance, unchanged from pass to pass, is that rounding floor and not slow
+	/// convergence. It was not found on any other family tried, up to 200,000 nodes.
+	///
+	/// - Parameters:
+	///   - graph: The graph.
+	///   - damping: Probability of following an edge rather than teleporting. Clamped into
+	///     `[0, 0.999]`, as ``pageRank(_:damping:maxIterations:tolerance:)`` does.
+	///   - maxIterations: Iteration ceiling. Never fewer than one pass is run.
+	///   - tolerance: Convergence threshold on the L1 change per pass.
+	/// - Returns:
+	///   - `iterations`: passes run. Zero for an empty graph, where there is nothing to iterate.
+	///   - `converged`: whether the change fell below `tolerance` within the ceiling. `true` for
+	///     an empty graph.
+	///   - `residual`: the L1 change between the last two iterates, the quantity compared with
+	///     `tolerance`. Zero for an empty graph.
+	///   - `scores`: exactly what `pageRank` returns for the same arguments.
+	///
+	/// ```swift
+	/// let path = WeightedGraph(unweightedEdges: [("a", "b"), ("b", "c")])
+	/// let run = Centrality.pageRankConvergence(path)
+	/// print(run.converged)    // true
+	/// print(run.iterations)   // well under the ceiling of 200
+	///
+	/// let slow = Centrality.pageRankConvergence(path, damping: 0.99, maxIterations: 20)
+	/// print(slow.converged)   // false
+	/// ```
+	public static func pageRankConvergence<Node: Hashable & Comparable & Sendable>(
+		_ graph: WeightedGraph<Node>, damping: Double = 0.85,
+		maxIterations: Int = 200, tolerance: Double = 1e-12
+	) -> (iterations: Int, converged: Bool, residual: Double, scores: NodeScores<Node>) {
 		let count = graph.nodeCount
-		guard count > 0 else { return NodeScores([:]) }
+		guard count > 0 else { return (0, true, 0, NodeScores([:])) }
 		let clampedDamping = min(max(damping, 0), 0.999)
 		let teleport = (1 - clampedDamping) / Double(count)
 
 		var current = [Double](repeating: 1 / Double(count), count: count)
 		let degrees = (0..<count).map { graph.weightedDegree($0) }
+		var iterations = 0
+		var converged = false
+		var residual = 0.0
 
 		for _ in 0..<max(1, maxIterations) {
 			var next = [Double](repeating: teleport, count: count)
@@ -240,12 +309,17 @@ public enum Centrality {
 			var delta = 0.0
 			for index in 0..<count { delta += abs(next[index] - current[index]) }
 			current = next
-			if delta < tolerance { break }
+			iterations += 1
+			residual = delta
+			if delta < tolerance {
+				converged = true
+				break
+			}
 		}
 
 		var scores: [Node: Double] = [:]
 		for (index, node) in graph.nodes.enumerated() { scores[node] = current[index] }
-		return NodeScores(scores)
+		return (iterations, converged, residual, NodeScores(scores))
 	}
 
 	/// Betweenness centrality by Brandes' algorithm.

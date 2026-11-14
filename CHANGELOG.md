@@ -11,6 +11,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+**Silent behaviours made explicit (step 4 of the plan, ADR-006, ADR-007, ADR-009).** Five behaviours the weighted measures
+inherited from the ClassGraph package, listed in ADR-007 as "known, scheduled, closed on purpose", are closed here, each with
+its own test and its own ADR-009 entry, and a metric-version bump where stored output changes. Some of these are
+source-breaking and answer-changing; each says exactly what changes and for whom.
+
+#### Changed: PageRank reports whether it converged (`pagerank` version 2 to 3)
+
+- **New `Centrality.pageRankConvergence(_:damping:maxIterations:tolerance:)`** returns `(iterations, converged, residual, scores)`.
+  It is the loop; `Centrality.pageRank` now calls it and returns its `scores`, so the two cannot drift apart. `pageRank` returns the
+  same numbers as before, bit for bit (pinned against a frozen copy of the old loop and by the golden measure test).
+- **The registered `PageRankMetric` now returns `DiagnosedScores`** (was `NodeScores`) and takes `damping`, `maxIterations` and
+  `tolerance` (defaults 0.85, 200, 1e-12, as before). **Source break for direct callers of `PageRankMetric.compute`**: read `.scores`.
+  Records: the payload keeps kind `"scores"` and gains an optional `convergence` key; a version 2 record still decodes, as
+  "convergence not recorded", and a reader of plain `NodeScores` still works. For whom: anyone who stored `pagerank` version 2 records
+  (their scores are unchanged but carry no convergence figure and should be read as unknown) and anyone calling the metric directly.
+- **Why it matters, measured** (`project/summaries/2026-11-13_network_explicit_behaviours/pagerank-measurement.md`): at the default
+  damping the 200-pass ceiling is enough on every graph tried (the L1 error after k passes is at most 2 * damping^k, never
+  violated; 175 passes at worst), so the default call never returned an unconverged answer. At damping 0.9 five of eleven graph
+  families exceed the ceiling, and at 0.99 most do (a path of 1,000 nodes returned with L1 error 1.4e-4, a 50-leaf star with isolates 3.3e-3),
+  with no signal. That is now reported.
+- **A false "did not converge" exists, and is reported honestly rather than hidden.** On a star-like hub (one node summing very many
+  equal terms) rounding keeps the change between passes above 1e-12: measured in this repository, a star converges up to 10,500
+  nodes (175 passes) and from 11,000 nodes stops at the ceiling with a residual of 1.04e-12 and scores accurate to about 3e-13. The
+  report carries the `residual` for that reason. The earlier proposal's estimate that the floor is about n * 1e-16 for any graph was
+  wrong: on sparse random, grid, path, ring, preferential-attachment, community and dangling-heavy graphs the floor is about 1e-17 up to
+  200,000 nodes.
+- `ConvergenceNote.sentence` is unchanged and still says "far from the true eigenvector. Raise maxIterations to check" for a miss;
+  that advice is wrong for the star case above. Recorded as an open follow-up in ADR-009.
+
 Additive: no existing API changes.
 
 **`WeightedGraph`: a validated undirected weighted graph beside `Graph`.** Step 1 of the plan to

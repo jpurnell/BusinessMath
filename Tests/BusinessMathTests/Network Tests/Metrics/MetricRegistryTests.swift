@@ -139,15 +139,16 @@ struct MetricRegistryTests {
 
 	/// Moved metrics keep their versions: the numbers did not change. The exception is
 	/// eigenvector centrality, bumped 2 to 3 when the bipartite fix changed its numbers, and 3 to 4
-	/// when it began reporting convergence.
-	@Test("Moved metrics keep the versions they had; eigenvector is at 4")
+	/// when it began reporting convergence. PageRank was bumped 2 to 3 in step 4 when it began doing the
+	/// same (ADR-009).
+	@Test("Moved metrics keep the versions they had; eigenvector is at 4 and pagerank at 3")
 	func versionsUnchanged() {
 		let versions = Dictionary(
 			uniqueKeysWithValues: MetricRegistry<String>.standard.available.map {
 				($0.identifier, $0.version)
 			})
 		#expect(versions["eigenvector-centrality"] == 4)
-		#expect(versions["pagerank"] == 2)
+		#expect(versions["pagerank"] == 3)
 		for identifier in [
 			"degree", "betweenness-centrality", "closeness-centrality", "k-core",
 			"louvain", "harmonic-centrality", "clustering", "components", "burt-constraint",
