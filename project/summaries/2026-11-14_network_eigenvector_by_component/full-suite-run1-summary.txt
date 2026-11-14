@@ -1,0 +1,2 @@
+Full BusinessMathTests run (swift test --skip-build), taken before the late test additions (settings/overflow suites) and the scale refactor.
+􁁛  Test run with 9749 tests in 938 suites passed after 483.650 seconds.

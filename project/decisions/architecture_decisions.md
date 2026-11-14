@@ -530,3 +530,84 @@ supersedes: null
 amends: ADR-007
 superseded_by: null
 ```
+
+---
+
+```yaml
+id: ADR-010
+date: 2026-11-14
+status: accepted
+category: architecture
+title: Component-wise eigenvector centrality is a Network measure, stored as eigenvector-centrality-by-component version 1
+context: |
+  ADR-009 item 5 made eigenvector centrality refuse a disconnected graph, and named the cost: a caller whose graph is
+  disconnected (ClassGraph's real graph has many isolates and small components) can no longer rank by eigenvector at
+  all. ClassGraph answered that with a metric of its own, written against this package's public API
+  (ClassGraph ADR-015, ComponentwiseEigenvector.swift at main d38b363), and recommended upstreaming it once the
+  convention had survived use. The owner approved upstreaming ("upstream to BusinessMath", 2026-11-14).
+  Design: project/plans/proposals/NetworkEigenvectorByComponent.md.
+decision: |
+  Centrality.eigenvectorByComponent(_:maxIterations:tolerance:) (Network/Weighted, beside eigenvectorConvergence) and a
+  registered metric ComponentwiseEigenvectorMetric, identifier "eigenvector-centrality-by-component", version 1, in
+  MetricRegistry.standard (which now lists twelve). The convention is ClassGraph's, unchanged:
+  - Components are read through ties of positive weight; each is scored on its own subgraph by eigenvectorConvergence.
+  - Scale: with s the per-component scores (largest 1) and rms = sqrt(mean(s^2)), a node scores s * min(rms) / rms, so a
+    typical member of every component scores alike and the largest score overall is exactly 1. Within a component the
+    ratios are eigenvector's; across components the order is a convention, said so in the descriptor and the DocC.
+  - A node with no tie of positive weight scores exactly 0 and is counted in isolatedCount.
+  - One component and no isolate: the graph goes to eigenvectorConvergence unchanged, bit-identical to
+    eigenvector-centrality 5 with its report.
+  - Convergence: the aggregate is the worst case (converged only if all did, most passes, largest residual);
+    components holds each component's own report and the scale applied.
+  Stored shape: kind "scores", keys scores, convergence, components, isolatedCount; each component anchor, size,
+  convergence, scale. It reads as NodeScores and as DiagnosedScores, and MetricEnvelope.convergence is the aggregate.
+  The value types are named as ClassGraph's are (ComponentScoring, ComponentwiseScores, ComponentwiseEigenvectorMetric)
+  so its cutover is a deletion, not a rename.
+  Errors: reuses GraphMeasureError and adds no case. The function is `throws` because what it calls throws; it throws
+  nothing of its own, and disconnectedGraph is unreachable from it. Nothing about a disconnected graph is an error here.
+  Return type: ComponentwiseScores, not DiagnosedScores. DiagnosedScores has two keys and ClassGraph's stored payload four;
+  widening it would change a shape three metrics already store. ComponentwiseScores.diagnosed gives the plain view.
+  Parity with ClassGraph is a test, not a claim: ByComponentParityGoldens.swift holds the envelopes ClassGraph's own code
+  wrote over 25 synthetic graphs (scratch program outside both repositories, project/summaries/2026-11-14_network_eigenvector_by_component/golden/),
+  byte for byte for every case whose weights are binary fractions. GoldenRecordData.swift gains the new metric's record
+  for each of its 20 fixtures, in the registry listing, in identifiersAndVersions and in the integer-node karate set (a
+  third deliberate edit to that file after ADR-009's two); the eleven entries that were there are untouched.
+rationale: |
+  - Every caller with a disconnected graph would otherwise rewrite the splitting and, worse, the cross-component scale.
+  - A new identifier means no stored record changes meaning; eigenvector-centrality stays version 5 and still refuses.
+  - Keeping ClassGraph's names, keys and wording means ClassGraph can delete its copy and read its own stored records.
+consequences: |
+  The cross-component scale is a convention, and changing it is version 2 of this metric, not an edit of version 1.
+  MetricRegistry.standard.available has twelve entries; a caller that counted eleven sees twelve.
+  While ClassGraph keeps its own three types, a file importing BusinessMath whole and ClassGraphMetrics sees two of each
+  name; its cutover deletes its copy. standard.registering(ClassGraph's metric) keeps the first of two with one
+  identifier, so it keeps working in the overlap.
+  Two findings from the move, neither changed here. (1) WeightedGraph sums totalWeight in dictionary order, so for weights that
+  are not binary fractions the last bit of a score can differ between processes (measured over twelve runs of the generator:
+  two decimal-weight cases differed, six and three times); the shift in eigenvectorConvergence reads it. Byte-for-byte
+  parity is therefore asserted only for cases with binary-fraction weights, and the decimal cases to a tolerance. This
+  affects every weighted measure that sums in that order, not this one alone. (2) For weights of about 1e154 and above,
+  eigenvectorConvergence overflows its norm and returns all zeros reported as converged (ADR-009's note about 1e-300
+  underflow is the same family); by component, such a component scores 0, keeps scale 1, and is not counted as isolated.
+  ClassGraph's mutation notes call the guards that handle this unreachable; they are reachable (measured), and they are the
+  only path that handles it. Not fixed: the fix belongs in eigenvectorConvergence (rescale before squaring) and is a
+  behaviour change needing its own version bump.
+alternatives_rejected:
+  - "Widen DiagnosedScores with optional components and isolatedCount: changes a shape eigenvector 4/5 and pagerank 3 store."
+  - "An onDisconnected mode on eigenvector: reopens ADR-009 item 5, and needs a richer result than NodeScores."
+  - "A new GraphMeasureError case for an unscoreable component: a source break for exhaustive switches, and eigenvector is silent on the same input."
+  - "Leave it in ClassGraph: the status quo; every consumer reimplements the scale."
+affected_files:
+  - Sources/BusinessMath/Network/Weighted/EigenvectorByComponent.swift
+  - Sources/BusinessMath/Network/Metrics/Values/ComponentwiseScores.swift
+  - Sources/BusinessMath/Network/Metrics/ComponentwiseEigenvectorMetric.swift
+  - Sources/BusinessMath/Network/Metrics/Protocol/MetricRegistry.swift
+  - Tests/BusinessMathTests/Network Tests/Weighted/EigenvectorByComponentTests.swift
+  - Tests/BusinessMathTests/Network Tests/Weighted/EigenvectorByComponentParityTests.swift
+  - Tests/BusinessMathTests/Network Tests/Weighted/ByComponentParityCases.swift
+  - Tests/BusinessMathTests/Network Tests/Weighted/ByComponentParityGoldens.swift
+  - Tests/BusinessMathTests/Network Tests/Metrics/GoldenRecordData.swift
+supersedes: null
+amends: ADR-009
+superseded_by: null
+```

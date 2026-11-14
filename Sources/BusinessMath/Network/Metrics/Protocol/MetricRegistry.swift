@@ -95,6 +95,7 @@ public struct MetricRegistry<Node: Hashable & Comparable & Sendable & Codable>: 
 			AnyGraphMetric(ClusteringMetric<Node>()),
 			AnyGraphMetric(ComponentsMetric<Node>()),
 			AnyGraphMetric(BurtConstraint<Node>()),
+			AnyGraphMetric(ComponentwiseEigenvectorMetric<Node>()),
 		])
 	}
 }

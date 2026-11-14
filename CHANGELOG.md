@@ -16,6 +16,32 @@ inherited from the ClassGraph package, listed in ADR-007 as "known, scheduled, c
 its own test and its own ADR-009 entry, and a metric-version bump where stored output changes. Some of these are
 source-breaking and answer-changing; each says exactly what changes and for whom.
 
+#### Added: eigenvector centrality of a graph that is not connected (`eigenvector-centrality-by-component` version 1, ADR-010)
+
+- **New `Centrality.eigenvectorByComponent(_:maxIterations:tolerance:)`** (`Network/Weighted`, beside `eigenvectorConvergence`) scores every
+  connected component on its own (read through ties of positive weight) and puts the results on one scale, so a graph with isolates and
+  many small components, which `eigenvector` refuses, gets an answer. Within a component the scores are `eigenvector`'s; across components
+  every component is scaled so its mean square is the same, then all together so the largest score is exactly 1 (`s * min(rms) / rms`),
+  a convention and not a measurement of cross-component importance. A node with no tie of positive weight scores exactly 0 and is counted
+  in `isolatedCount`. One component and no isolate: bit-identical to `eigenvector-centrality` 5, report included. It is the measure the
+  refusal's documentation pointed to. Moved here from ClassGraph (its ADR-015) unchanged; the design is
+  `project/plans/proposals/NetworkEigenvectorByComponent.md`.
+- **New registered metric** `ComponentwiseEigenvectorMetric` (`eigenvector-centrality-by-component`, version 1) in `MetricRegistry.standard`,
+  which now lists twelve metrics. `eigenvector-centrality` is untouched: still version 5, still refuses a disconnected graph.
+- **New value types** `ComponentwiseScores` (kind `"scores"`; keys `scores`, `convergence`, `components`, `isolatedCount`) and `ComponentScoring`
+  (`anchor`, `size`, `convergence`, `scale`). `convergence` is the worst case over the components; `components` gives each one's own report.
+  The result reads as `NodeScores` and as `DiagnosedScores`, `MetricEnvelope.convergence` is the aggregate, and `ComponentwiseScores.diagnosed`
+  is the plain view. The names, keys and descriptor wording are ClassGraph's, so ClassGraph can delete its copy and keep reading its own
+  stored version 1 records; a parity test pins this against constants produced by ClassGraph's own code (25 synthetic graphs, byte for byte
+  where the weights are binary fractions, to a tolerance otherwise; see ADR-010 for why).
+- **Errors:** reuses `GraphMeasureError`, adds no case; throws only what `eigenvectorConvergence` and `WeightedGraph.init` throw.
+  The result type is `ComponentwiseScores` and not `DiagnosedScores` (two keys against four; widening it would change a shape three metrics store).
+- **Findings, not fixed here** (ADR-010): `WeightedGraph.totalWeight` is summed in dictionary order, so for weights that are not binary
+  fractions the last bit of a score can differ between processes; and for weights of about 1e154 and above `eigenvectorConvergence` returns all
+  zeros reported as converged, so a component of such weights scores 0 here as it does there.
+- Tests that counted `MetricRegistry.standard` (11) now say 12, and `GoldenRecordData` gained the new metric's records, listing entry and
+  integer-node tokens (a deliberate edit, recorded in the file's header); the eleven existing entries are untouched.
+
 #### Changed: PageRank reports whether it converged (`pagerank` version 2 to 3)
 
 - **New `Centrality.pageRankConvergence(_:damping:maxIterations:tolerance:)`** returns `(iterations, converged, residual, scores)`.

@@ -7,6 +7,10 @@ siting) and 6 (ClassGraph cutover) remain per the phasing table; step 6 now has 
 and `eigenvector` throw) and a metric that refuses the real, disconnected class graph (see ADR-009 item 5). Step 4 also covered: the
 Louvain tie margin on the unweighted `Graph` (the cross-check's known issue, `random3`), and eigenvector centrality refusing a
 disconnected graph.
+**Step 6 follow-on, 2026-11-14 (branch `feature/network-eigenvector-by-component`, ADR-010, proposal `project/plans/proposals/NetworkEigenvectorByComponent.md`):**
+eigenvector centrality of a graph that is not connected is upstreamed from ClassGraph (its ADR-015) as `Centrality.eigenvectorByComponent` and the
+registered metric `eigenvector-centrality-by-component` version 1, so the refusal of step 4 now has an answer in this package. Additive;
+`MetricRegistry.standard` lists twelve. The rest of step 6 (the ClassGraph cutover itself) is ClassGraph's, and it can delete its copy.
 **Owner decisions already given (2026-11-12):** the licence question is settled (the code moves under
 BusinessMath's AGPLv3 / commercial dual licence); ClassGraph accepts a dependency on the full
 BusinessMath package; the weighted graph is added beside `Graph`, not in place of it; the eigenvector and

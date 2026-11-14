@@ -1,0 +1,34 @@
+A stored record decodes to the record the registry makes, and re-encodes to the same bytes
+Every score, convergence figure and community number matches bit for bit
+Karate on integer nodes matches the stored values bit for bit, by every registered metric
+The bare envelope the registry returns is byte-for-byte the stored envelope
+The record the registry makes is byte-for-byte the stored record
+a connected graph reports the tolerance and ceiling it was given, a ceiling below one as one
+a connected graph with no isolates scores bit for bit as eigenvector-centrality 5 does
+a decimal-weight case matches in structure exactly and in values to 1e-9
+a long path alone misses the default ceiling, and its component says so
+a path and a star: the star, with the smaller rms, keeps its scale; the path is scaled by sqrt(3)/2
+a path, a pair and an isolate: the pair is scaled by min(rms)/rms, the isolate scores 0
+a run records the new identifier and version
+a tie of positive weight between two isolates makes a component, not two isolates
+a tie of weight zero does not connect: its ends are scored as the ties of positive weight say
+an envelope of it reads as plain scores and carries the aggregate convergence
+dividing by the stored scale recovers the per-component scale, whose largest is 1
+every isolate counts, every one scores zero, beside a scored component
+every score matches ClassGraph's bit for bit, read back from the stored text
+it encodes with the envelope shape and decodes back equal
+multiplying every weight by a constant changes nothing
+random graphs with several components keep the invariants
+renaming the nodes, which reorders them, changes no score
+running it twice gives the same answer
+the aggregate is the maximum, not the first or last component, of passes and residual
+the configured tolerance and ceiling are reported, a ceiling below one as one
+the envelope this library writes is byte for byte what ClassGraph wrote
+the largest score is exactly 1 and none is below 0 or above 1
+the metric passes its own tolerance and ceiling on to the iteration
+the old identifier still refuses a disconnected graph while the new one answers it
+the same graph with an isolate added still scores its connected part the same, up to rounding
+two identical paths score like the path alone, both components at the same scale
+with a low ceiling the aggregate is the worst case and the detail names the slow component
+with the default ceiling every component converges and so does the aggregate
+within a component the scores are the per-component eigenvector's, up to one factor
