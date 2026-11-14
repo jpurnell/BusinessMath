@@ -176,7 +176,7 @@ struct UnweightedWeightedCrossCheckTests {
 	@Test("PageRank agrees to 1e-10, including dangling nodes (isolates)", arguments: allFixtures)
 	func pageRankAgrees(_ fixture: CrossCheckFixture) throws {
 		let plain = try #require(fixture.plain.pageRank())
-		let weighted = Centrality.pageRank(fixture.weighted)
+		let weighted = try Centrality.pageRank(fixture.weighted)
 		let difference = try #require(maxDifference(plain, weighted))
 		#expect(difference < 1e-10)
 	}

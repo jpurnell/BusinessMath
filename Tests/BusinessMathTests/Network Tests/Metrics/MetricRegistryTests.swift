@@ -182,7 +182,7 @@ struct MetricRegistryTests {
 		let registry = MetricRegistry<String>.standard
 		let pairs: [(String, NodeScores<String>)] = [
 			("degree", Centrality.degree(graph)),
-			("pagerank", Centrality.pageRank(graph)),
+			("pagerank", try Centrality.pageRank(graph)),
 			("betweenness-centrality", Centrality.betweenness(graph)),
 			("closeness-centrality", Centrality.closeness(graph)),
 			("harmonic-centrality", Centrality.harmonic(graph)),

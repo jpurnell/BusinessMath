@@ -109,9 +109,9 @@ struct PageRankConvergenceTests {
 			for damping in [0.0, 0.5, 0.85, 0.99, 0.999] {
 				for ceiling in [0, 1, 2, 5, 17, 200] {
 					for tolerance in [1e-12, 1e-3, 0.0] {
-						let direct = Centrality.pageRank(
+						let direct = try Centrality.pageRank(
 							graph, damping: damping, maxIterations: ceiling, tolerance: tolerance)
-						let run = Centrality.pageRankConvergence(
+						let run = try Centrality.pageRankConvergence(
 							graph, damping: damping, maxIterations: ceiling, tolerance: tolerance)
 						let legacy = legacyPageRank(
 							graph, damping: damping, maxIterations: ceiling, tolerance: tolerance)
@@ -127,12 +127,12 @@ struct PageRankConvergenceTests {
 	@Test("Does not claim convergence when the ceiling is too small, and does when it is large")
 	func convergedFlag() throws {
 		let path = try Synthetic.path(80)
-		let tight = Centrality.pageRankConvergence(path, maxIterations: 5)
+		let tight = try Centrality.pageRankConvergence(path, maxIterations: 5)
 		#expect(tight.converged == false)
 		#expect(tight.iterations == 5)
 		#expect(tight.residual >= 1e-12)
 
-		let roomy = Centrality.pageRankConvergence(path, maxIterations: 100_000)
+		let roomy = try Centrality.pageRankConvergence(path, maxIterations: 100_000)
 		#expect(roomy.converged)
 		#expect(roomy.iterations > 5)
 		#expect(roomy.iterations < 100_000)
@@ -141,7 +141,7 @@ struct PageRankConvergenceTests {
 
 	@Test("A zero ceiling still runs one pass, as pageRank does")
 	func zeroCeilingIsOnePass() throws {
-		let result = Centrality.pageRankConvergence(try Synthetic.path(10), maxIterations: 0)
+		let result = try Centrality.pageRankConvergence(try Synthetic.path(10), maxIterations: 0)
 		#expect(result.iterations == 1)
 		#expect(result.converged == false)
 	}
@@ -149,11 +149,11 @@ struct PageRankConvergenceTests {
 	@Test("The residual is the final L1 change, and one pass fewer is not yet converged")
 	func residualMeaning() throws {
 		let graph = try Synthetic.erdosRenyi(seed: 11, count: 200, edgeCount: 800)
-		let result = Centrality.pageRankConvergence(graph, tolerance: 1e-6)
+		let result = try Centrality.pageRankConvergence(graph, tolerance: 1e-6)
 		#expect(result.converged)
 		#expect(result.residual < 1e-6)
 		#expect(result.residual >= 0)
-		let before = Centrality.pageRankConvergence(
+		let before = try Centrality.pageRankConvergence(
 			graph, maxIterations: result.iterations - 1, tolerance: 1e-6)
 		#expect(before.converged == false)
 		#expect(before.residual >= 1e-6)
@@ -162,31 +162,31 @@ struct PageRankConvergenceTests {
 	@Test("A looser tolerance never needs more passes, and an enormous one stops after the first")
 	func toleranceControlsStopping() throws {
 		let graph = try Synthetic.communities(seed: 3, count: 120, groups: 2, inside: 300, between: 2)
-		let strict = Centrality.pageRankConvergence(graph, maxIterations: 100_000, tolerance: 1e-12)
-		let loose = Centrality.pageRankConvergence(graph, maxIterations: 100_000, tolerance: 1e-4)
+		let strict = try Centrality.pageRankConvergence(graph, maxIterations: 100_000, tolerance: 1e-12)
+		let loose = try Centrality.pageRankConvergence(graph, maxIterations: 100_000, tolerance: 1e-4)
 		#expect(strict.converged)
 		#expect(loose.converged)
 		#expect(loose.iterations < strict.iterations)
-		let instant = Centrality.pageRankConvergence(graph, maxIterations: 100_000, tolerance: 1e9)
+		let instant = try Centrality.pageRankConvergence(graph, maxIterations: 100_000, tolerance: 1e9)
 		#expect(instant.iterations == 1)
 		#expect(instant.converged)
 	}
 
 	@Test("Degenerate graphs: an empty graph has nothing to iterate; one node and an edgeless graph settle at once")
 	func degenerate() throws {
-		let empty = Centrality.pageRankConvergence(try WeightedGraph<String>(edges: []))
+		let empty = try Centrality.pageRankConvergence(try WeightedGraph<String>(edges: []))
 		#expect(empty.converged)
 		#expect(empty.iterations == 0)
 		#expect(empty.residual.isEqual(to: 0))
 		#expect(empty.scores.scores.isEmpty)
 
-		let lone = Centrality.pageRankConvergence(try WeightedGraph<String>(edges: [], isolatedNodes: ["x"]))
+		let lone = try Centrality.pageRankConvergence(try WeightedGraph<String>(edges: [], isolatedNodes: ["x"]))
 		#expect(lone.converged)
 		#expect(lone.iterations >= 1)
 		let loneScore = try #require(lone.scores["x"])
 		#expect(abs(loneScore - 1) < 1e-12)
 
-		let edgeless = Centrality.pageRankConvergence(
+		let edgeless = try Centrality.pageRankConvergence(
 			try WeightedGraph<String>(edges: [], isolatedNodes: ["x", "y", "z"]))
 		#expect(edgeless.converged)
 		for score in edgeless.scores.scores.values { #expect(abs(score - 1.0 / 3.0) < 1e-12) }
@@ -198,7 +198,7 @@ struct PageRankConvergenceTests {
 			for damping in [0.5, 0.7, 0.85, 0.9, 0.95, 0.99] {
 				let exact = IndependentImplementations.pageRankByDenseSolve(graph, damping: damping)
 				for passes in [1, 2, 3, 5, 10, 20, 40, 80, 160] {
-					let run = Centrality.pageRankConvergence(
+					let run = try Centrality.pageRankConvergence(
 						graph, damping: damping, maxIterations: passes, tolerance: 0)
 					let error = l1Error(run.scores, exact, graph)
 					let bound: Double = 2 * pow(damping, Double(passes))
@@ -214,7 +214,7 @@ struct PageRankConvergenceTests {
 		for (name, graph) in try families() {
 			for damping in [0.5, 0.7, 0.85, 0.9, 0.95] {
 				let predicted = predictedPasses(damping: damping, tolerance: tolerance)
-				let run = Centrality.pageRankConvergence(
+				let run = try Centrality.pageRankConvergence(
 					graph, damping: damping, maxIterations: 10_000, tolerance: tolerance)
 				#expect(run.converged, "\(name) \(damping)")
 				#expect(run.iterations >= 1, "\(name) \(damping)")
@@ -227,7 +227,7 @@ struct PageRankConvergenceTests {
 	@Test("The default call converges on every family, with the ceiling's margin intact")
 	func defaultConverges() throws {
 		for (name, graph) in try families() {
-			let run = Centrality.pageRankConvergence(graph)
+			let run = try Centrality.pageRankConvergence(graph)
 			#expect(run.converged, "\(name)")
 			#expect(run.iterations >= 1, "\(name)")
 			#expect(run.residual < 1e-12, "\(name)")
@@ -238,7 +238,7 @@ struct PageRankConvergenceTests {
 	@Test("Damping 0.99 at the default ceiling does not converge, says so, and the scores really are off")
 	func highDampingReportsNonConvergence() throws {
 		let graph = try Synthetic.path(120)
-		let run = Centrality.pageRankConvergence(graph, damping: 0.99)
+		let run = try Centrality.pageRankConvergence(graph, damping: 0.99)
 		#expect(run.converged == false)
 		#expect(run.iterations == 200)
 		#expect(run.residual > 1e-12)
@@ -253,7 +253,7 @@ struct PageRankConvergenceTests {
 	@Test("Damping 0.9 stops short on a path within the default ceiling, which the bound also predicts")
 	func dampingPointNine() throws {
 		let graph = try Synthetic.path(1_000)
-		let run = Centrality.pageRankConvergence(graph, damping: 0.9)
+		let run = try Centrality.pageRankConvergence(graph, damping: 0.9)
 		#expect(run.converged == false)
 		#expect(run.iterations == 200)
 		#expect(predictedPasses(damping: 0.9, tolerance: 1e-12) > 200)
@@ -262,7 +262,7 @@ struct PageRankConvergenceTests {
 	@Test("A star of 5,000 at the defaults converges, to the closed form")
 	func starConverges() throws {
 		let graph = try Synthetic.star(5_000)
-		let run = Centrality.pageRankConvergence(graph)
+		let run = try Centrality.pageRankConvergence(graph)
 		#expect(run.converged)
 		#expect(run.iterations <= 176)
 		// The star is the structurally slowest family: the bound is nearly tight on it.
@@ -286,7 +286,7 @@ struct PageRankConvergenceTests {
 	@Test("A very large star cannot meet the tolerance and reports that, while its scores are still accurate")
 	func largeStarNoiseFloor() throws {
 		let graph = try Synthetic.star(50_000)
-		let run = Centrality.pageRankConvergence(graph)
+		let run = try Centrality.pageRankConvergence(graph)
 		#expect(run.converged == false)
 		#expect(run.iterations == 200)
 		#expect(run.residual > 1e-12)
@@ -314,10 +314,10 @@ struct PageRankMetricVersion3Tests {
 	func scoresAndReport() throws {
 		let graph = WeightedGraph(unweightedEdges: ReferenceGraphs.karateEdges)
 		let result = try PageRankMetric<Int>().compute(on: graph)
-		let direct = Centrality.pageRank(graph)
+		let direct = try Centrality.pageRank(graph)
 		#expect(result.scores.scores.mapValues { $0.bitPattern } == direct.scores.mapValues { $0.bitPattern })
 		let report = try #require(result.convergence)
-		let run = Centrality.pageRankConvergence(graph)
+		let run = try Centrality.pageRankConvergence(graph)
 		#expect(report.iterations == run.iterations)
 		#expect(report.converged == run.converged)
 		#expect(report.residual.isEqual(to: run.residual))

@@ -102,9 +102,9 @@ struct PublishedCentralityTests {
 	}
 
 	@Test("PageRank agrees with eigenvector on who leads the karate club")
-	func pageRankAgrees() {
+	func pageRankAgrees() throws {
 		// Two different methods; if they disagreed on the top two, one is wrong.
-		let ranked = Centrality.pageRank(karate).ranked
+		let ranked = try Centrality.pageRank(karate).ranked
 		#expect(Set(ranked.prefix(2).map(\.node)) == Set(["34", "1"]))
 	}
 

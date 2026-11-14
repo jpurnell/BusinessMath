@@ -440,6 +440,21 @@ decision: |
      tell that floor from slow convergence; no rule that treats a stuck residual as converged is added,
      because the measurement could not justify a threshold (the envelope 0.12 * n * eps / (1 - d) was
      fitted to stars only).
+  2. PageRank damping is validated (no version bump).
+     Centrality.pageRank and pageRankConvergence refuse a damping that is NaN, infinite, negative or
+     at least one, by throwing the new GraphMeasureError.invalidDamping(_:), before anything else is
+     looked at (an empty graph refuses too). The accepted range is [0, 1); a damping between 0.999 and
+     1 runs as given and, being slow, reports non-convergence. The failure idiom is a throw because the
+     weighted module signals bad input by throwing (WeightedGraph.init throws GraphError) and a throw
+     can say which value was refused; the unweighted Graph returns nil, which cannot. The check is
+     written positively (isFinite, >= 0, < 1) so a NaN fails it and lands on the refusal.
+     This is a source break: both functions are now throwing, so every caller adds try. No shim is kept
+     (the plan does not ask for one, and a non-throwing overload would keep the silent behaviour
+     reachable). No version bump: the registered metric exposed no damping before version 3, so no
+     stored record can carry an out-of-range damping, and every record that can exist is unchanged.
+     The golden measure data keeps SwiftGraphMetrics's stored tokens for damping 1.5 and -1 and the
+     test now asserts that they were exactly the damping-0.999 and damping-0 runs (the old clamp) and
+     that the new outcome is a refusal.
 rationale: |
   - Uniformity with eigenvector centrality, which has reported convergence since version 4: a reader
     should not have to remember which iterative metrics say so.
@@ -457,6 +472,7 @@ alternatives_rejected:
   - "Make the stopping rule relative: the measurement shows delta / L1-norm is the same number as the absolute rule, and delta / n accepts errors growing to 8e-8."
 affected_files:
   - Sources/BusinessMath/Network/Weighted/WeightedCentrality.swift
+  - Sources/BusinessMath/Network/Weighted/GraphMeasureError.swift
   - Sources/BusinessMath/Network/Metrics/StandardMetrics.swift
   - Tests/BusinessMathTests/Network Tests/Weighted/PageRankConvergenceTests.swift
   - Tests/BusinessMathTests/Network Tests/Metrics/MetricRecordGoldenTests.swift

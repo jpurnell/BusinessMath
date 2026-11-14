@@ -40,6 +40,17 @@ source-breaking and answer-changing; each says exactly what changes and for whom
 - `ConvergenceNote.sentence` is unchanged and still says "far from the true eigenvector. Raise maxIterations to check" for a miss;
   that advice is wrong for the star case above. Recorded as an open follow-up in ADR-009.
 
+#### Changed: PageRank refuses an invalid damping (no version bump)
+
+- **`Centrality.pageRank` and `pageRankConvergence` now `throws`** and refuse a `damping` that is `NaN`, infinite, negative or at
+  least one with the new **`GraphMeasureError.invalidDamping(_:)`**. Before: `1.5` silently ran as `0.999`, `-1` as `0`, infinity as
+  `0.999`, and `NaN` returned `NaN` for every score with no error. Accepted: `[0, 1)`; a damping between `0.999` and `1` now runs
+  as given instead of as `0.999`.
+- **Source break** for every caller of `Centrality.pageRank` and `pageRankConvergence`: add `try`. No source-compatibility shim is
+  kept. `PageRankMetric(damping:).compute` throws the same error. For whom: anyone passing a damping of one or more (probably meaning
+  "no teleport") who was getting `0.999` results without knowing.
+- No version bump: the registered metric took no damping before version 3, so no stored record can carry one outside `[0, 1)`.
+
 Additive: no existing API changes.
 
 **`WeightedGraph`: a validated undirected weighted graph beside `Graph`.** Step 1 of the plan to

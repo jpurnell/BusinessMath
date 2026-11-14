@@ -1,0 +1,614 @@
+􀟈  Test run started.
+􀄵  Testing Library Version: 2403
+􀄵  Target Platform: arm64e-apple-macos14.0
+􀟈  Suite "PageRank damping validation" started.
+􀟈  Suite "Golden measures: bit-for-bit against SwiftGraphMetrics" started.
+􀟈  Suite "Mutation audit: closeness and harmonic centrality" started.
+􀟈  Suite "Mutation audit: PageRank" started.
+􀟈  Test "The default metric is unaffected: it still runs and still converges" started.
+􀟈  Test "The fixture set covers the cases the plan names" started.
+􀟈  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀟈  Suite "PageRank convergence report" started.
+􀟈  Test "The refusal does not depend on the graph, the ceiling or the tolerance: an empty graph refuses too" started.
+􀟈  Suite "Mutation audit: clustering coefficient" started.
+􀟈  Test "The registered metric refuses an invalid damping when it runs, through the registry and as a record" started.
+􀟈  Test "Zero damping is teleport only: every node scores 1/n" started.
+􀟈  Test "The error compares equal to itself for NaN, and unequal across different values" started.
+􀟈  Test "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" started.
+􀟈  Test "Old behaviour is gone: 1.5 no longer runs as 0.999, -1 no longer runs as 0, NaN no longer gives NaN scores" started.
+􀟈  Suite "Mutation audit: eigenvector centrality" started.
+􀟈  Test "The edges of the accepted range are accepted: 0, -0, 0.999, and the largest double below one" started.
+􀟈  Test "Harmonic on a path of five weights distance 3 and 4 by their reciprocals" started.
+􀟈  Test "Closeness of a graph of at most one node is zero" started.
+􀟈  Test "Harmonic on a path of three" started.
+􀟈  Test "Closeness of a lone edge is one" started.
+􀟈  Test "Damping just above the old cap is run as given, not as 0.999" started.
+􀟈  Test "Closeness on a star" started.
+􀟈  Test "pageRankConvergence refuses the same dampings: it is the loop, so the two cannot disagree" started.
+􀟈  Test "Harmonic counts the unreachable as zero but still divides by n - 1" started.
+􀟈  Test "Closeness and harmonic agree with Floyd-Warshall distances on random graphs" started.
+􀟈  Test "Both are invariant under weight scaling, which they ignore" started.
+􀟈  Test "Closeness on a path of three" started.
+􀟈  Test "Closeness discounts what cannot be reached, and an isolate scores zero" started.
+􀟈  Test case passing 1 argument name → "star7" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀟈  Suite "Mutation audit: betweenness" started.
+􀟈  Test case passing 1 argument name → "triangle" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀟈  Suite "PageRank metric, version 3" started.
+􀟈  Test "Harmonic of a graph of at most one node is zero" started.
+􀟈  Suite "Mutation audit: components and k-core" started.
+􀟈  Test case passing 1 argument name → "path7" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀟈  Test case passing 1 argument name → "kite" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀟈  Test case passing 1 argument name → "k23" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀟈  Test case passing 1 argument name → "evenCycle6" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀟈  Test "Accepted dampings give finite scores summing to one on every family: NaN can no longer come out" started.
+􀟈  Test case passing 1 argument name → "karate" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀟈  Test case passing 1 argument name → "weighted12" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀟈  Test case passing 1 argument name → "twoComponents" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "triangle" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  triangle / pageRank.damping1.5
+􀄵  value == "refused" → false
+􀄵    value → "3fd5555555555554 3fd5555555555554 3fd5555555555554"
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "triangle" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  triangle / pageRank.damping-1.0
+􀄵  value == "refused" → false
+􀄵    value → "3fd5555555555555 3fd5555555555555 3fd5555555555555"
+􀟈  Test case passing 1 argument name → "isolates" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "evenCycle6" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  evenCycle6 / pageRank.damping1.5
+􀄵  value == "refused" → false
+􀄵    value → "3fc5555555555554 3fc5555555555554 3fc5555555555554 3fc5555555555554 3fc5555555555554 3fc5555555555554"
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "evenCycle6" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  evenCycle6 / pageRank.damping-1.0
+􀄵  value == "refused" → false
+􀄵    value → "3fc5555555555555 3fc5555555555555 3fc5555555555555 3fc5555555555555 3fc5555555555555 3fc5555555555555"
+􀟈  Test case passing 1 argument damping → nan to "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" started.
+􀢄  Test "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" recorded an issue with 1 argument damping → nan at PageRankDampingTests.swift:47:3: Expectation failed: carried != nil
+􀄵  damping nan
+􀄵  carried != nil → false
+􀄵    carried → nil
+􀢄  Test "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" recorded an issue with 1 argument damping → nan at PageRankDampingTests.swift:49:4: Expectation failed: carried?.isNaN == true
+􀄵  carried?.isNaN == true → false
+􀄵    carried?.isNaN → nil
+􀄵      some → true
+􀟈  Test case passing 1 argument name → "edgeless4" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "edgeless4" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  edgeless4 / pageRank.damping1.5
+􀄵  value == "refused" → false
+􀄵    value → "3fd0000000000000 3fd0000000000000 3fd0000000000000 3fd0000000000000"
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "edgeless4" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  edgeless4 / pageRank.damping-1.0
+􀄵  value == "refused" → false
+􀄵    value → "3fd0000000000000 3fd0000000000000 3fd0000000000000 3fd0000000000000"
+􀟈  Test case passing 1 argument name → "single" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "single" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  single / pageRank.damping1.5
+􀄵  value == "refused" → false
+􀄵    value → "3ff0000000000000"
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "single" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  single / pageRank.damping-1.0
+􀄵  value == "refused" → false
+􀄵    value → "3ff0000000000000"
+􀟈  Test case passing 1 argument damping → inf to "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" started.
+􀢄  Test "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" recorded an issue with 1 argument damping → inf at PageRankDampingTests.swift:47:3: Expectation failed: carried != nil
+􀄵  damping inf
+􀄵  carried != nil → false
+􀄵    carried → nil
+􀢄  Test "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" recorded an issue with 1 argument damping → inf at PageRankDampingTests.swift:51:4: Expectation failed: carried?.isEqual(to: damping) == true
+􀄵  damping inf
+􀄵  carried?.isEqual(to: damping) == true → false
+􀄵    carried?.isEqual(to: damping) → nil
+􀄵      some → true
+􀟈  Test case passing 1 argument name → "empty" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "empty" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  empty / pageRank.damping1.5
+􀄵  value == "refused" → false
+􀄵    value → ""
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "empty" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  empty / pageRank.damping-1.0
+􀄵  value == "refused" → false
+􀄵    value → ""
+􀟈  Test case passing 1 argument damping → -inf to "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" started.
+􀢄  Test "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" recorded an issue with 1 argument damping → -inf at PageRankDampingTests.swift:47:3: Expectation failed: carried != nil
+􀄵  damping -inf
+􀄵  carried != nil → false
+􀄵    carried → nil
+􀢄  Test "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" recorded an issue with 1 argument damping → -inf at PageRankDampingTests.swift:51:4: Expectation failed: carried?.isEqual(to: damping) == true
+􀄵  damping -inf
+􀄵  carried?.isEqual(to: damping) == true → false
+􀄵    carried?.isEqual(to: damping) → nil
+􀄵      some → true
+􀟈  Test case passing 1 argument name → "ringOfCliques" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "star7" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  star7 / pageRank.damping1.5
+􀄵  value == "refused" → false
+􀄵    value → "3fca926872f632d9 3fc0e799422c4cc8 3fc0e799422c4cc8 3fc0e799422c4cc8 3fc0e799422c4cc8 3fc0e799422c4cc8 3fc0e799422c4cc8"
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "isolates" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  isolates / pageRank.damping1.5
+􀄵  value == "refused" → false
+􀄵    value → "3fd170faef5c8cb2 3fdd0dac041f4250 3fd170faef5c8cb2 3f35d2d18a2fe8d6 3f35d2d18a2fe8d6 3f35d2d18a2fe8d6"
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "star7" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  star7 / pageRank.damping-1.0
+􀄵  value == "refused" → false
+􀄵    value → "3fc2492492492492 3fc2492492492492 3fc2492492492492 3fc2492492492492 3fc2492492492492 3fc2492492492492 3fc2492492492492"
+􀟈  Test case passing 1 argument name → "zeroWeights" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "isolates" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  isolates / pageRank.damping-1.0
+􀄵  value == "refused" → false
+􀄵    value → "3fc5555555555555 3fc5555555555555 3fc5555555555555 3fc5555555555555 3fc5555555555555 3fc5555555555555"
+􀟈  Test case passing 1 argument damping → 1.0 to "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" started.
+􀢄  Test "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" recorded an issue with 1 argument damping → 1.0 at PageRankDampingTests.swift:47:3: Expectation failed: carried != nil
+􀄵  damping 1.0
+􀄵  carried != nil → false
+􀄵    carried → nil
+􀢄  Test "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" recorded an issue with 1 argument damping → 1.0 at PageRankDampingTests.swift:51:4: Expectation failed: carried?.isEqual(to: damping) == true
+􀄵  damping 1.0
+􀄵  carried?.isEqual(to: damping) == true → false
+􀄵    carried?.isEqual(to: damping) → nil
+􀄵      some → true
+􀟈  Test case passing 1 argument name → "random1" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "k23" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  k23 / pageRank.damping1.5
+􀄵  value == "refused" → false
+􀄵    value → "3fcac293be2cb564 3fcac293be2cb564 3fc8d39d81378756 3fc8d39d81378756 3fc8d39d81378756"
+􀢄  Test "The registered metric refuses an invalid damping when it runs, through the registry and as a record" recorded an issue at PageRankDampingTests.swift:135:4: Expectation failed: refusedDamping { _ = try metric.compute(on: sample) } != nil
+􀄵  damping nan
+􀄵  refusedDamping { _ = try metric.compute(on: sample) } != nil → false
+􀄵    refusedDamping { _ = try metric.compute(on: sample) } → nil
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "zeroWeights" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  zeroWeights / pageRank.damping1.5
+􀄵  value == "refused" → false
+􀄵    value → "3fc0051cd2816a60 3fd00105080ed126 3fd7fb656e90b647 3fcff9dd9f8534a4 3f30614174a49122"
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "zeroWeights" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  zeroWeights / pageRank.damping-1.0
+􀄵  value == "refused" → false
+􀄵    value → "3fc999999999999a 3fc999999999999a 3fc999999999999a 3fc999999999999a 3fc999999999999a"
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "k23" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  k23 / pageRank.damping-1.0
+􀄵  value == "refused" → false
+􀄵    value → "3fc999999999999a 3fc999999999999a 3fc999999999999a 3fc999999999999a 3fc999999999999a"
+􀟈  Test case passing 1 argument name → "random2" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀟈  Test case passing 1 argument damping → 1.0000001 to "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" started.
+􀢄  Test "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" recorded an issue with 1 argument damping → 1.0000001 at PageRankDampingTests.swift:47:3: Expectation failed: carried != nil
+􀄵  damping 1.0000001
+􀄵  carried != nil → false
+􀄵    carried → nil
+􀢄  Test "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" recorded an issue with 1 argument damping → 1.0000001 at PageRankDampingTests.swift:51:4: Expectation failed: carried?.isEqual(to: damping) == true
+􀄵  damping 1.0000001
+􀄵  carried?.isEqual(to: damping) == true → false
+􀄵    carried?.isEqual(to: damping) → nil
+􀄵      some → true
+􀢄  Test "The registered metric refuses an invalid damping when it runs, through the registry and as a record" recorded an issue at PageRankDampingTests.swift:137:4: Expectation failed: refusedDamping { _ = try registry.run("pagerank", on: sample) } != nil
+􀄵  damping nan
+􀄵  refusedDamping { _ = try registry.run("pagerank", on: sample) } != nil → false
+􀄵    refusedDamping { _ = try registry.run("pagerank", on: sample) } → nil
+􀢄  Test "Old behaviour is gone: 1.5 no longer runs as 0.999, -1 no longer runs as 0, NaN no longer gives NaN scores" recorded an issue at PageRankDampingTests.swift:66:3: Expectation failed: refusedDamping { _ = try Centrality.pageRank(sample, damping: 1.5) } != nil
+􀄵  refusedDamping { _ = try Centrality.pageRank(sample, damping: 1.5) } != nil → false
+􀄵    refusedDamping { _ = try Centrality.pageRank(sample, damping: 1.5) } → nil
+􀢄  Test "Old behaviour is gone: 1.5 no longer runs as 0.999, -1 no longer runs as 0, NaN no longer gives NaN scores" recorded an issue at PageRankDampingTests.swift:67:3: Expectation failed: refusedDamping { _ = try Centrality.pageRank(sample, damping: -1) } != nil
+􀄵  refusedDamping { _ = try Centrality.pageRank(sample, damping: -1) } != nil → false
+􀄵    refusedDamping { _ = try Centrality.pageRank(sample, damping: -1) } → nil
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "twoComponents" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  twoComponents / pageRank.damping1.5
+􀄵  value == "refused" → false
+􀄵    value → "3fc5555555555554 3fc5555555555554 3fc5555555555554 3fc45dda36dabe86 3fc7444b924a8326 3fc45dda36dabe86"
+􀢄  Test "The registered metric refuses an invalid damping when it runs, through the registry and as a record" recorded an issue at PageRankDampingTests.swift:138:4: Expectation failed: refusedDamping {
+				_ = try registry.record("pagerank", on: sample, context: "c", now: Date(timeIntervalSince1970: 0))
+			} != nil
+􀄵  damping nan
+􀄵  refusedDamping {
+   				_ = try registry.record("pagerank", on: sample, context: "c", now: Date(timeIntervalSince1970: 0))
+   			} != nil → false
+􀄵    refusedDamping {
+     				_ = try registry.record("pagerank", on: sample, context: "c", now: Date(timeIntervalSince1970: 0))
+     			} → nil
+􀢄  Test "Old behaviour is gone: 1.5 no longer runs as 0.999, -1 no longer runs as 0, NaN no longer gives NaN scores" recorded an issue at PageRankDampingTests.swift:68:3: Expectation failed: refusedDamping { _ = try Centrality.pageRank(sample, damping: Double.nan) } != nil
+􀄵  refusedDamping { _ = try Centrality.pageRank(sample, damping: Double.nan) } != nil → false
+􀄵    refusedDamping { _ = try Centrality.pageRank(sample, damping: Double.nan) } → nil
+􀟈  Test case passing 1 argument name → "random3" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "path7" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  path7 / pageRank.damping1.5
+􀄵  value == "refused" → false
+􀄵    value → "3fb7d843ae495679 3fc2d7995bb092c6 3fc7d206ea291c4c 3fc2d47bc6034ab5 3fc7d206ea291c4c 3fc2d7995bb092c6 3fb7d843ae495679"
+􀢄  Test "The registered metric refuses an invalid damping when it runs, through the registry and as a record" recorded an issue at PageRankDampingTests.swift:135:4: Expectation failed: refusedDamping { _ = try metric.compute(on: sample) } != nil
+􀄵  damping 1.0
+􀄵  refusedDamping { _ = try metric.compute(on: sample) } != nil → false
+􀄵    refusedDamping { _ = try metric.compute(on: sample) } → nil
+􀢄  Test "The registered metric refuses an invalid damping when it runs, through the registry and as a record" recorded an issue at PageRankDampingTests.swift:137:4: Expectation failed: refusedDamping { _ = try registry.run("pagerank", on: sample) } != nil
+􀄵  damping 1.0
+􀄵  refusedDamping { _ = try registry.run("pagerank", on: sample) } != nil → false
+􀄵    refusedDamping { _ = try registry.run("pagerank", on: sample) } → nil
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "ringOfCliques" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  ringOfCliques / pageRank.damping1.5
+􀄵  value == "refused" → false
+􀄵    value → "3fad1675d137b2bb 3fa7465c1f303382 3fa7465c1f303382 3fad1675d137b2bb 3fa7465c1f303382 3fad1675d137b2bb 3fa7465c1f303382 3fa7465c1f303382 3fad1675d137b2bb 3fa7465c1f303382 3fad1675d137b2bb 3fa7465c1f303382 3fa7465c1f303382 3fad1675d137b2bb 3fa7465c1f303382 3fad1675d137b2bb 3fa7465c1f303383 3fa7465c1f303383 3fad1675d137b2bb 3fa7465c1f303382"
+􀢄  Test "The registered metric refuses an invalid damping when it runs, through the registry and as a record" recorded an issue at PageRankDampingTests.swift:138:4: Expectation failed: refusedDamping {
+				_ = try registry.record("pagerank", on: sample, context: "c", now: Date(timeIntervalSince1970: 0))
+			} != nil
+􀄵  damping 1.0
+􀄵  refusedDamping {
+   				_ = try registry.record("pagerank", on: sample, context: "c", now: Date(timeIntervalSince1970: 0))
+   			} != nil → false
+􀄵    refusedDamping {
+     				_ = try registry.record("pagerank", on: sample, context: "c", now: Date(timeIntervalSince1970: 0))
+     			} → nil
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "ringOfCliques" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  ringOfCliques / pageRank.damping-1.0
+􀄵  value == "refused" → false
+􀄵    value → "3fa999999999999a 3fa999999999999a 3fa999999999999a 3fa999999999999a 3fa999999999999a 3fa999999999999a 3fa999999999999a 3fa999999999999a 3fa999999999999a 3fa999999999999a 3fa999999999999a 3fa999999999999a 3fa999999999999a 3fa999999999999a 3fa999999999999a 3fa999999999999a 3fa999999999999a 3fa999999999999a 3fa999999999999a 3fa999999999999a"
+􀢄  Test "The registered metric refuses an invalid damping when it runs, through the registry and as a record" recorded an issue at PageRankDampingTests.swift:135:4: Expectation failed: refusedDamping { _ = try metric.compute(on: sample) } != nil
+􀄵  damping 1.5
+􀄵  refusedDamping { _ = try metric.compute(on: sample) } != nil → false
+􀄵    refusedDamping { _ = try metric.compute(on: sample) } → nil
+􀟈  Test case passing 1 argument damping → 2.5 to "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" started.
+􀢄  Test "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" recorded an issue with 1 argument damping → 2.5 at PageRankDampingTests.swift:47:3: Expectation failed: carried != nil
+􀄵  damping 2.5
+􀄵  carried != nil → false
+􀄵    carried → nil
+􀢄  Test "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" recorded an issue with 1 argument damping → 2.5 at PageRankDampingTests.swift:51:4: Expectation failed: carried?.isEqual(to: damping) == true
+􀄵  damping 2.5
+􀄵  carried?.isEqual(to: damping) == true → false
+􀄵    carried?.isEqual(to: damping) → nil
+􀄵      some → true
+􀢄  Test "The registered metric refuses an invalid damping when it runs, through the registry and as a record" recorded an issue at PageRankDampingTests.swift:137:4: Expectation failed: refusedDamping { _ = try registry.run("pagerank", on: sample) } != nil
+􀄵  damping 1.5
+􀄵  refusedDamping { _ = try registry.run("pagerank", on: sample) } != nil → false
+􀄵    refusedDamping { _ = try registry.run("pagerank", on: sample) } → nil
+􀟈  Test case passing 1 argument name → "random4" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "path7" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  path7 / pageRank.damping-1.0
+􀄵  value == "refused" → false
+􀄵    value → "3fc2492492492492 3fc2492492492492 3fc2492492492492 3fc2492492492492 3fc2492492492492 3fc2492492492492 3fc2492492492492"
+􀟈  Test case passing 1 argument damping → 1e+300 to "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" started.
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "weighted12" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  weighted12 / pageRank.damping1.5
+􀄵  value == "refused" → false
+􀄵    value → "3fb3c39cc07b1fb7 3fb897469796d0a6 3fba59a4843f76bc 3fb6e019296f018c 3fb8a4592ac1bf6d 3fa362726125d016 3fb27d401589a74c 3fb35e4365a0bafe 3fbc28f7913d614a 3fbc297898e620ad 3fac300cb4da4e3f 3fb3cfd29f2fe448"
+􀢄  Test "The registered metric refuses an invalid damping when it runs, through the registry and as a record" recorded an issue at PageRankDampingTests.swift:138:4: Expectation failed: refusedDamping {
+				_ = try registry.record("pagerank", on: sample, context: "c", now: Date(timeIntervalSince1970: 0))
+			} != nil
+􀄵  damping 1.5
+􀄵  refusedDamping {
+   				_ = try registry.record("pagerank", on: sample, context: "c", now: Date(timeIntervalSince1970: 0))
+   			} != nil → false
+􀄵    refusedDamping {
+     				_ = try registry.record("pagerank", on: sample, context: "c", now: Date(timeIntervalSince1970: 0))
+     			} → nil
+􀢄  Test "The registered metric refuses an invalid damping when it runs, through the registry and as a record" recorded an issue at PageRankDampingTests.swift:135:4: Expectation failed: refusedDamping { _ = try metric.compute(on: sample) } != nil
+􀄵  damping -0.1
+􀄵  refusedDamping { _ = try metric.compute(on: sample) } != nil → false
+􀄵    refusedDamping { _ = try metric.compute(on: sample) } → nil
+􀢄  Test "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" recorded an issue with 1 argument damping → 1e+300 at PageRankDampingTests.swift:47:3: Expectation failed: carried != nil
+􀄵  damping 1e+300
+􀄵  carried != nil → false
+􀄵    carried → nil
+􀢄  Test "The registered metric refuses an invalid damping when it runs, through the registry and as a record" recorded an issue at PageRankDampingTests.swift:137:4: Expectation failed: refusedDamping { _ = try registry.run("pagerank", on: sample) } != nil
+􀄵  damping -0.1
+􀄵  refusedDamping { _ = try registry.run("pagerank", on: sample) } != nil → false
+􀄵    refusedDamping { _ = try registry.run("pagerank", on: sample) } → nil
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "twoComponents" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  twoComponents / pageRank.damping-1.0
+􀄵  value == "refused" → false
+􀄵    value → "3fc5555555555555 3fc5555555555555 3fc5555555555555 3fc5555555555555 3fc5555555555555 3fc5555555555555"
+􀢄  Test "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" recorded an issue with 1 argument damping → 1e+300 at PageRankDampingTests.swift:51:4: Expectation failed: carried?.isEqual(to: damping) == true
+􀄵  damping 1e+300
+􀄵  carried?.isEqual(to: damping) == true → false
+􀄵    carried?.isEqual(to: damping) → nil
+􀄵      some → true
+􀟈  Test case passing 1 argument damping → -1.0 to "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" started.
+􀟈  Test case passing 1 argument damping → -0.3 to "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" started.
+􀢄  Test "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" recorded an issue with 1 argument damping → -1.0 at PageRankDampingTests.swift:47:3: Expectation failed: carried != nil
+􀄵  damping -1.0
+􀄵  carried != nil → false
+􀄵    carried → nil
+􀢄  Test "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" recorded an issue with 1 argument damping → -1.0 at PageRankDampingTests.swift:51:4: Expectation failed: carried?.isEqual(to: damping) == true
+􀄵  damping -1.0
+􀄵  carried?.isEqual(to: damping) == true → false
+􀄵    carried?.isEqual(to: damping) → nil
+􀄵      some → true
+􀟈  Test case passing 1 argument damping → -5e-324 to "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" started.
+􀢄  Test "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" recorded an issue with 1 argument damping → -0.3 at PageRankDampingTests.swift:47:3: Expectation failed: carried != nil
+􀄵  damping -0.3
+􀄵  carried != nil → false
+􀄵    carried → nil
+􀢄  Test "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" recorded an issue with 1 argument damping → -5e-324 at PageRankDampingTests.swift:47:3: Expectation failed: carried != nil
+􀄵  damping -5e-324
+􀄵  carried != nil → false
+􀄵    carried → nil
+􀢄  Test "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" recorded an issue with 1 argument damping → -5e-324 at PageRankDampingTests.swift:51:4: Expectation failed: carried?.isEqual(to: damping) == true
+􀄵  damping -5e-324
+􀄵  carried?.isEqual(to: damping) == true → false
+􀄵    carried?.isEqual(to: damping) → nil
+􀄵      some → true
+􀢄  Test "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" recorded an issue with 1 argument damping → -0.3 at PageRankDampingTests.swift:51:4: Expectation failed: carried?.isEqual(to: damping) == true
+􀄵  damping -0.3
+􀄵  carried?.isEqual(to: damping) == true → false
+􀄵    carried?.isEqual(to: damping) → nil
+􀄵      some → true
+􀟈  Test "Invariant under weight scaling and under relabelling" started.
+􀟈  Test "The empty graph has no scores; a single node holds all the rank" started.
+􀟈  Test "Star matches the closed form" started.
+􀟈  Test "The iteration ceiling is honoured and floored at one pass" started.
+􀟈  Test "The default tolerance reaches the converged answer to better than 1e-9" started.
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "weighted12" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  weighted12 / pageRank.damping-1.0
+􀄵  value == "refused" → false
+􀄵    value → "3fb5555555555555 3fb5555555555555 3fb5555555555555 3fb5555555555555 3fb5555555555555 3fb5555555555555 3fb5555555555555 3fb5555555555555 3fb5555555555555 3fb5555555555555 3fb5555555555555 3fb5555555555555"
+􀟈  Test "Scores are positive and sum to one" started.
+􀟈  Test "An enormous tolerance stops after one pass" started.
+􀟈  Test "Nodes in symmetric positions score the same" started.
+􀟈  Test "The defaults are 200 iterations and a tolerance of 1e-12" started.
+􀟈  Test "Path of three matches the closed form" started.
+􀟈  Test "Agrees with a direct linear solve on random weighted graphs, isolates and light weights included" started.
+􀟈  Test "Damping zero is uniform; out-of-range damping is refused, not clamped (ADR-009)" started.
+􀟈  Test "A loose tolerance stops visibly short of the converged answer" started.
+􀟈  Test "A dangling node's mass is shared equally" started.
+􀟈  Test "Damping 0.99 at the default ceiling does not converge, says so, and the scores really are off" started.
+􀟈  Test "At the default damping and tolerance, convergence is reached within the pass count the bound predicts, on every family" started.
+ "Old behaviour is gone: 1.5 no longer runs as 0.999, -1 no longer runs as 0, NaN no longer gives NaN scores" failed after 0.029 seconds with 3 issues.
+􀟈  Test "An edgeless graph scores every node exactly 1, the tied largest" started.
+􀟈  Test "One pass from the uniform start, by hand" started.
+􀟈  Test "An enormous tolerance stops after one pass; a negative one runs to the ceiling" started.
+􀟈  Test "Path of six matches sin(k pi / 7) whatever the size of the weights" started.
+􀟈  Test "Weighted path of three matches the closed form" started.
+􀟈  Test "Complete bipartite K(2,3): sides are 1 and sqrt(2/3)" started.
+􀟈  Test "Path of three: the middle node leads, the ends are 1/sqrt(2)" started.
+􀟈  Test "The defaults are 200 iterations and a tolerance of 1e-10" started.
+􀟈  Test "The component with the larger eigenvalue takes all the weight" started.
+􀟈  Test "Two nodes: a joined pair both score one, and two strangers both appear" started.
+􀟈  Test "Star: the hub is 1 and each leaf is one half" started.
+􀟈  Test "Path of four: the ends are 1/phi" started.
+􀟈  Test "Stops when the change per pass falls below the tolerance, exactly as documented" started.
+􀟈  Test "The iteration ceiling is honoured and never below one" started.
+􀟈  Test "Invariant under an arbitrary permutation of the labels" started.
+􀟈  Test "A node with no ties scores zero beside a connected component" started.
+􀟈  Test "The empty graph has no scores and a lone node scores 1" started.
+􀟈  Test "The result satisfies A v = lambda v on random graphs, trees included" started.
+􀟈  Test "Invariant under relabelling that keeps the sort order, and under weight scaling" started.
+􁁛  Test "The fixture set covers the cases the plan names" passed after 0.030 seconds.
+􁁛  Test "The edges of the accepted range are accepted: 0, -0, 0.999, and the largest double below one" passed after 0.029 seconds.
+􁁛  Test "Closeness of a graph of at most one node is zero" passed after 0.029 seconds.
+􁁛  Test "Harmonic on a path of three" passed after 0.029 seconds.
+􁁛  Test "Closeness of a lone edge is one" passed after 0.029 seconds.
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "random4" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  random4 / pageRank.damping1.5
+􀄵  value == "refused" → false
+􀄵    value → "3f10620ab8260381 3fa0cd8032f7edc8 3f99355d9ef5cc00 3fb4f74ffa1400d2 3fa39601ba735f0c 3fa23101386c5364 3fb0c80306a2119a 3fa92dcc44249d5f 3fc121e6acbf6376 3f80eec761806987 3fa7ce1049ed1e73 3fb65da3dd8cfcac 3faec4920604c8e0 3fa506e62337041f 3fbbf35d84844a04 3fc014873c3bcd4a 3faecb360c284fec"
+􀢄  Test "Damping just above the old cap is run as given, not as 0.999" recorded an issue at PageRankDampingTests.swift:94:3: Expectation failed: bits(capped) != bits(above)
+􀄵  bits(capped) != bits(above) → false
+􀄵    bits(capped) → ["a": 4595173320735843066, "b": 4599673917712988664, "d": 4595173320735843068, "c": 4599673917712988662, "x": 4553246157029282082]
+􀄵    bits(above) → ["a": 4595173320735843066, "x": 4553246157029282082, "c": 4599673917712988662, "d": 4595173320735843068, "b": 4599673917712988664]
+􁁛  Test "Harmonic on a path of five weights distance 3 and 4 by their reciprocals" passed after 0.034 seconds.
+􁁛  Test "Closeness on a star" passed after 0.034 seconds.
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "random1" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  random1 / pageRank.damping1.5
+􀄵  value == "refused" → false
+􀄵    value → "3fa6ca62cab9bd8c 3fc1c3286e688f60 3fb90a10bd65190a 3fb14dd38e2a658a 3fa9856a412b3eeb 3f9244770311cbd6 3fb2abd5d5dca534 3fb2ae3795bbf10e 3fafe1ce82357555 3fb3204437b6bbce 3fba6b0b3e704f22 3fb237434a1cf8b0 3fa7b243aad410d8 3f899fd724f9dfc1 3fb14e2269e7d82e"
+􀢄  Test "The registered metric refuses an invalid damping when it runs, through the registry and as a record" recorded an issue at PageRankDampingTests.swift:138:4: Expectation failed: refusedDamping {
+				_ = try registry.record("pagerank", on: sample, context: "c", now: Date(timeIntervalSince1970: 0))
+			} != nil
+􀄵  damping -0.1
+􀄵  refusedDamping {
+   				_ = try registry.record("pagerank", on: sample, context: "c", now: Date(timeIntervalSince1970: 0))
+   			} != nil → false
+􀄵    refusedDamping {
+     				_ = try registry.record("pagerank", on: sample, context: "c", now: Date(timeIntervalSince1970: 0))
+     			} → nil
+􁁛  Test "Harmonic counts the unreachable as zero but still divides by n - 1" passed after 0.037 seconds.
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "random1" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  random1 / pageRank.damping-1.0
+􀄵  value == "refused" → false
+􀄵    value → "3fb1111111111111 3fb1111111111111 3fb1111111111111 3fb1111111111111 3fb1111111111111 3fb1111111111111 3fb1111111111111 3fb1111111111111 3fb1111111111111 3fb1111111111111 3fb1111111111111 3fb1111111111111 3fb1111111111111 3fb1111111111111 3fb1111111111111"
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "kite" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  kite / pageRank.damping1.5
+􀄵  value == "refused" → false
+􀄵    value → "3fbc6aa19e1575bd 3fbc6aa19e1575bc 3fb551567b95f5b1 3fc54ee12e096b45 3fb551567b95f5b2 3fc1c4393c695a4f 3fc1c4393c695a4f 3fb55eeb1e543879 3fac9d05f16a8e44 3f9cafe99f9da59c"
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "kite" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  kite / pageRank.damping-1.0
+􀄵  value == "refused" → false
+􀄵    value → "3fb999999999999a 3fb999999999999a 3fb999999999999a 3fb999999999999a 3fb999999999999a 3fb999999999999a 3fb999999999999a 3fb999999999999a 3fb999999999999a 3fb999999999999a"
+􁁛  Test "Both are invariant under weight scaling, which they ignore" passed after 0.042 seconds.
+􀢄  Test "Damping zero is uniform; out-of-range damping is refused, not clamped (ADR-009)" recorded an issue at WeightedCentralityMutationTests.swift:471:3: Expectation failed: an error was expected but none was thrown
+􀄵  GraphMeasureError.self → <not evaluated>
+􀄵    GraphMeasureError → <not evaluated>
+􀄵    self → <not evaluated>
+􀢄  Test "Damping zero is uniform; out-of-range damping is refused, not clamped (ADR-009)" recorded an issue at WeightedCentralityMutationTests.swift:473:3: Expectation failed: an error was expected but none was thrown
+􀄵  GraphMeasureError.self → <not evaluated>
+􀄵    GraphMeasureError → <not evaluated>
+􀄵    self → <not evaluated>
+􀢄  Test "Damping zero is uniform; out-of-range damping is refused, not clamped (ADR-009)" recorded an issue at WeightedCentralityMutationTests.swift:474:3: Expectation failed: an error was expected but none was thrown
+􀄵  GraphMeasureError.self → <not evaluated>
+􀄵    GraphMeasureError → <not evaluated>
+􀄵    self → <not evaluated>
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "random3" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  random3 / pageRank.damping1.5
+􀄵  value == "refused" → false
+􀄵    value → "3f04f810a0b52f75 3f04f810a0b52f75 3f04f810a0b52f75 3fb1ac14c5deaeea 3fa885860c6e3202 3f9ecb319f81d124 3fa7efbeb473bcb9 3fa75a6cca3ef611 3f89260edbb3fe75 3f924a886f5888fc 3fa51683c8649748 3fb1f0f5fcacdc32 3fb117d3f6b54e05 3f96d12ff3f88236 3f8ff70ae0c3d9b8 3fa3f19d90ccf8b0 3fab5afc214a02d4 3fafe98c42f35b74 3f72669f44f09d8b 3fac7f54e43c4f69 3fa7f14226fa7330 3fa0891acd7db79a 3f991563fe512544 3f86de6f0d3d2a07 3fb1a7d74b034b20 3faa3df38ef5adc5 3fa7f344f0e7f6de 3f924b6e5c7fd0a2"
+􁁛  Test "Closeness on a path of three" passed after 0.046 seconds.
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "random3" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  random3 / pageRank.damping-1.0
+􀄵  value == "refused" → false
+􀄵    value → "3fa2492492492492 3fa2492492492492 3fa2492492492492 3fa2492492492492 3fa2492492492492 3fa2492492492492 3fa2492492492492 3fa2492492492492 3fa2492492492492 3fa2492492492492 3fa2492492492492 3fa2492492492492 3fa2492492492492 3fa2492492492492 3fa2492492492492 3fa2492492492492 3fa2492492492492 3fa2492492492492 3fa2492492492492 3fa2492492492492 3fa2492492492492 3fa2492492492492 3fa2492492492492 3fa2492492492492 3fa2492492492492 3fa2492492492492 3fa2492492492492 3fa2492492492492"
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "random4" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  random4 / pageRank.damping-1.0
+􀄵  value == "refused" → false
+􀄵    value → "3fae1e1e1e1e1e1e 3fae1e1e1e1e1e1e 3fae1e1e1e1e1e1e 3fae1e1e1e1e1e1e 3fae1e1e1e1e1e1e 3fae1e1e1e1e1e1e 3fae1e1e1e1e1e1e 3fae1e1e1e1e1e1e 3fae1e1e1e1e1e1e 3fae1e1e1e1e1e1e 3fae1e1e1e1e1e1e 3fae1e1e1e1e1e1e 3fae1e1e1e1e1e1e 3fae1e1e1e1e1e1e 3fae1e1e1e1e1e1e 3fae1e1e1e1e1e1e 3fae1e1e1e1e1e1e"
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "random2" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  random2 / pageRank.damping1.5
+􀄵  value == "refused" → false
+􀄵    value → "3f08f6b634b4e3b8 3f08f6b634b4e3b8 3fb46341c012e410 3f9bc353e6c1e14c 3f9d2c4dafd687b6 3f903064f60381de 3f9a5b0f4d33bf28 3fb11c93639e5204 3fa8c6f62e069780 3fbb5631e923002b 3fa3cd328c929846 3f97538e5e1b98c0 3f9a448adfdc4a46 3fb409f15d213ba5 3fb3510e009baf96 3fa521bd098d9c35 3f9d28fd3e08cf10 3fc032a8318cdc9f 3f7d8a4221516804 3f9185ff36609e73 3fabb450b5506124 3faaf20447421f04 3fa0d83e3e93fa4c"
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "random2" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  random2 / pageRank.damping-1.0
+􀄵  value == "refused" → false
+􀄵    value → "3fa642c8590b2164 3fa642c8590b2164 3fa642c8590b2164 3fa642c8590b2164 3fa642c8590b2164 3fa642c8590b2164 3fa642c8590b2164 3fa642c8590b2164 3fa642c8590b2164 3fa642c8590b2164 3fa642c8590b2164 3fa642c8590b2164 3fa642c8590b2164 3fa642c8590b2164 3fa642c8590b2164 3fa642c8590b2164 3fa642c8590b2164 3fa642c8590b2164 3fa642c8590b2164 3fa642c8590b2164 3fa642c8590b2164 3fa642c8590b2164 3fa642c8590b2164"
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "karate" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  karate / pageRank.damping1.5
+􀄵  value == "refused" → false
+􀄵    value → "3fba40585ac8d5c1 3fad8513f8c0e9a3 3fb0656aa41f1294 3fa3ae882a95a236 3f93b8bcdb41c7e2 3f9a4c4c9d6c1c9e 3f9a4c4c9d6c1c9e 3f9a3ee80af39085 3fa066731e42fd94 3f8a45798ed64b6c 3f93b8bcdb41c7e2 3f7a58771b539f95 3f8a47e5169199c9 3fa06652b2010b24 3f8a4677af970665 3f8a4677af970665 3f8a54fcb9ff8971 3f8a479344d06404 3f8a4677af970665 3f93b186fb76b7c5 3f8a4677af970665 3f8a479344d06404 3f8a4677af970665 3fa068221fc01bea 3f93b42c1f328087 3f93b40f046b4d90 3f8a48928e50066c 3f9a40d1f084505d 3f93b100d8782231 3f9a421168c46331 3f9a3e9b06d5ed4a 3fa3afd665f13ef1 3fb3ae63f15baa46 3fbbe187efb926c4"
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" recorded an issue with 1 argument name → "karate" at GoldenMeasureTests.swift:32:5: Expectation failed: value == "refused"
+􀄵  // ADR-009: the old output is kept in the data; the new outcome is asserted here.
+􀄵  karate / pageRank.damping-1.0
+􀄵  value == "refused" → false
+􀄵    value → "3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e 3f9e1e1e1e1e1e1e"
+􀢄  Test "pageRankConvergence refuses the same dampings: it is the loop, so the two cannot disagree" with 10 test cases failed after 0.116 seconds with 10 issues.
+􀟈  Test case passing 1 argument seed → 1 to "pageRank and pageRankConvergence are one loop: identical scores bit for bit, and identical to the loop as it was before this change" started.
+􀟈  Test case passing 1 argument seed → 2 to "pageRank and pageRankConvergence are one loop: identical scores bit for bit, and identical to the loop as it was before this change" started.
+􀟈  Test case passing 1 argument seed → 3 to "pageRank and pageRankConvergence are one loop: identical scores bit for bit, and identical to the loop as it was before this change" started.
+􀟈  Test case passing 1 argument seed → 4 to "pageRank and pageRankConvergence are one loop: identical scores bit for bit, and identical to the loop as it was before this change" started.
+􀟈  Test case passing 1 argument seed → 5 to "pageRank and pageRankConvergence are one loop: identical scores bit for bit, and identical to the loop as it was before this change" started.
+􀟈  Test case passing 1 argument seed → 6 to "pageRank and pageRankConvergence are one loop: identical scores bit for bit, and identical to the loop as it was before this change" started.
+􁁛  Test "Closeness and harmonic agree with Floyd-Warshall distances on random graphs" passed after 0.587 seconds.
+􁁛  Test "Closeness discounts what cannot be reached, and an isolate scores zero" passed after 0.587 seconds.
+􀢄  Test "The refusal does not depend on the graph, the ceiling or the tolerance: an empty graph refuses too" failed after 0.588 seconds with 3 issues.
+􀟈  Test "Normalised betweenness lies in [0, 1]; it is invariant under any relabelling" started.
+􀟈  Test "Path of three: the middle node carries the only pair, so 1 normalised and 1 raw" started.
+􀟈  Test "Unreachable pairs contribute nothing" started.
+􀟈  Test "Brandes agrees with brute-force enumeration on random graphs, isolates included" started.
+􀟈  Test "Four-cycle splits a pair between two shortest paths" started.
+􀟈  Test "Path of four: inner nodes 2 raw, 2/3 normalised" started.
+􀟈  Test "Edge weights record strength, not distance: they do not change the result" started.
+􀟈  Test "Star hub: raw 6, normalised 1" started.
+􀟈  Test "Graphs of at most two nodes score zero for every node" started.
+􀟈  Test "The stored shape is kind 'scores' with an optional convergence key, so plain-scores readers still work" started.
+􀟈  Test "A damping that cannot converge in the ceiling is recorded as not converged, with the sentence that says so" started.
+􀟈  Test "It returns the same scores as Centrality.pageRank, bit for bit, plus the report of that run" started.
+􀟈  Test "The registered metric is pagerank at version 3 and its defaults are the loop's" started.
+􀟈  Test "A version 2 pagerank record, written before convergence was reported, still decodes, reads as unknown, and re-encodes to the stored bytes" started.
+􁁛  Test "Harmonic of a graph of at most one node is zero" passed after 0.588 seconds.
+􀟈  Test "Component labels are dense and ordered by smallest member" started.
+􀟈  Test "k-core of paths, stars and cycles" started.
+􀟈  Test "Agrees with literal peeling on random graphs, and is bounded by degree" started.
+􀟈  Test "Agrees with union-find on random graphs, and two nodes share a label iff connected" started.
+􀟈  Test "Every node is in a component; edgeless graph gives n components" started.
+􀟈  Test "Peeling a tail does not reduce the core beneath it" started.
+􀟈  Test "A chain is one component however it is reached" started.
+􀟈  Test "k-core of a clique with a pendant" started.
+􀟈  Test "Weights do not affect core numbers" started.
+􀢄  Test "Damping just above the old cap is run as given, not as 0.999" failed after 0.771 seconds with 1 issue.
+􁁛  Test "The empty graph has no scores; a single node holds all the rank" passed after 0.749 seconds.
+􁁛  Test "Star matches the closed form" passed after 0.749 seconds.
+􁁛  Test "The iteration ceiling is honoured and floored at one pass" passed after 0.749 seconds.
+􀢄  Test "The registered metric refuses an invalid damping when it runs, through the registry and as a record" failed after 0.771 seconds with 12 issues.
+􁁛  Test "The default tolerance reaches the converged answer to better than 1e-9" passed after 0.749 seconds.
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" with 19 test cases failed after 0.771 seconds with 38 issues.
+􁁛  Test "Nodes in symmetric positions score the same" passed after 0.748 seconds.
+􁁛  Test "An enormous tolerance stops after one pass" passed after 0.748 seconds.
+􁁛  Test "Path of three matches the closed form" passed after 0.748 seconds.
+􀢄  Test "Damping zero is uniform; out-of-range damping is refused, not clamped (ADR-009)" failed after 0.747 seconds with 3 issues.
+􁁛  Test "A loose tolerance stops visibly short of the converged answer" passed after 0.747 seconds.
+􁁛  Test "A dangling node's mass is shared equally" passed after 0.747 seconds.
+􁁛  Test "Invariant under weight scaling and under relabelling" passed after 0.749 seconds.
+􁁛  Test "The defaults are 200 iterations and a tolerance of 1e-12" passed after 0.748 seconds.
+􁁛  Test "Scores are positive and sum to one" passed after 0.749 seconds.
+􁁛  Test "Agrees with a direct linear solve on random weighted graphs, isolates and light weights included" passed after 0.748 seconds.
+􁁛  Test "The default call converges on every family, with the ceiling's margin intact" passed after 0.747 seconds.
+􁁛  Test "Does not claim convergence when the ceiling is too small, and does when it is large" passed after 0.747 seconds.
+􁁛  Test "Accepted dampings give finite scores summing to one on every family: NaN can no longer come out" passed after 0.771 seconds.
+􁁛  Test "A looser tolerance never needs more passes, and an enormous one stops after the first" passed after 0.746 seconds.
+􁁛  Test "Damping 0.99 at the default ceiling does not converge, says so, and the scores really are off" passed after 0.747 seconds.
+􁁛  Test "Damping 0.9 stops short on a path within the default ceiling, which the bound also predicts" passed after 0.747 seconds.
+􁁛  Test "At the default damping and tolerance, convergence is reached within the pass count the bound predicts, on every family" passed after 0.747 seconds.
+􁁛  Test "A zero ceiling still runs one pass, as pageRank does" passed after 0.744 seconds.
+􁁛  Test "The residual is the final L1 change, and one pass fewer is not yet converged" passed after 0.744 seconds.
+􁁛  Test "Agrees with explicit triangle counting on random graphs; weights are ignored" passed after 0.744 seconds.
+􁁛  Test "A node of degree two whose neighbours are not linked scores zero" passed after 0.744 seconds.
+􁁛  Test "A complete graph is fully clustered and a star not at all" passed after 0.744 seconds.
+􁁛  Test "Isolates and edgeless graphs score zero; every node is present" passed after 0.744 seconds.
+􁁛  Test "Triangle with a pendant" passed after 0.744 seconds.
+􁁛  Test "Bow-tie centre" passed after 0.744 seconds.
+􁁛  Test "Degenerate graphs: an empty graph has nothing to iterate; one node and an edgeless graph settle at once" passed after 0.743 seconds.
+􁁛  Test "An edgeless graph scores every node exactly 1, the tied largest" passed after 0.883 seconds.
+􁁛  Test "One pass from the uniform start, by hand" passed after 0.883 seconds.
+􁁛  Test "An enormous tolerance stops after one pass; a negative one runs to the ceiling" passed after 0.883 seconds.
+􁁛  Test "Path of six matches sin(k pi / 7) whatever the size of the weights" passed after 0.883 seconds.
+􁁛  Test "Weighted path of three matches the closed form" passed after 0.883 seconds.
+􁁛  Test "Complete bipartite K(2,3): sides are 1 and sqrt(2/3)" passed after 0.883 seconds.
+􁁛  Test "Path of three: the middle node leads, the ends are 1/sqrt(2)" passed after 0.883 seconds.
+􁁛  Test "The defaults are 200 iterations and a tolerance of 1e-10" passed after 0.883 seconds.
+􁁛  Test "The component with the larger eigenvalue takes all the weight" passed after 0.883 seconds.
+􁁛  Test "Two nodes: a joined pair both score one, and two strangers both appear" passed after 0.883 seconds.
+􁁛  Test "Star: the hub is 1 and each leaf is one half" passed after 0.883 seconds.
+􁁛  Test "Path of four: the ends are 1/phi" passed after 0.883 seconds.
+􁁛  Test "Stops when the change per pass falls below the tolerance, exactly as documented" passed after 0.883 seconds.
+􁁛  Test "The iteration ceiling is honoured and never below one" passed after 0.883 seconds.
+􁁛  Test "Invariant under an arbitrary permutation of the labels" passed after 0.883 seconds.
+􁁛  Test "A node with no ties scores zero beside a connected component" passed after 0.883 seconds.
+􁁛  Test "The empty graph has no scores and a lone node scores 1" passed after 0.883 seconds.
+􁁛  Test "The result satisfies A v = lambda v on random graphs, trees included" passed after 0.882 seconds.
+􁁛  Test "Invariant under relabelling that keeps the sort order, and under weight scaling" passed after 0.882 seconds.
+􁁛  Suite "Mutation audit: closeness and harmonic centrality" passed after 0.913 seconds.
+􁁛  Test "Normalised betweenness lies in [0, 1]; it is invariant under any relabelling" passed after 0.324 seconds.
+􁁛  Test "Path of three: the middle node carries the only pair, so 1 normalised and 1 raw" passed after 0.324 seconds.
+􁁛  Test "Unreachable pairs contribute nothing" passed after 0.324 seconds.
+􁁛  Test "Brandes agrees with brute-force enumeration on random graphs, isolates included" passed after 0.324 seconds.
+􁁛  Test "Four-cycle splits a pair between two shortest paths" passed after 0.324 seconds.
+􁁛  Test "Path of four: inner nodes 2 raw, 2/3 normalised" passed after 0.324 seconds.
+􁁛  Test "Edge weights record strength, not distance: they do not change the result" passed after 0.324 seconds.
+􁁛  Test "Star hub: raw 6, normalised 1" passed after 0.324 seconds.
+􁁛  Test "Graphs of at most two nodes score zero for every node" passed after 0.324 seconds.
+􁁛  Test "The stored shape is kind 'scores' with an optional convergence key, so plain-scores readers still work" passed after 0.324 seconds.
+􁁛  Test "A damping that cannot converge in the ceiling is recorded as not converged, with the sentence that says so" passed after 0.324 seconds.
+􁁛  Test "It returns the same scores as Centrality.pageRank, bit for bit, plus the report of that run" passed after 0.324 seconds.
+􁁛  Test "The registered metric is pagerank at version 3 and its defaults are the loop's" passed after 0.324 seconds.
+􁁛  Test "A version 2 pagerank record, written before convergence was reported, still decodes, reads as unknown, and re-encodes to the stored bytes" passed after 0.324 seconds.
+􁁛  Test "Component labels are dense and ordered by smallest member" passed after 0.324 seconds.
+􁁛  Test "k-core of paths, stars and cycles" passed after 0.324 seconds.
+􁁛  Test "Agrees with literal peeling on random graphs, and is bounded by degree" passed after 0.324 seconds.
+􁁛  Test "Agrees with union-find on random graphs, and two nodes share a label iff connected" passed after 0.324 seconds.
+􁁛  Test "Every node is in a component; edgeless graph gives n components" passed after 0.324 seconds.
+􁁛  Test "Peeling a tail does not reduce the core beneath it" passed after 0.324 seconds.
+􁁛  Test "A chain is one component however it is reached" passed after 0.324 seconds.
+􁁛  Test "k-core of a clique with a pendant" passed after 0.324 seconds.
+􁁛  Test "Weights do not affect core numbers" passed after 0.324 seconds.
+􀢄  Suite "PageRank damping validation" failed after 0.913 seconds with 49 issues.
+􀢄  Suite "Mutation audit: PageRank" failed after 0.913 seconds with 3 issues.
+􀢄  Suite "Golden measures: bit-for-bit against SwiftGraphMetrics" failed after 0.913 seconds with 38 issues.
+􁁛  Suite "Mutation audit: clustering coefficient" passed after 0.913 seconds.
+􁁛  Suite "Mutation audit: eigenvector centrality" passed after 0.914 seconds.
+􁁛  Suite "Mutation audit: betweenness" passed after 0.913 seconds.
+􁁛  Suite "PageRank metric, version 3" passed after 0.913 seconds.
+􁁛  Suite "Mutation audit: components and k-core" passed after 0.913 seconds.
+􁁛  Test "A star of 5,000 at the defaults converges, to the closed form" passed after 1.532 seconds.
+􁁛  Test "The a-priori bound is the oracle: after k passes the L1 error is at most 2 * damping^k, on every family and damping" passed after 1.910 seconds.
+􁁛  Test "pageRank and pageRankConvergence are one loop: identical scores bit for bit, and identical to the loop as it was before this change" with 6 test cases passed after 2.253 seconds.
+􁁛  Test "A very large star cannot meet the tolerance and reports that, while its scores are still accurate" passed after 9.476 seconds.
+􁁛  Suite "PageRank convergence report" passed after 9.501 seconds.
+􀢄  Test run with 99 tests in 10 suites failed after 9.502 seconds with 90 issues.
+Note: Some test targets reported failures:
+  - BusinessMathTests (Swift Testing)

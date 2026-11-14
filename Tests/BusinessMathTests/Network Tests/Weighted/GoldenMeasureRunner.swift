@@ -3,8 +3,11 @@
 //  BusinessMath
 //
 //  Runs every ported measure over a graph and renders each result as bit-pattern tokens. This
-//  file is byte-for-byte the runner the scratch program used against SwiftGraphMetrics (only
-//  the import line differs), so the two sides encode identically.
+//  file was byte-for-byte the runner the scratch program used against SwiftGraphMetrics (only
+//  the import line differed), so the two sides encoded identically. Step 4 (ADR-009) changed some
+//  behaviours on purpose; for those the runner renders the new outcome, `refused`, under the same
+//  key, and GoldenMeasureTests asserts it against the stored old tokens explicitly. Every other
+//  line is unchanged except for the `try` that a throwing signature requires.
 //
 
 import Foundation
@@ -19,6 +22,15 @@ func goldenScoreTokens(_ scores: NodeScores<String>, _ graph: WeightedGraph<Stri
 
 func goldenPartitionTokens(_ partition: NodePartition<String>, _ graph: WeightedGraph<String>) -> String {
 	graph.nodes.map { node in partition.communities[node].map(String.init) ?? "-" }.joined(separator: " ")
+}
+
+/// The tokens of a measure that may now refuse its input, or `refused`.
+func goldenTokensOrRefusal(_ graph: WeightedGraph<String>, _ body: () throws -> NodeScores<String>) -> String {
+	do {
+		return goldenScoreTokens(try body(), graph)
+	} catch {
+		return "refused"
+	}
 }
 
 func goldenMeasures(_ graph: WeightedGraph<String>) -> [(String, String)] {
@@ -41,12 +53,16 @@ func goldenMeasures(_ graph: WeightedGraph<String>) -> [(String, String)] {
 		"\(loose.iterations) \(loose.converged ? 1 : 0) \(hex(loose.residual))"))
 	scores("eigenvectorTol1e-3.scores", loose.scores)
 	scores("eigenvectorZeroCeiling", Centrality.eigenvector(graph, maxIterations: 0))
-	scores("pageRank", Centrality.pageRank(graph))
-	for damping in [0.5, 0.99, 1.5, -1.0] {
-		scores("pageRank.damping\(damping)", Centrality.pageRank(graph, damping: damping))
+	out.append(("pageRank", goldenTokensOrRefusal(graph) { try Centrality.pageRank(graph) }))
+	for damping in [0.5, 0.99] {
+		out.append(("pageRank.damping\(damping)", goldenTokensOrRefusal(graph) { try Centrality.pageRank(graph, damping: damping) }))
 	}
-	scores("pageRank.ceiling3", Centrality.pageRank(graph, maxIterations: 3))
-	scores("pageRank.tol1e-3", Centrality.pageRank(graph, tolerance: 1e-3))
+	// Step 4 (ADR-009): 1.5 used to run as 0.999 and -1 as 0; both are refused now.
+	for damping in [1.5, -1.0] {
+		out.append(("pageRank.damping\(damping)", goldenTokensOrRefusal(graph) { try Centrality.pageRank(graph, damping: damping) }))
+	}
+	out.append(("pageRank.ceiling3", goldenTokensOrRefusal(graph) { try Centrality.pageRank(graph, maxIterations: 3) }))
+	out.append(("pageRank.tol1e-3", goldenTokensOrRefusal(graph) { try Centrality.pageRank(graph, tolerance: 1e-3) }))
 	scores("betweenness", Centrality.betweenness(graph))
 	scores("betweennessRaw", Centrality.betweenness(graph, normalized: false))
 	scores("closeness", Centrality.closeness(graph))

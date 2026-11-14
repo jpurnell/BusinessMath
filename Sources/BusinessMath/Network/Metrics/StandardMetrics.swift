@@ -124,8 +124,8 @@ public struct PageRankMetric<Node: Hashable & Comparable & Sendable & Codable>: 
 				+ "before treating anyone as peripheral."
 		)
 	}
-	/// The probability of following a tie rather than teleporting. Clamped into `[0, 0.999]`
-	/// by the measure it runs; see ``Centrality/pageRankConvergence(_:damping:maxIterations:tolerance:)``.
+	/// The probability of following a tie rather than teleporting, in `[0, 1)`. Anything else
+	/// makes ``compute(on:)`` throw ``GraphMeasureError/invalidDamping(_:)``.
 	public let damping: Double
 	/// The iteration ceiling.
 	public let maxIterations: Int
@@ -139,7 +139,7 @@ public struct PageRankMetric<Node: Hashable & Comparable & Sendable & Codable>: 
 	}
 	/// Computes it over the graph.
 	public func compute(on graph: WeightedGraph<Node>) throws -> DiagnosedScores<Node> {
-		let run = Centrality.pageRankConvergence(
+		let run = try Centrality.pageRankConvergence(
 			graph, damping: damping, maxIterations: maxIterations, tolerance: tolerance)
 		return DiagnosedScores(
 			scores: run.scores,

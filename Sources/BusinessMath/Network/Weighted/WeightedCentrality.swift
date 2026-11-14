@@ -194,32 +194,31 @@ public enum Centrality {
 	///   - tolerance: Convergence threshold on the L1 change.
 	/// - Returns: A score per node, summing to one.
 	///
-	/// ## Current behaviour that a stricter measure would refuse
+	/// ## What it refuses, and what it still does not say
 	///
-	/// Recorded in ADR-007 and closed in step 4 (ADR-009); until the change that closes each is
-	/// merged, it is as follows:
-	///
-	/// - **The last iterate is returned at the ceiling**, converged or not, with no flag, by this
-	///   function. At the defaults the 200 passes suffice (the error after `k` passes is at most
-	///   `2 * damping^k`), but a damping near 1 or a tiny `maxIterations` can stop short and say
-	///   nothing. ``pageRankConvergence(_:damping:maxIterations:tolerance:)`` reports it.
-	/// - **`damping` is clamped into `[0, 0.999]`** rather than refused, so `1.5` runs as `0.999`
-	///   and `-1` runs as `0`.
-	/// - **A `NaN` damping gives `NaN` scores**: the clamp does not catch it, and nothing refuses it.
+	/// - **`damping` outside `[0, 1)` is refused**, with ``GraphMeasureError/invalidDamping(_:)``.
+	///   It used to be clamped into `[0, 0.999]` (so `1.5` ran as `0.999` and `-1` as `0`) and a
+	///   `NaN` damping gave `NaN` scores (ADR-009). A damping between `0.999` and `1` now runs as given.
+	/// - **The last iterate is still returned at the ceiling** by this function, converged or not,
+	///   with no flag. At the defaults the 200 passes suffice (the error after `k` passes is at most
+	///   `2 * damping^k`), but a damping near 1 or a tiny `maxIterations` can stop short.
+	///   ``pageRankConvergence(_:damping:maxIterations:tolerance:)`` reports it.
 	/// - Dangling mass (a node with no weighted tie) is spread uniformly; an empty graph gives
 	///   an empty result.
 	///
+	/// - Throws: ``GraphMeasureError/invalidDamping(_:)``.
+	///
 	/// ```swift
 	/// let path = WeightedGraph(unweightedEdges: [("a", "b"), ("b", "c")])
-	/// let scores = Centrality.pageRank(path)
+	/// let scores = try Centrality.pageRank(path)
 	/// print(scores["b"] ?? 0)   // 0.4864...
 	/// print(scores["a"] ?? 0)   // 0.2567...
 	/// ```
 	public static func pageRank<Node: Hashable & Comparable & Sendable>(
 		_ graph: WeightedGraph<Node>, damping: Double = 0.85,
 		maxIterations: Int = 200, tolerance: Double = 1e-12
-	) -> NodeScores<Node> {
-		pageRankConvergence(
+	) throws -> NodeScores<Node> {
+		try pageRankConvergence(
 			graph, damping: damping, maxIterations: maxIterations, tolerance: tolerance).scores
 	}
 
@@ -252,8 +251,7 @@ public enum Centrality {
 	///
 	/// - Parameters:
 	///   - graph: The graph.
-	///   - damping: Probability of following an edge rather than teleporting. Clamped into
-	///     `[0, 0.999]`, as ``pageRank(_:damping:maxIterations:tolerance:)`` does.
+	///   - damping: Probability of following an edge rather than teleporting, in `[0, 1)`.
 	///   - maxIterations: Iteration ceiling. Never fewer than one pass is run.
 	///   - tolerance: Convergence threshold on the L1 change per pass.
 	/// - Returns:
@@ -263,24 +261,30 @@ public enum Centrality {
 	///   - `residual`: the L1 change between the last two iterates, the quantity compared with
 	///     `tolerance`. Zero for an empty graph.
 	///   - `scores`: exactly what `pageRank` returns for the same arguments.
+	/// - Throws: ``GraphMeasureError/invalidDamping(_:)`` if `damping` is `NaN`, infinite, negative
+	///   or at least one. Checked before anything else, so an empty graph refuses it too.
 	///
 	/// ```swift
 	/// let path = WeightedGraph(unweightedEdges: [("a", "b"), ("b", "c")])
-	/// let run = Centrality.pageRankConvergence(path)
+	/// let run = try Centrality.pageRankConvergence(path)
 	/// print(run.converged)    // true
 	/// print(run.iterations)   // well under the ceiling of 200
 	///
-	/// let slow = Centrality.pageRankConvergence(path, damping: 0.99, maxIterations: 20)
+	/// let slow = try Centrality.pageRankConvergence(path, damping: 0.99, maxIterations: 20)
 	/// print(slow.converged)   // false
 	/// ```
 	public static func pageRankConvergence<Node: Hashable & Comparable & Sendable>(
 		_ graph: WeightedGraph<Node>, damping: Double = 0.85,
 		maxIterations: Int = 200, tolerance: Double = 1e-12
-	) -> (iterations: Int, converged: Bool, residual: Double, scores: NodeScores<Node>) {
+	) throws -> (iterations: Int, converged: Bool, residual: Double, scores: NodeScores<Node>) {
+		// Written so that a comparison that cannot be evaluated (NaN) fails it and lands on the
+		// refusal, not on "valid".
+		guard damping.isFinite, damping >= 0, damping < 1 else {
+			throw GraphMeasureError.invalidDamping(damping)
+		}
 		let count = graph.nodeCount
 		guard count > 0 else { return (0, true, 0, NodeScores([:])) }
-		let clampedDamping = min(max(damping, 0), 0.999)
-		let teleport = (1 - clampedDamping) / Double(count)
+		let teleport = (1 - damping) / Double(count)
 
 		var current = [Double](repeating: 1 / Double(count), count: count)
 		let degrees = (0..<count).map { graph.weightedDegree($0) }
@@ -294,13 +298,13 @@ public enum Centrality {
 			for index in 0..<count where degrees[index] <= 0 {
 				danglingMass += current[index]
 			}
-			let spread = clampedDamping * danglingMass / Double(count)
+			let spread = damping * danglingMass / Double(count)
 			for index in 0..<count { next[index] += spread }
 
 			for index in 0..<count {
 				let degree = degrees[index]
 				guard degree > 0 else { continue }
-				let share = clampedDamping * current[index] / degree
+				let share = damping * current[index] / degree
 				for (neighbour, weight) in graph.adjacency[index] {
 					next[neighbour] += share * weight
 				}

@@ -29,16 +29,16 @@ struct StoppingRuleBoundaryTests {
 	}
 
 	@Test("PageRank: with the tolerance set to the change of pass k, the result is not the pass-k iterate")
-	func pageRankStopIsStrict() {
+	func pageRankStopIsStrict() throws {
 		let pass = 6
-		let previous = Centrality.pageRank(graph, maxIterations: pass - 1, tolerance: 0)
-		let atPass = Centrality.pageRank(graph, maxIterations: pass, tolerance: 0)
+		let previous = try Centrality.pageRank(graph, maxIterations: pass - 1, tolerance: 0)
+		let atPass = try Centrality.pageRank(graph, maxIterations: pass, tolerance: 0)
 		var delta = 0.0
 		for node in graph.nodes {
 			delta += abs((atPass.scores[node] ?? 0) - (previous.scores[node] ?? 0))
 		}
 		#expect(delta > 0)
-		let stopped = Centrality.pageRank(graph, maxIterations: 200, tolerance: delta)
+		let stopped = try Centrality.pageRank(graph, maxIterations: 200, tolerance: delta)
 		#expect(stopped != atPass)
 	}
 }

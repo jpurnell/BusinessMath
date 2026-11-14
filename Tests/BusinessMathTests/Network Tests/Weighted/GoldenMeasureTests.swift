@@ -27,12 +27,31 @@ struct GoldenMeasureTests {
 		#expect(actual.count == golden.expected.count)
 		for ((key, value), (expectedKey, expectedValue)) in zip(actual, golden.expected) {
 			#expect(key == expectedKey)
-			if value != expectedValue {
+			if let changed = Self.intentionallyChanged(key) {
+				// ADR-009: the old output is kept in the data; the new outcome is asserted here.
+				#expect(value == "refused", "\(name) / \(key)")
+				#expect(expectedValue == changed(graph), "\(name) / \(key): the stored output was the clamped run")
+			} else if value != expectedValue {
 				let got = value.split(separator: " ")
 				let want = expectedValue.split(separator: " ")
 				let first = zip(got, want).enumerated().first { $0.element.0 != $0.element.1 }?.offset
 				Issue.record("\(name) / \(key): first differing token at \(String(describing: first)), got \(got.count) tokens, expected \(want.count)")
 			}
+		}
+	}
+
+	/// For a key whose behaviour step 4 changed on purpose: how to recompute what the old code
+	/// returned for it, so the stored token is shown to have been exactly that old behaviour.
+	static func intentionallyChanged(_ key: String) -> ((WeightedGraph<String>) -> String)? {
+		switch key {
+		case "pageRank.damping1.5":
+			// 1.5 ran as the cap, 0.999.
+			return { graph in goldenTokensOrRefusal(graph) { try Centrality.pageRank(graph, damping: 0.999) } }
+		case "pageRank.damping-1.0":
+			// -1 ran as 0.
+			return { graph in goldenTokensOrRefusal(graph) { try Centrality.pageRank(graph, damping: 0) } }
+		default:
+			return nil
 		}
 	}
 

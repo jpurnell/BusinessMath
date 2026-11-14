@@ -433,7 +433,7 @@ struct PageRankMutationTests {
 	func pathOfThree() throws {
 		let d = 0.85, t = 0.05
 		let x = t * (1 + d / 2) / (1 - d * d)
-		let scores = Centrality.pageRank(graph([("a", "b"), ("b", "c")]))
+		let scores = try Centrality.pageRank(graph([("a", "b"), ("b", "c")]))
 		#expect(close(scores["a"], x))
 		#expect(close(scores["c"], x))
 		#expect(close(scores["b"], 1 - 2 * x))
@@ -445,7 +445,7 @@ struct PageRankMutationTests {
 	func star() throws {
 		let d = 0.85, t = 0.15 / 4
 		let hub = t * (1 + 3 * d) / (1 - d * d)
-		let scores = Centrality.pageRank(graph([("h", "a"), ("h", "b"), ("h", "c")]))
+		let scores = try Centrality.pageRank(graph([("h", "a"), ("h", "b"), ("h", "c")]))
 		#expect(close(scores["h"], hub))
 		for leaf in ["a", "b", "c"] { #expect(close(scores[leaf], (1 - hub) / 3)) }
 	}
@@ -457,29 +457,29 @@ struct PageRankMutationTests {
 		let d = 0.85, t = 0.05
 		let z = t / (1 - d / 3)
 		let x = (t + d * z / 3) / (1 - d)
-		let scores = Centrality.pageRank(graph([("a", "b")], isolated: ["c"]))
+		let scores = try Centrality.pageRank(graph([("a", "b")], isolated: ["c"]))
 		#expect(close(scores["c"], z))
 		#expect(close(scores["a"], x))
 		#expect(close(scores["b"], x))
 	}
 
-	@Test("Damping zero is uniform; out-of-range damping is clamped")
+	@Test("Damping zero is uniform; out-of-range damping is refused, not clamped (ADR-009)")
 	func damping() throws {
 		let g = graph([("a", "b"), ("b", "c"), ("c", "d"), ("b", "d")])
-		let uniform = Centrality.pageRank(g, damping: 0)
+		let uniform = try Centrality.pageRank(g, damping: 0)
 		for node in g.nodes { #expect(close(uniform[node], 0.25, tolerance: 1e-12)) }
-		#expect(Centrality.pageRank(g, damping: -3) == uniform)
-		let high = Centrality.pageRank(g, damping: 0.999)
-		#expect(Centrality.pageRank(g, damping: 7) == high)
-		#expect(Centrality.pageRank(g, damping: 1) == high)
-		#expect(Centrality.pageRank(g, damping: 0.5) != uniform)
-		#expect(Centrality.pageRank(g, damping: 0.5) != high)
+		#expect(throws: GraphMeasureError.self) { _ = try Centrality.pageRank(g, damping: -3) }
+		let high = try Centrality.pageRank(g, damping: 0.999)
+		#expect(throws: GraphMeasureError.self) { _ = try Centrality.pageRank(g, damping: 7) }
+		#expect(throws: GraphMeasureError.self) { _ = try Centrality.pageRank(g, damping: 1) }
+		#expect(try Centrality.pageRank(g, damping: 0.5) != uniform)
+		#expect(try Centrality.pageRank(g, damping: 0.5) != high)
 	}
 
 	@Test("The empty graph has no scores; a single node holds all the rank")
 	func degenerate() throws {
-		#expect(Centrality.pageRank(try WeightedGraph<String>(edges: [])).scores.isEmpty)
-		let lone = Centrality.pageRank(graph([], isolated: ["x"]))
+		#expect(try Centrality.pageRank(try WeightedGraph<String>(edges: [])).scores.isEmpty)
+		let lone = try Centrality.pageRank(graph([], isolated: ["x"]))
 		#expect(close(lone["x"], 1, tolerance: 1e-9))
 	}
 
@@ -488,33 +488,36 @@ struct PageRankMutationTests {
 	@Test("The iteration ceiling is honoured and floored at one pass")
 	func iterationCeiling() throws {
 		let g = graph([("a", "b"), ("b", "c")])
-		let one = Centrality.pageRank(g, maxIterations: 1)
+		let one = try Centrality.pageRank(g, maxIterations: 1)
 		#expect(close(one["a"], 0.05 + 0.85 / 6, tolerance: 1e-12))
 		#expect(close(one["b"], 0.05 + 2 * 0.85 / 3, tolerance: 1e-12))
 		#expect(close(one["c"], 0.05 + 0.85 / 6, tolerance: 1e-12))
-		#expect(Centrality.pageRank(g, maxIterations: 0) == one)
-		#expect(Centrality.pageRank(g, maxIterations: 2) != one)
-		#expect(Centrality.pageRank(g, maxIterations: 2) != Centrality.pageRank(g))
+		#expect(try Centrality.pageRank(g, maxIterations: 0) == one)
+		#expect(try Centrality.pageRank(g, maxIterations: 2) != one)
+		let twoPasses = try Centrality.pageRank(g, maxIterations: 2)
+		let converged = try Centrality.pageRank(g)
+		#expect(twoPasses != converged)
 	}
 
 	@Test("An enormous tolerance stops after one pass")
 	func toleranceStops() throws {
 		let g = pathGraph(6)
-		let one = Centrality.pageRank(g, maxIterations: 1)
-		#expect(Centrality.pageRank(g, maxIterations: 200, tolerance: 1e9) == one)
-		#expect(Centrality.pageRank(g, maxIterations: 5, tolerance: -1)
-				!= Centrality.pageRank(g, maxIterations: 6, tolerance: -1))
-		#expect(Centrality.pageRank(g) != one)
+		let one = try Centrality.pageRank(g, maxIterations: 1)
+		#expect(try Centrality.pageRank(g, maxIterations: 200, tolerance: 1e9) == one)
+		let fivePasses = try Centrality.pageRank(g, maxIterations: 5, tolerance: -1)
+		let sixPasses = try Centrality.pageRank(g, maxIterations: 6, tolerance: -1)
+		#expect(fivePasses != sixPasses)
+		#expect(try Centrality.pageRank(g) != one)
 	}
 
 	@Test("A loose tolerance stops visibly short of the converged answer")
 	func looseToleranceStopsEarly() throws {
 		let g = pathGraph(7)
-		let converged = Centrality.pageRank(g, maxIterations: 20_000, tolerance: 1e-15)
-		let loose = Centrality.pageRank(g, maxIterations: 5_000, tolerance: 1e-3)
+		let converged = try Centrality.pageRank(g, maxIterations: 20_000, tolerance: 1e-15)
+		let loose = try Centrality.pageRank(g, maxIterations: 5_000, tolerance: 1e-3)
 		let gap = g.nodes.map { abs((loose[$0] ?? 0) - (converged[$0] ?? 0)) }.max() ?? 0
 		#expect(gap > 1e-7 && gap < 0.05, "gap \(gap)")
-		let tight = Centrality.pageRank(g, maxIterations: 5_000, tolerance: 1e-9)
+		let tight = try Centrality.pageRank(g, maxIterations: 5_000, tolerance: 1e-9)
 		let tightGap = g.nodes.map { abs((tight[$0] ?? 0) - (converged[$0] ?? 0)) }.max() ?? 0
 		#expect(tightGap < gap)
 		#expect(tightGap < 1e-7)
@@ -523,18 +526,20 @@ struct PageRankMutationTests {
 	@Test("The defaults are 200 iterations and a tolerance of 1e-12")
 	func defaultsArePinned() throws {
 		let g = pathGraph(7)
-		#expect(Centrality.pageRank(g)
-				== Centrality.pageRank(g, damping: 0.85, maxIterations: 200, tolerance: 1e-12))
+		let byDefault = try Centrality.pageRank(g)
+		let explicit = try Centrality.pageRank(g, damping: 0.85, maxIterations: 200, tolerance: 1e-12)
+		#expect(byDefault == explicit)
 		// Heavy damping converges so slowly the ceiling binds.
-		#expect(Centrality.pageRank(g, damping: 0.99)
-				== Centrality.pageRank(g, damping: 0.99, maxIterations: 200, tolerance: 1e-12))
+		let heavyDefault = try Centrality.pageRank(g, damping: 0.99)
+		let heavyExplicit = try Centrality.pageRank(g, damping: 0.99, maxIterations: 200, tolerance: 1e-12)
+		#expect(heavyDefault == heavyExplicit)
 	}
 
 	@Test("The default tolerance reaches the converged answer to better than 1e-9")
 	func defaultToleranceIsTight() throws {
 		let g = pathGraph(7)
 		let reference = pageRankBySolving(g, damping: 0.85)
-		let scores = Centrality.pageRank(g)
+		let scores = try Centrality.pageRank(g)
 		for node in g.nodes { #expect(close(scores[node], reference[node], tolerance: 1e-10)) }
 	}
 
@@ -556,7 +561,7 @@ struct PageRankMutationTests {
 			let g = try WeightedGraph(edges: edges, isolatedNodes: nodes)
 			for damping in [0.85, 0.5] {
 				let reference = pageRankBySolving(g, damping: damping)
-				let scores = Centrality.pageRank(g, damping: damping)
+				let scores = try Centrality.pageRank(g, damping: damping)
 				for node in g.nodes {
 					#expect(close(scores[node], reference[node], tolerance: 1e-9),
 							"seed \(seed) d \(damping) \(node)")
@@ -569,7 +574,7 @@ struct PageRankMutationTests {
 	func sumsToOne() throws {
 		for seed in 0..<8 as Range<UInt64> {
 			let g = try randomGraph(seed: 400 + seed, count: 8, edgeCount: 9, isolated: 2)
-			let scores = Centrality.pageRank(g)
+			let scores = try Centrality.pageRank(g)
 			#expect(close(scores.scores.values.reduce(0, +), 1, tolerance: 1e-9))
 			#expect(scores.scores.values.allSatisfy { $0 > 0 })
 			#expect(scores.scores.count == g.nodeCount)
@@ -580,12 +585,12 @@ struct PageRankMutationTests {
 	func invariances() throws {
 		for seed in 0..<5 as Range<UInt64> {
 			let edges = randomConnected(seed: 70 + seed, count: 8, chords: 3)
-			let base = Centrality.pageRank(try WeightedGraph(edges: edges))
-			let scaled = Centrality.pageRank(
+			let base = try Centrality.pageRank(try WeightedGraph(edges: edges))
+			let scaled = try Centrality.pageRank(
 				try WeightedGraph(edges: edges.map { ($0.0, $0.1, $0.2 * 0.01) }))
 			let nodes = names(8)
 			let permutation = Dictionary(uniqueKeysWithValues: zip(nodes, nodes.reversed()))
-			let permuted = Centrality.pageRank(try relabelled(edges) { permutation[$0] ?? $0 })
+			let permuted = try Centrality.pageRank(try relabelled(edges) { permutation[$0] ?? $0 })
 			for node in nodes {
 				#expect(close(scaled[node], base[node], tolerance: 1e-9))
 				#expect(close(permuted[image(node, permutation)], base[node], tolerance: 1e-9))
@@ -596,7 +601,7 @@ struct PageRankMutationTests {
 	@Test("Nodes in symmetric positions score the same")
 	func symmetry() throws {
 		let ring = graph((0..<5).map { ("r\($0)", "r\(($0 + 1) % 5)") })
-		let scores = Centrality.pageRank(ring)
+		let scores = try Centrality.pageRank(ring)
 		for node in ring.nodes { #expect(close(scores[node], 0.2, tolerance: 1e-9)) }
 	}
 }

@@ -48,3 +48,21 @@ converges in 174 to 175 passes; from 11,000 nodes it stops at the ceiling with r
 `pagerank-measurement.md`. The pinned tests use 5,000 (converges) and 50,000 (does not, floor 4.5 times the tolerance)
 because the 10,000/11,000 threshold sits within 4% of the tolerance and is a rounding limit cycle that x86 Linux may
 place differently; the threshold is recorded here, not pinned.
+
+## Change 2: PageRank damping validation (no bump)
+
+**Stub.** New `GraphMeasureError` (`invalidDamping`); `pageRank` and `pageRankConvergence` made `throws` with the old clamp
+and NaN pass-through intact. All 8 existing call-site files gained `try` (mechanical; three `try`-right-of-operator
+expressions hoisted into `let`s). **Before the red run**, the old-behaviour assertions were rewritten to the new expectation:
+`WeightedCentralityMutationTests.damping` (clamp pins to refusal pins) and `GoldenMeasureRunner`/`GoldenMeasureTests`: the
+runner now renders `refused` for damping 1.5 and -1, and the test asserts that and that the stored tokens equal the damping
+0.999 / damping 0 runs (what the old clamp did). Stored tokens untouched.
+
+**Red (stub): 99 tests in 10 suites, 90 issues** (`red2-run-full.txt`). Failing: the damping-refusal tests for pageRank and
+pageRankConvergence (all 10 values), the old-behaviour-gone test, the above-the-old-cap test, empty-graph refusal, metric
+refusal through compute/registry/record, the golden measure test for all 19 fixtures, and the rewritten clamp test.
+Passed against the stub, classified [S] (the stub already satisfies it; invariants): accepted edges of the range, zero damping
+uniform, never-NaN for accepted dampings, error equality, default metric still runs. They guard that the validation does not
+over-reject.
+
+**Green.** Validation added; same suites, 99 tests passed (`green2-run-full.txt`). Nothing edited between.
