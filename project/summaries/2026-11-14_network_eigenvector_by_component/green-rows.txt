@@ -1,0 +1,99 @@
+􁁛  Test "the stored payload has exactly the four keys, and each component exactly four" passed after 0.025 seconds.
+􁁛  Test "A record for a metric this build does not know decodes and re-encodes unchanged" passed after 0.025 seconds.
+􁁛  Test "a stored record reads as plain scores and as diagnosed scores, and its convergence is the aggregate" with 26 test cases passed after 0.025 seconds.
+􁁛  Test "the envelope this library writes is byte for byte what ClassGraph wrote" with 22 test cases passed after 0.025 seconds.
+􁁛  Test "A version 4 record with a report decodes and keeps the report" passed after 0.025 seconds.
+􁁛  Test "A version 1 pagerank record decodes as 1, distinct from the version 3 the registry writes now" passed after 0.025 seconds.
+􁁛  Test "every case has a golden, and every golden a case" passed after 0.026 seconds.
+􁁛  Test "A version 3 eigenvector record decodes, reads as plain scores, and re-encodes to the stored bytes" passed after 0.026 seconds.
+􁁛  Test "the identifier, version, title and wording are ClassGraph's, character for character" passed after 0.027 seconds.
+􁁛  Test "Returns nil for an unknown identifier rather than throwing" passed after 0.027 seconds.
+􁁛  Test "a decimal-weight case matches in structure exactly and in values to 1e-9" with 4 test cases passed after 0.027 seconds.
+􁁛  Test "A version 2 eigenvector record, with no convergence, decodes and reads as unknown" passed after 0.037 seconds.
+􁁛  Test "The registry lists its metrics in identifier order, once each" passed after 0.037 seconds.
+􁁛  Test "Ships the metrics the design calls for" passed after 0.037 seconds.
+􁁛  Test "A metric looked up by identifier carries the descriptor it was registered with" passed after 0.037 seconds.
+􁁛  Test "A metric that throws makes the registry throw, not return nil" passed after 0.037 seconds.
+􁁛  Test "A custom value type can travel through the registry" passed after 0.037 seconds.
+􁁛  Test "Every added measure is in the registry, and there are exactly twelve" passed after 0.037 seconds.
+􁁛  Test "An empty registry lists nothing and runs nothing" passed after 0.037 seconds.
+􁁛  Test "The seed selector is deliberately not in the standard registry" passed after 0.037 seconds.
+􁁛  Test "Runs a metric by identifier" passed after 0.038 seconds.
+􁁛  Test "Every metric states what a low score does and does not mean" passed after 0.038 seconds.
+􁁛  Test "Moved metrics keep the versions they had; eigenvector is at 5 and pagerank at 3" passed after 0.039 seconds.
+􁁛  Test "When two metrics share an identifier the first wins, in the initialiser and in registering" passed after 0.039 seconds.
+􁁛  Test "A new metric can be added without touching existing code" passed after 0.045 seconds.
+􁁛  Test "a record ClassGraph stored decodes here and re-encodes to the same bytes" with 26 test cases passed after 0.046 seconds.
+􁁛  Test "A partition metric comes back as a partition envelope" passed after 0.045 seconds.
+􁁛  Test "the aggregate is the maximum, not the first or last component, of passes and residual" passed after 0.040 seconds.
+􁁛  Test "the configured tolerance and ceiling are reported, a ceiling below one as one" passed after 0.040 seconds.
+􁁛  Test "with the default ceiling every component converges and so does the aggregate" passed after 0.042 seconds.
+􁁛  Test "dividing by the stored scale recovers the per-component scale, whose largest is 1" passed after 0.036 seconds.
+􁁛  Test "running it twice gives the same answer" passed after 0.037 seconds.
+􁁛  Test "two identical paths score like the path alone, both components at the same scale" passed after 0.035 seconds.
+􁁛  Test "within a component the scores are the per-component eigenvector's, up to one factor" passed after 0.035 seconds.
+􁁛  Test "a path, a pair and an isolate: the pair is scaled by min(rms)/rms, the isolate scores 0" passed after 0.033 seconds.
+􁁛  Test "every score matches ClassGraph's bit for bit, read back from the stored text" with 22 test cases passed after 0.046 seconds.
+􁁛  Test "renaming the nodes, which reorders them, changes no score" passed after 0.035 seconds.
+􁁛  Test "a path and a star: the star, with the smaller rms, keeps its scale; the path is scaled by sqrt(3)/2" passed after 0.029 seconds.
+􁁛  Test "the largest score is exactly 1 and none is below 0 or above 1" passed after 0.035 seconds.
+􁁛  Test "with a low ceiling the aggregate is the worst case and the detail names the slow component" passed after 0.040 seconds.
+􁁛  Test "multiplying every weight by a constant changes nothing" passed after 0.042 seconds.
+􁁛  Test "the shapes the brief names: isolates 0 with their count, largest score 1, one component identical to v5" passed after 0.060 seconds.
+􁁛  Test "a long path alone misses the default ceiling, and its component says so" passed after 0.155 seconds.
+􁁛  Test "Records the context and metric version alongside the numbers" passed after 0.149 seconds.
+􁁛  Test "The stored listing decodes to the descriptors the registry lists, in order" passed after 0.151 seconds.
+􁁛  Test "Uses the clock it was given rather than reading the wall clock" passed after 0.151 seconds.
+􁁛  Test "The record initialiser keeps every field it is given" passed after 0.151 seconds.
+􁁛  Test "The same listing comes from a registry of integer nodes" passed after 0.151 seconds.
+􁁛  Test "An unknown identifier records nothing" passed after 0.154 seconds.
+􁁛  Test "The seed selector registers and round-trips as a selection envelope" passed after 0.179 seconds.
+􁁛  Test "Identifiers and versions are exactly the stored ones, with no metric added or dropped" passed after 0.154 seconds.
+􁁛  Test "Round-trips through Codable so a record survives to be compared later" passed after 0.155 seconds.
+􁁛  Suite "Stored-record golden: records written by earlier versions still decode" passed after 0.180 seconds.
+􁁛  Test "the standard registry lists it beside every other metric, which keep their versions" passed after 0.154 seconds.
+􁁛  Test "The descriptor listing encodes to exactly the stored text" passed after 0.154 seconds.
+􁁛  Test "it encodes with the envelope shape and decodes back equal" passed after 0.155 seconds.
+􁁛  Test "a run records the new identifier and version" passed after 0.159 seconds.
+􁁛  Test "a connected graph with no isolates scores bit for bit as eigenvector-centrality 5 does" with 6 test cases passed after 0.160 seconds.
+􁁛  Test "a connected graph reports the tolerance and ceiling it was given, a ceiling below one as one" passed after 0.160 seconds.
+􁁛  Test "an envelope of it reads as plain scores and carries the aggregate convergence" passed after 0.161 seconds.
+􁁛  Test "eigenvector still refuses the graphs this one answers" passed after 0.161 seconds.
+􁁛  Test "An eigenvector record stored under version 2 decodes as 2; a new one carries 4" passed after 0.162 seconds.
+􁁛  Test "the identifier and version are its own, kind scores" passed after 0.161 seconds.
+􁁛  Test "the diagnosed view is the scores and the aggregate, nothing more" passed after 0.161 seconds.
+􁁛  Test "a lone node scores 0, not the 1 that eigenvector-centrality 5 gives a one-node graph" passed after 0.161 seconds.
+􁁛  Test "the empty graph is empty, trivially converged" passed after 0.161 seconds.
+􁁛  Test "the old identifier still refuses a disconnected graph while the new one answers it" passed after 0.161 seconds.
+􁁛  Test "an edge-less graph is all zeros, not all ones" passed after 0.161 seconds.
+􁁛  Test "a graph whose only ties have weight zero has nothing to iterate" passed after 0.161 seconds.
+􁁛  Test "a tie of weight zero does not connect: its ends are scored as the ties of positive weight say" passed after 0.161 seconds.
+􁁛  Test "a graph with nothing to iterate still reports the tolerance and ceiling it was given" passed after 0.161 seconds.
+􁁛  Test "a tie of positive weight between two isolates makes a component, not two isolates" passed after 0.161 seconds.
+􁁛  Test "every isolate counts, every one scores zero, beside a scored component" passed after 0.161 seconds.
+􁁛  Test "The fixture set covers the cases the plan names" passed after 0.159 seconds.
+􁁛  Test "the same graph with an isolate added still scores its connected part the same, up to rounding" passed after 0.162 seconds.
+􁁛  Test "the metric passes its own tolerance and ceiling on to the iteration" passed after 0.162 seconds.
+􁁛  Test "The long path misses the default ceiling and says so in the stored record" passed after 0.160 seconds.
+􁁛  Test "Every standard metric's envelope is the value its function returns, wrapped" passed after 0.190 seconds.
+􁁛  Test "The bare envelope the registry returns is byte-for-byte the stored envelope" with 20 test cases passed after 0.162 seconds.
+􁁛  Test "Every score, convergence figure and community number matches bit for bit" with 20 test cases passed after 0.162 seconds.
+􁁛  Test "A stored record decodes to the record the registry makes, and re-encodes to the same bytes" with 20 test cases passed after 0.162 seconds.
+􁁛  Test "Karate on integer nodes matches the stored values bit for bit, by every registered metric" passed after 0.163 seconds.
+􁁛  Test "Each fixture stores a record for every registered metric" with 20 test cases passed after 0.162 seconds.
+􁁛  Test "A record's output is what run returns for the same graph" passed after 0.166 seconds.
+􁁛  Suite "Eigenvector by component: convergence across components" passed after 0.191 seconds.
+􁁛  Suite "Eigenvector by component: the stored contract with ClassGraph" passed after 0.191 seconds.
+􁁛  Suite "Stored-record golden: the registry listing" passed after 0.191 seconds.
+􁁛  Suite "Eigenvector by component: the stored metric" passed after 0.191 seconds.
+􁁛  Suite "MetricRegistry" passed after 0.191 seconds.
+􁁛  Suite "Eigenvector by component: agreement with eigenvector when there is one component" passed after 0.191 seconds.
+􁁛  Suite "Eigenvector by component: nodes with no ties, and trivial graphs" passed after 0.191 seconds.
+􁁛  Suite "MetricRecord provenance" passed after 0.191 seconds.
+􁁛  Test "A stored envelope decodes to the typed value of its kind" with 20 test cases passed after 0.162 seconds.
+􁁛  Test "The record the registry makes is byte-for-byte the stored record" with 20 test cases passed after 0.166 seconds.
+􁁛  Test "random graphs with several components keep the invariants" passed after 0.194 seconds.
+􁁛  Suite "Eigenvector by component: values" passed after 0.207 seconds.
+􁁛  Test "Eigenvector envelopes at non-default ceilings and tolerances match the stored text and bits" passed after 0.218 seconds.
+􁁛  Suite "Stored-record golden: every standard metric's record over every fixture" passed after 0.247 seconds.
+􁁛  Test run with 87 tests in 11 suites passed after 0.247 seconds.

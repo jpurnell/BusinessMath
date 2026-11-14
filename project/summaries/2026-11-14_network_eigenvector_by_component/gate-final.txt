@@ -1,0 +1,51 @@
+quality-gate --no-cache on the final tree (full output was 2 MB of informational notes; kept here: each checker's status line and the closing block).
+○ [mcp-readiness] SKIPPED (4.53s)
+○ [privacy-manifest] SKIPPED (905ms)
+○ [appintents-readiness] SKIPPED (0ms)
+○ [app-skills] SKIPPED (521ms)
+○ [design-token-drift] SKIPPED (0ms)
+○ [consistency] SKIPPED (0ms)
+==========================================
+  Quality Gate Results
+==========================================
+
+✓ [build] PASSED (35.14s)
+  ℹ️  note: 1501 Swift compile unit(s): 0 compiled by this run, 1501 read from recorded diagnostics. C-family sources are not counted; their warnings are reported only when recompiled.
+
+✓ [test] PASSED (539.37s)
+✓ [safety] PASSED (59.47s)
+  ℹ️  note: 11 traps in library, test or plugin code counted, not reported (precondition 10, fatal-error 1). There the caller is a programmer with a stack trace, and a trap is the documented way to report a logic failure. Set `trapPolicy: forbidden` to report them, or `justified` to require a stated reason.
+  ℹ️  note: security.xml examined 0 XML parse sites · 0 XMLParser · 0 XMLDocument · 0 libxml2 · 0 configured to load external entities · 0 acknowledged
+  ℹ️  note: security examined 0 security-named values · 0 from a safe source · 0 weak · 0 predictable · 0 UUID · 0 from a generator this file cannot resolve · 0 credential-producing functions accept a caller's generator
+  ℹ️  note: security.server-surface examined 1518 files · 0 listeners · 0 bound to all interfaces · 0 with authentication off by default · 0 handlers · 0 acknowledged
+  ℹ️  note: safety examined 1518 files
+
+✓ [doc-lint] PASSED (74.95s)
+  ℹ️  note: doc-lint examined 1 target(s) owning a DocC catalogue, each declaring it where DocC can read it.
+
+✓ [doc-code] PASSED (45.03s)
+  ℹ️  note: Swift fences: 12 found · 11 examined · 1 exempt · 0 not analyzed
+     → /Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath-wt-bycomp/Sources/BusinessMath/BusinessMath.docc/1.1-GettingStarted.md
+  ℹ️  note: Swift fences: 13 found · 12 examined · 1 exempt · 0 not analyzed
+     → /Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath-wt-bycomp/Sources/BusinessMath/BusinessMath.docc/1.10-TypedModelAuthoring.md
+  ℹ️  note: Swift fences: 20 found · 19 examined · 1 exempt · 0 not analyzed
+     → /Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath-wt-bycomp/Sources/BusinessMath/BusinessMath.docc/1.2-TimeSeries.md
+  ℹ️  note: Swift fences: 28 found · 28 examined · 0 not analyzed
+     → /Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath-wt-bycomp/Sources/BusinessMath/BusinessMath.docc/1.3-TimeValueOfMoney.md
+  ℹ️  note: Swift fences: 29 found · 29 examined · 0 not analyzed
+     → /Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath-wt-bycomp/Sources/BusinessMath/BusinessMath.docc/1.4-FluentAPIGuide.md
+  ℹ️  note: Swift fences: 21 found · 21 examined · 0 not analyzed
+     → /Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath-wt-bycomp/Sources/BusinessMath/BusinessMath.docc/1.5-TemplateGuide.md
+  ℹ️  note: Swift fences: 31 found · 31 examined · 0 not analyzed
+     → /Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath-wt-bycomp/Sources/BusinessMath/BusinessMath.docc/1.6-DebuggingGuide.md
+  ℹ️  note: Swift fences: 35 found · 35 examined · 0 not analyzed
+     → /Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath-wt-bycomp/Sources/BusinessMath/BusinessMath.docc/1.7-ErrorHandlingGuide.md
+  ℹ️  note: Swift fences: 21 found · 21 examined · 0 not analyzed
+     → /Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath-wt-bycomp/Sources/BusinessMath/BusinessMath.docc/1.8-StatisticalDistributionsGuide.md
+  ℹ️  note: Swift fences: 13 found · 13 examined · 0 not analyzed
+     → /Users/jpurnell/Dropbox/Computer/Development/Swift/Playgrounds/Math/BusinessMath-wt-bycomp/Sources/BusinessMath/BusinessMath.docc/1.9-FormulaEvaluation.md
+  ℹ️  note: Swift fences: 18 found · 18 examined · 0 not analyzed
+
+Closing block of the full output (reconstructed from what was read before trimming, not a copy): "Quality Gate: PASSED", 45 of 51 checkers, 6 not selected (those listed SKIPPED above,
+including consistency: no corpusPath configured, "not a pass"). A search of the full 2 MB output for warning (⚠️) and error (❌) finding lines found none, so 0 errors and 0 warnings; the first run
+(`--no-cache`, before the two test warnings and the complexity note were fixed) had 0 errors and 2 warnings, both in EigenvectorByComponentTests.swift.

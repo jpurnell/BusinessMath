@@ -1,0 +1,53 @@
+A custom value type can travel through the registry
+A metric looked up by identifier carries the descriptor it was registered with
+A metric that throws makes the registry throw, not return nil
+A new metric can be added without touching existing code
+A partition metric comes back as a partition envelope
+A record for a metric this build does not know decodes and re-encodes unchanged
+A record's output is what run returns for the same graph
+A stored envelope decodes to the typed value of its kind
+A version 1 pagerank record decodes as 1, distinct from the version 3 the registry writes now
+A version 2 eigenvector record, with no convergence, decodes and reads as unknown
+A version 3 eigenvector record decodes, reads as plain scores, and re-encodes to the stored bytes
+A version 4 record with a report decodes and keeps the report
+An eigenvector record stored under version 2 decodes as 2; a new one carries 4
+An empty registry lists nothing and runs nothing
+An unknown identifier records nothing
+Each fixture stores a record for every registered metric
+Eigenvector envelopes at non-default ceilings and tolerances match the stored text and bits
+Every added measure is in the registry, and there are exactly twelve
+Every metric states what a low score does and does not mean
+Every standard metric's envelope is the value its function returns, wrapped
+Identifiers and versions are exactly the stored ones, with no metric added or dropped
+Moved metrics keep the versions they had; eigenvector is at 5 and pagerank at 3
+Records the context and metric version alongside the numbers
+Returns nil for an unknown identifier rather than throwing
+Round-trips through Codable so a record survives to be compared later
+Runs a metric by identifier
+Ships the metrics the design calls for
+The descriptor listing encodes to exactly the stored text
+The fixture set covers the cases the plan names
+The long path misses the default ceiling and says so in the stored record
+The record initialiser keeps every field it is given
+The registry lists its metrics in identifier order, once each
+The same listing comes from a registry of integer nodes
+The seed selector is deliberately not in the standard registry
+The seed selector registers and round-trips as a selection envelope
+The stored listing decodes to the descriptors the registry lists, in order
+Uses the clock it was given rather than reading the wall clock
+When two metrics share an identifier the first wins, in the initialiser and in registering
+a graph whose only ties have weight zero has nothing to iterate
+a graph with nothing to iterate still reports the tolerance and ceiling it was given
+a lone node scores 0, not the 1 that eigenvector-centrality 5 gives a one-node graph
+a record ClassGraph stored decodes here and re-encodes to the same bytes
+a stored record reads as plain scores and as diagnosed scores, and its convergence is the aggregate
+an edge-less graph is all zeros, not all ones
+eigenvector still refuses the graphs this one answers
+every case has a golden, and every golden a case
+the diagnosed view is the scores and the aggregate, nothing more
+the empty graph is empty, trivially converged
+the identifier and version are its own, kind scores
+the identifier, version, title and wording are ClassGraph's, character for character
+the shapes the brief names: isolates 0 with their count, largest score 1, one component identical to v5
+the standard registry lists it beside every other metric, which keep their versions
+the stored payload has exactly the four keys, and each component exactly four

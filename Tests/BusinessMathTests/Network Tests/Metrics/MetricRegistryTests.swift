@@ -39,13 +39,14 @@ struct MetricRegistryTests {
 		}
 	}
 
-	@Test("Every added measure is in the registry, and there are exactly eleven")
+	@Test("Every added measure is in the registry, and there are exactly twelve")
 	func registered() {
 		let identifiers = Set(MetricRegistry<String>.standard.available.map(\.identifier))
 		for expected in ["harmonic-centrality", "clustering", "components"] {
 			#expect(identifiers.contains(expected))
 		}
-		#expect(MetricRegistry<String>.standard.available.count == 11)
+		#expect(identifiers.contains("eigenvector-centrality-by-component"))
+		#expect(MetricRegistry<String>.standard.available.count == 12)
 	}
 
 	@Test("Runs a metric by identifier")

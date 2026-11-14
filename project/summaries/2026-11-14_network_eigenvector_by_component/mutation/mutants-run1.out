@@ -1,0 +1,83 @@
+E01 ceiling not clamped: KILLED  the envelope this library writes is byte for byte what ClassGraph wrote
+E02 trivial guard flipped: KILLED  a connected graph with no isolates scores bit for bit as eigenvector-centrality 5 does
+E03 trivial guard needs two components: KILLED  random graphs with several components keep the invariants
+E04 trivial: one pass reported: KILLED  a graph with nothing to iterate still reports the tolerance and ceiling it was given
+E05 trivial: reported not converged: KILLED  The bare envelope the registry returns is byte-for-byte the stored envelope
+E06 trivial: isolated count dropped: KILLED  the envelope this library writes is byte for byte what ClassGraph wrote
+E07 trivial: ceiling unclamped: KILLED  the envelope this library writes is byte for byte what ClassGraph wrote
+E08 trivial: tolerance fixed: KILLED  a graph with nothing to iterate still reports the tolerance and ceiling it was given
+E09 trivial: residual one: KILLED  every score matches ClassGraph's bit for bit, read back from the stored text
+E10 whole graph taken for one component with isolates: KILLED  the same graph with an isolate added still scores its connected part the same, up to rounding
+E11 whole graph branch on || : KILLED  a tie of positive weight between two isolates makes a component, not two isolates
+E12 whole graph with one isolate allowed: KILLED  a tie of positive weight between two isolates makes a component, not two isolates
+E13 whole: scale half: KILLED  a connected graph with no isolates scores bit for bit as eigenvector-centrality 5 does
+E14 whole: anchor is the last node: KILLED  The bare envelope the registry returns is byte-for-byte the stored envelope
+E15 whole: size one short: KILLED  the envelope this library writes is byte for byte what ClassGraph wrote
+E16 whole: ceiling unclamped: KILLED  a connected graph reports the tolerance and ceiling it was given, a ceiling below one as one
+E17 whole: tolerance fixed: KILLED  the envelope this library writes is byte for byte what ClassGraph wrote
+E18 whole: isolated count one: KILLED  the envelope this library writes is byte for byte what ClassGraph wrote
+E19 whole: score through the component path (rescaled): KILLED  random graphs with several components keep the invariants
+E20 rms without the square root: KILLED  the envelope this library writes is byte for byte what ClassGraph wrote
+E21 mean over n + 1: KILLED  the envelope this library writes is byte for byte what ClassGraph wrote
+E22 sum of scores, not squares: KILLED  a path, a pair and an isolate: the pair is scaled by min(rms)/rms, the isolate scores 0
+E23 shared scale is the largest rms: KILLED  a path, a pair and an isolate: the pair is scaled by min(rms)/rms, the isolate scores 0
+E24 shared scale fallback 1 to 0: SURVIVED  
+E25 scale inverted: KILLED  the largest score is exactly 1 and none is below 0 or above 1
+E26 scale guard accepts zero rms: SURVIVED  
+E27 zero-rms component scale 1 to 0: SURVIVED  
+E28 score divided by the scale: KILLED  the envelope this library writes is byte for byte what ClassGraph wrote
+E29 every member takes the first score: KILLED  the same graph with an isolate added still scores its connected part the same, up to rounding
+E30 unassigned nodes default to 1: KILLED  a path, a pair and an isolate: the pair is scaled by min(rms)/rms, the isolate scores 0
+E31 score lookup default 0 to 1: SURVIVED  
+E32 anchor is the highest member: KILLED  the envelope this library writes is byte for byte what ClassGraph wrote
+E33 size one over: KILLED  a decimal-weight case matches in structure exactly and in values to 1e-9
+E34 detail carries the aggregate scale 1: KILLED  The bare envelope the registry returns is byte-for-byte the stored envelope
+E35 worst iterations is the least: KILLED  with the default ceiling every component converges and so does the aggregate
+E36 worst converged if any converged: KILLED  the envelope this library writes is byte for byte what ClassGraph wrote
+E37 worst converged judged by the first component: SURVIVED  
+E38 worst converged judged by the last component: KILLED  the envelope this library writes is byte for byte what ClassGraph wrote
+E39 worst residual is the least: KILLED  the envelope this library writes is byte for byte what ClassGraph wrote
+E40 worst iterations is the first component's: KILLED  the envelope this library writes is byte for byte what ClassGraph wrote
+E41 worst: ceiling unclamped: KILLED  the envelope this library writes is byte for byte what ClassGraph wrote
+E42 worst: tolerance fixed: KILLED  the metric passes its own tolerance and ceiling on to the iteration
+E43 component report: tolerance fixed: KILLED  the configured tolerance and ceiling are reported, a ceiling below one as one
+E44 component report: ceiling unclamped: KILLED  the envelope this library writes is byte for byte what ClassGraph wrote
+E45 component iteration ignores the ceiling: KILLED  the envelope this library writes is byte for byte what ClassGraph wrote
+E46 component iteration ignores the tolerance: SURVIVED  
+E47 whole iteration ignores the ceiling: KILLED  the envelope this library writes is byte for byte what ClassGraph wrote
+E48 whole iteration ignores the tolerance: SURVIVED  
+E49 a zero-weight tie connects: KILLED  a tie of weight zero does not connect: its ends are scored as the ties of positive weight say
+E50 members left unsorted: KILLED  the envelope this library writes is byte for byte what ClassGraph wrote
+E51 isolates counted as components: BUILD ERROR  error: Process '/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/libexec/swift/pm/swiftpm-testing-helper --test-bundle-path /private/tmp/claude-501/-Users-jpurnell-Do
+E52 isolated count is every group: KILLED  a path, a pair and an isolate: the pair is scaled by min(rms)/rms, the isolate scores 0
+E53 components found from the last node: KILLED  a decimal-weight case matches in structure exactly and in values to 1e-9
+E54 start node not marked seen: BUILD ERROR  Swift/ContiguousArrayBuffer.swift:695: Fatal error: Index out of range | Swift/ContiguousArrayBuffer.swift:695: Fatal error: Index out of range | Swift/ContiguousArrayBuffer.swift:695: Fatal error: In
+E55 subgraph keeps zero-weight ties: KILLED  every score matches ClassGraph's bit for bit, read back from the stored text
+E56 subgraph emits every tie twice: SURVIVED  
+E57 subgraph emits each tie from the higher end: SURVIVED  
+E58 subgraph drops one tie in four: KILLED  every score matches ClassGraph's bit for bit, read back from the stored text
+E59 mean denominator unguarded: SURVIVED  
+E60 worst iterations default 0 to 1: SURVIVED  
+V01 unconverged lists the converged: KILLED  with the default ceiling every component converges and so does the aggregate
+V02 diagnosed drops the report: KILLED  the diagnosed view is the scores and the aggregate, nothing more
+V03 kind renamed: KILLED  Every score, convergence figure and community number matches bit for bit
+V04 isolatedCount key renamed (encode and decode): BUILD ERROR  error: SwiftCompile normal arm64 /private/tmp/claude-501/-Users-jpurnell-Documents-Princeton-Class-of-2000-Events-2028/afdd3956-2eca-4229-b368-a078e9c2e4d7/scratchpad/lab/Sources/BusinessMath/Network/
+V05 encode drops the components: KILLED  the envelope this library writes is byte for byte what ClassGraph wrote
+V06 encode drops the isolated count: KILLED  a record ClassGraph stored decodes here and re-encodes to the same bytes
+V07 decode forgets the isolated count: KILLED  an envelope of it reads as plain scores and carries the aggregate convergence
+V08 decode forgets the convergence: KILLED  an envelope of it reads as plain scores and carries the aggregate convergence
+V09 init drops the components: KILLED  a connected graph with no isolates scores bit for bit as eigenvector-centrality 5 does
+V10 component init swaps size: KILLED  a connected graph with no isolates scores bit for bit as eigenvector-centrality 5 does
+M01 identifier changed: KILLED  The same listing comes from a registry of integer nodes
+M02 version two: KILLED  The record the registry makes is byte-for-byte the stored record
+M03 title changed: KILLED  The same listing comes from a registry of integer nodes
+M04 metric ignores its ceiling: KILLED  the metric passes its own tolerance and ceiling on to the iteration
+M05 metric ignores its tolerance: KILLED  the metric passes its own tolerance and ceiling on to the iteration
+M06 default ceiling 200 to 100: KILLED  The bare envelope the registry returns is byte-for-byte the stored envelope
+M07 default tolerance 1e-10 to 1e-9: KILLED  the metric passes its own tolerance and ceiling on to the iteration
+M08 interpretation wording changed: KILLED  The same listing comes from a registry of integer nodes
+R01 not registered in the standard registry: KILLED  Each fixture stores a record for every registered metric
+R02 registered with a lower ceiling: KILLED  Karate on integer nodes matches the stored values bit for bit, by every registered metric
+R03 registered twice: SURVIVED  
+
+TOTAL 81  killed 66  survived 12  not-counted 3

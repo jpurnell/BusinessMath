@@ -153,7 +153,7 @@ struct RegistryListingGoldenTests {
 		let found = MetricRegistry<String>.standard.available.map { "\($0.identifier)@\($0.version)" }
 		let stored = GoldenRecordData.identifiersAndVersions.map { "\($0.0)@\($0.1)" }
 		#expect(found == stored)
-		#expect(stored.count == 11)
+		#expect(stored.count == 12)
 	}
 
 	@Test("The same listing comes from a registry of integer nodes")
@@ -262,6 +262,13 @@ struct MetricRecordGoldenTests {
 				#expect(envelope.kind == "partition")
 				_ = try #require(try envelope.value(as: NodePartition<String>.self))
 			case "eigenvector-centrality":
+				let typed = try #require(try envelope.value(as: DiagnosedScores<String>.self))
+				_ = try #require(typed.convergence)
+				#expect(envelope.convergence == typed.convergence)
+			case "eigenvector-centrality-by-component":
+				// Reads as plain scores, as diagnosed scores, and its aggregate convergence is what the envelope reports.
+				#expect(envelope.kind == "scores")
+				_ = try #require(try envelope.value(as: NodeScores<String>.self))
 				let typed = try #require(try envelope.value(as: DiagnosedScores<String>.self))
 				_ = try #require(typed.convergence)
 				#expect(envelope.convergence == typed.convergence)
