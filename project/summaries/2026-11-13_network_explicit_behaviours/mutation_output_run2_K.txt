@@ -1,0 +1,15 @@
+K01 pagerank version 3 to 2: KILLED  A version 1 pagerank record decodes as 1, distinct from the version 3 the registry writes now
+K02 pagerank version 3 to 4: KILLED  The registered metric is pagerank at version 3 and its defaults are the loop's
+K03 PageRankMetric default damping 0.85 to 0.9: KILLED  Every standard metric's envelope is the value its function returns, wrapped
+K04 PageRankMetric default ceiling 200 to 100: KILLED  Every score, convergence figure and community number matches bit for bit
+K05 PageRankMetric default tolerance 1e-12 to 1e-9: KILLED  The bare envelope the registry returns is byte-for-byte the stored envelope
+K06 PageRankMetric ignores its damping: KILLED  The registered metric refuses an invalid damping when it runs, through the registry and as a record
+K07 PageRankMetric ignores its ceiling: KILLED  A non-default ceiling and tolerance reach the loop and are reported as given, the ceiling floored at
+K08 PageRankMetric ignores its tolerance: KILLED  A non-default ceiling and tolerance reach the loop and are reported as given, the ceiling floored at
+K09 PageRankMetric reports a fixed tolerance: BUILD ERROR  error: CodeSign /private/tmp/claude-501/-Users-jpurnell-Documents-Princeton-Class-of-2000-Events-2028/afdd3956-2eca-4229-b368-a078e9c2e4d7/scratchpad/mut5/.build/out/Products/Debug/BusinessMathTests.x
+K10 PageRankMetric reports the raw ceiling: KILLED  A non-default ceiling and tolerance reach the loop and are reported as given, the ceiling floored at
+K11 PageRankMetric reports converged always true: KILLED  A non-default ceiling and tolerance reach the loop and are reported as given, the ceiling floored at
+K12 PageRankMetric reports a zero residual: KILLED  It returns the same scores as Centrality.pageRank, bit for bit, plus the report of that run
+K13 PageRankMetric reports no convergence: KILLED  The default metric is unaffected: it still runs and still converges
+
+TOTAL 83  killed 12  survived 0  not-counted 1

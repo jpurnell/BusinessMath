@@ -51,6 +51,41 @@ enum Synthetic {
 		Double(Int.random(in: 1...4, using: &rng))
 	}
 
+	/// The graph induced on its largest connected component, reading ties of positive weight, the
+	/// connectivity eigenvector centrality requires (ADR-009). Ties between equally large components
+	/// go to the one holding the lowest node. Used where a test is about the iteration, not about
+	/// what happens on a graph the measure now refuses.
+	static func connectedPart(_ graph: WeightedGraph<String>) throws -> WeightedGraph<String> {
+		var component = [Int](repeating: -1, count: graph.nodeCount)
+		var sizes: [Int] = []
+		for start in 0..<graph.nodeCount where component[start] < 0 {
+			let id = sizes.count
+			component[start] = id
+			var queue = [start]
+			var head = 0
+			while head < queue.count {
+				let node = queue[head]
+				head += 1
+				for (neighbour, weight) in graph.adjacency[node] where weight > 0 && component[neighbour] < 0 {
+					component[neighbour] = id
+					queue.append(neighbour)
+				}
+			}
+			sizes.append(queue.count)
+		}
+		guard let largest = sizes.enumerated().max(by: { $0.element < $1.element || ($0.element == $1.element && $0.offset > $1.offset) })?.offset else {
+			return graph
+		}
+		var edges: [Edge] = []
+		for (node, ties) in graph.adjacency.enumerated() where component[node] == largest {
+			for (other, weight) in ties where other > node && weight > 0 {
+				edges.append((graph.nodes[node], graph.nodes[other], weight))
+			}
+		}
+		let nodes = graph.nodes.indices.filter { component[$0] == largest }.map { graph.nodes[$0] }
+		return try WeightedGraph(edges: edges, isolatedNodes: nodes)
+	}
+
 	/// `edgeCount` random pairs among `count` nodes, weights 1 to 4 (duplicates merge by sum).
 	static func erdosRenyi(seed: UInt64, count: Int, edgeCount: Int) throws -> WeightedGraph<String> {
 		var rng = SplitMix64(seed: seed)

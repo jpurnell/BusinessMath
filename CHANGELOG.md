@@ -40,6 +40,21 @@ source-breaking and answer-changing; each says exactly what changes and for whom
 - `ConvergenceNote.sentence` is unchanged and still says "far from the true eigenvector. Raise maxIterations to check" for a miss;
   that advice is wrong for the star case above. Recorded as an open follow-up in ADR-009.
 
+#### Changed: eigenvector centrality refuses a graph that is not connected (`eigenvector-centrality` version 4 to 5)
+
+- **`Centrality.eigenvector` and `eigenvectorConvergence` now `throw`** `GraphMeasureError.disconnectedGraph(components:)` for a graph
+  with more than one connected component, and so does `EigenvectorMetric.compute` (through the registry, `run` and `record` too). Before:
+  the iteration ran and scored the component with the largest eigenvalue, leaving every other node (and every isolate) near zero, which
+  reads as "unimportant" rather than "not comparable"; an edgeless graph scored every node 1. The unweighted `Graph.eigenvectorCentrality`
+  already returned `nil`. The empty graph and a lone node are still answered.
+- **Connectivity is judged through ties of positive weight**: a zero-weight tie carries nothing through the iteration, so it does not
+  connect (`Community.connectedComponents` reads topology and does; recorded in ADR-009).
+- **Version 4 to 5.** Scores and convergence reports on a connected graph are bit-identical to version 4 (golden test). A stored version 4
+  record of a graph that was not connected is the old misleading answer and cannot be reproduced; it still decodes.
+- **Source break** (add `try`) and **a use case that now fails loudly**: anyone running eigenvector centrality over a graph that has
+  isolated nodes or several components, which includes any real graph with people who have no recorded tie. Score the components
+  separately (`Community.connectedComponents`) or use PageRank, which is defined on a disconnected graph. No lenient mode is offered.
+
 #### Changed: PageRank refuses an invalid damping (no version bump)
 
 - **`Centrality.pageRank` and `pageRankConvergence` now `throws`** and refuse a `damping` that is `NaN`, infinite, negative or at

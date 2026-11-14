@@ -47,9 +47,9 @@ struct WeightedCrossCheckTests {
 	}
 
 	@Test("Power iteration agrees with dense matrix multiplication")
-	func eigenvectorAgrees() {
+	func eigenvectorAgrees() throws {
 		for graph in [kite, karate] {
-			let fast = Centrality.eigenvector(graph)
+			let fast = try Centrality.eigenvector(graph)
 			let slow = IndependentImplementations.eigenvectorByDenseMatrix(graph)
 			for node in graph.nodes {
 				let a = fast[node] ?? -1

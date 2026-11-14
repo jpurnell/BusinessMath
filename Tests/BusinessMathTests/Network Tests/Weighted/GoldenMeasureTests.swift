@@ -27,7 +27,11 @@ struct GoldenMeasureTests {
 		#expect(actual.count == golden.expected.count)
 		for ((key, value), (expectedKey, expectedValue)) in zip(actual, golden.expected) {
 			#expect(key == expectedKey)
-			if key == "modularity.partial" {
+			if Self.eigenvectorKeys.contains(key) {
+				// ADR-009: refused exactly when the graph is not connected through positive-weight ties.
+				let refused = Self.positiveTieComponents(graph) > 1
+				#expect(value == (refused ? "refused" : expectedValue), "\(name) / \(key)")
+			} else if key == "modularity.partial" {
 				// ADR-009: every second node is left out, so the partition is partial unless the graph has
 				// at most one node. The stored token is what the old code returned for that partial partition.
 				let partial = graph.nodeCount > 1
@@ -43,6 +47,29 @@ struct GoldenMeasureTests {
 				Issue.record("\(name) / \(key): first differing token at \(String(describing: first)), got \(got.count) tokens, expected \(want.count)")
 			}
 		}
+	}
+
+	static let eigenvectorKeys: Set<String> = [
+		"eigenvector", "eigenvectorConvergence.report", "eigenvectorConvergence.scores",
+		"eigenvectorCeiling5.report", "eigenvectorCeiling5.scores",
+		"eigenvectorTol1e-3.report", "eigenvectorTol1e-3.scores", "eigenvectorZeroCeiling",
+	]
+
+	/// Connected components through ties of positive weight, by union-find: written here so the
+	/// expectation does not come from the library code it checks. A graph of fewer than two nodes has one.
+	static func positiveTieComponents(_ graph: WeightedGraph<String>) -> Int {
+		var parent = Array(0..<graph.nodeCount)
+		func root(_ index: Int) -> Int {
+			var current = index
+			while parent[current] != current { current = parent[current] }
+			return current
+		}
+		for (node, ties) in graph.adjacency.enumerated() {
+			for (other, weight) in ties where weight > 0 {
+				parent[root(node)] = root(other)
+			}
+		}
+		return Set((0..<graph.nodeCount).map(root)).count
 	}
 
 	/// For a key whose behaviour step 4 changed on purpose: how to recompute what the old code

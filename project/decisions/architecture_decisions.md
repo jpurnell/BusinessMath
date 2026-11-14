@@ -477,11 +477,36 @@ decision: |
      The cross-check's known issue (random3) is removed and the test is a plain assertion. Louvain on a graph
      where two moves differ by less than 1e-12/2m now resolves to the lower-numbered candidate or stays,
      where before it moved by rounding: a result can change on such graphs, which is the point.
+  5. Eigenvector centrality refuses a graph that is not connected (eigenvector-centrality version 4 to 5).
+     Centrality.eigenvector and eigenvectorConvergence throw GraphMeasureError.disconnectedGraph(components:)
+     for a graph with more than one connected component; EigenvectorMetric.compute therefore throws, and so
+     do registry.run and registry.record. The empty graph and a lone node are still answered. Connectivity is
+     read through ties of positive weight, not topology: a zero-weight tie carries nothing through the
+     iteration, so a graph joined only by zero-weight ties is as disconnected for this measure as one with
+     no tie at all (Community.connectedComponents, which reads topology, would call it connected: ADR-007's
+     recorded inconsistency, and this measure sits on Burt's side of it). An edgeless graph of two or more
+     nodes is disconnected and is refused; it used to score every node 1, which ADR-007 listed "for review in
+     step 4": decided here, refuse, because it is the unweighted measure's answer (nil) and the same defect
+     (the absence of a ranking presented as a measurement). Version: bumped 4 to 5 because the stored output
+     for a disconnected graph changes (a record can no longer be produced, and a version 4 record of such a
+     graph is the lenient, misleading answer). Scores and convergence reports on connected graphs are
+     bit-identical across 4 and 5 (the golden record test compares them after undoing only the version number).
+     Plan section 6 says these behaviours are "closed in step 5" while the phasing table and ADR-007 say step 4
+     (step 5 is diffusion and siting); the phasing table and ADR-007 were followed, and the plan's wording is
+     corrected. No shim: a lenient mode would keep the misleading answer reachable. Consequence for a caller
+     such as ClassGraph, whose real graph is disconnected: the registered metric now throws on it, so a run
+     over every standard metric must handle that one, and score the components separately or use PageRank.
+     Flagged to the owner as the one change here that makes an existing use case impossible rather than loud.
 rationale: |
   - Uniformity with eigenvector centrality, which has reported convergence since version 4: a reader
     should not have to remember which iterative metrics say so.
   - Reporting the residual instead of silently accepting a noise floor keeps the stored figure a
     measurement and not a judgement.
+  Reviewed and not changed in step 4 (ADR-007's "recorded without a scheduled change"): Louvain does not
+  validate resolution (NaN or negative) and treats maxPasses below one as one; the contracted level's
+  adjacency comes from a Dictionary. None changes a stored record for a valid input and none was among the
+  five changes the plan scheduled; they remain open (open decisions, below). Also noticed and not changed:
+  with weights near 1e-300 the eigenvector products underflow and every node scores 1 (the guard in the loop).
 consequences: |
   Positive: damping above about 0.88 or a lowered ceiling can no longer return an unconverged answer
   silently. Negative: PageRankMetric.compute returns a different type (source-breaking for direct

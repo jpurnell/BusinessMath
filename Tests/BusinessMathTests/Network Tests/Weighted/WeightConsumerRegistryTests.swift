@@ -34,6 +34,11 @@ struct WeightConsumerRegistryTests {
 		let registry = MetricRegistry<String>.standard
 		#expect(registry.available.count >= 10)
 		for descriptor in registry.available {
+			if descriptor.identifier == "eigenvector-centrality" {
+				// The graph carries an isolated node, so it is not connected: refused since ADR-009.
+				#expect(throws: GraphMeasureError.self) { _ = try registry.run(descriptor.identifier, on: graph) }
+				continue
+			}
 			let envelope = try #require(try registry.run(descriptor.identifier, on: graph))
 			if let scores = try envelope.value(as: NodeScores<String>.self) {
 				#expect(scores.scores.values.allSatisfy { $0.isFinite }, "\(descriptor.identifier) on \(weights)")

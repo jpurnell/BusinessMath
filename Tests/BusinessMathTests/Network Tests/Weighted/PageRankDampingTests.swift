@@ -29,6 +29,12 @@ private func refusedDamping(_ body: () throws -> Void) -> Double? {
 	}
 }
 
+/// Whether the call threw `invalidDamping` carrying exactly `expected` (NaN matches NaN).
+private func isRefusal(of expected: Double, _ body: () throws -> Void) -> Bool {
+	guard let carried = refusedDamping(body) else { return false }
+	return expected.isNaN ? carried.isNaN : carried.isEqual(to: expected)
+}
+
 private let refusedDampings: [Double] = [
 	Double.nan, Double.infinity, -Double.infinity, 1.0, 1.0000001, 2.5, 1e300,
 	-0.3, -1, -Double.leastNonzeroMagnitude,
@@ -43,29 +49,22 @@ struct PageRankDampingTests {
 	@Test("A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value",
 		  arguments: refusedDampings)
 	func pageRankRefuses(damping: Double) {
-		let carried = refusedDamping { _ = try Centrality.pageRank(sample, damping: damping) }
-		#expect(carried != nil, "damping \(damping)")
-		if damping.isNaN {
-			#expect(carried?.isNaN == true)
-		} else {
-			#expect(carried?.isEqual(to: damping) == true, "damping \(damping)")
-		}
+		#expect(isRefusal(of: damping) { _ = try Centrality.pageRank(sample, damping: damping) }, "damping \(damping)")
 	}
 
 	@Test("pageRankConvergence refuses the same dampings: it is the loop, so the two cannot disagree",
 		  arguments: refusedDampings)
 	func convergenceRefuses(damping: Double) {
-		let carried = refusedDamping { _ = try Centrality.pageRankConvergence(sample, damping: damping) }
-		#expect(carried != nil, "damping \(damping)")
+		#expect(isRefusal(of: damping) { _ = try Centrality.pageRankConvergence(sample, damping: damping) }, "damping \(damping)")
 	}
 
 	@Test("Old behaviour is gone: 1.5 no longer runs as 0.999, -1 no longer runs as 0, NaN no longer gives NaN scores")
 	func clampAndNaNPassThroughAreGone() throws {
 		let atCap = try Centrality.pageRank(sample, damping: 0.999)
 		let atZero = try Centrality.pageRank(sample, damping: 0)
-		#expect(refusedDamping { _ = try Centrality.pageRank(sample, damping: 1.5) } != nil)
-		#expect(refusedDamping { _ = try Centrality.pageRank(sample, damping: -1) } != nil)
-		#expect(refusedDamping { _ = try Centrality.pageRank(sample, damping: Double.nan) } != nil)
+		#expect(isRefusal(of: 1.5) { _ = try Centrality.pageRank(sample, damping: 1.5) })
+		#expect(isRefusal(of: -1) { _ = try Centrality.pageRank(sample, damping: -1) })
+		#expect(isRefusal(of: Double.nan) { _ = try Centrality.pageRank(sample, damping: Double.nan) })
 		// And the values they used to be treated as are still themselves legal.
 		#expect(atCap.scores.values.allSatisfy { $0.isFinite })
 		#expect(atZero.scores.values.allSatisfy { abs($0 - 0.2) < 1e-12 })
@@ -97,9 +96,9 @@ struct PageRankDampingTests {
 	@Test("The refusal does not depend on the graph, the ceiling or the tolerance: an empty graph refuses too")
 	func refusalIsInputOnly() throws {
 		let empty = try WeightedGraph<String>(edges: [])
-		#expect(refusedDamping { _ = try Centrality.pageRank(empty, damping: Double.nan) } != nil)
-		#expect(refusedDamping { _ = try Centrality.pageRankConvergence(empty, damping: 1) } != nil)
-		#expect(refusedDamping { _ = try Centrality.pageRank(sample, damping: 2, maxIterations: 0, tolerance: 0) } != nil)
+		#expect(isRefusal(of: Double.nan) { _ = try Centrality.pageRank(empty, damping: Double.nan) })
+		#expect(isRefusal(of: 1) { _ = try Centrality.pageRankConvergence(empty, damping: 1) })
+		#expect(isRefusal(of: 2) { _ = try Centrality.pageRank(sample, damping: 2, maxIterations: 0, tolerance: 0) })
 		// A valid damping on an empty graph still gives an empty answer.
 		#expect(try Centrality.pageRank(empty).scores.isEmpty)
 	}
@@ -132,12 +131,12 @@ struct PageRankDampingTests {
 	func metricRefuses() {
 		for damping in [Double.nan, 1.0, 1.5, -0.1] {
 			let metric = PageRankMetric<String>(damping: damping)
-			#expect(refusedDamping { _ = try metric.compute(on: sample) } != nil, "damping \(damping)")
+			#expect(isRefusal(of: damping) { _ = try metric.compute(on: sample) }, "damping \(damping)")
 			let registry = MetricRegistry([AnyGraphMetric(metric)])
-			#expect(refusedDamping { _ = try registry.run("pagerank", on: sample) } != nil, "damping \(damping)")
-			#expect(refusedDamping {
+			#expect(isRefusal(of: damping) { _ = try registry.run("pagerank", on: sample) }, "damping \(damping)")
+			#expect(isRefusal(of: damping) {
 				_ = try registry.record("pagerank", on: sample, context: "c", now: Date(timeIntervalSince1970: 0))
-			} != nil, "damping \(damping)")
+			}, "damping \(damping)")
 		}
 	}
 

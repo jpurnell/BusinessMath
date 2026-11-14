@@ -42,26 +42,44 @@ func goldenValueOrRefusal(_ body: () throws -> Double) -> String {
 	}
 }
 
+/// The eigenvector measures of the golden set, in the stored order, or `refused` for each if the graph is refused.
+func goldenEigenvectorMeasures(_ graph: WeightedGraph<String>) -> [(String, String)] {
+	let keys = [
+		"eigenvector", "eigenvectorConvergence.report", "eigenvectorConvergence.scores",
+		"eigenvectorCeiling5.report", "eigenvectorCeiling5.scores",
+		"eigenvectorTol1e-3.report", "eigenvectorTol1e-3.scores", "eigenvectorZeroCeiling",
+	]
+	do {
+		var out: [(String, String)] = []
+		out.append(("eigenvector", goldenScoreTokens(try Centrality.eigenvector(graph), graph)))
+		let converged = try Centrality.eigenvectorConvergence(graph)
+		out.append(("eigenvectorConvergence.report",
+			"\(converged.iterations) \(converged.converged ? 1 : 0) \(hex(converged.residual))"))
+		out.append(("eigenvectorConvergence.scores", goldenScoreTokens(converged.scores, graph)))
+		let capped = try Centrality.eigenvectorConvergence(graph, maxIterations: 5, tolerance: 1e-10)
+		out.append(("eigenvectorCeiling5.report",
+			"\(capped.iterations) \(capped.converged ? 1 : 0) \(hex(capped.residual))"))
+		out.append(("eigenvectorCeiling5.scores", goldenScoreTokens(capped.scores, graph)))
+		let loose = try Centrality.eigenvectorConvergence(graph, maxIterations: 200, tolerance: 1e-3)
+		out.append(("eigenvectorTol1e-3.report",
+			"\(loose.iterations) \(loose.converged ? 1 : 0) \(hex(loose.residual))"))
+		out.append(("eigenvectorTol1e-3.scores", goldenScoreTokens(loose.scores, graph)))
+		out.append(("eigenvectorZeroCeiling", goldenScoreTokens(try Centrality.eigenvector(graph, maxIterations: 0), graph)))
+		return out
+	} catch {
+		return keys.map { ($0, "refused") }
+	}
+}
+
 func goldenMeasures(_ graph: WeightedGraph<String>) -> [(String, String)] {
 	var out: [(String, String)] = []
 	func scores(_ key: String, _ value: NodeScores<String>) { out.append((key, goldenScoreTokens(value, graph))) }
 	func parts(_ key: String, _ value: NodePartition<String>) { out.append((key, goldenPartitionTokens(value, graph))) }
 
 	scores("degree", Centrality.degree(graph))
-	scores("eigenvector", Centrality.eigenvector(graph))
-	let converged = Centrality.eigenvectorConvergence(graph)
-	out.append(("eigenvectorConvergence.report",
-		"\(converged.iterations) \(converged.converged ? 1 : 0) \(hex(converged.residual))"))
-	scores("eigenvectorConvergence.scores", converged.scores)
-	let capped = Centrality.eigenvectorConvergence(graph, maxIterations: 5, tolerance: 1e-10)
-	out.append(("eigenvectorCeiling5.report",
-		"\(capped.iterations) \(capped.converged ? 1 : 0) \(hex(capped.residual))"))
-	scores("eigenvectorCeiling5.scores", capped.scores)
-	let loose = Centrality.eigenvectorConvergence(graph, maxIterations: 200, tolerance: 1e-3)
-	out.append(("eigenvectorTol1e-3.report",
-		"\(loose.iterations) \(loose.converged ? 1 : 0) \(hex(loose.residual))"))
-	scores("eigenvectorTol1e-3.scores", loose.scores)
-	scores("eigenvectorZeroCeiling", Centrality.eigenvector(graph, maxIterations: 0))
+	// Step 4 (ADR-009): eigenvector centrality refuses a graph that is not connected, so on those
+	// fixtures every one of these keys renders `refused`; on connected ones the tokens are unchanged.
+	out += goldenEigenvectorMeasures(graph)
 	out.append(("pageRank", goldenTokensOrRefusal(graph) { try Centrality.pageRank(graph) }))
 	for damping in [0.5, 0.99] {
 		out.append(("pageRank.damping\(damping)", goldenTokensOrRefusal(graph) { try Centrality.pageRank(graph, damping: damping) }))

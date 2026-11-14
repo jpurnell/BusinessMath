@@ -82,13 +82,30 @@ private func isEigenvector(_ identifier: String) -> Bool { identifier == "eigenv
 // change does not touch must still equal what the previous package wrote.
 //
 // - pagerank, version 2 to 3: the version number, and a `convergence` key in the payload.
+// - eigenvector-centrality, version 4 to 5: the version number only (a connected graph's scores and
+//   report are bit-identical); on a graph that is not connected the registry now throws, and the
+//   stored record is the old behaviour, which no longer reproduces.
 
 /// A fresh record or envelope, as JSON text, with the documented step-4 change of `identifier`
 /// undone, so it can be compared byte for byte with the stored text.
 private func asStoredBeforeStepFour(_ json: String, identifier: String) throws -> String {
-	guard identifier == "pagerank" else { return json }
+	guard identifier == "pagerank" || identifier == "eigenvector-centrality" else { return json }
 	let value = try JSONDecoder().decode(JSONValue.self, from: Data(json.utf8))
+	if identifier == "eigenvector-centrality" {
+		guard case .object(var fields) = value else { return json }
+		if case .number(let version)? = fields["metricVersion"], Int(version) == 5 {
+			fields["metricVersion"] = .number(4)
+		}
+		return try text(JSONValue.object(fields))
+	}
 	return try text(withoutPageRankStepFourChange(value))
+}
+
+/// Whether the registry now refuses this metric on this graph: eigenvector centrality on a graph
+/// that is not connected through positive-weight ties (ADR-009). Connectivity is computed by the
+/// union-find in GoldenMeasureTests, which shares no code with the library.
+private func isRefused(_ identifier: String, _ graph: WeightedGraph<String>) -> Bool {
+	identifier == "eigenvector-centrality" && GoldenMeasureTests.positiveTieComponents(graph) > 1
 }
 
 private func withoutPageRankStepFourChange(_ value: JSONValue) -> JSONValue {
@@ -178,6 +195,12 @@ struct MetricRecordGoldenTests {
 		let graph = try graph(golden)
 		let context = GoldenContext(fixture: golden.name, weighting: "golden", minimumEdgeWeight: 0.02)
 		for (identifier, expected, _, _) in golden.records {
+			if isRefused(identifier, graph) {
+				#expect(throws: GraphMeasureError.self, "\(golden.name) \(identifier)") {
+					_ = try MetricRegistry<String>.standard.record(identifier, on: graph, context: context, now: goldenClock)
+				}
+				continue
+			}
 			let record = try #require(
 				try MetricRegistry<String>.standard.record(identifier, on: graph, context: context, now: goldenClock))
 			let found = try asStoredBeforeStepFour(try text(record), identifier: identifier)
@@ -189,6 +212,12 @@ struct MetricRecordGoldenTests {
 	func envelopeText(golden: GoldenRecordCase) throws {
 		let graph = try graph(golden)
 		for (identifier, _, expected, _) in golden.records {
+			if isRefused(identifier, graph) {
+				#expect(throws: GraphMeasureError.self, "\(golden.name) \(identifier)") {
+					_ = try MetricRegistry<String>.standard.run(identifier, on: graph)
+				}
+				continue
+			}
 			let envelope = try #require(try MetricRegistry<String>.standard.run(identifier, on: graph))
 			let found = try asStoredBeforeStepFour(try text(envelope), identifier: identifier)
 			#expect(found == expected, "\(golden.name) \(identifier)")
@@ -199,6 +228,7 @@ struct MetricRecordGoldenTests {
 	func bitPatterns(golden: GoldenRecordCase) throws {
 		let graph = try graph(golden)
 		for (identifier, _, _, expected) in golden.records {
+			if isRefused(identifier, graph) { continue }   // refused: asserted by the record and envelope tests
 			let envelope = try #require(try MetricRegistry<String>.standard.run(identifier, on: graph))
 			let found = try tokens(envelope, graph.nodes, diagnosed: isEigenvector(identifier))
 			#expect(found == expected, "\(golden.name) \(identifier)")
@@ -212,13 +242,14 @@ struct MetricRecordGoldenTests {
 		let context = GoldenContext(fixture: golden.name, weighting: "golden", minimumEdgeWeight: 0.02)
 		for (identifier, stored, _, _) in golden.records {
 			let decoded = try JSONDecoder().decode(MetricRecord<GoldenContext>.self, from: Data(stored.utf8))
-			let fresh = try #require(
-				try MetricRegistry<String>.standard.record(identifier, on: graph, context: context, now: goldenClock))
-			if identifier != "pagerank" {
-				#expect(decoded == fresh, "\(golden.name) \(identifier)")
-			}
 			#expect(try text(decoded) == stored, "\(golden.name) \(identifier)")
 			#expect(decoded.metric == identifier)
+			if isRefused(identifier, graph) { continue }   // the stored record decodes; it can no longer be reproduced
+			let fresh = try #require(
+				try MetricRegistry<String>.standard.record(identifier, on: graph, context: context, now: goldenClock))
+			if identifier != "pagerank" && identifier != "eigenvector-centrality" {
+				#expect(decoded == fresh, "\(golden.name) \(identifier)")
+			}
 		}
 	}
 
@@ -252,6 +283,12 @@ struct MetricRecordGoldenTests {
 		for (name, ceiling, tolerance, expectedText, expectedBits) in GoldenRecordData.eigenvectorSettings {
 			let golden = try #require(GoldenRecordData.cases.first { $0.name == name })
 			let graph = try graph(golden)
+			if GoldenMeasureTests.positiveTieComponents(graph) > 1 {
+				#expect(throws: GraphMeasureError.self, "\(name) \(ceiling) \(tolerance)") {
+					_ = try EigenvectorMetric<String>(maxIterations: ceiling, tolerance: tolerance).compute(on: graph)
+				}
+				continue
+			}
 			let output = try EigenvectorMetric<String>(maxIterations: ceiling, tolerance: tolerance).compute(on: graph)
 			let envelope = try MetricEnvelope(output)
 			#expect(try text(envelope) == expectedText, "\(name) \(ceiling) \(tolerance)")

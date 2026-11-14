@@ -201,7 +201,7 @@ struct UnweightedWeightedCrossCheckTests {
 		#expect(peak > 0)
 		var rescaled: [String: Double] = [:]
 		for (node, value) in plain { rescaled[node] = value / peak }
-		let report = Centrality.eigenvectorConvergence(fixture.weighted, maxIterations: 20_000, tolerance: 1e-12)
+		let report = try Centrality.eigenvectorConvergence(fixture.weighted, maxIterations: 20_000, tolerance: 1e-12)
 		#expect(report.converged)
 		let difference = try #require(maxDifference(rescaled, report.scores))
 		#expect(difference < 1e-6)
@@ -214,37 +214,32 @@ struct UnweightedWeightedCrossCheckTests {
 			let peak = try #require(plain.values.max())
 			var rescaled: [String: Double] = [:]
 			for (node, value) in plain { rescaled[node] = value / peak }
-			let weighted = Centrality.eigenvector(fixture.weighted)
+			let weighted = try Centrality.eigenvector(fixture.weighted)
 			let difference = try #require(maxDifference(rescaled, weighted))
 			#expect(difference < 1e-6)
 		}
 	}
 
-	@Test("Eigenvector, difference: the unweighted measure refuses a disconnected graph, the weighted one scores the dominant component and leaves the rest near zero (ADR-007)",
+	@Test("Eigenvector, agreement since ADR-009: both refuse a disconnected graph, nil unweighted and a thrown error weighted",
 		  arguments: [disconnectedFixtures[1], disconnectedFixtures[2], disconnectedFixtures[3]])
-	func eigenvectorDisconnectedDifference(_ fixture: CrossCheckFixture) {
+	func eigenvectorDisconnectedBothRefuse(_ fixture: CrossCheckFixture) {
 		#expect(fixture.plain.eigenvectorCentrality() == nil)
-		let weighted = Centrality.eigenvector(fixture.weighted)
-		#expect(weighted.scores.values.max() == 1)
-		// Not exactly zero: the other components decay with every pass (about 3.5e-12 after
-		// the default 200 on the path with isolates), so "near zero" is the honest description.
-		#expect(weighted.scores.values.contains { $0 < 1e-6 })
+		#expect(throws: GraphMeasureError.self) { _ = try Centrality.eigenvector(fixture.weighted) }
 	}
 
-	@Test("Eigenvector, difference: two components with the same leading eigenvalue both score one weighted, and the unweighted measure still refuses")
-	func eigenvectorTiedComponentsDifference() {
+	@Test("Eigenvector, agreement since ADR-009: two components with the same leading eigenvalue are refused by both too")
+	func eigenvectorTiedComponentsBothRefuse() {
 		let fixture = disconnectedFixtures[0]
 		#expect(fixture.plain.eigenvectorCentrality() == nil)
-		let weighted = Centrality.eigenvector(fixture.weighted)
-		for score in weighted.scores.values { #expect(abs(score - 1) < 1e-9) }
+		#expect(throws: GraphMeasureError.self) { _ = try Centrality.eigenvector(fixture.weighted) }
 	}
 
-	@Test("Eigenvector, difference: an edgeless graph is nil unweighted, all ones weighted")
-	func eigenvectorEdgelessDifference() {
+	@Test("Eigenvector, agreement since ADR-009: an edgeless graph is nil unweighted and refused weighted (it scored all ones before)")
+	func eigenvectorEdgelessBothRefuse() {
 		let plain = Graph<String>(adjacency: ["a": [], "b": [], "c": []])
 		#expect(plain.eigenvectorCentrality() == nil)
-		let weighted = Centrality.eigenvector(WeightedGraph(unweightedEdges: [], isolatedNodes: ["a", "b", "c"]))
-		#expect(weighted.scores == ["a": 1, "b": 1, "c": 1])
+		let weighted = WeightedGraph<String>(unweightedEdges: [], isolatedNodes: ["a", "b", "c"])
+		#expect(throws: GraphMeasureError.self) { _ = try Centrality.eigenvector(weighted) }
 	}
 
 	@Test("Modularity of the same partition agrees to 1e-12: the weighted Louvain result, the components, and singletons",

@@ -1,0 +1,638 @@
+􁁛  Test "PageRank reports a failure to converge rather than its last iterate" passed
+􁁛  Test "Harmonic closeness matches a reference breadth-first computation" passed
+􁁛  Test "An empty graph has no centrality of any kind" passed
+􁁛  Test "Degree centrality counts neighbours" passed
+􁁛  Test "Harmonic closeness stays defined on a disconnected graph" passed
+􁁛  Test "Eigenvector centrality matches a reference power iteration" passed
+􁁛  Test "PageRank matches a reference power iteration and sums to one" passed
+􁁛  Test "The bridge has the lowest degree, the lowest PageRank, and the highest betweenness" passed
+􁁛  Test "Path at p = 1: spread is the component size from any seed" passed
+􁁛  Test "Two components at p = 1: only the seeded component activates" passed
+􁁛  Test "Eigenvector centrality refuses a graph where it is not meaningful" passed
+􁁛  Test "Probability outside [0, 1] or non-finite is rejected" passed
+􁁛  Test "Empty sweep and invalid probabilities throw" passed
+􁁛  Test "Projection refuses input it cannot project" passed
+􁁛  Test "Betweenness matches a reference implementation of Brandes" passed
+􁁛  Test "A leaf at p = 1 reaches the whole star; at p = 0 only itself" passed
+􁁛  Test "Shared-membership counts are the projection's simplest weighting" passed
+􁁛  Test "Modularity refuses a partition that is not one" passed
+􁁛  Test "Louvain finds the two clusters the graph obviously has" passed
+􁁛  Test "Star centre at p = 0 spreads to exactly 1" passed
+􁁛  Test "A member who shares nothing survives the projection" passed
+􁁛  Test "One community scores exactly zero, by identity" passed
+􁁛  Test "Jaccard overlap: matrix is symmetric, unit diagonal, hand-checked values" passed
+􁁛  Test "Triangle with a pendant" passed
+􁁛  Test "Modularity matches an independent computation" passed
+􁁛  Test "Jaccard and cosine weightings match an independent computation" passed
+􁁛  Test "Kite degrees match the published sequence" passed
+􁁛  Test "PageRank: with the tolerance set to the change of pass k, the result is not the pass-k iterate" passed
+􁁛  Test "Isolates and edgeless graphs score zero; every node is present" passed
+􁁛  Test "A graph with no structure is not forced into communities" passed
+􁁛  Test "Star centre at p = 1 spreads to exactly n + 1" passed
+􁁛  Test "The kite has ten nodes and eighteen edges" passed
+􁁛  Test "Agrees with explicit triangle counting on random graphs; weights are ignored" passed
+􁁛  Test "Bow-tie centre" passed
+􁁛  Test "A complete graph is fully clustered and a star not at all" passed
+􁁛  Test "Louvain is deterministic whatever order the graph was built in" passed
+􁁛  Test "An improvement exactly equal to the tolerance is not taken (the comparison is strict)" passed
+􁁛  Test "A single sweep point has mean Jaccard 1 (no pairs to disagree)" passed
+􁁛  Test "A node of degree two whose neighbours are not linked scores zero" passed
+􁁛  Test "enumerate stops at the last subset even when asked for more, and never reads past it" passed
+􁁛  Test "SiteAssignment sorts by demand and site whatever order it is built in, and re-sorting is a no-op" with 12 test cases passed
+􁁛  Test "The karate club has thirty-four nodes and seventy-eight edges" passed
+􁁛  Test "Karate degrees match the published values" passed
+􁁛  Test "A result with no weight reports mean 0, not NaN" passed
+􁁛  Test "enumerate visits every k-subset once, lexicographically, and keeps the first strict best" passed
+􁁛  Test "Invalid weights, costs and counts are each rejected with the offending value named" passed
+􁁛  Test "A custom value type can travel through the registry" passed
+􁁛  Test "Eigenvector: with the tolerance set to the residual of a converged run, the run needs more passes" passed
+􁁛  Test "subsetCount is the binomial coefficient, symmetric, saturating and overflow-safe" with 9 test cases passed
+􁁛  Test "An empty registry lists nothing and runs nothing" passed
+􁁛  Test "swapSearch accepts an improvement only when it exceeds 1e-12 x max(1, |current|)" with 8 test cases passed
+􁁛  Test "The guarantee is not vacuous: on a graph with one hub, greedy keeps most of the optimum, not just 63%" passed
+􀢄  Test "Moved metrics keep the versions they had; eigenvector is at 5 and pagerank at 3" failed
+􁁛  Test "When two metrics share an identifier the first wins, in the initialiser and in registering" passed
+􁁛  Test "Round trip: encode then decode returns the original, as JSON and as an envelope" with 12 test cases passed
+􁁛  Test "Star centre at p = 0.5, n = 10 is within 4 SE of 6.0 (2000 trials)" passed
+􁁛  Test "greedy adds the best site each round, lowest index on ties, and stops when none are left" passed
+􁁛  Test "Weight-scaled probability uses w / maxWeight" passed
+􁁛  Test "swapSearch scales its tolerance by the objective being improved on, not by the best candidate" passed
+􁁛  Test "A metric looked up by identifier carries the descriptor it was registered with" passed
+􁁛  Test "A result is exact precisely when C(sites, k) <= enumerationLimit" passed
+􁁛  Test "Every diffusion model keeps its count in range and the estimate finite" with 7 test cases passed
+􁁛  Test "A declared model is refreshed in batches no larger than the batch asked for" passed
+􁁛  Test "Runs a metric by identifier" passed
+􁁛  Test "Seed selection and a probability sweep pick real, distinct nodes" with 7 test cases passed
+􁁛  Test "Returns nil for an unknown identifier rather than throwing" passed
+􁁛  Test "Siting on degree-weighted demand stays finite" with 7 test cases passed
+􁁛  Test "The same model declared submodular is allowed to skip: it runs fewer trials, and picks the same nodes" passed
+􁁛  Test "The registry lists its metrics in identifier order, once each" passed
+􁁛  Test "swapSearch takes the best single swap until none improves by more than rounding" passed
+􁁛  Test "NodeScores demand: the weights are the scores, and a non-positive total is refused" passed
+􁁛  Test "Siting on NodeScores built from weighted degree stays finite" with 7 test cases passed
+􁁛  Test "Every added measure is in the registry, and there are exactly eleven" passed
+􁁛  Test "A new metric can be added without touching existing code" passed
+􁁛  Test "A metric that throws makes the registry throw, not return nil" passed
+􁁛  Test "Every metric states what a low score does and does not mean" passed
+􁁛  Test "Closeness of a lone edge is one" passed
+􁁛  Test "A partition metric comes back as a partition envelope" passed
+􁁛  Test "The seed selector registers and round-trips as a selection envelope" passed
+􀢄  Test "The same listing comes from a registry of integer nodes" failed
+􁁛  Test "Ships the metrics the design calls for" passed
+􀢄  Test "The descriptor listing encodes to exactly the stored text" failed
+􁁛  Test "Closeness on a star" passed
+􁁛  Test "Closeness of a graph of at most one node is zero" passed
+􁁛  Test "Harmonic on a path of three" passed
+􁁛  Test "Closeness discounts what cannot be reached, and an isolate scores zero" passed
+􁁛  Test "Closeness on a path of three" passed
+􁁛  Test "The seed selector is deliberately not in the standard registry" passed
+􀢄  Test "The stored listing decodes to the descriptors the registry lists, in order" failed
+􁁛  Test "Re-encoding a decoded stored envelope reproduces the stored text" passed
+􁁛  Test "A zero ceiling still runs one pass, as eigenvector does" passed
+􁁛  Test "Closeness and harmonic agree with Floyd-Warshall distances on random graphs" passed
+􁁛  Test "Every standard metric's envelope is the value its function returns, wrapped" passed
+􁁛  Test "Harmonic of a graph of at most one node is zero" passed
+􁁛  Test "Reports one selection per probability, in order" passed
+􁁛  Test "Its scores equal eigenvector's exactly, at every ceiling, across seeded random graphs" with 10 test cases passed
+􁁛  Test "Harmonic counts the unreachable as zero but still divides by n - 1" passed
+􁁛  Test "Sweeps are deterministic" passed
+􁁛  Test "Harmonic on a path of five weights distance 3 and 4 by their reciprocals" passed
+􀢄  Test "Degenerate graphs have nothing to iterate: converged, zero residual" failed
+􁁛  Test "Every recorded selection is reproduced exactly, exact and heuristic branches alike" passed
+􁁛  Test "For seeded random trial counts the standard error is finite, non-negative and matches the two-pass formula" passed
+􁁛  Test "Stored envelopes decode, yield equal typed values and the same convergence" passed
+􁁛  Test "A version 4 record with a report decodes and keeps the report" passed
+􀢄  Test "Identifiers and versions are exactly the stored ones, with no metric added or dropped" failed
+􁁛  Test "Once converged the residual is the final change and sits under the tolerance" passed
+􁁛  Test "One trial of any count has standard error exactly zero, never NaN" with 5 test cases passed
+􁁛  Test "Every transient row sums to one, and absorbing states hold themselves" passed
+􁁛  Test "The values encode to exactly the stored text" passed
+􁁛  Test "Transition probabilities are the observed frequencies" passed
+􁁛  Test "The stored text decodes to equal values" passed
+􁁛  Test "Envelopes of each value encode to exactly the stored text" passed
+􁁛  Test "A version 1 pagerank record decodes as 1, distinct from the version 3 the registry writes now" passed
+􁁛  Test "The stationary distribution is stationary" passed
+􁁛  Test "A deterministic chain takes exactly as many steps as it has" passed
+􁁛  Test "The sentences for the stored reports are the ones the previous package wrote" passed
+􁁛  Test "Chains refuse what they cannot represent" passed
+􁁛  Test "The chain reproduces the conversion rate of the journeys it was built from" passed
+􁁛  Test "Both are invariant under weight scaling, which they ignore" passed
+􁁛  Test "A journey's expected length is at least one step and finite" passed
+􁁛  Test "Expected steps to absorption is the geometric mean it must be" passed
+􁁛  Test "A version 3 eigenvector record decodes, reads as plain scores, and re-encodes to the stored bytes" passed
+􁁛  Test "A record for a metric this build does not know decodes and re-encodes unchanged" passed
+􁁛  Test "Removing a state that is not a channel is refused" passed
+􁁛  Test "A version 2 eigenvector record, with no convergence, decodes and reads as unknown" passed
+􁁛  Test "The dominant channel is identified as dominant" passed
+􁁛  Test "Louvain reaches the modularity the literature reports for this graph" passed
+􁁛  Test "The stationary distribution of an ergodic chain is the one solved by hand" passed
+􁁛  Test "Absorption from a later state ignores how the journey reached it" passed
+􁁛  Test "A single trial is a valid trial count for the selector, the estimator and the sweep" passed
+􁁛  Test "Every node lands in exactly one community" passed
+􁁛  Test "Attribution shares are the normalised removal effects and sum to one" passed
+􁁛  Test "Independent cascade declares it; linear threshold and an undeclared model do not" passed
+􁁛  Test "Modularity of everything-in-one-community is zero" passed
+􁁛  Test "Recovers most of the actual faction split" passed
+􁁛  Test "Louvain's partition scores well under an independent modularity function" passed
+􁁛  Test "Frequencies are the fraction of sweep points in which a node was picked" passed
+􁁛  Test "An undeclared model gets exact plain greedy even when asked to be as lazy as possible" passed
+􁁛  Test "Louvain separates the instructor from the administrator" passed
+􁁛  Test "The same graph always produces the same partition, across processes" passed
+􁁛  Test "Removal effects are the ones an independent computation gives" passed
+􁁛  Test "Threshold share is weight over weighted degree, not over neighbour count" passed
+􁁛  Test "Path from an end under linear threshold: mean 2 with variance 1.875" passed
+􁁛  Test "Core numbers agree with literal repeated peeling" passed
+􁁛  Test "Modularity of every-node-alone is negative" passed
+􁁛  Test "Path from an end: mean is the geometric sum" passed
+􁁛  Test "A lone edge under linear threshold always spreads to both ends, with zero variance" passed
+􁁛  Test "Does not claim convergence when the ceiling is too small, and does when it is large" passed
+􁁛  Test "Does not claim convergence when the ceiling is too small, and does when it is large" passed
+􁁛  Test "A looser tolerance never needs more passes, and an enormous one stops
+􁁛  Test "Brandes betweenness agrees with brute-force path enumeration on the kite" passed
+􁁛  Test "Power iteration agrees with dense matrix multiplication" passed
+􁁛  Test "A zero ceiling still runs one pass, as pageRank does" passed
+􁁛  Test "Damping 0.9 stops short on a path within the default ceiling, which the bound also predicts" passed
+􁁛  Test "pageRank and pageRankConvergence are one loop: identical scores bit for bit, and identical to the loop as it was before this change" with 6 test cases passed
+􁁛  Test "A looser tolerance never needs more passes, and an enormous one stops
+􁁛  Test "Damping 0.99 at the default ceiling does not converge, says so, and the scores really are off" passed
+􁁛  Test "Other kinds carry no convergence" passed
+􁁛  Test "Degenerate graphs: an empty graph has nothing to iterate; one node and an edgeless graph settle at once" passed
+􁁛  Test "The default call converges on every family, with the ceiling's margin intact" passed
+􁁛  Test "A graph with nothing to iterate reports converged, zero passes" passed
+􁁛  Test "The residual is the final L1 change, and one pass fewer is not yet converged" passed
+􁁛  Test "The tolerance is carried, and the ceiling is at least one pass" passed
+􁁛  Test "A whole stored version 3 record decodes" passed
+􁁛  Test "The sentence says which it was, with the numbers" passed
+􁁛  Test "Two dense clusters joined by one edge hit the ceiling" with 3 test cases passed
+􁁛  Test "A long path hits the ceiling, with a residual far above the tolerance" passed
+􁁛  Test "At the default damping and tolerance, convergence is reached within the pass count the bound predicts, on every family" passed
+􁁛  Test "Only a scores envelope is read for convergence, whatever another kind's payload holds" passed
+􁁛  Test "Path of six matches sin(k pi / 7) whatever the size of the weights" passed
+􁁛  Test "A star converges at the default ceiling" passed
+􁁛  Test "The scores are exactly Centrality.eigenvector's, at the default and at a raised ceiling" with 3 test cases passed
+􁁛  Test "A consumer that only knows NodeScores still reads a version 4 envelope" passed
+􁁛  Test "Invariant under an arbitrary permutation of the labels" passed
+􁁛  Test "The defaults are 200 iterations and a tolerance of 1e-10" passed
+􁁛  Test "Path of three: the middle node leads, the ends are 1/sqrt(2)" passed
+􁁛  Test "The iteration ceiling is honoured and never below one" passed
+􁁛  Test "Star: the hub is 1 and each leaf is one half" passed
+􁁛  Test "Round-trips through the registry, an envelope and JSON, seeded" with 4 test cases passed
+􁁛  Test "A large enough ceiling flips both to converged" passed
+􁁛  Test "The result satisfies A v = lambda v on random graphs, trees included" passed
+􁁛  Test "A stored version 3 envelope decodes, and its convergence reads as unknown" passed
+􁁛  Test "Weighted path of three matches the closed form" passed
+􁁛  Test "The metric's defaults are 200 passes and a tolerance of 1e-10" passed
+􀢄  Test "Two nodes: a joined pair both score one, and two strangers are refused" failed
+􁁛  Test "Brandes betweenness agrees with enumeration on the karate club" passed
+􁁛  Test "Seeded Erdos-Renyi and preferential-attachment graphs converge" with 6 test cases passed
+􁁛  Test "Complete bipartite K(2,3): sides are 1 and sqrt(2/3)" passed
+􀢄  Test "An edgeless graph is refused, one component per node (it used to score every node 1)" failed
+􁁛  Test "Stops when the change per pass falls below the tolerance, exactly as documented" passed
+􀢄  Test "Two components, one dominant, are refused instead of the larger eigenvalue taking all the weight" failed
+􁁛  Test "One pass from the uniform start, by hand" passed
+􁁛  Test "An enormous tolerance stops
+􁁛  Test "Repeated runs give identical output" passed
+􁁛  Test "The a-priori bound is the oracle:
+􁁛  Test "Invariant under relabelling that keeps the sort order, and under weight scaling" passed
+􁁛  Test "Agrees with the dense transcription on a weighted, irregular graph" passed
+􁁛  Test "The empty graph has no scores and a lone node scores 1" passed
+􁁛  Test "Agrees with the dense-matrix transcription on the kite and the karate club" passed
+􁁛  Test "Independent cascade is submodular in every single trial: gains never grow with the seed set" with 25 test cases passed
+􀢄  Test "A node with no ties beside a connected component is refused, not scored zero (ADR-009)" failed
+􁁛  Test "A star of 5,000 at the defaults converges, to the closed form" passed
+􁁛  Test "The compressed-row form of the weighted graph is reproduced exactly" passed
+􁁛  Test "Linear threshold is NOT submodular in a single trial: two half-weight neighbours can jointly activate a node neither does alone" passed
+􁁛  Test "Constraint is positive for every non-isolated node; a single neighbour gives 1" passed
+􁁛  Test "Every recorded node draw is reproduced bit for bit" passed
+􁁛  Test "Path of four: the ends are 1/phi" passed
+􁁛  Test "The kite's connector is the lowest-constraint broker among its hubs" passed
+􁁛  Test "The generator overload keys the trial from one Xoshiro256StarStar draw, as before" passed
+􁁛  Test "Every recorded edge draw is reproduced bit for bit" passed
+􁁛  Test "NodeSelection round-trips through JSON and its envelope, for seeded arbitrary picks" with 4 test cases passed
+􁁛  Test "The sum of weighted degrees is twice the total weight" passed
+􁁛  Test "Adjacency is symmetric: every tie is recorded at both ends with the same weight" passed
+􁁛  Test "Graphs of at most two nodes score zero for every node" passed
+􁁛  Test "The bridge on a random symmetric graph round-trips to the same adjacency" passed
+􁁛  Test "Unreachable pairs contribute nothing" passed
+􁁛  Test "Relabelling the nodes by a bijection preserves the multiset of weighted degrees" passed
+􁁛  Test "Marginal gain is zero for a node already reached with certainty" passed
+􁁛  Test "Four-cycle splits a pair between two shortest paths" passed
+􁁛  Test "Edge weights record strength, not distance: they do not change the result" passed
+􁁛  Test "Repeating every edge doubles every weight and leaves the structure alone" passed
+􁁛  Test "Never worse than every node alone, and communities do not span components" passed
+􁁛  Test "Three cliques in a ring are three communities" passed
+􁁛  Test "Ties resolve to the lowest node index; zero probability picks nodes in order" passed
+􁁛  Test "Edge order does not change the graph" passed
+􁁛  Test "Star hub: raw 6, normalised 1" passed
+􁁛  Test "A heavy link pairs its ends; a light link leaves the triangles whole" passed
+􁁛  Test "Per-trial counts and exact activated sets match, for both models on three graphs" passed
+􁁛  Test "Resolution: huge keeps every node alone, zero merges a connected graph" passed
+􁁛  Test "Invariant under order-preserving relabelling and under uniform weight scaling" passed
+􁁛  Test "NodeScores become demand weights" passed
+􁁛  Test "The estimator reads the same trials as TrialRandomness(masterSeed:, trial:) in order, and the flat and unflattened overloads agree" passed
+􁁛  Test "Labels are dense, and numbered in the order of each community's first node" passed
+􁁛  Test "More passes never lower modularity; zero passes behaves as one" passed
+􁁛  Test "Convergence reads as unknown for a non-object payload, a null or a malformed report" passed
+􁁛  Test "Path of three: the middle node carries the only pair, so 1 normalised and 1 raw" passed
+􁁛  Test "Seeded: DiagnosedScores with and without a report round-trip through JSON" with 4 test cases passed
+􁁛  Test "Round-trips through its envelope" passed
+􁁛  Test "Ties are stable: equal-cost sites resolve to the lower site, every run" passed
+􁁛  Test "A single edge is one community; an isolate stays alone" passed
+􁁛  Test "Brandes agrees with brute-force enumeration on random graphs, isolates included" passed
+􁁛  Test "Normalised betweenness lies in [0, 1]; it is invariant under any relabelling" passed
+􁁛  Test "A version 4 envelope is still readable as plain NodeScores" passed
+􁁛  Test "Path of four: inner nodes 2 raw, 2/3 normalised" passed
+􁁛  Test "Seed handling at the boundaries: 0 and n-1 count, n and -1 do not, repeats count once" passed
+􁁛  Test "Two four-cliques joined by one edge split at the bridge" passed
+􁁛  Test "A second pass merges what the first leaves, and scores strictly higher" passed
+􁁛  Test "Extreme legal weights never trap or hang, and the count stays in range" with 4 test cases passed
+􁁛  Test "Without edges each node is its own community, numbered in node order" passed
+􁁛  Test "Uniform weight scaling by a power of two, up or down, gives the identical partition" passed
+􁁛  Test "Hand cases on a line: k = 1, 2, 3" passed
+􁁛  Test "The sentence says which it was, with the numbers" passed
+􁁛  Test "Golden path: cash cost picks a different winner" passed
+􁁛  Test "Mean and standard error are the two-pass sample statistics of the per-trial counts" with 6 test cases passed
+􁁛  Test "The convergence accessor reads a diagnosed scores envelope" passed
+􁁛  Test "The error compares by what it names" passed
+􁁛  Test "A miss names the ceiling, not the passes run, and says what to do" passed
+􁁛  Test "A lone node is a community of its own, numbered zero" passed
+􁁛  Test "A foreign key is refused however complete the rest is, over seeded random graphs and the partitions Louvain and components return" passed
+􁁛  Test "Edge cases" passed
+􁁛  Test "Golden path: travel hours" passed
+􁁛  Test "Differences below the 1e-12 tolerance are ties, and differences above it are not" passed
+􁁛  Test "A stored version 3 envelope decodes, and its convergence reads as unknown" passed
+􁁛  Test "Agrees with literal peeling on random graphs, and is bounded by degree" passed
+􁁛  Test "A partition that is both partial and foreign names both, in node order" passed
+􁁛  Test "Draws match values computed independently, bit for bit" with 3 test cases passed
+􁁛  Test "Decoding DiagnosedScores directly: absent and null convergence are nil, malformed throws" passed
+􁁛  Test "Component labels are dense and ordered by smallest member" passed
+􁁛  Test "A chain is one component however it is reached" passed
+􁁛  Test "Peeling a tail does not reduce the core beneath it" passed
+􁁛  Test "ConvergenceReport round-trips and compares field by field" passed
+􁁛  Test "SpreadEstimate round-trips through JSON, for seeded arbitrary values" with 6 test cases passed
+􁁛  Test "Every assignment of each of six nodes to community 0, community 1 or nothing: refused exactly when a node is unassigned, and otherwise equal to the old scoring bit for bit" passed
+􁁛  Test "Community numbers are labels: negative and large numbers are fine, so only the node set is checked" passed
+􁁛  Test "A nil convergence is omitted from the encoding, not written as null" passed
+􁁛  Test "k-core of paths, stars and cycles" passed
+􁁛  Test "summarise: hand-checked values, a degenerate run, and zero trials" passed
+􁁛  Test "Node indices that need all 32 bits of the edge packing are still told apart" passed
+􁁛  Test "Closeness on the kite favours Fernando and Garth, as published" passed
+􁁛  Test "A weight-scaled cascade on an edgeless graph, and any model on the empty graph, spread to nothing" passed
+􁁛  Test "A partition that leaves a node out is refused, naming the node; it used to be scored as if the node were absent" passed
+􁁛  Test "No two (master seed, trial) pairs share a stream, including neighbouring seeds and trials" passed
+􁁛  Test "A complete partition scores as before: the documented example, 1/6" passed
+􁁛  Test "Weights do not affect core numbers" passed
+􁁛  Test "The generator overload keys one trial from exactly one draw of the generator" passed
+􁁛  Test "Models validate probabilities at the boundaries and expose what they were given" passed
+􁁛  Test "An empty partition of a non-empty graph is refused: every node is missing" passed
+􁁛  Test "Kite betweenness matches the published values" passed
+􁁛  Test "Agrees with union-find on random graphs, and two nodes share a label iff connected" passed
+􁁛  Test "Karate eigenvector ranks the administrator first" passed
+􁁛  Test "A partition that mentions a node the graph does not have is refused, naming it" passed
+􁁛  Test "A candidate better by 6e-14, just over the margin, takes it" passed
+􁁛  Test "Degree and betweenness disagree on the kite, as published" passed
+􁁛  Test "An empty graph accepts the empty partition and refuses a non-empty one" passed
+􁁛  Test "A clearly better candidate takes it" passed
+􁁛  Test "PageRank agrees with eigenvector on who leads the karate club" passed
+􁁛  Test "Betweenness on the karate club puts node 1 at the top" passed
+􁁛  Test "The margin scales with 2m: the same relative shortfall decides the same way on a graph ten times larger" passed
+􁁛  Test "An exactly tied candidate does not take it, and a worse one does not either" passed
+􁁛  Test "k-core of a clique with a pendant" passed
+􁁛  Test "bottom(0) is empty, and bottom reads the lowest first" passed
+􁁛  Test "K(2,3): 2-side 1/2, 3-side 1/sqrt6" passed
+􁁛  Test "The same graph and settings always give the same partition" passed
+􁁛  Test "A candidate better by 4e-14, just under the 5e-14 margin, still does not take it" passed
+􁁛  Test "Mean and standard error are bit-identical, through both estimator overloads" passed
+􁁛  Test "Only a scores envelope is read for convergence, whatever another kind's payload holds" passed
+􁁛  Test "The registry lists its metrics in identifier order" passed
+􁁛  Test "Path of 3 is (1/2, 1/sqrt2, 1/2)" passed
+􁁛  Test "Ranking is by score descending, ties by node ascending, whatever the insertion order" passed
+􁁛  Test "The tolerance is a strict bound: a movement of exactly zero does not beat tolerance 0" passed
+􁁛  Test "A null payload decodes as null and re-encodes" passed
+􁁛  Test "Edge count and neighbour order are those of the sorted, merged edge list" passed
+􁁛  Test "Path of 5 is sin(k pi/6) over sqrt3" passed
+􁁛  Test "A candidate better by less than the margin does not take the node: a gain of 1e-14 is a tie" passed
+􁁛  Test "The check comes before the no-edge shortcut: an edgeless graph with a partial partition is refused, with a full one scores zero" passed
+􁁛  Test "Groups of equal size are ordered by community number" passed
+􁁛  Test "Cycles, even and odd, are uniform 1/sqrt(n)" with 6 test cases passed
+􁁛  Test "The linear threshold selection is deterministic and no worse than the worst-connected nodes" passed
+􁁛  Test "maxIterations is exactly the number of passes allowed" with 3 test cases passed
+􁁛  Test "Core numbers never exceed degree" passed
+􁁛  Test "The result is an eigenvector: A v = lambda v" passed
+􁁛  Test "Failing to converge within maxIterations is nil, not the last iterate" passed
+􁁛  Test "The kite's pendant node is in the zero or one core" passed
+􁁛  Test "Karate club has a maximum core of four" passed
+􁁛  Test "Every node is in a component; edgeless graph gives n components" passed
+􁁛  Test "Path of 4 still right" passed
+􁁛  Test "Non-bipartite fixture keeps its values" passed
+􁁛  Test "Jaccard matrix: symmetric, unit diagonal, in [0, 1], equal to set arithmetic, for seeded random picks" with 6 test cases passed
+􁁛  Test "Degenerate sweeps: no points, one point" passed
+􁁛  Test "The answer does not depend on the parity of maxIterations" passed
+􁁛  Test "Only the independent cascade declares submodular trials; the default assumes nothing" passed
+􁁛  Test "A custom model builder is used at every probability: each point equals the selector run with that model" passed
+􁁛  Test "Karate on integer nodes matches the stored values bit for bit, by every registered metric" passed
+􁁛  Test "Stars: hub 1/sqrt2, each leaf 1/sqrt(2n)" with 4 test cases passed
+􁁛  Test "Relabelling the nodes permutes the answer and changes nothing else" passed
+􁁛  Test "Agrees move for move with an independent dense Louvain" passed
+􁁛  Test "The fixture set covers the cases the plan names" passed
+􁁛  Test "A 29-node path converges at the default maxIterations (954 passes needed)" passed
+􁁛  Test "A point whose probability is NaN cannot be encoded, and says so rather than storing garbage" passed
+􁁛  Test "A sweep round-trips through JSON exactly, for seeded arbitrary sweeps" with 40 test cases passed
+􁁛  Test "A sweep round-trips through its stored-record envelope, filed under "seed-sweep"" with 40 test cases passed
+􁁛  Test "Hand-checked stability summary: partial overlaps, the always-picked set, an empty pick" passed
+􁁛  Test "Nil conditions are kept" passed
+􁁛  Test "A single point round-trips, including on String nodes" with 20 test cases passed
+􁁛  Test "Random connected graphs (mostly trees, hence bipartite) match the Jacobi reference" passed
+􁁛  Test "Each fixture stores a record for every registered metric" with 20 test cases passed
+􁁛  Test "The long path misses the default ceiling and says so in the stored record" passed
+􁁛  Test "A stored envelope decodes to the typed value of its kind" with 20 test cases passed
+􁁛  Test "Each sweep point is the selector run at that probability with the same master seed" passed
+􁁛  Test "Only the points are stored: the stability summary is recomputed, so it cannot disagree with them" passed
+􁁛  Test "Siting from NodeScores reproduces the original's answers, totals and JSON exactly" passed
+􁁛  Test "The JSON and the envelope of every recorded p-median answer are reproduced exactly" passed
+􀢄  Test "Eigenvector envelopes at non-default ceilings and tolerances match the stored text and bits" failed
+􁁛  Test "Every score, convergence figure and community number matches bit for bit" with 20 test cases passed
+􀢄  Test "The record the registry makes is byte-for-byte the stored record" with 20 test cases failed
+􁁛  Test "Clustering stays within zero and one for every node" passed
+􁁛  Test "Reaches the exhaustive optimum on small planted graphs" passed
+􁁛  Test "A 30-node path (1016 passes) and a 61-node path (3773) return nil at the default, the closed form at 10_000" passed
+􁁛  Test "Clustering is lowest for the kite's bridge" passed
+􁁛  Test "Across 400 seeded random connected graphs the two Louvain implementations find the same communities" passed
+􁁛  Test "Harmonic and closeness agree at the ends and differ in the middle" passed
+􁁛  Test "Isolated nodes are their own components" passed
+􁁛  Test "Harmonic centrality matches a hand computation" passed
+􁁛  Test "Harmonic centrality survives a disconnected graph" passed
+􁁛  Test "A sweep produced by SeedSelector.sweep round-trips, derived summary included" passed
+􁁛  Test "PMedian's optimum equals the integer program's, for p = 1, 2, 3, with the same sites" with 3 test cases passed
+􁁛  Test "A node reached by a single contact always scores 1, whoever the contact is" with 16 test cases passed
+􁁛  Test "A node with one tie has no clustering to speak of" passed
+􁁛  Test "How the same graph is written does not matter: duplicate edges merge, direction and self-loops are irrelevant" passed
+􁁛  Test "The karate club is one connected component" passed
+􁁛  Test "Relabelling the nodes relabels the scores and nothing else" with 16 test cases passed
+􁁛  Test "A stored record decodes to the record the registry makes, and re-encodes to the same bytes" with 20 test cases passed
+􁁛  Test "Constraint is positive for every non-isolated node and lies in [1/degree, 2]" with 16 test cases passed
+􀢄  Test "The bare envelope the registry returns is byte-for-byte the stored envelope" with 20 test cases failed
+􁁛  Test "Isolated, zero-weight and unusable ties are omitted, never scored 0 or NaN" passed
+􁁛  Test "Introducing two of a hub's contacts to each other raises the hub's constraint" passed
+􁁛  Test "Adjacency lists are sorted by neighbour index" passed
+􁁛  Test "An empty graph is valid" passed
+􁁛  Test "Scaling every weight by a constant changes nothing: shares are ratios" with 3 test cases passed
+􁁛  Test "Partition groups are largest first with members sorted" passed
+􁁛  Test "The two initialisers agree, and an empty selection is empty" passed
+􁁛  Test "Kite graph: eighteen ties between ten people, each weighing one" passed
+􁁛  Test "Seeded: groups partition the nodes exactly and are ordered by size then number" with 5 test cases passed
+􁁛  Test "The smallest positive weight is accepted, and a half-range weight is accepted" passed
+􁁛  Test "A single edge of the largest finite weight is refused: the total is accumulated from both ends before halving" passed
+􁁛  Test "Order is part of identity" passed
+􁁛  Test "Nodes come out in sorted order regardless of input order" passed
+􁁛  Test "Isolated nodes are kept and have zero degree" passed
+􁁛  Test "Negative community numbers are ordinary identifiers" passed
+􁁛  Test "The weight of a self-loop is checked even though the loop is then dropped" with 6 test cases passed
+􁁛  Test "Zero and negative zero are legal weights: a recorded tie with no strength" passed
+􁁛  Test "Groups of equal size are ordered by community number, ascending" passed
+􁁛  Test "Unweighted construction cannot throw and weighs every edge one" passed
+􁁛  Test "An empty partition has no groups and no communities" passed
+􁁛  Test "Any Comparable node type works, not only strings" passed
+􁁛  Test "Weighted degree by index equals degree by name" passed
+􁁛  Test "Self-loops are dropped but the node survives" passed
+􁁛  Test "A graph built from valid weights is unchanged by validating them" passed
+􁁛  Test "A NaN, infinite or negative weight is refused, naming the edge" with 6 test cases passed
+􁁛  Test "Hostile weights are refused wherever they sit in a seeded random edge list" passed
+􁁛  Test "Duplicate pairs merge by summing, in either direction" passed
+􁁛  Test "A selection keeps its picks in order with their marginal gains" passed
+􁁛  Test "Finite weights that sum past the largest finite number are refused, however they meet" passed
+􀢄  Test "Old behaviour is gone: the near-zero scores for the non-dominant component can no longer be obtained" failed
+􁁛  Test "The error compares by component count" passed
+􁁛  Test "A custom value type travels through an envelope" passed
+􀢄  Test "Each disconnected graph is refused by eigenvector and by the convergence form, naming the component count" failed
+􀢄  Test "A zero-weight tie does not connect: it carries nothing through the iteration" failed
+􁁛  Test "A null payload decodes as null and re-encodes" passed
+􀢄  Test "The registered metric is version 5, refuses a disconnected graph through compute, run and record, and still scores a connected one" failed
+􁁛  Test "A known kind with a malformed payload throws" passed
+􁁛  Test "Seeded: random values survive value to envelope to JSON text to envelope to value" with 8 test cases passed
+􁁛  Test "Connected graphs are untouched, including bipartite ones, and a lone node and the empty graph" passed
+􁁛  Test "A number is never read as a boolean, nor a boolean as a number" passed
+􁁛  Test "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" with 10 test cases passed
+􁁛  Test "Records stored as version 4 (which may be of a disconnected graph) still decode" passed
+􁁛  Test "An unknown kind decodes as an opaque envelope and survives re-encoding" passed
+􁁛  Test "A stored sweep reads back equal, with the summary recomputed" passed
+􁁛  Test "The default metric is unaffected: it still runs and still converges" passed
+􁁛  Test "The heuristic branch is never below the integer program's optimum, and usually reaches it" with 3 test cases passed
+􁁛  Test "Typed access is nil for a different known kind and never throws for it" passed
+􁁛  Test "The stability summary is derived the same way from every recorded set of points" passed
+􁁛  Test "The descriptor encodes to exactly the text the original produced" passed
+􁁛  Test "Damping just above the old cap is run as given, not as 0.999" passed
+􁁛  Test "A node type that is not a string still round-trips" passed
+􁁛  Test "The error compares equal to itself for NaN, and unequal across different values" passed
+􁁛  Test "The registered metric refuses an invalid damping when it runs, through the registry and as a record" passed
+􁁛  Test "JSONValue decodes every JSON shape and encodes it back" passed
+􁁛  Test "pageRankConvergence refuses the same dampings: it is the loop, so the two cannot disagree" with 10 test cases passed
+􁁛  Test "Zero damping is teleport only: every node scores 1/n" passed
+􁁛  Test "The envelope carries the kind of what it wraps" passed
+􁁛  Test "The raw initialiser keeps its parts" passed
+􁁛  Test "Budget above node count returns at most node count picks, all distinct" passed
+􁁛  Test "Each built-in value round-trips through its envelope exactly" passed
+􀢄  Test "Every standard metric returns finite scores" with 7 test cases failed
+􁁛  Test "An envelope missing its kind or its payload does not decode" passed
+􁁛  Test "Old behaviour is gone: 1.5 no longer runs as 0.999, -1 no longer runs as 0, NaN no longer gives NaN scores" passed
+􁁛  Test "The refusal does not depend on the graph, the ceiling or the tolerance: an empty graph refuses too" passed
+􁁛  Test "Isolated nodes are pickable and gain exactly 1 each" passed
+􁁛  Test "Every component's members come back sorted" passed
+􁁛  Test "Accepted dampings give finite scores summing to one on every family: NaN can no longer come out" passed
+􁁛  Test "The edges of the accepted range are accepted: 0, -0, 0.999, and the largest double below one" passed
+􁁛  Test "Star at p = 1: the centre is picked first with gain n + 1" passed
+􁁛  Test "Siting on centrality-weighted demand stays finite" with 7 test cases passed
+􁁛  Test "Budget 0 yields no picks; negative budget throws" passed
+􁁛  Test "The lifted components agree exactly with the ones Model Definition shipped" passed
+􁁛  Test "A selection round-trips through its stored-record envelope, filed under "selection"" passed
+􁁛  Test "Descriptor is exploratory, generic and states high and low" passed
+􁁛  Test "Components are found, and are the ones worked out by hand" passed
+􁁛  Test "Every recorded sweep is reproduced exactly: picks, summary, JSON, envelope" passed
+􁁛  Test "A graph of total weight below one still has a modularity" passed
+􁁛  Test "Weighted edges count by weight" passed
+􁁛  Test "The lift works at a node type that is not String" passed
+􁁛  Test "trials = 0 throws a clear error" passed
+􁁛  Test "Unlisted targets can be excluded, which is what a dependency graph needs" passed
+􁁛  Test "Invariant under community renumbering, weight scaling and node relabelling" passed
+􁁛  Test "The integer program agrees with enumeration, so it is a trustworthy oracle" with 3 test cases passed
+􁁛  Test "Two triangles and a bridge, split at the bridge" passed
+􁁛  Test "The record initialiser keeps every field it is given" passed
+􁁛  Test "A DAG sorts so that every edge points forward" passed
+􁁛  Test "Adjacency is sorted at construction, whatever order it arrived in" passed
+􁁛  Test "A community with no internal edge still pays for its degree" passed
+􁁛  Test "A self-loop is a component of one, and is still a cycle" passed
+􁁛  Test "Empty graph yields an empty selection" passed
+􁁛  Test "The topological order is the same whatever order the graph was built in" passed
+􁁛  Test "An isolated node is never activated by others and counts when seeded" passed
+􁁛  Test "A record's output is what run returns for the same graph" passed
+􁁛  Test "Modularity of a complete assignment lies within [-1/2, 1)" passed
+􁁛  Test "An unknown identifier records nothing" passed
+􁁛  Test "A graph built from edges makes every mentioned node a vertex" passed
+􁁛  Test "Independent cascade: lazy evaluation is exact at every refresh batch size" with 60 test cases passed
+􁁛  Test "Computing the metric is computing the brokerage measure, and the hand-derived path values hold" passed
+􀢄  Test "An eigenvector record stored under version 2 decodes as 2; a new one carries 4" failed
+􁁛  Test "A split edge reaches the lower bound of minus one half" passed
+􁁛  Test "The instance descriptor is the static one" passed
+􁁛  Test "Component output does not depend on the order the graph was built in" passed
+􁁛  Test "Uses the clock it was given rather than reading the wall clock" passed
+􁁛  Test "An edge fires on draw < p strictly: p equal to its draw does not fire, the next value up does" passed
+􁁛  Test "Identical configuration gives identical selections; different seed may differ" passed
+􁁛  Test "The same graph partitioned the other way" passed
+􁁛  Test "A cyclic graph has no topological order and says so" passed
+􁁛  Test "A single trial is a valid trial count for the estimator: a whole number of nodes, no spread" passed
+􁁛  Test "The linear threshold model also selects, deterministically, and beats a random-ish set" passed
+􁁛  Test "Two seeded neighbours of equal weight always activate the shared node" passed
+􁁛  Test "Weight-scaled probability on a graph whose every edge weighs zero is 0, not NaN or 1" passed
+􁁛  Test "Linear threshold: the selector equals plain greedy even with the laziest refresh batch, over many seeded graphs" with 120 test cases passed
+􁁛  Test "One of two neighbours activates the shared node with probability 1/2" passed
+􁁛  Test "Records the context and metric version alongside the numbers" passed
+􁁛  Test "Every node alone scores minus the sum of squared degree shares" passed
+􁁛  Test "Scores round-trip through the registry envelope on integer nodes, as JSON" passed
+􁁛  Test "Round-trips through the registry as a scores envelope" passed
+􁁛  Test "A neighbour whose whole weight is active always activates (share = 1)" passed
+􁁛  Test "Round-trips through Codable so a record survives to be compared later" passed
+􁁛  Test "A graph of one node is simulated, not skipped: a seed counts as 1 under every model" passed
+􁁛  Test "A graph with no edges has modularity zero" passed
+􁁛  Test "Different master seeds give different estimates" passed
+􁁛  Test "The sum runs over communities in ascending order, bit for bit" passed
+􁁛  Test "A node with no community assignment is refused, not left out of the sums (ADR-009)" passed
+􁁛  Test "An isolate is omitted from the registered metric's scores, as from the measure" passed
+􁁛  Test "Descriptor says what low and high do and do not mean" passed
+􁁛  Test "The threshold rule is share + 1e-12 >= theta: inside the tolerance activates, outside does not" passed
+􁁛  Test "Empty seed set spreads to nothing; out-of-range and duplicate seeds are ignored" passed
+􁁛  Test "A node whose incident weights are all zero has no share to give and never activates" passed
+􁁛  Test "trials = 0 and negative trials throw a clear error" passed
+􁁛  Test "A disconnected graph is scored component by component" passed
+􁁛  Test "Agrees with the textbook definition on random graphs and partitions" passed
+􁁛  Test "Star with n leaves: centre is 1/n, every leaf is 1" with 2 test cases passed
+􁁛  Test "A single trial reports zero standard error rather than dividing by zero" passed
+􁁛  Test "Identical inputs give bit-identical estimates" passed
+􁁛  Test "The RNG-driven simulate overload is reproducible for equal generator state" passed
+􁁛  Test "Dense matrix: path of three, weighted path, star, bipartite, and the degenerate sizes" passed
+􁁛  Test "Triangle: each node is 2 * (1/2 + 1/4)^2 = 1.125" passed
+􁁛  Test "Peeling: clique with a pendant and an isolate, a tail on a triangle, and the empty graph" passed
+􁁛  Test "Dense matrix: a bipartite graph beside an isolate, one pass by hand, and weights of any size" passed
+􁁛  Test "An isolated node is omitted, not scored 0 and not NaN" passed
+􁁛  Test "Weighted triangle matches the hand derivation" passed
+􁁛  Test "Path a-b-c: the ends are 1, the middle is 0.5" passed
+􁁛  Test "Enumeration: path of three, star, four-cycle, and the degenerate sizes" passed
+􁁛  Test "TrialRandomness: draws are in [0, 1), reproducible, and sensitive to every input" passed
+􁁛  Test "DiffusionGraph is the weighted graph's adjacency in compressed rows" with 8 test cases passed
+􁁛  Test "Edge and node draws are uniform on [0, 1): mean, spread and bucket counts" passed
+􁁛  Test "Empty graph and single node give empty scores" passed
+􁁛  Test "Louvain: random3 is split the same way by both, now that the unweighted move rule has the tie margin" passed
+􁁛  Test "All 2,500 directed pairs on 50 nodes get distinct draws" passed
+􁁛  Test "Eigenvector at the weighted default budget agrees on the small bipartite graphs too" passed
+􁁛  Test "neighbours(of:) is empty out of bounds and valid at both ends" passed
+􁁛  Test "Eigenvector agrees to 1e-6
+􁁛  Test "Adding zero-weight edges changes no score, over seeded random graphs" with 40 test cases passed
+􁁛  Test "Louvain: the partitions are the same sets of nodes and have the same modularity" with 18 test cases passed
+􁁛  Test "The stored shape is kind 'scores' with an optional convergence key, so plain-scores readers still work" passed
+􁁛  Test "The partition equals the reference's, not just its modularity, on rings of cliques" passed
+􁁛  Test "Directed semantics, difference: a directed path scores its out-edges only; symmetrised, the middle node has degree two" passed
+􁁛  Test "The registered metric is pagerank at version 3 and its defaults are the loop's" passed
+􁁛  Test "a-b = 1, a-c = 0, b-c = 1 scores a = 1, b = 1/2, c = 1" passed
+􁁛  Test "Agrees with the dense transcription on graphs mixing zero and positive weights" with 40 test cases passed
+􁁛  Test "maxPasses: 1 is local moving alone, and more passes never lower modularity" passed
+􁁛  Test "A version 2 pagerank record, written before convergence was reported, still decodes, reads as unknown, and re-encodes to the stored bytes" passed
+􁁛  Test "A NaN score still ranks every node once, and cannot be stored in an envelope" passed
+􁁛  Test "Louvain on the karate club finds the same four communities in both" passed
+􁁛  Test "Nodes in symmetric positions score the same" passed
+􁁛  Test "It returns the same scores as Centrality.pageRank, bit for bit, plus the report of that run" passed
+􁁛  Test "Ring of 16 K4 cliques beats one community per clique (closed form)" passed
+􁁛  Test "A damping that cannot converge in the ceiling is recorded as not converged, with the sentence that says so" passed
+􁁛  Test "Bottom breaks ties in the reverse of ranked order" passed
+􁁛  Test "Betweenness agrees to 1e-12" with 18 test cases passed
+􁁛  Test "The empty graph has no scores; a single node holds all the rank" passed
+􁁛  Test "A loose tolerance stops visibly short of the converged answer" passed
+􁁛  Test "Round trip of the karate club is exact" passed
+􀢄  Test "Eigenvector, agreement since ADR-009: both refuse a disconnected graph, nil unweighted and a thrown error weighted" with 3 test cases failed
+􁁛  Test "Subscript reads one node's score" passed
+􁁛  Test "Planted structure: relabelling the nodes gives the same partition structure" passed
+􁁛  Test "Communities are returned ordered by their lowest node" passed
+􁁛  Test "Isolated vertices survive, in both directions" passed
+􁁛  Test "Star matches the closed form" passed
+􁁛  Test "Kinds are stable strings" passed
+􁁛  Test "The bridge agrees with building the weighted graph directly" passed
+􀢄  Test "Eigenvector, agreement since ADR-009: two components with the same leading eigenvalue are refused by both too" failed
+􁁛  Test "A self-loop is kept consistent through contraction" passed
+􁁛  Test "Zero-weight ties survive the trip to Graph, which has no weights to lose them in" passed
+􁁛  Test "Every weight in a symmetrised graph is exactly one" passed
+􁁛  Test "Planted-partition graphs with self-loops reach the multi-level reference's modularity" passed
+􁁛  Test "Round trip on a directed graph returns its undirected closure" passed
+􁁛  Test "Ranks descending with ties broken by node ascending, whatever the insertion order" passed
+􁁛  Test "Never below local moving alone, on seeded random graphs" passed
+􁁛  Test "Rings whose neighbours share several edges: weights survive repeated contraction" passed
+􁁛  Test "Properties on seeded random graphs: range, coverage, determinism" passed
+􁁛  Test "The defaults are 200 iterations and a tolerance of 1e-12" passed
+􁁛  Test "Louvain, difference: an edgeless graph is nil unweighted, every node alone weighted" passed
+􁁛  Test "Top and bottom read from opposite ends" passed
+􁁛  Test "WeightedGraph to Graph gives both directions of every edge and drops the weights" passed
+􁁛  Test "Ring of 12 triangles reaches at least the paired partition (closed form 7/8 - 2/12)" passed
+􁁛  Test "The default tolerance reaches the converged answer to better than 1e-9" passed
+􁁛  Test "Seeded: the ranking does not depend on dictionary construction order" with 4 test cases passed
+􁁛  Test "A self-loop in a Graph is dropped by the bridge, as WeightedGraph drops all loops" passed
+􁁛  Test "Degree: out-degree count equals weighted degree on a symmetrised unweighted graph" with 18 test cases passed
+􁁛  Test "Symmetrising a directed edge makes one undirected tie of weight one" passed
+􁁛  Test "Harmonic closeness agrees to 1e-12" with 18 test cases passed
+􁁛  Test "Seeded: ranked is a permutation, non-increasing, ties ascending; top and bottom agree" with 8 test cases passed
+􁁛  Test "Modularity, difference: an edgeless graph is nil unweighted and zero weighted" passed
+􁁛  Test "A dangling node's mass is shared equally" passed
+􁁛  Test "Round trip on a symmetric graph returns the input" passed
+􁁛  Test "Fewer than one round is treated as one round" passed
+􁁛  Test "Negative and infinite scores order as numbers do" passed
+􁁛  Test "The production result matches the multi-level reference on rings of cliques" passed
+􁁛  Test "Targets with no entry of their own become vertices" passed
+􁁛  Test "Modularity, agreement since ADR-009: a partition that omits a node is refused by both, nil unweighted and a thrown error weighted" passed
+􁁛  Test "Edges listed in both directions still weigh one, not two" passed
+􁁛  Test "Scores are positive and sum to one" passed
+􁁛  Test "An empty table ranks to nothing and looks up nil" passed
+􁁛  Test "PageRank agrees to 1e-10, including dangling nodes (isolates)" with 18 test cases passed
+􁁛  Test "Path of three matches the closed form" passed
+􁁛  Test "Limits: zero and negative are empty, exact count is everything, more is clamped" passed
+􀢄  Test "Eigenvector, agreement since ADR-009: an edgeless graph is nil unweighted and refused weighted (it scored all ones before)" failed
+􁁛  Test "Damping zero is uniform; out-of-range damping is refused, not clamped (ADR-009)" passed
+􁁛  Test "Agrees with a direct linear solve on random weighted graphs, isolates and light weights included" passed
+􁁛  Test "Modularity of the same partition agrees to 1e-12: the weighted Louvain result, the components, and singletons" with 18 test cases passed
+􁁛  Test "An enormous tolerance stops
+􁁛  Test "Modularity, agreement since ADR-009: a partition that names a node the graph does not have is refused by both" passed
+􁁛  Test "The iteration ceiling is honoured and floored at one pass" passed
+􁁛  Test "Invariant under weight scaling and under relabelling" passed
+􁁛  Test "At its default batch size the selector equals plain greedy on graphs bigger than the batch, for both models" passed
+􁁛  Test "Hierarchical planted graphs, where contraction runs for several levels, reach the reference's modularity" passed
+􁁛  Test "Every recorded selection is reproduced exactly: picks, gains, spread, JSON, envelope" passed
+􁁛  Test "Modularity never exceeds the exhaustive optimum on graphs of 8 nodes or fewer" passed
+􁁛  Test "A very large star cannot meet the tolerance and reports that, while its scores are still accurate" passed
+􁁛  Test "Estimates are identical when run concurrently under different scheduling" passed
+􁁛  Test "A heuristic result that needs no swaps lists the sites in greedy pick order, unsorted" passed
+􁁛  Test "A declared model's refresh work is exactly the lazy rule's, at every batch size" with 4 test cases passed
+􁁛  Test "Optimum never rises as k grows, and k = number of sites costs the cheapest-of-all" with 12 test cases passed
+􁁛  Test "k = 1 is never worse than any single site, and equals the best one" with 12 test cases passed
+􁁛  Test "Exact result: structure, and the lexicographically first optimum, even with ties" with 12 test cases passed
+􁁛  Test "A model that does not declare submodular trials has every candidate refreshed every round, however lazy the batch" with 6 test cases passed
+􁁛  Test "Heuristic branch: structure, no better than the optimum, no worse than greedy, swap-optimal" with 12 test cases passed
+􁁛  Test "Input order of the candidate list never changes the answer" with 12 test cases passed
+􁁛  Test "Scale invariance holds at extreme magnitudes, where an offset would swallow every difference" with 4 test cases passed
+􁁛  Test "A large heuristic problem finishes, is not exact, and is swap-optimal" passed
+􁁛  Test "Scaling every weight, or every cost, by c scales the total by c and changes no choice" with 3 test cases passed
+􁁛  Test "Star centre: mean is 1 + n p within 4 theoretical SE, and the reported SE matches theory" with 3 test cases passed
+􁁛  Test "Weight-scaled cascades select like plain greedy too" with 3 test cases passed
+􁁛  Test "Lazy selection equals plain greedy under linear threshold on three fixed seeds" with 3 test cases passed
+􁁛  Test "Lazy CELF selection equals plain greedy, node for node and gain for gain" with 8 test cases passed
+􁁛  Test "Marginal gains telescope to the spread of the chosen set, for both models" with 3 test cases passed
+􁁛  Test "Linear threshold equals the threshold fixed point, trial by trial" with 8 test cases passed
+􁁛  Test "Independent cascade equals reachability over the fired edges, trial by trial" with 8 test cases passed
+􁁛  Test "Spread is monotone in the seed set and in the probability, exactly, on common trials" with 8 test cases passed
+􁁛  Test "Exact branch equals brute force; heuristic is never worse than greedy" passed
+􁁛  Test "The threshold comparison tolerance is rounding-sized, not visible" passed
+􁁛  Test "Agrees with the dense transcription on seeded random weighted graphs, at several densities" with 16 test cases passed
+􁁛  Test "k = 1 pick equals the brute-force best single node" passed
+􁁛  Test "Constraint on a 1,100-node, 15,000-edge graph finishes quickly and every score is finite and positive" passed
+􁁛  Test "The async selection equals the dispatch selection on random graphs" with 3 test cases passed
+􁁛  Test "The parallel first pass agrees bit-for-bit with the async task-group version" passed
+􁁛  Test "A large graph finishes within a time limit" passed
+􁁛  Test "Both models, several budgets (including over-budget) and refresh batches: exact pick and gain equality" with 48 test cases passed
+􁁛  Test "Greedy is within (1 - 1/e) of the brute-force optimum on unseen trials, up to 4 standard errors, k = 1...3" with 6 test cases passed
+􁁛  Test "Greedy spread >= (1 - 1/e) x brute-force optimum, k = 1...3, several small graphs" passed
+􁁛  Test "The task-group version reproduces the same recorded selections" passed
+􀢄  Test run with 640 tests in 85 suites failed

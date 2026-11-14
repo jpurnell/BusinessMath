@@ -93,8 +93,8 @@ struct PublishedCentralityTests {
 	/// Node 34 (the administrator) outranks node 1 (the instructor) on
 	/// eigenvector centrality — a standard result for this graph.
 	@Test("Karate eigenvector ranks the administrator first")
-	func karateEigenvector() {
-		let scores = Centrality.eigenvector(karate)
+	func karateEigenvector() throws {
+		let scores = try Centrality.eigenvector(karate)
 		let ranked = scores.ranked
 		#expect(ranked[0].node == "34")
 		#expect(ranked[1].node == "1")

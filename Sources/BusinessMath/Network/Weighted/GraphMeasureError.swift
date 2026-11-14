@@ -53,6 +53,7 @@ public enum GraphMeasureError: Error, Equatable, Sendable {
 	/// which is defined on a disconnected graph.
 	case disconnectedGraph(components: Int)
 
+	/// Two errors are equal if they are the same case carrying the same values; two `NaN` dampings are equal.
 	public static func == (lhs: GraphMeasureError, rhs: GraphMeasureError) -> Bool {
 		switch (lhs, rhs) {
 		case (.invalidDamping(let left), .invalidDamping(let right)):

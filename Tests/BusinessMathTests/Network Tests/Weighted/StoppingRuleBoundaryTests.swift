@@ -17,12 +17,16 @@ struct StoppingRuleBoundaryTests {
 
 	private let graph = WeightedGraph(unweightedEdges: [("a", "b"), ("b", "c"), ("c", "d"), ("b", "d")], isolatedNodes: ["e"])
 
+	/// Eigenvector centrality refuses a disconnected graph (ADR-009), so it is exercised on the same
+	/// graph without the isolated node; PageRank keeps the isolate, which exercises dangling mass.
+	private let connected = WeightedGraph(unweightedEdges: [("a", "b"), ("b", "c"), ("c", "d"), ("b", "d")])
+
 	@Test("Eigenvector: with the tolerance set to the residual of a converged run, the run needs more passes")
-	func eigenvectorStopIsStrict() {
-		let first = Centrality.eigenvectorConvergence(graph, maxIterations: 200, tolerance: 1e-10)
+	func eigenvectorStopIsStrict() throws {
+		let first = try Centrality.eigenvectorConvergence(connected, maxIterations: 200, tolerance: 1e-10)
 		#expect(first.converged)
 		#expect(first.residual > 0)
-		let second = Centrality.eigenvectorConvergence(graph, maxIterations: 200, tolerance: first.residual)
+		let second = try Centrality.eigenvectorConvergence(connected, maxIterations: 200, tolerance: first.residual)
 		// The pass that produced `first.residual` is not strictly below it, so it cannot stop there.
 		#expect(second.iterations > first.iterations)
 		#expect(second.residual < first.residual)

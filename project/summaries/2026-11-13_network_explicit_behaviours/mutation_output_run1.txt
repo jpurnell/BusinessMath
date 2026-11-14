@@ -1,0 +1,85 @@
+D01 isFinite dropped from the damping check: SURVIVED  
+D02 zero damping refused (>= 0 to > 0): KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+D03 damping of one accepted (< 1 to <= 1): KILLED  Damping zero is uniform; out-of-range damping is refused, not clamped (ADR-009)
+D04 damping capped at 0.999 again (< 1 to < 0.999): KILLED  The edges of the accepted range are accepted: 0, -0, 0.999, and the largest double below one
+D05 negative damping accepted: KILLED  pageRankConvergence refuses the same dampings: it is the loop, so the two cannot disagree
+D06 validation always passes: KILLED  Old behaviour is gone: 1.5 no longer runs as 0.999, -1 no longer runs as 0, NaN no longer gives NaN 
+D07 refusal carries the wrong value: KILLED  A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the 
+D08 refusal comes after the empty-graph shortcut: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+D09 pageRank swallows the refusal: KILLED  Damping zero is uniform; out-of-range damping is refused, not clamped (ADR-009)
+P01 teleport not divided by n: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+P02 dangling spread not divided by n: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+P03 dangling mass dropped: KILLED  Accepted dampings give finite scores summing to one on every family: NaN can no longer come out
+P04 share not divided by degree: KILLED  Accepted dampings give finite scores summing to one on every family: NaN can no longer come out
+P05 edge weight ignored in the spread: KILLED  Invariant under weight scaling and under relabelling
+P06 zero-degree nodes treated as having ties: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+P07 dangling test < instead of <=: KILLED  Degenerate graphs: an empty graph has nothing to iterate; one node and an edgeless graph settle at o
+P08 stop test < to <= (pagerank): KILLED  PageRank: with the tolerance set to the change of pass k, the result is not the pass-k iterate
+P09 pagerank converged flag never set: KILLED  The default metric is unaffected: it still runs and still converges
+P10 pagerank break dropped after convergence: KILLED  pageRank and pageRankConvergence are one loop: identical scores bit for bit, and identical to the lo
+P11 pagerank iterations not counted: KILLED  Degenerate graphs: an empty graph has nothing to iterate; one node and an edgeless graph settle at o
+P12 pagerank residual not recorded: KILLED  Does not claim convergence when the ceiling is too small, and does when it is large
+P13 pagerank delta L1 to L-inf: KILLED  Every score, convergence figure and community number matches bit for bit
+P14 empty graph reports not converged: KILLED  Degenerate graphs: an empty graph has nothing to iterate; one node and an edgeless graph settle at o
+P15 max(1, ceiling) dropped in pagerank loop: KILLED  pageRank and pageRankConvergence are one loop: identical scores bit for bit, and identical to the lo
+P16 pageRank default damping 0.85 to 0.9: KILLED  The defaults are 200 iterations and a tolerance of 1e-12
+P17 pageRankConvergence default ceiling 200 to 100: KILLED  The default call converges on every family, with the ceiling's margin intact
+P18 pageRankConvergence default tolerance 1e-12 to 1e-9: KILLED  Does not claim convergence when the ceiling is too small, and does when it is large
+P19 pageRank ignores the tolerance it is given: KILLED  Every standard metric's envelope is the value its function returns, wrapped
+P20 pageRank ignores the ceiling it is given: KILLED  The default tolerance reaches the converged answer to better than 1e-9
+P21 pageRank ignores the damping it is given: KILLED  A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the 
+P22 start vector not uniform (pagerank): KILLED  Karate on integer nodes matches the stored values bit for bit, by every registered metric
+K01 pagerank version 3 to 2: KILLED  The registered metric is pagerank at version 3 and its defaults are the loop's
+K02 pagerank version 3 to 4: KILLED  The same listing comes from a registry of integer nodes
+K03 PageRankMetric default damping 0.85 to 0.9: KILLED  It returns the same scores as Centrality.pageRank, bit for bit, plus the report of that run
+K04 PageRankMetric default ceiling 200 to 100: KILLED  The registered metric is pagerank at version 3 and its defaults are the loop's
+K05 PageRankMetric default tolerance 1e-12 to 1e-9: KILLED  The registered metric is pagerank at version 3 and its defaults are the loop's
+K06 PageRankMetric ignores its damping: KILLED  The registered metric refuses an invalid damping when it runs, through the registry and as a record
+K07 PageRankMetric ignores its ceiling: SURVIVED  
+K08 PageRankMetric ignores its tolerance: SURVIVED  
+K09 PageRankMetric reports a fixed tolerance: SURVIVED  
+K10 PageRankMetric reports the raw ceiling: SURVIVED  
+K11 PageRankMetric reports converged always true: KILLED  A damping that cannot converge in the ceiling is recorded as not converged, with the sentence that s
+K12 PageRankMetric reports a zero residual: KILLED  It returns the same scores as Centrality.pageRank, bit for bit, plus the report of that run
+K13 PageRankMetric reports no convergence: KILLED  The default metric is unaffected: it still runs and still converges
+M01 foreign nodes no longer refused: KILLED  A foreign key is refused however complete the rest is, over seeded random graphs and the partitions 
+M02 missing nodes no longer refused: KILLED  An empty partition of a non-empty graph is refused: every node is missing
+M03 validation always passes: KILLED  A node with no community assignment is refused, not left out of the sums (ADR-009)
+M04 missing test inverted: KILLED  A split edge reaches the lower bound of minus one half
+M05 foreign test inverted: KILLED  Louvain's partition scores well under an independent modularity function
+M06 refusal drops the foreign names: KILLED  A partition that is both partial and foreign names both, in node order
+M07 refusal drops the missing names: KILLED  A partition that leaves a node out is refused, naming the node; it used to be scored as if the node 
+M08 foreign names not sorted: KILLED  A partition that is both partial and foreign names both, in node order
+M09 validation after the edgeless shortcut: SURVIVED  
+L01 margin is a raw 1e-12 (not scaled by 2m): KILLED  The margin scales with 2m: the same relative shortfall decides the same way on a graph ten times lar
+L02 no margin: KILLED  A candidate better by less than the margin does not take the node: a gain of 1e-14 is a tie
+L03 margin multiplied by 2m: KILLED  A clearly better candidate takes it
+L04 margin constant 1e-12 to 1e-9: KILLED  A clearly better candidate takes it
+L05 margin constant 1e-12 to 1e-15: KILLED  A candidate better by less than the margin does not take the node: a gain of 1e-14 is a tie
+L06 move test > to >=: SURVIVED  
+L07 best gain not updated after a move: KILLED  Louvain on the karate club finds the same four communities in both
+L08 margin applied to the baseline instead of the candidate: KILLED  A candidate better by less than the margin does not take the node: a gain of 1e-14 is a tie
+L09 margin subtracted: KILLED  Louvain: random3 is split the same way by both, now that the unweighted move rule has the tie margin
+V01 refusal needs three components: KILLED  Eigenvector, agreement since ADR-009: both refuse a disconnected graph, nil unweighted and a thrown 
+V02 never refuses: KILLED  An edgeless graph is refused, one component per node (it used to score every node 1)
+V03 refuses a connected graph: KILLED  Eigenvector at the weighted default budget agrees on the small bipartite graphs too
+V04 zero-weight ties connect: KILLED  A zero-weight tie does not connect: it carries nothing through the iteration
+V05 every tie is ignored: KILLED  Eigenvector envelopes at non-default ceilings and tolerances match the stored text and bits
+V06 refusal carries the wrong component count: KILLED  Each disconnected graph is refused by eigenvector and by the convergence form, naming the component 
+V07 components counted twice each: KILLED  Path of four: the ends are 1/phi
+V08 search never grows past the start: KILLED  Round-trips through the registry, an envelope and JSON, seeded
+V09 neighbours not marked seen: KILLED  timeout (a hang is a detected change)
+V10 single node goes through the iteration: KILLED  Two nodes: a joined pair both score one, and two strangers are refused
+V11 empty graph reports not converged (eigenvector): KILLED  A graph with nothing to iterate reports converged, zero passes
+V12 eigenvector version 5 to 4: KILLED  Identifiers and versions are exactly the stored ones, with no metric added or dropped
+V13 eigenvector version 5 to 6: KILLED  An eigenvector record stored under version 2 decodes as 2; a new one carries 4
+V14 eigenvector shortcut for a lone node dropped: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+V15 eigenvector wrapper ignores the ceiling: KILLED  Every measure on every fixture reproduces SwiftGraphMetrics exactly
+G01 NaN damping errors no longer equal: KILLED  The error compares equal to itself for NaN, and unequal across different values
+G02 damping errors always equal: KILLED  The error compares equal to itself for NaN, and unequal across different values
+G03 partition errors equal if either list matches: KILLED  The error compares by what it names
+G04 partition errors compare only the missing list: KILLED  The error compares by what it names
+G05 component errors always equal: KILLED  The error compares by component count
+G06 different error cases compare equal: KILLED  The error compares by what it names
+
+TOTAL 83  killed 76  survived 7  not-counted 0

@@ -108,7 +108,8 @@ struct ModularityPartitionValidationTests {
 	@Test("The check comes before the no-edge shortcut: an edgeless graph with a partial partition is refused, with a full one scores zero")
 	func validationPrecedesEdgelessShortcut() throws {
 		let edgeless = WeightedGraph<String>(unweightedEdges: [], isolatedNodes: ["a", "b"])
-		#expect(refusal { _ = try Community.modularity(edgeless, partition: NodePartition(["a": 0])) } != nil)
+		let found = refusal { _ = try Community.modularity(edgeless, partition: NodePartition(["a": 0])) }
+		#expect(found?.missing == ["b"])
 		#expect(try Community.modularity(edgeless, partition: NodePartition(["a": 0, "b": 1])).isEqual(to: 0))
 	}
 

@@ -98,3 +98,34 @@ against the stub, [S]: the above-margin, clearly-better, tie and worse unit case
 The permanent 400-seed sweep test was added after the green (it is the baseline measurement turned into a test; its red is the
 recorded five disagreements, not a stub run). Choice recorded in ADR-009: scaled margin, not a raw 1e-12, because the two gains differ by a
 factor 2m; the raw form was not measured separately.
+
+## Change 5: eigenvector refuses a disconnected graph (eigenvector-centrality 4 to 5)
+
+**The fallout was found first.** With the refusal in place (before any red run) the Network suites showed which existing tests
+depended on the old behaviour: 55 issues in 16 tests. Each was a test of the old behaviour or ran the measure on a graph that
+happens to be disconnected. The old-behaviour pins were rewritten to refusal pins (`isolateScoresZero`, `dominantComponent`,
+`edgeless`, `twoNodes`, `degenerate`, three cross-check difference tests, now agreement tests); tests about the iteration (not
+about disconnected graphs) now run on `Synthetic.connectedPart(graph)`, the largest positive-tie component; the golden measure,
+record, envelope and settings tests treat a disconnected fixture as refused, deciding connectivity with an independent union-find in
+`GoldenMeasureTests.positiveTieComponents`; the golden listing constants say eigenvector 5 (the second deliberate edit of
+`GoldenRecordData.swift`, with a comment); `MetricRecordGoldenTests` undoes only the version number for a connected fixture;
+`WeightConsumerRegistryTests` asserts the refusal for the eigenvector metric on its graph with an isolate. Stored data untouched.
+
+**Then the source was put back to a stub** (the connectivity function present, the refusal removed, version 4) and the suites run:
+**Red (stub): 640 tests in 85 suites, 58 issues** (`red5-run-full.txt`, one line per test in `red5-rows.txt`). Failing: every refusal
+test in the new suite (five disconnected graphs, zero-weight bridge, old-behaviour-gone, metric version 5 and refusal through
+compute/run/record), the four rewritten mutation-test pins, the degenerate test, the three cross-check agreement tests, the golden
+record/envelope/settings tests on the disconnected fixtures, the weight-consumer test, the four listing/version tests. Passed
+against the stub, [P]/[S]: connected graphs still scored (including bipartite, weighted, lone node, empty), the v4 record still
+decodes, the iteration tests on connected parts.
+**Green.** The real refusal and version 5 restored; same command: **640 tests in 85 suites passed, no known issues**
+(`green5-run-full.txt`). The only edits between red and green are the source (the refusal and the version).
+
+## Hash-seed flakiness
+
+The Louvain-dependent suites (`GoldenMeasureTests`, `MetricRecordGoldenTests`, `StoredRecordGoldenTests`,
+`UnweightedWeightedCrossCheckTests`, `LouvainMultiLevelTests`, `WeightedCommunityMutationTests`, `UnweightedLouvainTieMarginTests`,
+`ProjectionAndCommunityTests`; 107 tests) were run in 12 separate processes, each with its own random hash seed: 12 of 12 passed
+(`louvain-repeat.txt`).
+
+Note: the `*-run-full.txt` files were trimmed after the fact to the test/suite result lines and failed expectations (sorted, de-duplicated, lines cut at 260 characters), because the raw outputs were 1 to 2 MB each; the counts quoted above are from the raw runs.

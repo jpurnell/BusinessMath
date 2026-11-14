@@ -44,6 +44,13 @@ public struct DegreeMetric<Node: Hashable & Comparable & Sendable & Codable>: Gr
 /// is short for weakly bridged clusters, lattices and long paths). Print
 /// ``ConvergenceNote/sentence(_:)`` of it wherever the scores are shown.
 ///
+/// Version 5 refuses a graph that is not connected, by throwing ``GraphMeasureError/disconnectedGraph(components:)``
+/// from ``compute(on:)``. Versions 1 to 4 ran anyway and scored the component with the largest eigenvalue,
+/// leaving every other node near zero, which reads as "unimportant" rather than "not comparable". Scores
+/// and convergence reports on a connected graph are bit-identical to version 4; a stored version 4
+/// record of a graph that was not connected should be read with that in mind, and cannot be reproduced.
+/// Score the components separately (``Community/connectedComponents(_:)``) or use ``PageRankMetric``.
+///
 /// ```swift
 /// import BusinessMath
 ///
@@ -55,7 +62,7 @@ public struct EigenvectorMetric<Node: Hashable & Comparable & Sendable & Codable
 	/// What this metric answers, and how to read it.
 	public static var descriptor: MetricDescriptor {
 		MetricDescriptor(
-			identifier: "eigenvector-centrality", version: 4, title: "Eigenvector Centrality",
+			identifier: "eigenvector-centrality", version: 5, title: "Eigenvector Centrality",
 			interpretation: "Who is connected to well-connected classmates. "
 				+ "Prone to localising — check it against PageRank before acting.",
 			highMeans: "Well connected within whichever cluster this measure has "
@@ -79,7 +86,7 @@ public struct EigenvectorMetric<Node: Hashable & Comparable & Sendable & Codable
 	}
 	/// Computes it over the graph.
 	public func compute(on graph: WeightedGraph<Node>) throws -> DiagnosedScores<Node> {
-		let run = Centrality.eigenvectorConvergence(
+		let run = try Centrality.eigenvectorConvergence(
 			graph, maxIterations: maxIterations, tolerance: tolerance)
 		return DiagnosedScores(
 			scores: run.scores,

@@ -1,0 +1,768 @@
+􁁛  Suite "Burt constraint: a zero-weight tie is not a tie" passed after 17.624 seconds.
+􁁛  Suite "Burt constraint: hand-derived values" passed after 17.624 seconds.
+􁁛  Suite "Burt constraint: properties" passed after 17.713 seconds.
+􁁛  Suite "Burt constraint: second opinion and invariants" passed after 17.546 seconds.
+􁁛  Suite "Burt constraint: the registered metric" passed after 17.618 seconds.
+􁁛  Suite "Centrality against published results" passed after 17.617 seconds.
+􁁛  Suite "Centrality" passed after 17.545 seconds.
+􁁛  Suite "Community detection against ground truth" passed after 17.546 seconds.
+􀢄  Suite "Cross-check: unweighted Graph measures against WeightedGraph measures" failed after 17.624 seconds with 5 issues.
+􁁛  Suite "Diffusion: boundaries found by the mutation audit" passed after 17.624 seconds.
+􁁛  Suite "Diffusion: closed forms with theoretical tolerances" passed after 17.713 seconds.
+􁁛  Suite "Diffusion: estimator and plumbing" passed after 18.301 seconds.
+􁁛  Suite "Diffusion: golden values from SwiftGraphMetrics" passed after 17.546 seconds.
+􁁛  Suite "Diffusion: graph and randomness primitives" passed after 17.624 seconds.
+􁁛  Suite "Diffusion: model declarations" passed after 17.617 seconds.
+􁁛  Suite "Diffusion: per-trial oracles" passed after 17.713 seconds.
+􁁛  Suite "Diffusion: reproducibility of the trial streams" passed after 17.617 seconds.
+􁁛  Suite "Diffusion: seed selection boundaries" passed after 17.546 seconds.
+􁁛  Suite "Diffusion: seed selection oracles" passed after 17.738 seconds.
+􁁛  Suite "Diffusion: sweep" passed after 17.617 seconds.
+􁁛  Suite "DiffusionModel.hasSubmodularTrials" passed after 17.546 seconds.
+􁁛  Suite "Eigenvector centrality on bipartite graphs" passed after 17.617 seconds.
+􀢄  Suite "Eigenvector centrality refuses a disconnected graph" failed after 17.618 seconds with 17 issues.
+􀢄  Suite "Eigenvector convergence diagnostic" failed after 17.546 seconds with 1 issue.
+􁁛  Suite "Eigenvector metric reports convergence" passed after 17.546 seconds.
+􁁛  Suite "Graph and WeightedGraph bridges" passed after 17.625 seconds.
+􁁛  Suite "Graph, components and ordering" passed after 17.618 seconds.
+􁁛  Suite "IndependentCascade" passed after 17.545 seconds.
+􁁛  Suite "k-core" passed after 17.617 seconds.
+􁁛  Suite "Lazy greedy: exact agreement with plain greedy" passed after 17.618 seconds.
+􁁛  Suite "Lazy greedy: the soundness argument" passed after 17.546 seconds.
+􁁛  Suite "LinearThreshold" passed after 17.618 seconds.
+􁁛  Suite "Louvain multi-level" passed after 17.624 seconds.
+􁁛  Suite "Markov chains" passed after 17.546 seconds.
+􁁛  Suite "MetricEnvelope: round trips and unknown kinds" passed after 17.618 seconds.
+􁁛  Suite "MetricEnvelope.convergence and DiagnosedScores" passed after 17.617 seconds.
+􀢄  Suite "MetricRecord provenance" failed after 17.618 seconds with 1 issue.
+􀢄  Suite "MetricRegistry" failed after 17.546 seconds with 1 issue.
+􁁛  Suite "Modularity partition validation" passed after 17.617 seconds.
+􁁛  Suite "Mutation audit: betweenness" passed after 17.597 seconds.
+􁁛  Suite "Mutation audit: closeness and harmonic centrality" passed after 17.546 seconds.
+􁁛  Suite "Mutation audit: clustering coefficient" passed after 17.545 seconds.
+􁁛  Suite "Mutation audit: components and k-core" passed after 17.617 seconds.
+􀢄  Suite "Mutation audit: eigenvector centrality" failed after 17.546 seconds with 4 issues.
+􁁛  Suite "Mutation audit: Louvain" passed after 17.597 seconds.
+􁁛  Suite "Mutation audit: modularity" passed after 17.618 seconds.
+􁁛  Suite "Mutation audit: PageRank" passed after 17.624 seconds.
+􁁛  Suite "Mutation audit: the independent reference implementations" passed after 17.624 seconds.
+􁁛  Suite "Mutation audit: value types, registry listing and envelope" passed after 17.617 seconds.
+􁁛  Suite "Node values: kinds and NodeScores" passed after 17.624 seconds.
+􁁛  Suite "Node values: NodePartition and NodeSelection" passed after 17.618 seconds.
+􁁛  Suite "PageRank convergence report" passed after 17.629 seconds.
+􁁛  Suite "PageRank damping validation" passed after 17.618 seconds.
+􁁛  Suite "PageRank metric, version 3" passed after 17.624 seconds.
+􁁛  Suite "PMedian against an integer-programming oracle" passed after 17.618 seconds.
+􁁛  Suite "PMedian: golden values from SwiftGraphMetrics" passed after 17.546 seconds.
+􁁛  Suite "Projection and community" passed after 17.545 seconds.
+􁁛  Suite "Reference graphs are what they claim" passed after 17.545 seconds.
+􁁛  Suite "Second opinions" passed after 17.546 seconds.
+􁁛  Suite "Seed selection: lazy greedy against a plain-greedy oracle" passed after 18.312 seconds.
+􁁛  Suite "Seed selection: the (1 - 1/e) guarantee under independent cascade" passed after 19.410 seconds.
+􁁛  Suite "Seed selection: the submodularity gate (ADR-005)" passed after 17.713 seconds.
+􁁛  Suite "SeedSelector sweep" passed after 17.546 seconds.
+􁁛  Suite "SeedSelector: golden values from SwiftGraphMetrics" passed after 22.652 seconds.
+􁁛  Suite "SeedSelector" passed after 19.755 seconds.
+􁁛  Suite "SeedSweep and SweepPoint: Codable" passed after 17.617 seconds.
+􁁛  Suite "Site selection: invariants" passed after 17.713 seconds.
+􁁛  Suite "Site selection" passed after 17.713 seconds.
+􁁛  Suite "SiteAssignment and NodeScores siting: golden values from SwiftGraphMetrics" passed after 17.617 seconds.
+􁁛  Suite "SpreadEstimator.summarise: a standard error is never NaN" passed after 17.546 seconds.
+􁁛  Suite "SpreadEstimator" passed after 17.709 seconds.
+􁁛  Suite "Stopping rules are strict: a change exactly equal to the tolerance does not stop the iteration" passed after 17.546 seconds.
+􀢄  Suite "Stored-record golden: every standard metric's record over every fixture" failed after 17.617 seconds with 18 issues.
+􁁛  Suite "Stored-record golden: records written by earlier versions still decode" passed after 17.546 seconds.
+􁁛  Suite "Stored-record golden: the JSON the previous package wrote" passed after 17.546 seconds.
+􀢄  Suite "Stored-record golden: the registry listing" failed after 17.546 seconds with 4 issues.
+􁁛  Suite "The measures added for the TUI" passed after 17.617 seconds.
+􁁛  Suite "Unweighted Louvain move margin" passed after 17.617 seconds.
+􁁛  Suite "Weight consumers: diffusion and siting" passed after 17.546 seconds.
+􀢄  Suite "Weight consumers: the standard metrics and centrality-weighted siting" failed after 17.618 seconds with 7 issues.
+􁁛  Suite "WeightedGraph: properties over seeded random graphs" passed after 17.546 seconds.
+􁁛  Suite "WeightedGraph: weights are validated where the graph is built" passed after 17.618 seconds.
+􁁛  Suite "WeightedGraph" passed after 17.618 seconds.
+􁁛  Test "A 29-node path converges at the default maxIterations (954 passes needed)" passed after 16.083 seconds.
+􁁛  Test "A 30-node path (1016 passes) and a 61-node path (3773) return nil at the default, the closed form at 10_000" passed after 17.254 seconds.
+􁁛  Test "A candidate better by 4e-14, just under the 5e-14 margin, still does not take it" passed after 14.515 seconds.
+􁁛  Test "A candidate better by 6e-14, just over the margin, takes it" passed after 14.515 seconds.
+􁁛  Test "A candidate better by less than the margin does not take the node: a gain of 1e-14 is a tie" passed after 14.515 seconds.
+􁁛  Test "A chain is one component however it is reached" passed after 14.162 seconds.
+􁁛  Test "A clearly better candidate takes it" passed after 14.515 seconds.
+􁁛  Test "A community with no internal edge still pays for its degree" passed after 17.452 seconds.
+􁁛  Test "A complete graph is fully clustered and a star not at all" passed after 8.537 seconds.
+􁁛  Test "A complete partition scores as before: the documented example, 1/6" passed after 14.515 seconds.
+􁁛  Test "A consumer that only knows NodeScores still reads a version 4 envelope" passed after 10.715 seconds.
+􁁛  Test "A custom model builder is used at every probability: each point equals the selector run with that model" passed after 15.368 seconds.
+􁁛  Test "A custom value type can travel through the registry" passed after 8.672 seconds.
+􁁛  Test "A custom value type travels through an envelope" passed after 17.376 seconds.
+􁁛  Test "A cyclic graph has no topological order and says so" passed after 17.484 seconds.
+􁁛  Test "A DAG sorts so that every edge points forward" passed after 17.452 seconds.
+􁁛  Test "A damping that cannot converge in the ceiling is recorded as not converged, with the sentence that says so" passed after 17.506 seconds.
+􁁛  Test "A dangling node's mass is shared equally" passed after 17.506 seconds.
+􁁛  Test "A declared model is refreshed in batches no larger than the batch asked for" passed after 8.897 seconds.
+􁁛  Test "A declared model's refresh work is exactly the lazy rule's, at every batch size" with 4 test cases passed after 17.662 seconds.
+􁁛  Test "A deterministic chain takes exactly as many steps as it has" passed after 10.616 seconds.
+􁁛  Test "A disconnected graph is scored component by component" passed after 17.506 seconds.
+􁁛  Test "A foreign key is refused however complete the rest is, over seeded random graphs and the partitions Louvain and components return" passed after 14.162 seconds.
+􁁛  Test "A graph built from edges makes every mentioned node a vertex" passed after 17.452 seconds.
+􁁛  Test "A graph built from valid weights is unchanged by validating them" passed after 17.376 seconds.
+􁁛  Test "A graph of one node is simulated, not skipped: a seed counts as 1 under every model" passed after 17.484 seconds.
+􁁛  Test "A graph of total weight below one still has a modularity" passed after 17.452 seconds.
+􁁛  Test "A graph with no edges has modularity zero" passed after 17.484 seconds.
+􁁛  Test "A graph with no structure is not forced into communities" passed after 8.531 seconds.
+􁁛  Test "A graph with nothing to iterate reports converged, zero passes" passed after 10.715 seconds.
+􁁛  Test "A heavy link pairs its ends; a light link leaves the triangles whole" passed after 14.035 seconds.
+􁁛  Test "A heuristic result that needs no swaps lists the sites in greedy pick order, unsorted" passed after 17.662 seconds.
+􁁛  Test "A journey's expected length is at least one step and finite" passed after 10.616 seconds.
+􁁛  Test "A known kind with a malformed payload throws" passed after 17.376 seconds.
+􁁛  Test "A large enough ceiling flips both to converged" passed after 10.715 seconds.
+􁁛  Test "A large graph finishes within a time limit" passed after 18.296 seconds.
+􁁛  Test "A large heuristic problem finishes, is not exact, and is swap-optimal" passed after 17.662 seconds.
+􁁛  Test "A leaf at p = 1 reaches the whole star; at p = 0 only itself" passed after 8.468 seconds.
+􁁛  Test "A lone edge under linear threshold always spreads to both ends, with zero variance" passed after 10.628 seconds.
+􁁛  Test "A lone node is a community of its own, numbered zero" passed after 14.130 seconds.
+􁁛  Test "A long path hits the ceiling, with a residual far above the tolerance" passed after 10.715 seconds.
+􁁛  Test "A loose tolerance stops visibly short of the converged answer" passed after 17.505 seconds.
+􁁛  Test "A looser tolerance never needs more passes, and an enormous one stops after the first" passed after 10.715 seconds.
+􁁛  Test "A looser tolerance never needs more passes, and an enormous one stops after the first" passed after 10.716 seconds.
+􁁛  Test "A member who shares nothing survives the projection" passed after 8.505 seconds.
+􁁛  Test "A metric looked up by identifier carries the descriptor it was registered with" passed after 8.878 seconds.
+􁁛  Test "A metric that throws makes the registry throw, not return nil" passed after 10.615 seconds.
+􁁛  Test "A miss names the ceiling, not the passes run, and says what to do" passed after 14.099 seconds.
+􁁛  Test "A model that does not declare submodular trials has every candidate refreshed every round, however lazy the batch" with 6 test cases passed after 17.662 seconds.
+􁁛  Test "A NaN score still ranks every node once, and cannot be stored in an envelope" passed after 17.506 seconds.
+􁁛  Test "A NaN, infinite or negative weight is refused, naming the edge" with 6 test cases passed after 17.376 seconds.
+􁁛  Test "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" with 10 test cases passed after 17.376 seconds.
+􁁛  Test "A neighbour whose whole weight is active always activates (share = 1)" passed after 17.484 seconds.
+􁁛  Test "A new metric can be added without touching existing code" passed after 10.616 seconds.
+􁁛  Test "A nil convergence is omitted from the encoding, not written as null" passed after 14.162 seconds.
+􁁛  Test "A node of degree two whose neighbours are not linked scores zero" passed after 8.551 seconds.
+􁁛  Test "A node reached by a single contact always scores 1, whoever the contact is" with 16 test cases passed after 17.253 seconds.
+􁁛  Test "A node type that is not a string still round-trips" passed after 17.380 seconds.
+􁁛  Test "A node whose incident weights are all zero has no share to give and never activates" passed after 17.484 seconds.
+􁁛  Test "A node with no community assignment is refused, not left out of the sums (ADR-009)" passed after 17.484 seconds.
+􀢄  Test "A node with no ties beside a connected component is refused, not scored zero (ADR-009)" failed after 10.867 seconds with 1 issue.
+􀢄  Test "A node with no ties beside a connected component is refused, not scored zero (ADR-009)" recorded an issue at WeightedCentralityMutationTests.swift:288:3: Expectation failed: an error was expected but none was thrown
+􁁛  Test "A node with one tie has no clustering to speak of" passed after 17.253 seconds.
+􁁛  Test "A null payload decodes as null and re-encodes" passed after 14.515 seconds.
+􁁛  Test "A null payload decodes as null and re-encodes" passed after 17.376 seconds.
+􁁛  Test "A number is never read as a boolean, nor a boolean as a number" passed after 17.376 seconds.
+􁁛  Test "A partition metric comes back as a partition envelope" passed after 10.616 seconds.
+􁁛  Test "A partition that is both partial and foreign names both, in node order" passed after 14.162 seconds.
+􁁛  Test "A partition that leaves a node out is refused, naming the node; it used to be scored as if the node were absent" passed after 14.515 seconds.
+􁁛  Test "A partition that mentions a node the graph does not have is refused, naming it" passed after 14.515 seconds.
+􁁛  Test "A point whose probability is NaN cannot be encoded, and says so rather than storing garbage" passed after 16.083 seconds.
+􁁛  Test "A record for a metric this build does not know decodes and re-encodes unchanged" passed after 10.616 seconds.
+􁁛  Test "A record's output is what run returns for the same graph" passed after 17.452 seconds.
+􁁛  Test "A result is exact precisely when C(sites, k) <= enumerationLimit" passed after 8.885 seconds.
+􁁛  Test "A result with no weight reports mean 0, not NaN" passed after 8.586 seconds.
+􁁛  Test "A second pass merges what the first leaves, and scores strictly higher" passed after 14.057 seconds.
+􁁛  Test "A selection keeps its picks in order with their marginal gains" passed after 17.376 seconds.
+􁁛  Test "A selection round-trips through its stored-record envelope, filed under "selection"" passed after 17.451 seconds.
+􁁛  Test "A self-loop in a Graph is dropped by the bridge, as WeightedGraph drops all loops" passed after 17.507 seconds.
+􁁛  Test "A self-loop is a component of one, and is still a cycle" passed after 17.452 seconds.
+􁁛  Test "A self-loop is kept consistent through contraction" passed after 17.509 seconds.
+􁁛  Test "A single edge is one community; an isolate stays alone" passed after 14.039 seconds.
+􁁛  Test "A single edge of the largest finite weight is refused: the total is accumulated from both ends before halving" passed after 17.365 seconds.
+􁁛  Test "A single point round-trips, including on String nodes" with 20 test cases passed after 16.510 seconds.
+􁁛  Test "A single sweep point has mean Jaccard 1 (no pairs to disagree)" passed after 8.551 seconds.
+􁁛  Test "A single trial is a valid trial count for the estimator: a whole number of nodes, no spread" passed after 17.484 seconds.
+􁁛  Test "A single trial is a valid trial count for the selector, the estimator and the sweep" passed after 10.616 seconds.
+􁁛  Test "A single trial reports zero standard error rather than dividing by zero" passed after 17.506 seconds.
+􁁛  Test "A split edge reaches the lower bound of minus one half" passed after 17.484 seconds.
+􁁛  Test "A star converges at the default ceiling" passed after 10.715 seconds.
+􁁛  Test "A star of 5,000 at the defaults converges, to the closed form" passed after 10.867 seconds.
+􁁛  Test "A stored envelope decodes to the typed value of its kind" with 20 test cases passed after 17.253 seconds.
+􁁛  Test "A stored record decodes to the record the registry makes, and re-encodes to the same bytes" with 20 test cases passed after 17.254 seconds.
+􁁛  Test "A stored sweep reads back equal, with the summary recomputed" passed after 17.376 seconds.
+􁁛  Test "A stored version 3 envelope decodes, and its convergence reads as unknown" passed after 10.715 seconds.
+􁁛  Test "A stored version 3 envelope decodes, and its convergence reads as unknown" passed after 14.162 seconds.
+􁁛  Test "A sweep produced by SeedSelector.sweep round-trips, derived summary included" passed after 17.253 seconds.
+􁁛  Test "A sweep round-trips through its stored-record envelope, filed under "seed-sweep"" with 40 test cases passed after 16.313 seconds.
+􁁛  Test "A sweep round-trips through JSON exactly, for seeded arbitrary sweeps" with 40 test cases passed after 16.201 seconds.
+􁁛  Test "A version 1 pagerank record decodes as 1, distinct from the version 3 the registry writes now" passed after 10.616 seconds.
+􁁛  Test "A version 2 eigenvector record, with no convergence, decodes and reads as unknown" passed after 10.616 seconds.
+􁁛  Test "A version 2 pagerank record, written before convergence was reported, still decodes, reads as unknown, and re-encodes to the stored bytes" passed after 17.505 seconds.
+􁁛  Test "A version 3 eigenvector record decodes, reads as plain scores, and re-encodes to the stored bytes" passed after 10.616 seconds.
+􁁛  Test "A version 4 envelope is still readable as plain NodeScores" passed after 14.039 seconds.
+􁁛  Test "A version 4 record with a report decodes and keeps the report" passed after 10.616 seconds.
+􁁛  Test "A very large star cannot meet the tolerance and reports that, while its scores are still accurate" passed after 17.524 seconds.
+􁁛  Test "A weight-scaled cascade on an edgeless graph, and any model on the empty graph, spread to nothing" passed after 14.515 seconds.
+􁁛  Test "A whole stored version 3 record decodes" passed after 10.715 seconds.
+􁁛  Test "A zero ceiling still runs one pass, as eigenvector does" passed after 10.616 seconds.
+􁁛  Test "A zero ceiling still runs one pass, as pageRank does" passed after 10.715 seconds.
+􀢄  Test "A zero-weight tie does not connect: it carries nothing through the iteration" failed after 17.376 seconds with 2 issues.
+􀢄  Test "A zero-weight tie does not connect: it carries nothing through the iteration" recorded an issue at EigenvectorDisconnectedTests.swift:51:3: Expectation failed: componentsRefused { _ = try Centrality.eigenvector(graph) } == 2
+􀢄  Test "A zero-weight tie does not connect: it carries nothing through the iteration" recorded an issue at EigenvectorDisconnectedTests.swift:53:3: Expectation failed: componentsRefused { _ = try Centrality.eigenvector(allZero) } == 3
+􁁛  Test "a-b = 1, a-c = 0, b-c = 1 scores a = 1, b = 1/2, c = 1" passed after 17.505 seconds.
+􁁛  Test "Absorption from a later state ignores how the journey reached it" passed after 10.616 seconds.
+􁁛  Test "Accepted dampings give finite scores summing to one on every family: NaN can no longer come out" passed after 17.451 seconds.
+􁁛  Test "Across 400 seeded random connected graphs the two Louvain implementations find the same communities" passed after 17.254 seconds.
+􁁛  Test "Adding zero-weight edges changes no score, over seeded random graphs" with 40 test cases passed after 17.506 seconds.
+􁁛  Test "Adjacency is sorted at construction, whatever order it arrived in" passed after 17.452 seconds.
+􁁛  Test "Adjacency is symmetric: every tie is recorded at both ends with the same weight" passed after 14.026 seconds.
+􁁛  Test "Adjacency lists are sorted by neighbour index" passed after 17.258 seconds.
+􁁛  Test "Agrees move for move with an independent dense Louvain" passed after 15.973 seconds.
+􁁛  Test "Agrees with a direct linear solve on random weighted graphs, isolates and light weights included" passed after 17.506 seconds.
+􁁛  Test "Agrees with explicit triangle counting on random graphs; weights are ignored" passed after 8.531 seconds.
+􁁛  Test "Agrees with literal peeling on random graphs, and is bounded by degree" passed after 14.162 seconds.
+􁁛  Test "Agrees with the dense transcription on a weighted, irregular graph" passed after 10.866 seconds.
+􁁛  Test "Agrees with the dense transcription on graphs mixing zero and positive weights" with 40 test cases passed after 17.506 seconds.
+􁁛  Test "Agrees with the dense transcription on seeded random weighted graphs, at several densities" with 16 test cases passed after 17.658 seconds.
+􁁛  Test "Agrees with the dense-matrix transcription on the kite and the karate club" passed after 10.867 seconds.
+􁁛  Test "Agrees with the textbook definition on random graphs and partitions" passed after 17.506 seconds.
+􁁛  Test "Agrees with union-find on random graphs, and two nodes share a label iff connected" passed after 14.515 seconds.
+􁁛  Test "All 2,500 directed pairs on 50 nodes get distinct draws" passed after 17.506 seconds.
+􁁛  Test "An edge fires on draw < p strictly: p equal to its draw does not fire, the next value up does" passed after 17.484 seconds.
+􀢄  Test "An edgeless graph is refused, one component per node (it used to score every node 1)" failed after 10.715 seconds with 1 issue.
+􀢄  Test "An edgeless graph is refused, one component per node (it used to score every node 1)" recorded an issue at WeightedCentralityMutationTests.swift:198:3: Expectation failed: an error was expected but none was thrown
+􀢄  Test "An eigenvector record stored under version 2 decodes as 2; a new one carries 4" failed after 17.484 seconds with 1 issue.
+􀢄  Test "An eigenvector record stored under version 2 decodes as 2; a new one carries 4" recorded an issue at MetricRegistryTests.swift:308:3: Expectation failed: fresh.metricVersion == 5
+􁁛  Test "An empty graph accepts the empty partition and refuses a non-empty one" passed after 14.515 seconds.
+􁁛  Test "An empty graph has no centrality of any kind" passed after 8.075 seconds.
+􁁛  Test "An empty graph is valid" passed after 17.260 seconds.
+􁁛  Test "An empty partition has no groups and no communities" passed after 17.376 seconds.
+􁁛  Test "An empty partition of a non-empty graph is refused: every node is missing" passed after 14.515 seconds.
+􁁛  Test "An empty registry lists nothing and runs nothing" passed after 8.825 seconds.
+􁁛  Test "An empty table ranks to nothing and looks up nil" passed after 17.507 seconds.
+􁁛  Test "An enormous tolerance stops after one pass; a negative one runs to the ceiling" passed after 10.715 seconds.
+􁁛  Test "An enormous tolerance stops after one pass" passed after 17.505 seconds.
+􁁛  Test "An envelope missing its kind or its payload does not decode" passed after 17.380 seconds.
+􁁛  Test "An exactly tied candidate does not take it, and a worse one does not either" passed after 14.515 seconds.
+􁁛  Test "An improvement exactly equal to the tolerance is not taken (the comparison is strict)" passed after 8.551 seconds.
+􁁛  Test "An isolate is omitted from the registered metric's scores, as from the measure" passed after 17.484 seconds.
+􁁛  Test "An isolated node is never activated by others and counts when seeded" passed after 17.452 seconds.
+􁁛  Test "An isolated node is omitted, not scored 0 and not NaN" passed after 17.506 seconds.
+􁁛  Test "An undeclared model gets exact plain greedy even when asked to be as lazy as possible" passed after 10.616 seconds.
+􁁛  Test "An unknown identifier records nothing" passed after 17.452 seconds.
+􁁛  Test "An unknown kind decodes as an opaque envelope and survives re-encoding" passed after 17.376 seconds.
+􁁛  Test "Any Comparable node type works, not only strings" passed after 17.376 seconds.
+􁁛  Test "At its default batch size the selector equals plain greedy on graphs bigger than the batch, for both models" passed after 17.517 seconds.
+􁁛  Test "At the default damping and tolerance, convergence is reached within the pass count the bound predicts, on every family" passed after 10.715 seconds.
+􁁛  Test "Attribution shares are the normalised removal effects and sum to one" passed after 10.616 seconds.
+􁁛  Test "Betweenness agrees to 1e-12" with 18 test cases passed after 17.505 seconds.
+􁁛  Test "Betweenness matches a reference implementation of Brandes" passed after 8.468 seconds.
+􁁛  Test "Betweenness on the karate club puts node 1 at the top" passed after 14.515 seconds.
+􁁛  Test "Both are invariant under weight scaling, which they ignore" passed after 10.616 seconds.
+􁁛  Test "Both models, several budgets (including over-budget) and refresh batches: exact pick and gain equality" with 48 test cases passed after 18.307 seconds.
+􁁛  Test "Bottom breaks ties in the reverse of ranked order" passed after 17.504 seconds.
+􁁛  Test "bottom(0) is empty, and bottom reads the lowest first" passed after 14.515 seconds.
+􁁛  Test "Bow-tie centre" passed after 8.530 seconds.
+􁁛  Test "Brandes agrees with brute-force enumeration on random graphs, isolates included" passed after 14.039 seconds.
+􁁛  Test "Brandes betweenness agrees with brute-force path enumeration on the kite" passed after 10.715 seconds.
+􁁛  Test "Brandes betweenness agrees with enumeration on the karate club" passed after 10.715 seconds.
+􁁛  Test "Budget 0 yields no picks; negative budget throws" passed after 17.451 seconds.
+􁁛  Test "Budget above node count returns at most node count picks, all distinct" passed after 17.380 seconds.
+􁁛  Test "Chains refuse what they cannot represent" passed after 10.616 seconds.
+􁁛  Test "Closeness and harmonic agree with Floyd-Warshall distances on random graphs" passed after 10.616 seconds.
+􁁛  Test "Closeness discounts what cannot be reached, and an isolate scores zero" passed after 10.616 seconds.
+􁁛  Test "Closeness of a graph of at most one node is zero" passed after 10.615 seconds.
+􁁛  Test "Closeness of a lone edge is one" passed after 10.615 seconds.
+􁁛  Test "Closeness on a path of three" passed after 10.616 seconds.
+􁁛  Test "Closeness on a star" passed after 10.615 seconds.
+􁁛  Test "Closeness on the kite favours Fernando and Garth, as published" passed after 14.515 seconds.
+􁁛  Test "Clustering is lowest for the kite's bridge" passed after 17.253 seconds.
+􁁛  Test "Clustering stays within zero and one for every node" passed after 17.253 seconds.
+􁁛  Test "Communities are returned ordered by their lowest node" passed after 17.511 seconds.
+􁁛  Test "Community numbers are labels: negative and large numbers are fine, so only the node set is checked" passed after 14.162 seconds.
+􁁛  Test "Complete bipartite K(2,3): sides are 1 and sqrt(2/3)" passed after 10.715 seconds.
+􁁛  Test "Component labels are dense and ordered by smallest member" passed after 14.162 seconds.
+􁁛  Test "Component output does not depend on the order the graph was built in" passed after 17.484 seconds.
+􁁛  Test "Components are found, and are the ones worked out by hand" passed after 17.452 seconds.
+􁁛  Test "Computing the metric is computing the brokerage measure, and the hand-derived path values hold" passed after 17.453 seconds.
+􁁛  Test "Connected graphs are untouched, including bipartite ones, and a lone node and the empty graph" passed after 17.376 seconds.
+􁁛  Test "Constraint is positive for every non-isolated node and lies in [1/degree, 2]" with 16 test cases passed after 17.253 seconds.
+􁁛  Test "Constraint is positive for every non-isolated node; a single neighbour gives 1" passed after 11.789 seconds.
+􁁛  Test "Constraint on a 1,100-node, 15,000-edge graph finishes quickly and every score is finite and positive" passed after 17.658 seconds.
+􁁛  Test "Convergence reads as unknown for a non-object payload, a null or a malformed report" passed after 14.039 seconds.
+􁁛  Test "ConvergenceReport round-trips and compares field by field" passed after 14.162 seconds.
+􁁛  Test "Core numbers agree with literal repeated peeling" passed after 10.616 seconds.
+􁁛  Test "Core numbers never exceed degree" passed after 14.515 seconds.
+􁁛  Test "Cycles, even and odd, are uniform 1/sqrt(n)" with 6 test cases passed after 14.515 seconds.
+􁁛  Test "Damping 0.9 stops short on a path within the default ceiling, which the bound also predicts" passed after 10.715 seconds.
+􁁛  Test "Damping 0.99 at the default ceiling does not converge, says so, and the scores really are off" passed after 10.715 seconds.
+􁁛  Test "Damping just above the old cap is run as given, not as 0.999" passed after 17.380 seconds.
+􁁛  Test "Damping zero is uniform; out-of-range damping is refused, not clamped (ADR-009)" passed after 17.506 seconds.
+􁁛  Test "Decoding DiagnosedScores directly: absent and null convergence are nil, malformed throws" passed after 14.162 seconds.
+􀢄  Test "Degenerate graphs have nothing to iterate: converged, zero residual" failed after 10.616 seconds with 1 issue.
+􀢄  Test "Degenerate graphs have nothing to iterate: converged, zero residual" recorded an issue at EigenvectorConvergenceTests.swift:102:3: Expectation failed: an error was expected but none was thrown
+􁁛  Test "Degenerate graphs: an empty graph has nothing to iterate; one node and an edgeless graph settle at once" passed after 10.715 seconds.
+􁁛  Test "Degenerate sweeps: no points, one point" passed after 15.048 seconds.
+􁁛  Test "Degree and betweenness disagree on the kite, as published" passed after 14.515 seconds.
+􁁛  Test "Degree centrality counts neighbours" passed after 8.080 seconds.
+􁁛  Test "Degree: out-degree count equals weighted degree on a symmetrised unweighted graph" with 18 test cases passed after 17.507 seconds.
+􁁛  Test "Dense matrix: a bipartite graph beside an isolate, one pass by hand, and weights of any size" passed after 17.506 seconds.
+􁁛  Test "Dense matrix: path of three, weighted path, star, bipartite, and the degenerate sizes" passed after 17.506 seconds.
+􁁛  Test "Descriptor is exploratory, generic and states high and low" passed after 17.451 seconds.
+􁁛  Test "Descriptor says what low and high do and do not mean" passed after 17.484 seconds.
+􁁛  Test "Differences below the 1e-12 tolerance are ties, and differences above it are not" passed after 14.162 seconds.
+􁁛  Test "Different master seeds give different estimates" passed after 17.484 seconds.
+􁁛  Test "DiffusionGraph is the weighted graph's adjacency in compressed rows" with 8 test cases passed after 17.506 seconds.
+􁁛  Test "Directed semantics, difference: a directed path scores its out-edges only; symmetrised, the middle node has degree two" passed after 17.506 seconds.
+􁁛  Test "Does not claim convergence when the ceiling is too small, and does when it is large" passed after 10.654 seconds.
+􁁛  Test "Does not claim convergence when the ceiling is too small, and does when it is large" passed after 10.715 seconds.
+􁁛  Test "Draws match values computed independently, bit for bit" with 3 test cases passed after 14.162 seconds.
+􁁛  Test "Duplicate pairs merge by summing, in either direction" passed after 17.376 seconds.
+􁁛  Test "Each built-in value round-trips through its envelope exactly" passed after 17.380 seconds.
+􀢄  Test "Each disconnected graph is refused by eigenvector and by the convergence form, naming the component count" failed after 17.376 seconds with 10 issues.
+􀢄  Test "Each disconnected graph is refused by eigenvector and by the convergence form, naming the component count" recorded an issue at EigenvectorDisconnectedTests.swift:43:4: Expectation failed: componentsRefused { _ = try Centrality.eigenvector(graph) } ==
+􀢄  Test "Each disconnected graph is refused by eigenvector and by the convergence form, naming the component count" recorded an issue at EigenvectorDisconnectedTests.swift:44:4: Expectation failed: componentsRefused { _ = try Centrality.eigenvectorConvergence(
+􁁛  Test "Each fixture stores a record for every registered metric" with 20 test cases passed after 17.226 seconds.
+􁁛  Test "Each sweep point is the selector run at that probability with the same master seed" passed after 17.253 seconds.
+􁁛  Test "Edge and node draws are uniform on [0, 1): mean, spread and bucket counts" passed after 17.506 seconds.
+􁁛  Test "Edge cases" passed after 14.162 seconds.
+􁁛  Test "Edge count and neighbour order are those of the sorted, merged edge list" passed after 14.515 seconds.
+􁁛  Test "Edge order does not change the graph" passed after 14.035 seconds.
+􁁛  Test "Edge weights record strength, not distance: they do not change the result" passed after 14.035 seconds.
+􁁛  Test "Edges listed in both directions still weigh one, not two" passed after 17.507 seconds.
+􁁛  Test "Eigenvector agrees to 1e-6 after rescaling, on connected graphs including bipartite ones" with 14 test cases passed after 17.506 seconds.
+􁁛  Test "Eigenvector at the weighted default budget agrees on the small bipartite graphs too" passed after 17.506 seconds.
+􁁛  Test "Eigenvector centrality matches a reference power iteration" passed after 8.364 seconds.
+􁁛  Test "Eigenvector centrality refuses a graph where it is not meaningful" passed after 8.458 seconds.
+􀢄  Test "Eigenvector envelopes at non-default ceilings and tolerances match the stored text and bits" failed after 17.253 seconds with 4 issues.
+􀢄  Test "Eigenvector envelopes at non-default ceilings and tolerances match the stored text and bits" recorded an issue at MetricRecordGoldenTests.swift:287:5: Expectation failed: an error was expected but none was thrown
+􀢄  Test "Eigenvector, agreement since ADR-009: an edgeless graph is nil unweighted and refused weighted (it scored all ones before)" failed after 17.506 seconds with 1 issue.
+􀢄  Test "Eigenvector, agreement since ADR-009: an edgeless graph is nil unweighted and refused weighted (it scored all ones before)" recorded an issue at UnweightedWeightedCrossCheckTests.swift:242:3: Expectation failed: an error was expected but none was thro
+􀢄  Test "Eigenvector, agreement since ADR-009: both refuse a disconnected graph, nil unweighted and a thrown error weighted" recorded an issue with 1 argument fixture → CrossCheckFixture(name: "kiteWithIsolate", edges: [("Andre", "Beverly"), ("Andre", "Carol")
+􀢄  Test "Eigenvector, agreement since ADR-009: both refuse a disconnected graph, nil unweighted and a thrown error weighted" recorded an issue with 1 argument fixture → CrossCheckFixture(name: "pathAndTriangle", edges: [("a", "b"), ("b", "c"), ("x", "y"), ("y"
+􀢄  Test "Eigenvector, agreement since ADR-009: both refuse a disconnected graph, nil unweighted and a thrown error weighted" recorded an issue with 1 argument fixture → CrossCheckFixture(name: "pathWithIsolates", edges: [("a", "b"), ("b", "c")], isolated: ["x"
+􀢄  Test "Eigenvector, agreement since ADR-009: both refuse a disconnected graph, nil unweighted and a thrown error weighted" with 3 test cases failed after 17.505 seconds with 3 issues.
+􀢄  Test "Eigenvector, agreement since ADR-009: two components with the same leading eigenvalue are refused by both too" failed after 17.509 seconds with 1 issue.
+􀢄  Test "Eigenvector, agreement since ADR-009: two components with the same leading eigenvalue are refused by both too" recorded an issue at UnweightedWeightedCrossCheckTests.swift:234:3: Expectation failed: an error was expected but none was thrown
+􁁛  Test "Eigenvector: with the tolerance set to the residual of a converged run, the run needs more passes" passed after 8.672 seconds.
+􁁛  Test "Empty graph and single node give empty scores" passed after 17.506 seconds.
+􁁛  Test "Empty graph yields an empty selection" passed after 17.452 seconds.
+􁁛  Test "Empty seed set spreads to nothing; out-of-range and duplicate seeds are ignored" passed after 17.484 seconds.
+􁁛  Test "Empty sweep and invalid probabilities throw" passed after 8.462 seconds.
+􁁛  Test "enumerate stops at the last subset even when asked for more, and never reads past it" passed after 8.551 seconds.
+􁁛  Test "enumerate visits every k-subset once, lexicographically, and keeps the first strict best" passed after 8.631 seconds.
+􁁛  Test "Enumeration: path of three, star, four-cycle, and the degenerate sizes" passed after 17.506 seconds.
+􁁛  Test "Envelopes of each value encode to exactly the stored text" passed after 10.616 seconds.
+􁁛  Test "Estimates are identical when run concurrently under different scheduling" passed after 17.615 seconds.
+􁁛  Test "Every added measure is in the registry, and there are exactly eleven" passed after 10.615 seconds.
+􁁛  Test "Every assignment of each of six nodes to community 0, community 1 or nothing: refused exactly when a node is unassigned, and otherwise equal to the old scoring bit for bit" passed after 14.162 seconds.
+􁁛  Test "Every component's members come back sorted" passed after 17.436 seconds.
+􁁛  Test "Every diffusion model keeps its count in range and the estimate finite" with 7 test cases passed after 8.886 seconds.
+􁁛  Test "Every metric states what a low score does and does not mean" passed after 10.616 seconds.
+􁁛  Test "Every node alone scores minus the sum of squared degree shares" passed after 17.484 seconds.
+􁁛  Test "Every node is in a component; edgeless graph gives n components" passed after 14.515 seconds.
+􁁛  Test "Every node lands in exactly one community" passed after 10.616 seconds.
+􁁛  Test "Every recorded edge draw is reproduced bit for bit" passed after 14.005 seconds.
+􁁛  Test "Every recorded node draw is reproduced bit for bit" passed after 13.189 seconds.
+􁁛  Test "Every recorded selection is reproduced exactly, exact and heuristic branches alike" passed after 10.616 seconds.
+􁁛  Test "Every recorded selection is reproduced exactly: picks, gains, spread, JSON, envelope" passed after 17.519 seconds.
+􁁛  Test "Every recorded sweep is reproduced exactly: picks, summary, JSON, envelope" passed after 17.452 seconds.
+􁁛  Test "Every score, convergence figure and community number matches bit for bit" with 20 test cases passed after 17.253 seconds.
+􀢄  Test "Every standard metric returns finite scores" recorded an issue with 1 argument weights → [0.0, 1.0] at WeightConsumerRegistryTests.swift:39:5: Expectation failed: an error was expected but none was thrown
+􀢄  Test "Every standard metric returns finite scores" recorded an issue with 1 argument weights → [0.0] at WeightConsumerRegistryTests.swift:39:5: Expectation failed: an error was expected but none was thrown
+􀢄  Test "Every standard metric returns finite scores" recorded an issue with 1 argument weights → [1.0, 0.0, 1e-300, 1e+300, 1.0, 0.0] at WeightConsumerRegistryTests.swift:39:5: Expectation failed: an error was expected but none was thrown
+􀢄  Test "Every standard metric returns finite scores" recorded an issue with 1 argument weights → [1.0] at WeightConsumerRegistryTests.swift:39:5: Expectation failed: an error was expected but none was thrown
+􀢄  Test "Every standard metric returns finite scores" recorded an issue with 1 argument weights → [1e-300, 1e+300] at WeightConsumerRegistryTests.swift:39:5: Expectation failed: an error was expected but none was thrown
+􀢄  Test "Every standard metric returns finite scores" recorded an issue with 1 argument weights → [1e-300] at WeightConsumerRegistryTests.swift:39:5: Expectation failed: an error was expected but none was thrown
+􀢄  Test "Every standard metric returns finite scores" recorded an issue with 1 argument weights → [1e+300] at WeightConsumerRegistryTests.swift:39:5: Expectation failed: an error was expected but none was thrown
+􀢄  Test "Every standard metric returns finite scores" with 7 test cases failed after 17.380 seconds with 7 issues.
+􁁛  Test "Every standard metric's envelope is the value its function returns, wrapped" passed after 10.616 seconds.
+􁁛  Test "Every transient row sums to one, and absorbing states hold themselves" passed after 10.616 seconds.
+􁁛  Test "Every weight in a symmetrised graph is exactly one" passed after 17.509 seconds.
+􁁛  Test "Exact branch equals brute force; heuristic is never worse than greedy" passed after 17.660 seconds.
+􁁛  Test "Exact result: structure, and the lexicographically first optimum, even with ties" with 12 test cases passed after 17.662 seconds.
+􁁛  Test "Expected steps to absorption is the geometric mean it must be" passed after 10.616 seconds.
+􁁛  Test "Extreme legal weights never trap or hang, and the count stays in range" with 4 test cases passed after 14.063 seconds.
+􁁛  Test "Failing to converge within maxIterations is nil, not the last iterate" passed after 14.515 seconds.
+􁁛  Test "Fewer than one round is treated as one round" passed after 17.506 seconds.
+􁁛  Test "Finite weights that sum past the largest finite number are refused, however they meet" passed after 17.376 seconds.
+􁁛  Test "For seeded random trial counts the standard error is finite, non-negative and matches the two-pass formula" passed after 10.616 seconds.
+􁁛  Test "Four-cycle splits a pair between two shortest paths" passed after 14.034 seconds.
+􁁛  Test "Frequencies are the fraction of sweep points in which a node was picked" passed after 10.617 seconds.
+􁁛  Test "Golden path: cash cost picks a different winner" passed after 14.066 seconds.
+􁁛  Test "Golden path: travel hours" passed after 14.162 seconds.
+􁁛  Test "Graphs of at most two nodes score zero for every node" passed after 14.034 seconds.
+􁁛  Test "greedy adds the best site each round, lowest index on ties, and stops when none are left" passed after 8.858 seconds.
+􁁛  Test "Greedy is within (1 - 1/e) of the brute-force optimum on unseen trials, up to 4 standard errors, k = 1...3" with 6 test cases passed after 19.407 seconds.
+􁁛  Test "Greedy spread >= (1 - 1/e) x brute-force optimum, k = 1...3, several small graphs" passed after 19.747 seconds.
+􁁛  Test "Groups of equal size are ordered by community number, ascending" passed after 17.373 seconds.
+􁁛  Test "Groups of equal size are ordered by community number" passed after 14.515 seconds.
+􁁛  Test "Hand cases on a line: k = 1, 2, 3" passed after 14.067 seconds.
+􁁛  Test "Hand-checked stability summary: partial overlaps, the always-picked set, an empty pick" passed after 16.319 seconds.
+􁁛  Test "Harmonic and closeness agree at the ends and differ in the middle" passed after 17.253 seconds.
+􁁛  Test "Harmonic centrality matches a hand computation" passed after 17.253 seconds.
+􁁛  Test "Harmonic centrality survives a disconnected graph" passed after 17.253 seconds.
+􁁛  Test "Harmonic closeness agrees to 1e-12" with 18 test cases passed after 17.512 seconds.
+􁁛  Test "Harmonic closeness matches a reference breadth-first computation" passed after 8.045 seconds.
+􁁛  Test "Harmonic closeness stays defined on a disconnected graph" passed after 8.176 seconds.
+􁁛  Test "Harmonic counts the unreachable as zero but still divides by n - 1" passed after 10.616 seconds.
+􁁛  Test "Harmonic of a graph of at most one node is zero" passed after 10.616 seconds.
+􁁛  Test "Harmonic on a path of five weights distance 3 and 4 by their reciprocals" passed after 10.616 seconds.
+􁁛  Test "Harmonic on a path of three" passed after 10.616 seconds.
+􁁛  Test "Heuristic branch: structure, no better than the optimum, no worse than greedy, swap-optimal" with 12 test cases passed after 17.662 seconds.
+􁁛  Test "Hierarchical planted graphs, where contraction runs for several levels, reach the reference's modularity" passed after 17.510 seconds.
+􁁛  Test "Hostile weights are refused wherever they sit in a seeded random edge list" passed after 17.376 seconds.
+􁁛  Test "How the same graph is written does not matter: duplicate edges merge, direction and self-loops are irrelevant" passed after 17.253 seconds.
+􁁛  Test "Identical configuration gives identical selections; different seed may differ" passed after 17.485 seconds.
+􁁛  Test "Identical inputs give bit-identical estimates" passed after 17.506 seconds.
+􀢄  Test "Identifiers and versions are exactly the stored ones, with no metric added or dropped" failed after 10.616 seconds with 1 issue.
+􀢄  Test "Identifiers and versions are exactly the stored ones, with no metric added or dropped" recorded an issue at MetricRecordGoldenTests.swift:155:3: Expectation failed: found == stored
+􁁛  Test "Independent cascade declares it; linear threshold and an undeclared model do not" passed after 10.616 seconds.
+􁁛  Test "Independent cascade equals reachability over the fired edges, trial by trial" with 8 test cases passed after 17.660 seconds.
+􁁛  Test "Independent cascade is submodular in every single trial: gains never grow with the seed set" with 25 test cases passed after 10.867 seconds.
+􁁛  Test "Independent cascade: lazy evaluation is exact at every refresh batch size" with 60 test cases passed after 17.453 seconds.
+􁁛  Test "Input order of the candidate list never changes the answer" with 12 test cases passed after 17.662 seconds.
+􁁛  Test "Introducing two of a hub's contacts to each other raises the hub's constraint" passed after 17.256 seconds.
+􁁛  Test "Invalid weights, costs and counts are each rejected with the offending value named" passed after 8.669 seconds.
+􁁛  Test "Invariant under an arbitrary permutation of the labels" passed after 10.715 seconds.
+􁁛  Test "Invariant under community renumbering, weight scaling and node relabelling" passed after 17.452 seconds.
+􁁛  Test "Invariant under order-preserving relabelling and under uniform weight scaling" passed after 14.035 seconds.
+􁁛  Test "Invariant under relabelling that keeps the sort order, and under weight scaling" passed after 10.867 seconds.
+􁁛  Test "Invariant under weight scaling and under relabelling" passed after 17.504 seconds.
+􁁛  Test "Isolated nodes are kept and have zero degree" passed after 17.368 seconds.
+􁁛  Test "Isolated nodes are pickable and gain exactly 1 each" passed after 17.436 seconds.
+􁁛  Test "Isolated nodes are their own components" passed after 17.253 seconds.
+􁁛  Test "Isolated vertices survive, in both directions" passed after 17.510 seconds.
+􁁛  Test "Isolated, zero-weight and unusable ties are omitted, never scored 0 or NaN" passed after 17.253 seconds.
+􁁛  Test "Isolates and edgeless graphs score zero; every node is present" passed after 8.530 seconds.
+􁁛  Test "It returns the same scores as Centrality.pageRank, bit for bit, plus the report of that run" passed after 17.506 seconds.
+􁁛  Test "Its scores equal eigenvector's exactly, at every ceiling, across seeded random graphs" with 10 test cases passed after 10.616 seconds.
+􁁛  Test "Jaccard and cosine weightings match an independent computation" passed after 8.525 seconds.
+􁁛  Test "Jaccard matrix: symmetric, unit diagonal, in [0, 1], equal to set arithmetic, for seeded random picks" with 6 test cases passed after 14.876 seconds.
+􁁛  Test "Jaccard overlap: matrix is symmetric, unit diagonal, hand-checked values" passed after 8.510 seconds.
+􁁛  Test "JSONValue decodes every JSON shape and encodes it back" passed after 17.380 seconds.
+􁁛  Test "k = 1 is never worse than any single site, and equals the best one" with 12 test cases passed after 17.662 seconds.
+􁁛  Test "k = 1 pick equals the brute-force best single node" passed after 17.657 seconds.
+􁁛  Test "k-core of a clique with a pendant" passed after 14.515 seconds.
+􁁛  Test "k-core of paths, stars and cycles" passed after 14.162 seconds.
+􁁛  Test "K(2,3): 2-side 1/2, 3-side 1/sqrt6" passed after 14.515 seconds.
+􁁛  Test "Karate club has a maximum core of four" passed after 14.515 seconds.
+􁁛  Test "Karate degrees match the published values" passed after 8.584 seconds.
+􁁛  Test "Karate eigenvector ranks the administrator first" passed after 14.515 seconds.
+􁁛  Test "Karate on integer nodes matches the stored values bit for bit, by every registered metric" passed after 15.543 seconds.
+􁁛  Test "Kinds are stable strings" passed after 17.509 seconds.
+􁁛  Test "Kite betweenness matches the published values" passed after 14.515 seconds.
+􁁛  Test "Kite degrees match the published sequence" passed after 8.527 seconds.
+􁁛  Test "Kite graph: eighteen ties between ten people, each weighing one" passed after 17.361 seconds.
+􁁛  Test "Labels are dense, and numbered in the order of each community's first node" passed after 14.039 seconds.
+􁁛  Test "Lazy CELF selection equals plain greedy, node for node and gain for gain" with 8 test cases passed after 17.660 seconds.
+􁁛  Test "Lazy selection equals plain greedy under linear threshold on three fixed seeds" with 3 test cases passed after 17.660 seconds.
+􁁛  Test "Limits: zero and negative are empty, exact count is everything, more is clamped" passed after 17.506 seconds.
+􁁛  Test "Linear threshold equals the threshold fixed point, trial by trial" with 8 test cases passed after 17.660 seconds.
+􁁛  Test "Linear threshold is NOT submodular in a single trial: two half-weight neighbours can jointly activate a node neither does alone" passed after 10.867 seconds.
+􁁛  Test "Linear threshold: the selector equals plain greedy even with the laziest refresh batch, over many seeded graphs" with 120 test cases passed after 17.484 seconds.
+􁁛  Test "Louvain finds the two clusters the graph obviously has" passed after 8.489 seconds.
+􁁛  Test "Louvain is deterministic whatever order the graph was built in" passed after 8.551 seconds.
+􁁛  Test "Louvain on the karate club finds the same four communities in both" passed after 17.506 seconds.
+􁁛  Test "Louvain reaches the modularity the literature reports for this graph" passed after 10.616 seconds.
+􁁛  Test "Louvain separates the instructor from the administrator" passed after 10.616 seconds.
+􁁛  Test "Louvain, difference: an edgeless graph is nil unweighted, every node alone weighted" passed after 17.508 seconds.
+􁁛  Test "Louvain: random3 is split the same way by both, now that the unweighted move rule has the tie margin" passed after 17.506 seconds.
+􁁛  Test "Louvain: the partitions are the same sets of nodes and have the same modularity" with 18 test cases passed after 17.506 seconds.
+􁁛  Test "Louvain's partition scores well under an independent modularity function" passed after 10.616 seconds.
+􁁛  Test "Marginal gain is zero for a node already reached with certainty" passed after 14.035 seconds.
+􁁛  Test "Marginal gains telescope to the spread of the chosen set, for both models" with 3 test cases passed after 17.660 seconds.
+􁁛  Test "maxIterations is exactly the number of passes allowed" with 3 test cases passed after 14.515 seconds.
+􁁛  Test "maxPasses: 1 is local moving alone, and more passes never lower modularity" passed after 17.505 seconds.
+􁁛  Test "Mean and standard error are bit-identical, through both estimator overloads" passed after 14.516 seconds.
+􁁛  Test "Mean and standard error are the two-pass sample statistics of the per-trial counts" with 6 test cases passed after 14.066 seconds.
+􁁛  Test "Models validate probabilities at the boundaries and expose what they were given" passed after 14.515 seconds.
+􁁛  Test "Modularity matches an independent computation" passed after 8.522 seconds.
+􁁛  Test "Modularity never exceeds the exhaustive optimum on graphs of 8 nodes or fewer" passed after 17.516 seconds.
+􁁛  Test "Modularity of a complete assignment lies within [-1/2, 1)" passed after 17.452 seconds.
+􁁛  Test "Modularity of every-node-alone is negative" passed after 10.616 seconds.
+􁁛  Test "Modularity of everything-in-one-community is zero" passed after 10.616 seconds.
+􁁛  Test "Modularity of the same partition agrees to 1e-12: the weighted Louvain result, the components, and singletons" with 18 test cases passed after 17.505 seconds.
+􁁛  Test "Modularity refuses a partition that is not one" passed after 8.478 seconds.
+􁁛  Test "Modularity, agreement since ADR-009: a partition that names a node the graph does not have is refused by both" passed after 17.504 seconds.
+􁁛  Test "Modularity, agreement since ADR-009: a partition that omits a node is refused by both, nil unweighted and a thrown error weighted" passed after 17.506 seconds.
+􁁛  Test "Modularity, difference: an edgeless graph is nil unweighted and zero weighted" passed after 17.506 seconds.
+􁁛  Test "More passes never lower modularity; zero passes behaves as one" passed after 14.039 seconds.
+􀢄  Test "Moved metrics keep the versions they had; eigenvector is at 5 and pagerank at 3" failed after 8.852 seconds with 1 issue.
+􀢄  Test "Moved metrics keep the versions they had; eigenvector is at 5 and pagerank at 3" recorded an issue at MetricRegistryTests.swift:150:3: Expectation failed: versions["eigenvector-centrality"] == 5
+􁁛  Test "Negative and infinite scores order as numbers do" passed after 17.506 seconds.
+􁁛  Test "Negative community numbers are ordinary identifiers" passed after 17.369 seconds.
+􁁛  Test "neighbours(of:) is empty out of bounds and valid at both ends" passed after 17.506 seconds.
+􁁛  Test "Never below local moving alone, on seeded random graphs" passed after 17.509 seconds.
+􁁛  Test "Never worse than every node alone, and communities do not span components" passed after 14.035 seconds.
+􁁛  Test "Nil conditions are kept" passed after 16.481 seconds.
+􁁛  Test "No two (master seed, trial) pairs share a stream, including neighbouring seeds and trials" passed after 14.515 seconds.
+􁁛  Test "Node indices that need all 32 bits of the edge packing are still told apart" passed after 14.515 seconds.
+􁁛  Test "Nodes come out in sorted order regardless of input order" passed after 17.368 seconds.
+􁁛  Test "Nodes in symmetric positions score the same" passed after 17.506 seconds.
+􁁛  Test "NodeScores become demand weights" passed after 14.039 seconds.
+􁁛  Test "NodeScores demand: the weights are the scores, and a non-positive total is refused" passed after 10.616 seconds.
+􁁛  Test "NodeSelection round-trips through JSON and its envelope, for seeded arbitrary picks" with 4 test cases passed after 14.005 seconds.
+􁁛  Test "Non-bipartite fixture keeps its values" passed after 14.623 seconds.
+􁁛  Test "Normalised betweenness lies in [0, 1]; it is invariant under any relabelling" passed after 14.039 seconds.
+􁁛  Test "Old behaviour is gone: 1.5 no longer runs as 0.999, -1 no longer runs as 0, NaN no longer gives NaN scores" passed after 17.380 seconds.
+􀢄  Test "Old behaviour is gone: the near-zero scores for the non-dominant component can no longer be obtained" failed after 17.376 seconds with 1 issue.
+􀢄  Test "Old behaviour is gone: the near-zero scores for the non-dominant component can no longer be obtained" recorded an issue at EigenvectorDisconnectedTests.swift:72:3: Expectation failed: componentsRefused { _ = try Centrality.eigenvector(graph) } != nil
+􁁛  Test "Once converged the residual is the final change and sits under the tolerance" passed after 10.616 seconds.
+􁁛  Test "One community scores exactly zero, by identity" passed after 8.510 seconds.
+􁁛  Test "One of two neighbours activates the shared node with probability 1/2" passed after 17.484 seconds.
+􁁛  Test "One pass from the uniform start, by hand" passed after 10.715 seconds.
+􁁛  Test "One trial of any count has standard error exactly zero, never NaN" with 5 test cases passed after 10.616 seconds.
+􁁛  Test "Only a scores envelope is read for convergence, whatever another kind's payload holds" passed after 10.715 seconds.
+􁁛  Test "Only a scores envelope is read for convergence, whatever another kind's payload holds" passed after 14.515 seconds.
+􁁛  Test "Only the independent cascade declares submodular trials; the default assumes nothing" passed after 15.276 seconds.
+􁁛  Test "Only the points are stored: the stability summary is recomputed, so it cannot disagree with them" passed after 17.253 seconds.
+􁁛  Test "Optimum never rises as k grows, and k = number of sites costs the cheapest-of-all" with 12 test cases passed after 17.662 seconds.
+􁁛  Test "Order is part of identity" passed after 17.366 seconds.
+􁁛  Test "Other kinds carry no convergence" passed after 10.715 seconds.
+􁁛  Test "PageRank agrees to 1e-10, including dangling nodes (isolates)" with 18 test cases passed after 17.506 seconds.
+􁁛  Test "PageRank agrees with eigenvector on who leads the karate club" passed after 14.515 seconds.
+􁁛  Test "pageRank and pageRankConvergence are one loop: identical scores bit for bit, and identical to the loop as it was before this change" with 6 test cases passed after 10.715 seconds.
+􁁛  Test "PageRank matches a reference power iteration and sums to one" passed after 8.396 seconds.
+􁁛  Test "PageRank reports a failure to converge rather than its last iterate" passed after 8.019 seconds.
+􁁛  Test "PageRank: with the tolerance set to the change of pass k, the result is not the pass-k iterate" passed after 8.529 seconds.
+􁁛  Test "pageRankConvergence refuses the same dampings: it is the loop, so the two cannot disagree" with 10 test cases passed after 17.380 seconds.
+􁁛  Test "Partition groups are largest first with members sorted" passed after 17.359 seconds.
+􁁛  Test "Path a-b-c: the ends are 1, the middle is 0.5" passed after 17.506 seconds.
+􁁛  Test "Path at p = 1: spread is the component size from any seed" passed after 8.443 seconds.
+􁁛  Test "Path from an end under linear threshold: mean 2 with variance 1.875" passed after 10.616 seconds.
+􁁛  Test "Path from an end: mean is the geometric sum" passed after 10.616 seconds.
+􁁛  Test "Path of 3 is (1/2, 1/sqrt2, 1/2)" passed after 14.515 seconds.
+􁁛  Test "Path of 4 still right" passed after 14.515 seconds.
+􁁛  Test "Path of 5 is sin(k pi/6) over sqrt3" passed after 14.515 seconds.
+􁁛  Test "Path of four: inner nodes 2 raw, 2/3 normalised" passed after 14.039 seconds.
+􁁛  Test "Path of four: the ends are 1/phi" passed after 13.190 seconds.
+􁁛  Test "Path of six matches sin(k pi / 7) whatever the size of the weights" passed after 10.715 seconds.
+􁁛  Test "Path of three matches the closed form" passed after 17.506 seconds.
+􁁛  Test "Path of three: the middle node carries the only pair, so 1 normalised and 1 raw" passed after 14.039 seconds.
+􁁛  Test "Path of three: the middle node leads, the ends are 1/sqrt(2)" passed after 10.715 seconds.
+􁁛  Test "Peeling a tail does not reduce the core beneath it" passed after 14.162 seconds.
+􁁛  Test "Peeling: clique with a pendant and an isolate, a tail on a triangle, and the empty graph" passed after 17.506 seconds.
+􁁛  Test "Per-trial counts and exact activated sets match, for both models on three graphs" passed after 14.035 seconds.
+􁁛  Test "Planted structure: relabelling the nodes gives the same partition structure" passed after 17.511 seconds.
+􁁛  Test "Planted-partition graphs with self-loops reach the multi-level reference's modularity" passed after 17.510 seconds.
+􁁛  Test "PMedian's optimum equals the integer program's, for p = 1, 2, 3, with the same sites" with 3 test cases passed after 17.253 seconds.
+􁁛  Test "Power iteration agrees with dense matrix multiplication" passed after 10.715 seconds.
+􁁛  Test "Probability outside [0, 1] or non-finite is rejected" passed after 8.459 seconds.
+􁁛  Test "Projection refuses input it cannot project" passed after 8.464 seconds.
+􁁛  Test "Properties on seeded random graphs: range, coverage, determinism" passed after 17.508 seconds.
+􁁛  Test "Random connected graphs (mostly trees, hence bipartite) match the Jacobi reference" passed after 16.751 seconds.
+􁁛  Test "Ranking is by score descending, ties by node ascending, whatever the insertion order" passed after 14.515 seconds.
+􁁛  Test "Ranks descending with ties broken by node ascending, whatever the insertion order" passed after 17.508 seconds.
+􁁛  Test "Re-encoding a decoded stored envelope reproduces the stored text" passed after 10.616 seconds.
+􁁛  Test "Reaches the exhaustive optimum on small planted graphs" passed after 17.255 seconds.
+􁁛  Test "Records stored as version 4 (which may be of a disconnected graph) still decode" passed after 17.376 seconds.
+􁁛  Test "Records the context and metric version alongside the numbers" passed after 17.484 seconds.
+􁁛  Test "Recovers most of the actual faction split" passed after 10.616 seconds.
+􁁛  Test "Relabelling the nodes by a bijection preserves the multiset of weighted degrees" passed after 14.035 seconds.
+􁁛  Test "Relabelling the nodes permutes the answer and changes nothing else" passed after 15.652 seconds.
+􁁛  Test "Relabelling the nodes relabels the scores and nothing else" with 16 test cases passed after 17.253 seconds.
+􁁛  Test "Removal effects are the ones an independent computation gives" passed after 10.616 seconds.
+􁁛  Test "Removing a state that is not a channel is refused" passed after 10.616 seconds.
+􁁛  Test "Repeated runs give identical output" passed after 10.715 seconds.
+􁁛  Test "Repeating every edge doubles every weight and leaves the structure alone" passed after 14.035 seconds.
+􁁛  Test "Reports one selection per probability, in order" passed after 10.617 seconds.
+􁁛  Test "Resolution: huge keeps every node alone, zero merges a connected graph" passed after 14.035 seconds.
+􁁛  Test "Returns nil for an unknown identifier rather than throwing" passed after 10.614 seconds.
+􁁛  Test "Ring of 12 triangles reaches at least the paired partition (closed form 7/8 - 2/12)" passed after 17.508 seconds.
+􁁛  Test "Ring of 16 K4 cliques beats one community per clique (closed form)" passed after 17.506 seconds.
+􁁛  Test "Rings whose neighbours share several edges: weights survive repeated contraction" passed after 17.513 seconds.
+􁁛  Test "Round trip of the karate club is exact" passed after 17.504 seconds.
+􁁛  Test "Round trip on a directed graph returns its undirected closure" passed after 17.508 seconds.
+􁁛  Test "Round trip on a symmetric graph returns the input" passed after 17.506 seconds.
+􁁛  Test "Round trip: encode then decode returns the original, as JSON and as an envelope" with 12 test cases passed after 8.854 seconds.
+􁁛  Test "Round-trips through Codable so a record survives to be compared later" passed after 17.484 seconds.
+􁁛  Test "Round-trips through its envelope" passed after 14.039 seconds.
+􁁛  Test "Round-trips through the registry as a scores envelope" passed after 17.484 seconds.
+􁁛  Test "Round-trips through the registry, an envelope and JSON, seeded" with 4 test cases passed after 10.715 seconds.
+􁁛  Test "Runs a metric by identifier" passed after 10.291 seconds.
+􁁛  Test "Scale invariance holds at extreme magnitudes, where an offset would swallow every difference" with 4 test cases passed after 17.662 seconds.
+􁁛  Test "Scaling every weight by a constant changes nothing: shares are ratios" with 3 test cases passed after 17.263 seconds.
+􁁛  Test "Scaling every weight, or every cost, by c scales the total by c and changes no choice" with 3 test cases passed after 17.662 seconds.
+􁁛  Test "Scores are positive and sum to one" passed after 17.507 seconds.
+􁁛  Test "Scores round-trip through the registry envelope on integer nodes, as JSON" passed after 17.484 seconds.
+􁁛  Test "Seed handling at the boundaries: 0 and n-1 count, n and -1 do not, repeats count once" passed after 14.043 seconds.
+􁁛  Test "Seed selection and a probability sweep pick real, distinct nodes" with 7 test cases passed after 10.342 seconds.
+􁁛  Test "Seeded Erdos-Renyi and preferential-attachment graphs converge" with 6 test cases passed after 10.715 seconds.
+􁁛  Test "Seeded: DiagnosedScores with and without a report round-trip through JSON" with 4 test cases passed after 14.039 seconds.
+􁁛  Test "Seeded: groups partition the nodes exactly and are ordered by size then number" with 5 test cases passed after 17.363 seconds.
+􁁛  Test "Seeded: random values survive value to envelope to JSON text to envelope to value" with 8 test cases passed after 17.376 seconds.
+􁁛  Test "Seeded: ranked is a permutation, non-increasing, ties ascending; top and bottom agree" with 8 test cases passed after 17.507 seconds.
+􁁛  Test "Seeded: the ranking does not depend on dictionary construction order" with 4 test cases passed after 17.507 seconds.
+􁁛  Test "Self-loops are dropped but the node survives" passed after 17.376 seconds.
+􁁛  Test "Shared-membership counts are the projection's simplest weighting" passed after 8.478 seconds.
+􁁛  Test "Ships the metrics the design calls for" passed after 10.615 seconds.
+􁁛  Test "SiteAssignment sorts by demand and site whatever order it is built in, and re-sorting is a no-op" with 12 test cases passed after 8.560 seconds.
+􁁛  Test "Siting from NodeScores reproduces the original's answers, totals and JSON exactly" passed after 17.253 seconds.
+􁁛  Test "Siting on centrality-weighted demand stays finite" with 7 test cases passed after 17.451 seconds.
+􁁛  Test "Siting on degree-weighted demand stays finite" with 7 test cases passed after 10.614 seconds.
+􁁛  Test "Siting on NodeScores built from weighted degree stays finite" with 7 test cases passed after 10.615 seconds.
+􁁛  Test "Spread is monotone in the seed set and in the probability, exactly, on common trials" with 8 test cases passed after 17.660 seconds.
+􁁛  Test "SpreadEstimate round-trips through JSON, for seeded arbitrary values" with 6 test cases passed after 14.162 seconds.
+􁁛  Test "Star at p = 1: the centre is picked first with gain n + 1" passed after 17.451 seconds.
+􁁛  Test "Star centre at p = 0 spreads to exactly 1" passed after 8.500 seconds.
+􁁛  Test "Star centre at p = 0.5, n = 10 is within 4 SE of 6.0 (2000 trials)" passed after 8.854 seconds.
+􁁛  Test "Star centre at p = 1 spreads to exactly n + 1" passed after 8.531 seconds.
+􁁛  Test "Star centre: mean is 1 + n p within 4 theoretical SE, and the reported SE matches theory" with 3 test cases passed after 17.661 seconds.
+􁁛  Test "Star hub: raw 6, normalised 1" passed after 14.035 seconds.
+􁁛  Test "Star matches the closed form" passed after 17.509 seconds.
+􁁛  Test "Star with n leaves: centre is 1/n, every leaf is 1" with 2 test cases passed after 17.506 seconds.
+􁁛  Test "Star: the hub is 1 and each leaf is one half" passed after 10.715 seconds.
+􁁛  Test "Stars: hub 1/sqrt2, each leaf 1/sqrt(2n)" with 4 test cases passed after 15.543 seconds.
+􁁛  Test "Stops when the change per pass falls below the tolerance, exactly as documented" passed after 10.715 seconds.
+􁁛  Test "Stored envelopes decode, yield equal typed values and the same convergence" passed after 10.616 seconds.
+􁁛  Test "Subscript reads one node's score" passed after 17.504 seconds.
+􁁛  Test "subsetCount is the binomial coefficient, symmetric, saturating and overflow-safe" with 9 test cases passed after 8.786 seconds.
+􁁛  Test "summarise: hand-checked values, a degenerate run, and zero trials" passed after 14.515 seconds.
+􁁛  Test "swapSearch accepts an improvement only when it exceeds 1e-12 x max(1, |current|)" with 8 test cases passed after 8.836 seconds.
+􁁛  Test "swapSearch scales its tolerance by the objective being improved on, not by the best candidate" passed after 8.876 seconds.
+􁁛  Test "swapSearch takes the best single swap until none improves by more than rounding" passed after 10.615 seconds.
+􁁛  Test "Sweeps are deterministic" passed after 10.617 seconds.
+􁁛  Test "Symmetrising a directed edge makes one undirected tie of weight one" passed after 17.507 seconds.
+􁁛  Test "Targets with no entry of their own become vertices" passed after 17.507 seconds.
+􁁛  Test "The a-priori bound is the oracle: after k passes the L1 error is at most 2 * damping^k, on every family and damping" passed after 10.784 seconds.
+􁁛  Test "The answer does not depend on the parity of maxIterations" passed after 15.048 seconds.
+􁁛  Test "The async selection equals the dispatch selection on random graphs" with 3 test cases passed after 17.708 seconds.
+􀢄  Test "The bare envelope the registry returns is byte-for-byte the stored envelope" recorded an issue with 1 argument golden → GoldenRecordCase(name: "edgeless4", edges: [], isolated: ["a", "b", "c", "d"], records: [("betweenness-centrality", "{\"computedAt\
+􀢄  Test "The bare envelope the registry returns is byte-for-byte the stored envelope" recorded an issue with 1 argument golden → GoldenRecordCase(name: "isolates", edges: [("a", "b", 1.0), ("b", "c", 1.0)], isolated: ["x", "y", "z"], records: [("betweenness-ce
+􀢄  Test "The bare envelope the registry returns is byte-for-byte the stored envelope" recorded an issue with 1 argument golden → GoldenRecordCase(name: "random2", edges: [("v13", "v16", 2.5), ("v16", "v06", 1.5), ("v15", "v16", 1.25), ("v16", "v07", 2.0), ("v1
+􀢄  Test "The bare envelope the registry returns is byte-for-byte the stored envelope" recorded an issue with 1 argument golden → GoldenRecordCase(name: "random3", edges: [("v02", "v17", 2.5), ("v01", "v05", 2.75), ("v03", "v22", 2.0), ("v22", "v17", 3.0), ("v1
+􀢄  Test "The bare envelope the registry returns is byte-for-byte the stored envelope" recorded an issue with 1 argument golden → GoldenRecordCase(name: "random4", edges: [("v07", "v16", 3.5), ("v08", "v07", 2.5), ("v16", "v08", 0.75), ("v09", "v14", 3.0), ("v0
+􀢄  Test "The bare envelope the registry returns is byte-for-byte the stored envelope" recorded an issue with 1 argument golden → GoldenRecordCase(name: "twoComponents", edges: [("a", "b", 1.0), ("b", "c", 1.0), ("a", "c", 1.0), ("x", "y", 1.0), ("y", "z", 1.0)
+􀢄  Test "The bare envelope the registry returns is byte-for-byte the stored envelope" recorded an issue with 1 argument golden → GoldenRecordCase(name: "zeroWeights", edges: [("a", "b", 1.0), ("a", "c", 0.0), ("b", "c", 1.0), ("c", "d", 2.0), ("d", "e", 0.0)],
+􀢄  Test "The bare envelope the registry returns is byte-for-byte the stored envelope" with 20 test cases failed after 17.254 seconds with 7 issues.
+􁁛  Test "The bridge agrees with building the weighted graph directly" passed after 17.509 seconds.
+􁁛  Test "The bridge has the lowest degree, the lowest PageRank, and the highest betweenness" passed after 8.399 seconds.
+􁁛  Test "The bridge on a random symmetric graph round-trips to the same adjacency" passed after 14.035 seconds.
+􁁛  Test "The chain reproduces the conversion rate of the journeys it was built from" passed after 10.616 seconds.
+􁁛  Test "The check comes before the no-edge shortcut: an edgeless graph with a partial partition is refused, with a full one scores zero" passed after 14.515 seconds.
+􁁛  Test "The compressed-row form of the weighted graph is reproduced exactly" passed after 10.867 seconds.
+􁁛  Test "The convergence accessor reads a diagnosed scores envelope" passed after 14.066 seconds.
+􁁛  Test "The default call converges on every family, with the ceiling's margin intact" passed after 10.715 seconds.
+􁁛  Test "The default metric is unaffected: it still runs and still converges" passed after 17.376 seconds.
+􁁛  Test "The default tolerance reaches the converged answer to better than 1e-9" passed after 17.508 seconds.
+􁁛  Test "The defaults are 200 iterations and a tolerance of 1e-10" passed after 10.715 seconds.
+􁁛  Test "The defaults are 200 iterations and a tolerance of 1e-12" passed after 17.508 seconds.
+􁁛  Test "The descriptor encodes to exactly the text the original produced" passed after 17.380 seconds.
+􀢄  Test "The descriptor listing encodes to exactly the stored text" failed after 10.616 seconds with 1 issue.
+􀢄  Test "The descriptor listing encodes to exactly the stored text" recorded an issue at MetricRecordGoldenTests.swift:140:3: Expectation failed: listing == GoldenRecordData.registryListing
+􁁛  Test "The dominant channel is identified as dominant" passed after 10.616 seconds.
+􁁛  Test "The edges of the accepted range are accepted: 0, -0, 0.999, and the largest double below one" passed after 17.451 seconds.
+􁁛  Test "The empty graph has no scores and a lone node scores 1" passed after 10.867 seconds.
+􁁛  Test "The empty graph has no scores; a single node holds all the rank" passed after 17.505 seconds.
+􁁛  Test "The envelope carries the kind of what it wraps" passed after 17.380 seconds.
+􁁛  Test "The error compares by component count" passed after 17.376 seconds.
+􁁛  Test "The error compares by what it names" passed after 14.071 seconds.
+􁁛  Test "The error compares equal to itself for NaN, and unequal across different values" passed after 17.380 seconds.
+􁁛  Test "The estimator reads the same trials as TrialRandomness(masterSeed:, trial:) in order, and the flat and unflattened overloads agree" passed after 14.039 seconds.
+􁁛  Test "The fixture set covers the cases the plan names" passed after 15.972 seconds.
+􁁛  Test "The generator overload keys one trial from exactly one draw of the generator" passed after 14.515 seconds.
+􁁛  Test "The generator overload keys the trial from one Xoshiro256StarStar draw, as before" passed after 13.947 seconds.
+􁁛  Test "The guarantee is not vacuous: on a graph with one hub, greedy keeps most of the optimum, not just 63%" passed after 8.852 seconds.
+􁁛  Test "The heuristic branch is never below the integer program's optimum, and usually reaches it" with 3 test cases passed after 17.381 seconds.
+􁁛  Test "The instance descriptor is the static one" passed after 17.484 seconds.
+􁁛  Test "The integer program agrees with enumeration, so it is a trustworthy oracle" with 3 test cases passed after 17.454 seconds.
+􁁛  Test "The iteration ceiling is honoured and floored at one pass" passed after 17.503 seconds.
+􁁛  Test "The iteration ceiling is honoured and never below one" passed after 10.715 seconds.
+􁁛  Test "The JSON and the envelope of every recorded p-median answer are reproduced exactly" passed after 17.253 seconds.
+􁁛  Test "The karate club has thirty-four nodes and seventy-eight edges" passed after 8.584 seconds.
+􁁛  Test "The karate club is one connected component" passed after 17.253 seconds.
+􁁛  Test "The kite has ten nodes and eighteen edges" passed after 8.530 seconds.
+􁁛  Test "The kite's connector is the lowest-constraint broker among its hubs" passed after 13.617 seconds.
+􁁛  Test "The kite's pendant node is in the zero or one core" passed after 14.515 seconds.
+􁁛  Test "The lift works at a node type that is not String" passed after 17.452 seconds.
+􁁛  Test "The lifted components agree exactly with the ones Model Definition shipped" passed after 17.451 seconds.
+􁁛  Test "The linear threshold model also selects, deterministically, and beats a random-ish set" passed after 17.484 seconds.
+􁁛  Test "The linear threshold selection is deterministic and no worse than the worst-connected nodes" passed after 14.516 seconds.
+􁁛  Test "The long path misses the default ceiling and says so in the stored record" passed after 17.253 seconds.
+􁁛  Test "The margin scales with 2m: the same relative shortfall decides the same way on a graph ten times larger" passed after 14.515 seconds.
+􁁛  Test "The metric's defaults are 200 passes and a tolerance of 1e-10" passed after 10.715 seconds.
+􁁛  Test "The parallel first pass agrees bit-for-bit with the async task-group version" passed after 17.844 seconds.
+􁁛  Test "The partition equals the reference's, not just its modularity, on rings of cliques" passed after 17.506 seconds.
+􁁛  Test "The production result matches the multi-level reference on rings of cliques" passed after 17.507 seconds.
+􁁛  Test "The raw initialiser keeps its parts" passed after 17.380 seconds.
+􁁛  Test "The record initialiser keeps every field it is given" passed after 17.452 seconds.
+􀢄  Test "The record the registry makes is byte-for-byte the stored record" recorded an issue with 1 argument golden → GoldenRecordCase(name: "edgeless4", edges: [], isolated: ["a", "b", "c", "d"], records: [("betweenness-centrality", "{\"computedAt\":791692800
+􀢄  Test "The record the registry makes is byte-for-byte the stored record" recorded an issue with 1 argument golden → GoldenRecordCase(name: "isolates", edges: [("a", "b", 1.0), ("b", "c", 1.0)], isolated: ["x", "y", "z"], records: [("betweenness-centrality", 
+􀢄  Test "The record the registry makes is byte-for-byte the stored record" recorded an issue with 1 argument golden → GoldenRecordCase(name: "random2", edges: [("v13", "v16", 2.5), ("v16", "v06", 1.5), ("v15", "v16", 1.25), ("v16", "v07", 2.0), ("v12", "v08", 
+􀢄  Test "The record the registry makes is byte-for-byte the stored record" recorded an issue with 1 argument golden → GoldenRecordCase(name: "random3", edges: [("v02", "v17", 2.5), ("v01", "v05", 2.75), ("v03", "v22", 2.0), ("v22", "v17", 3.0), ("v12", "v08", 
+􀢄  Test "The record the registry makes is byte-for-byte the stored record" recorded an issue with 1 argument golden → GoldenRecordCase(name: "random4", edges: [("v07", "v16", 3.5), ("v08", "v07", 2.5), ("v16", "v08", 0.75), ("v09", "v14", 3.0), ("v09", "v12", 
+􀢄  Test "The record the registry makes is byte-for-byte the stored record" recorded an issue with 1 argument golden → GoldenRecordCase(name: "twoComponents", edges: [("a", "b", 1.0), ("b", "c", 1.0), ("a", "c", 1.0), ("x", "y", 1.0), ("y", "z", 1.0)], isolated
+􀢄  Test "The record the registry makes is byte-for-byte the stored record" recorded an issue with 1 argument golden → GoldenRecordCase(name: "zeroWeights", edges: [("a", "b", 1.0), ("a", "c", 0.0), ("b", "c", 1.0), ("c", "d", 2.0), ("d", "e", 0.0)], isolated: 
+􀢄  Test "The record the registry makes is byte-for-byte the stored record" with 20 test cases failed after 17.253 seconds with 7 issues.
+􁁛  Test "The refusal does not depend on the graph, the ceiling or the tolerance: an empty graph refuses too" passed after 17.380 seconds.
+􁁛  Test "The registered metric is pagerank at version 3 and its defaults are the loop's" passed after 17.506 seconds.
+􀢄  Test "The registered metric is version 5, refuses a disconnected graph through compute, run and record, and still scores a connected one" failed after 17.376 seconds with 4 issues.
+􀢄  Test "The registered metric is version 5, refuses a disconnected graph through compute, run and record, and still scores a connected one" recorded an issue at EigenvectorDisconnectedTests.swift:77:3: Expectation failed: EigenvectorMetric<String>.descriptor.
+􀢄  Test "The registered metric is version 5, refuses a disconnected graph through compute, run and record, and still scores a connected one" recorded an issue at EigenvectorDisconnectedTests.swift:80:3: Expectation failed: componentsRefused { _ = try metric.co
+􀢄  Test "The registered metric is version 5, refuses a disconnected graph through compute, run and record, and still scores a connected one" recorded an issue at EigenvectorDisconnectedTests.swift:81:3: Expectation failed: componentsRefused { _ = try MetricReg
+􀢄  Test "The registered metric is version 5, refuses a disconnected graph through compute, run and record, and still scores a connected one" recorded an issue at EigenvectorDisconnectedTests.swift:82:3: Expectation failed: componentsRefused {
+􁁛  Test "The registered metric refuses an invalid damping when it runs, through the registry and as a record" passed after 17.380 seconds.
+􁁛  Test "The registry lists its metrics in identifier order, once each" passed after 10.616 seconds.
+􁁛  Test "The registry lists its metrics in identifier order" passed after 14.515 seconds.
+􁁛  Test "The residual is the final L1 change, and one pass fewer is not yet converged" passed after 10.715 seconds.
+􁁛  Test "The result is an eigenvector: A v = lambda v" passed after 14.515 seconds.
+􁁛  Test "The result satisfies A v = lambda v on random graphs, trees included" passed after 10.715 seconds.
+􁁛  Test "The RNG-driven simulate overload is reproducible for equal generator state" passed after 17.506 seconds.
+􁁛  Test "The same graph always produces the same partition, across processes" passed after 10.616 seconds.
+􁁛  Test "The same graph and settings always give the same partition" passed after 14.515 seconds.
+􁁛  Test "The same graph partitioned the other way" passed after 17.484 seconds.
+􀢄  Test "The same listing comes from a registry of integer nodes" failed after 10.616 seconds with 1 issue.
+􀢄  Test "The same listing comes from a registry of integer nodes" recorded an issue at MetricRecordGoldenTests.swift:162:3: Expectation failed: listing == GoldenRecordData.registryListing
+􁁛  Test "The same model declared submodular is allowed to skip: it runs fewer trials, and picks the same nodes" passed after 10.616 seconds.
+􁁛  Test "The scores are exactly Centrality.eigenvector's, at the default and at a raised ceiling" with 3 test cases passed after 10.715 seconds.
+􁁛  Test "The seed selector is deliberately not in the standard registry" passed after 10.616 seconds.
+􁁛  Test "The seed selector registers and round-trips as a selection envelope" passed after 10.616 seconds.
+􁁛  Test "The sentence says which it was, with the numbers" passed after 10.715 seconds.
+􁁛  Test "The sentence says which it was, with the numbers" passed after 14.067 seconds.
+􁁛  Test "The sentences for the stored reports are the ones the previous package wrote" passed after 10.616 seconds.
+􁁛  Test "The smallest positive weight is accepted, and a half-range weight is accepted" passed after 17.363 seconds.
+􁁛  Test "The stability summary is derived the same way from every recorded set of points" passed after 17.380 seconds.
+􁁛  Test "The stationary distribution is stationary" passed after 10.616 seconds.
+􁁛  Test "The stationary distribution of an ergodic chain is the one solved by hand" passed after 10.616 seconds.
+􀢄  Test "The stored listing decodes to the descriptors the registry lists, in order" failed after 10.616 seconds with 1 issue.
+􀢄  Test "The stored listing decodes to the descriptors the registry lists, in order" recorded an issue at MetricRecordGoldenTests.swift:147:3: Expectation failed: stored == MetricRegistry<String>.standard.available
+􁁛  Test "The stored shape is kind 'scores' with an optional convergence key, so plain-scores readers still work" passed after 17.506 seconds.
+􁁛  Test "The stored text decodes to equal values" passed after 10.616 seconds.
+􁁛  Test "The sum of weighted degrees is twice the total weight" passed after 14.005 seconds.
+􁁛  Test "The sum runs over communities in ascending order, bit for bit" passed after 17.484 seconds.
+􁁛  Test "The task-group version reproduces the same recorded selections" passed after 22.645 seconds.
+􁁛  Test "The threshold comparison tolerance is rounding-sized, not visible" passed after 17.660 seconds.
+􁁛  Test "The threshold rule is share + 1e-12 >= theta: inside the tolerance activates, outside does not" passed after 17.484 seconds.
+􁁛  Test "The tolerance is a strict bound: a movement of exactly zero does not beat tolerance 0" passed after 14.515 seconds.
+􁁛  Test "The tolerance is carried, and the ceiling is at least one pass" passed after 10.715 seconds.
+􁁛  Test "The topological order is the same whatever order the graph was built in" passed after 17.452 seconds.
+􁁛  Test "The two initialisers agree, and an empty selection is empty" passed after 17.359 seconds.
+􁁛  Test "The values encode to exactly the stored text" passed after 10.616 seconds.
+􁁛  Test "The weight of a self-loop is checked even though the loop is then dropped" with 6 test cases passed after 17.371 seconds.
+􁁛  Test "Three cliques in a ring are three communities" passed after 14.035 seconds.
+􁁛  Test "Threshold share is weight over weighted degree, not over neighbour count" passed after 10.616 seconds.
+􁁛  Test "Ties are stable: equal-cost sites resolve to the lower site, every run" passed after 14.039 seconds.
+􁁛  Test "Ties resolve to the lowest node index; zero probability picks nodes in order" passed after 14.035 seconds.
+􁁛  Test "Top and bottom read from opposite ends" passed after 17.508 seconds.
+􁁛  Test "Transition probabilities are the observed frequencies" passed after 10.616 seconds.
+􁁛  Test "TrialRandomness: draws are in [0, 1), reproducible, and sensitive to every input" passed after 17.506 seconds.
+􁁛  Test "trials = 0 and negative trials throw a clear error" passed after 17.484 seconds.
+􁁛  Test "trials = 0 throws a clear error" passed after 17.452 seconds.
+􁁛  Test "Triangle with a pendant" passed after 8.521 seconds.
+􁁛  Test "Triangle: each node is 2 * (1/2 + 1/4)^2 = 1.125" passed after 17.506 seconds.
+􁁛  Test "Two components at p = 1: only the seeded component activates" passed after 8.457 seconds.
+􀢄  Test "Two components, one dominant, are refused instead of the larger eigenvalue taking all the weight" failed after 10.715 seconds with 1 issue.
+􀢄  Test "Two components, one dominant, are refused instead of the larger eigenvalue taking all the weight" recorded an issue at WeightedCentralityMutationTests.swift:297:3: Expectation failed: an error was expected but none was thrown
+􁁛  Test "Two dense clusters joined by one edge hit the ceiling" with 3 test cases passed after 10.715 seconds.
+􁁛  Test "Two four-cliques joined by one edge split at the bridge" passed after 14.043 seconds.
+􀢄  Test "Two nodes: a joined pair both score one, and two strangers are refused" failed after 10.715 seconds with 1 issue.
+􀢄  Test "Two nodes: a joined pair both score one, and two strangers are refused" recorded an issue at WeightedCentralityMutationTests.swift:210:3: Expectation failed: an error was expected but none was thrown
+􁁛  Test "Two seeded neighbours of equal weight always activate the shared node" passed after 17.484 seconds.
+􁁛  Test "Two triangles and a bridge, split at the bridge" passed after 17.452 seconds.
+􁁛  Test "Typed access is nil for a different known kind and never throws for it" passed after 17.380 seconds.
+􁁛  Test "Uniform weight scaling by a power of two, up or down, gives the identical partition" passed after 14.066 seconds.
+􁁛  Test "Unlisted targets can be excluded, which is what a dependency graph needs" passed after 17.452 seconds.
+􁁛  Test "Unreachable pairs contribute nothing" passed after 14.034 seconds.
+􁁛  Test "Unweighted construction cannot throw and weighs every edge one" passed after 17.376 seconds.
+􁁛  Test "Uses the clock it was given rather than reading the wall clock" passed after 17.484 seconds.
+􁁛  Test "Weight-scaled cascades select like plain greedy too" with 3 test cases passed after 17.660 seconds.
+􁁛  Test "Weight-scaled probability on a graph whose every edge weighs zero is 0, not NaN or 1" passed after 17.484 seconds.
+􁁛  Test "Weight-scaled probability uses w / maxWeight" passed after 8.866 seconds.
+􁁛  Test "Weighted degree by index equals degree by name" passed after 17.376 seconds.
+􁁛  Test "Weighted edges count by weight" passed after 17.452 seconds.
+􁁛  Test "Weighted path of three matches the closed form" passed after 10.715 seconds.
+􁁛  Test "Weighted triangle matches the hand derivation" passed after 17.506 seconds.
+􁁛  Test "WeightedGraph to Graph gives both directions of every edge and drops the weights" passed after 17.508 seconds.
+􁁛  Test "Weights do not affect core numbers" passed after 14.515 seconds.
+􁁛  Test "When two metrics share an identifier the first wins, in the initialiser and in registering" passed after 8.852 seconds.
+􁁛  Test "Without edges each node is its own community, numbered in node order" passed after 14.066 seconds.
+􁁛  Test "Zero and negative zero are legal weights: a recorded tie with no strength" passed after 17.371 seconds.
+􁁛  Test "Zero damping is teleport only: every node scores 1/n" passed after 17.380 seconds.
+􁁛  Test "Zero-weight ties survive the trip to Graph, which has no weights to lose them in" passed after 17.509 seconds.
+􀢄  Test run with 640 tests in 85 suites failed after 22.653 seconds with 58 issues.

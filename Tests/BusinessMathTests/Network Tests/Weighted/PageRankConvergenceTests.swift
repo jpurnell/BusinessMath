@@ -339,6 +339,36 @@ struct PageRankMetricVersion3Tests {
 		#expect(record.output.convergence?.converged == false)
 	}
 
+	/// Found by the mutation run (mutation_output.txt K07 to K10): the defaults were tested, the
+	/// settings were not, so a metric that ignored its ceiling or tolerance, or reported them wrongly,
+	/// survived.
+	@Test("A non-default ceiling and tolerance reach the loop and are reported as given, the ceiling floored at one pass")
+	func settingsReachTheLoop() throws {
+		let graph = try Synthetic.path(60)
+
+		let capped = try PageRankMetric<String>(maxIterations: 5).compute(on: graph)
+		let cappedReport = try #require(capped.convergence)
+		#expect(cappedReport.iterations == 5)
+		#expect(cappedReport.converged == false)
+		#expect(cappedReport.maxIterations == 5)
+		let cappedDirect = try Centrality.pageRank(graph, maxIterations: 5)
+		#expect(capped.scores.scores.mapValues { $0.bitPattern } == cappedDirect.scores.mapValues { $0.bitPattern })
+
+		let loose = try PageRankMetric<String>(tolerance: 1e-3).compute(on: graph)
+		let looseReport = try #require(loose.convergence)
+		#expect(looseReport.tolerance.isEqual(to: 1e-3))
+		#expect(looseReport.converged)
+		#expect(looseReport.iterations < 100)
+		#expect(looseReport.maxIterations == 200)
+		let looseDirect = try Centrality.pageRank(graph, tolerance: 1e-3)
+		#expect(loose.scores.scores.mapValues { $0.bitPattern } == looseDirect.scores.mapValues { $0.bitPattern })
+
+		let zero = try PageRankMetric<String>(maxIterations: 0).compute(on: graph)
+		let zeroReport = try #require(zero.convergence)
+		#expect(zeroReport.maxIterations == 1)
+		#expect(zeroReport.iterations == 1)
+	}
+
 	@Test("The stored shape is kind 'scores' with an optional convergence key, so plain-scores readers still work")
 	func storedShape() throws {
 		let record = try #require(try MetricRegistry<Int>.standard.record(

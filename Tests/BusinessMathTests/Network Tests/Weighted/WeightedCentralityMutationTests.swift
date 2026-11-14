@@ -130,7 +130,7 @@ struct EigenvectorMutationTests {
 	/// Every tree is bipartite.
 	@Test("Path of three: the middle node leads, the ends are 1/sqrt(2)")
 	func pathOfThree() throws {
-		let scores = Centrality.eigenvector(graph([("a", "b"), ("b", "c")]))
+		let scores = try Centrality.eigenvector(graph([("a", "b"), ("b", "c")]))
 		let end = 1 / 2.0.squareRoot()
 		#expect(close(scores["a"], end, tolerance: 1e-7), "a: \(String(describing: scores["a"]))")
 		#expect(close(scores["b"], 1, tolerance: 1e-7))
@@ -142,7 +142,7 @@ struct EigenvectorMutationTests {
 	@Test("Weighted path of three matches the closed form")
 	func weightedPath() throws {
 		let g = try WeightedGraph(edges: [("a", "b", 1.0), ("b", "c", 3.0)])
-		let scores = Centrality.eigenvector(g)
+		let scores = try Centrality.eigenvector(g)
 		let lambda = 10.0.squareRoot()
 		#expect(close(scores["a"], 1 / lambda, tolerance: 1e-7))
 		#expect(close(scores["b"], 1, tolerance: 1e-7))
@@ -152,7 +152,7 @@ struct EigenvectorMutationTests {
 	/// Star with four leaves: lambda = 2, centre 1, each leaf 1/2.
 	@Test("Star: the hub is 1 and each leaf is one half")
 	func star() throws {
-		let scores = Centrality.eigenvector(
+		let scores = try Centrality.eigenvector(
 			graph([("hub", "a"), ("hub", "b"), ("hub", "c"), ("hub", "d")]))
 		#expect(close(scores["hub"], 1, tolerance: 1e-7))
 		for leaf in ["a", "b", "c", "d"] { #expect(close(scores[leaf], 0.5, tolerance: 1e-7)) }
@@ -162,7 +162,7 @@ struct EigenvectorMutationTests {
 	@Test("Path of four: the ends are 1/phi")
 	func pathOfFour() throws {
 		let phi = (1 + 5.0.squareRoot()) / 2
-		let scores = Centrality.eigenvector(pathGraph(4))
+		let scores = try Centrality.eigenvector(pathGraph(4))
 		let nodes = names(4)
 		#expect(close(scores[nodes[0]], 1 / phi, tolerance: 1e-7))
 		#expect(close(scores[nodes[1]], 1, tolerance: 1e-7))
@@ -176,7 +176,7 @@ struct EigenvectorMutationTests {
 	func completeBipartite() throws {
 		var edges: [(String, String)] = []
 		for left in ["l1", "l2"] { for right in ["r1", "r2", "r3"] { edges.append((left, right)) } }
-		let scores = Centrality.eigenvector(graph(edges))
+		let scores = try Centrality.eigenvector(graph(edges))
 		for left in ["l1", "l2"] { #expect(close(scores[left], 1, tolerance: 1e-7)) }
 		for right in ["r1", "r2", "r3"] {
 			#expect(close(scores[right], (2.0 / 3.0).squareRoot(), tolerance: 1e-7))
@@ -185,34 +185,31 @@ struct EigenvectorMutationTests {
 
 	@Test("The empty graph has no scores and a lone node scores 1")
 	func degenerate() throws {
-		#expect(Centrality.eigenvector(try WeightedGraph<String>(edges: [])).scores.isEmpty)
-		let lone = Centrality.eigenvector(graph([], isolated: ["x"]))
+		#expect(try Centrality.eigenvector(try WeightedGraph<String>(edges: [])).scores.isEmpty)
+		let lone = try Centrality.eigenvector(graph([], isolated: ["x"]))
 		#expect(lone.scores == ["x": 1])
 	}
 
-	/// With no edges at all there is nothing to rank. Scores are normalised so the
-	/// largest is 1 and every node ties for the largest, so every node scores
-	/// exactly 1. That is the documented behaviour, not a measured centrality.
-	@Test("An edgeless graph scores every node exactly 1, the tied largest")
+	/// With no edges at all there is nothing to rank. Before ADR-009 every node scored exactly 1, the
+	/// tied largest, which reported the absence of a ranking as if it were a measurement. An edgeless
+	/// graph of two or more nodes is disconnected, and is refused with one component per node.
+	@Test("An edgeless graph is refused, one component per node (it used to score every node 1)")
 	func edgeless() throws {
-		let scores = Centrality.eigenvector(graph([], isolated: ["x", "y", "z"]))
-		#expect(scores.scores.count == 3)
-		#expect(scores.scores == ["x": 1, "y": 1, "z": 1])
-		let values = Set(scores.scores.values)
-		#expect(values.count == 1)
-		for value in values { #expect(value.isFinite && value >= 0 && value <= 1) }
+		#expect(throws: GraphMeasureError.disconnectedGraph(components: 3)) {
+			_ = try Centrality.eigenvector(graph([], isolated: ["x", "y", "z"]))
+		}
 	}
 
-	@Test("Two nodes: a joined pair both score one, and two strangers both appear")
+	@Test("Two nodes: a joined pair both score one, and two strangers are refused")
 	func twoNodes() throws {
-		let pair = Centrality.eigenvector(graph([("a", "b")]))
+		let pair = try Centrality.eigenvector(graph([("a", "b")]))
 		#expect(close(pair["a"], 1, tolerance: 1e-9)); #expect(close(pair["b"], 1, tolerance: 1e-9))
 		#expect(pair.scores.count == 2)
-		let strangers = Centrality.eigenvector(graph([], isolated: ["a", "b"]))
-		#expect(strangers.scores == ["a": 1, "b": 1])
-		// The design says scores are normalised so the largest is 1, so with no
-		// edge to prefer one node over another, all of them are the largest.
-		#expect(Centrality.eigenvector(graph([], isolated: ["x", "y", "z"])).scores == ["x": 1, "y": 1, "z": 1])
+		// Two strangers are two components: refused since ADR-009 (they used to both score 1, the
+		// tied largest, which reported the absence of a ranking as a measurement).
+		#expect(throws: GraphMeasureError.disconnectedGraph(components: 2)) {
+			_ = try Centrality.eigenvector(graph([], isolated: ["a", "b"]))
+		}
 	}
 
 	/// Path of six has eigenvector sin(k pi / 7), peak sin(3 pi / 7). The
@@ -226,7 +223,7 @@ struct EigenvectorMutationTests {
 		let peak = sin(3 * Double.pi / 7)
 		for weight in [1.0, 0.01, 0.0001, 100.0, 1e6] {
 			let g = try WeightedGraph(edges: (1..<6).map { (nodes[$0 - 1], nodes[$0], weight) })
-			let scores = Centrality.eigenvector(g)
+			let scores = try Centrality.eigenvector(g)
 			for (k, node) in nodes.enumerated() {
 				#expect(close(scores[node], sin(Double(k + 1) * Double.pi / 7) / peak, tolerance: 1e-6),
 						"weight \(weight) node \(k)")
@@ -239,12 +236,14 @@ struct EigenvectorMutationTests {
 	@Test("An enormous tolerance stops after one pass; a negative one runs to the ceiling")
 	func toleranceStops() throws {
 		let g = pathGraph(6)
-		let one = Centrality.eigenvector(g, maxIterations: 1)
-		#expect(Centrality.eigenvector(g, maxIterations: 200, tolerance: 1e9) == one)
-		let few = Centrality.eigenvector(g, maxIterations: 3, tolerance: -1)
-		#expect(few == Centrality.eigenvector(g, maxIterations: 3, tolerance: 0))
-		#expect(few != Centrality.eigenvector(g, maxIterations: 4, tolerance: -1))
-		#expect(Centrality.eigenvector(g) != one)
+		let one = try Centrality.eigenvector(g, maxIterations: 1)
+		#expect(try Centrality.eigenvector(g, maxIterations: 200, tolerance: 1e9) == one)
+		let few = try Centrality.eigenvector(g, maxIterations: 3, tolerance: -1)
+		let fewNoTolerance = try Centrality.eigenvector(g, maxIterations: 3, tolerance: 0)
+		let fourPasses = try Centrality.eigenvector(g, maxIterations: 4, tolerance: -1)
+		#expect(few == fewNoTolerance)
+		#expect(few != fourPasses)
+		#expect(try Centrality.eigenvector(g) != one)
 	}
 
 	/// The tolerance decides when to stop, so a loose one leaves a visibly
@@ -257,9 +256,9 @@ struct EigenvectorMutationTests {
 			graphs.append(try WeightedGraph(edges: randomConnected(seed: 30 + seed, count: 8, chords: Int(seed))))
 		}
 		for (index, g) in graphs.enumerated() {
-			let converged = Centrality.eigenvector(g, maxIterations: 20_000, tolerance: 1e-15)
+			let converged = try Centrality.eigenvector(g, maxIterations: 20_000, tolerance: 1e-15)
 			for tolerance in [1e-1, 1e-2, 1e-3, 1e-5] {
-				let scores = Centrality.eigenvector(g, maxIterations: 5_000, tolerance: tolerance)
+				let scores = try Centrality.eigenvector(g, maxIterations: 5_000, tolerance: tolerance)
 				let expected = eigenvectorIteration(g, maxIterations: 5_000, tolerance: tolerance)
 				for (k, node) in g.nodes.enumerated() {
 					#expect(close(scores[node], expected[k], tolerance: 1e-12), "graph \(index) tol \(tolerance)")
@@ -279,38 +278,35 @@ struct EigenvectorMutationTests {
 	/// makes the iteration converge on bipartite graphs.
 	@Test("One pass from the uniform start, by hand")
 	func onePass() throws {
-		let one = Centrality.eigenvector(graph([("a", "b"), ("b", "c")]), maxIterations: 1)
+		let one = try Centrality.eigenvector(graph([("a", "b"), ("b", "c")]), maxIterations: 1)
 		#expect(close(one["a"], 0.7, tolerance: 1e-12)); #expect(close(one["b"], 1, tolerance: 1e-12))
 		#expect(close(one["c"], 0.7, tolerance: 1e-12))
 	}
 
-	@Test("A node with no ties scores zero beside a connected component")
-	func isolateScoresZero() throws {
-		let scores = Centrality.eigenvector(
-			graph([("a", "b"), ("b", "c"), ("c", "a")], isolated: ["x"]))
-		#expect(close(scores["x"], 0))
-		for node in ["a", "b", "c"] { #expect(close(scores[node], 1, tolerance: 1e-7)) }
+	@Test("A node with no ties beside a connected component is refused, not scored zero (ADR-009)")
+	func isolateIsRefused() throws {
+		#expect(throws: GraphMeasureError.disconnectedGraph(components: 2)) {
+			_ = try Centrality.eigenvector(graph([("a", "b"), ("b", "c"), ("c", "a")], isolated: ["x"]))
+		}
 	}
 
-	/// The dominant component wins: a triangle (lambda 2) beats a lone edge
-	/// (lambda 1), so the edge's two nodes decay to zero.
-	@Test("The component with the larger eigenvalue takes all the weight")
+	/// Before ADR-009 the dominant component won: a triangle (lambda 2) beat a lone edge (lambda 1)
+	/// and the edge's two nodes decayed to zero. Two components are refused instead.
+	@Test("Two components, one dominant, are refused instead of the larger eigenvalue taking all the weight")
 	func dominantComponent() throws {
-		let scores = Centrality.eigenvector(
-			graph([("a", "b"), ("b", "c"), ("c", "a"), ("x", "y")]))
-		for node in ["a", "b", "c"] { #expect(close(scores[node], 1, tolerance: 1e-7)) }
-		#expect(atMost(scores["x"], 1e-6))
-		#expect(atMost(scores["y"], 1e-6))
+		#expect(throws: GraphMeasureError.disconnectedGraph(components: 2)) {
+			_ = try Centrality.eigenvector(graph([("a", "b"), ("b", "c"), ("c", "a"), ("x", "y")]))
+		}
 	}
 
 	/// `maxIterations` is a ceiling that is floored at one pass.
 	@Test("The iteration ceiling is honoured and never below one")
 	func iterationCeiling() throws {
 		let g = pathGraph(6)
-		let zero = Centrality.eigenvector(g, maxIterations: 0)
-		let one = Centrality.eigenvector(g, maxIterations: 1)
-		let two = Centrality.eigenvector(g, maxIterations: 2)
-		let converged = Centrality.eigenvector(g, maxIterations: 5_000, tolerance: 1e-14)
+		let zero = try Centrality.eigenvector(g, maxIterations: 0)
+		let one = try Centrality.eigenvector(g, maxIterations: 1)
+		let two = try Centrality.eigenvector(g, maxIterations: 2)
+		let converged = try Centrality.eigenvector(g, maxIterations: 5_000, tolerance: 1e-14)
 		#expect(zero == one)
 		#expect(one != two)
 		#expect(one != converged)
@@ -325,8 +321,9 @@ struct EigenvectorMutationTests {
 	@Test("The defaults are 200 iterations and a tolerance of 1e-10")
 	func defaultsArePinned() throws {
 		for g in [pathGraph(15), pathGraph(6), pathGraph(8)] {
-			#expect(Centrality.eigenvector(g)
-					== Centrality.eigenvector(g, maxIterations: 200, tolerance: 1e-10))
+			let byDefault = try Centrality.eigenvector(g)
+			let explicit = try Centrality.eigenvector(g, maxIterations: 200, tolerance: 1e-10)
+			#expect(byDefault == explicit)
 		}
 	}
 
@@ -340,7 +337,7 @@ struct EigenvectorMutationTests {
 			let count = 6 + Int(seed % 5)
 			let chords = seed % 3 == 0 ? 0 : Int(seed % 4) + 1   // some pure trees
 			let g = try WeightedGraph(edges: randomConnected(seed: seed, count: count, chords: chords))
-			let scores = Centrality.eigenvector(g)
+			let scores = try Centrality.eigenvector(g)
 			let v = g.nodes.map { scores[$0] ?? .nan }
 			let av = (0..<g.nodeCount).map { row in
 				g.adjacency[row].reduce(0.0) { $0 + $1.weight * v[$1.neighbour] }
@@ -361,11 +358,11 @@ struct EigenvectorMutationTests {
 	func invariances() throws {
 		for seed in 0..<6 as Range<UInt64> {
 			let edges = randomConnected(seed: 50 + seed, count: 9, chords: 4)
-			let base = Centrality.eigenvector(try WeightedGraph(edges: edges))
-			let renamed = Centrality.eigenvector(try relabelled(edges) { "z" + $0 })
+			let base = try Centrality.eigenvector(try WeightedGraph(edges: edges))
+			let renamed = try Centrality.eigenvector(try relabelled(edges) { "z" + $0 })
 			let scaledEdges = edges.map { ($0.0, $0.1, $0.2 * 8) }       // exact in binary
-			let scaled = Centrality.eigenvector(try WeightedGraph(edges: scaledEdges))
-			let scaledOdd = Centrality.eigenvector(
+			let scaled = try Centrality.eigenvector(try WeightedGraph(edges: scaledEdges))
+			let scaledOdd = try Centrality.eigenvector(
 				try WeightedGraph(edges: edges.map { ($0.0, $0.1, $0.2 * 3.7) }))
 			for node in names(9) {
 				#expect(close(renamed["z" + node], base[node], tolerance: 1e-12))
@@ -382,8 +379,8 @@ struct EigenvectorMutationTests {
 		let edges = randomConnected(seed: 77, count: 8, chords: 3)
 		let nodes = names(8)
 		let permutation = Dictionary(uniqueKeysWithValues: zip(nodes, nodes.reversed()))
-		let base = Centrality.eigenvector(try WeightedGraph(edges: edges))
-		let permuted = Centrality.eigenvector(try relabelled(edges) { permutation[$0] ?? $0 })
+		let base = try Centrality.eigenvector(try WeightedGraph(edges: edges))
+		let permuted = try Centrality.eigenvector(try relabelled(edges) { permutation[$0] ?? $0 })
 		for node in nodes {
 			#expect(close(permuted[image(node, permutation)], base[node], tolerance: 1e-7))
 		}
