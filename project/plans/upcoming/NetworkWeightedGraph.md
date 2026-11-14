@@ -1,8 +1,12 @@
 # Design Proposal: Weighted graphs and graph metrics in `Network/`
 
-**Status:** Approved by the owner 2026-11-12. Steps 0 to 3 done on the integration branch (step 3, the metric registry and
-stored-record golden test, 2026-11-13, ADR-008); step 4 is next. Step 4 also covers: the Louvain tie margin on the unweighted
-`Graph` (the cross-check's known issue, `random3`), and eigenvector centrality refusing a disconnected graph.
+**Status:** Approved by the owner 2026-11-12. **Steps 0 to 4 done** on the integration line (step 3, the metric registry and
+stored-record golden test, 2026-11-13, ADR-008; step 4, the silent behaviours made explicit, 2026-11-13, ADR-009, branch
+`feature/network-explicit-behaviours`, five changes each with its own red, test, commit and version note). Steps 5 (diffusion and
+siting) and 6 (ClassGraph cutover) remain per the phasing table; step 6 now has to handle three source breaks (`pageRank`, `modularity`
+and `eigenvector` throw) and a metric that refuses the real, disconnected class graph (see ADR-009 item 5). Step 4 also covered: the
+Louvain tie margin on the unweighted `Graph` (the cross-check's known issue, `random3`), and eigenvector centrality refusing a
+disconnected graph.
 **Owner decisions already given (2026-11-12):** the licence question is settled (the code moves under
 BusinessMath's AGPLv3 / commercial dual licence); ClassGraph accepts a dependency on the full
 BusinessMath package; the weighted graph is added beside `Graph`, not in place of it; the eigenvector and
@@ -152,8 +156,12 @@ deterministic given a seed.
 - **Fail-silent principle.** SGM returns the last iterate silently in two places the BusinessMath standard
   forbids: PageRank at its ceiling, and an out-of-range damping, which it clamps. SGM also does not validate a
   partition given to `modularity`, and does not refuse an eigenvector on a disconnected graph. These are ported
-  as they are in step 4 (stored records must not move) and **closed in step 5 by explicit metric-version bumps**,
-  each with its own test and ADR note. They are not folded silently into the move.
+  as they are in step 2 (stored records must not move) and ~~closed in step 5~~ **closed in step 4** (step 5 is diffusion and
+  siting; the phasing table below and ADR-007 always said step 4, and this paragraph was wrong) by explicit metric-version bumps,
+  each with its own test and ADR note (ADR-009). They are not folded silently into the move. What shipped: PageRank
+  convergence reporting (`pagerank` 2 to 3); damping validation; modularity partition validation; the eigenvector refusal of a
+  disconnected graph (`eigenvector-centrality` 4 to 5); and the Louvain tie margin. Of these the plan's wording "ported as they
+  are, then bumped" held for the two that change stored output; the other three change no stored record and carry no bump.
 - **Concurrency:** all value types are `Sendable`; `SeedSelector.computeAsync` uses structured concurrency.
 - **Determinism:** randomness only through `SwiftDeterminism.SplitMix64`, already a dependency; seeds are explicit.
 - **Safety:** no force unwraps; guard clauses; division guards; NaN-closed validation (`WeightedGraph` rejects

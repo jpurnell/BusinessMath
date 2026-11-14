@@ -1,0 +1,3 @@
+K09 PageRankMetric reports a fixed tolerance: KILLED  A non-default ceiling and tolerance reach the loop and are reported as given, the ceiling floored at
+
+TOTAL 83  killed 1  survived 0  not-counted 0

@@ -139,15 +139,16 @@ struct MetricRegistryTests {
 
 	/// Moved metrics keep their versions: the numbers did not change. The exception is
 	/// eigenvector centrality, bumped 2 to 3 when the bipartite fix changed its numbers, and 3 to 4
-	/// when it began reporting convergence.
-	@Test("Moved metrics keep the versions they had; eigenvector is at 4")
+	/// when it began reporting convergence. PageRank was bumped 2 to 3 in step 4 when it began doing the
+	/// same (ADR-009), and eigenvector 4 to 5 when it began refusing a disconnected graph.
+	@Test("Moved metrics keep the versions they had; eigenvector is at 5 and pagerank at 3")
 	func versionsUnchanged() {
 		let versions = Dictionary(
 			uniqueKeysWithValues: MetricRegistry<String>.standard.available.map {
 				($0.identifier, $0.version)
 			})
-		#expect(versions["eigenvector-centrality"] == 4)
-		#expect(versions["pagerank"] == 2)
+		#expect(versions["eigenvector-centrality"] == 5)
+		#expect(versions["pagerank"] == 3)
 		for identifier in [
 			"degree", "betweenness-centrality", "closeness-centrality", "k-core",
 			"louvain", "harmonic-centrality", "clustering", "components", "burt-constraint",
@@ -181,7 +182,7 @@ struct MetricRegistryTests {
 		let registry = MetricRegistry<String>.standard
 		let pairs: [(String, NodeScores<String>)] = [
 			("degree", Centrality.degree(graph)),
-			("pagerank", Centrality.pageRank(graph)),
+			("pagerank", try Centrality.pageRank(graph)),
 			("betweenness-centrality", Centrality.betweenness(graph)),
 			("closeness-centrality", Centrality.closeness(graph)),
 			("harmonic-centrality", Centrality.harmonic(graph)),
@@ -199,7 +200,8 @@ struct MetricRegistryTests {
 		#expect(try components.value(as: NodePartition<String>.self) == Community.connectedComponents(graph))
 		let eigenvector = try #require(try registry.run("eigenvector-centrality", on: graph))
 		let typed = try #require(try eigenvector.value(as: DiagnosedScores<String>.self))
-		#expect(typed.scores == Centrality.eigenvector(graph))
+		let direct = try Centrality.eigenvector(graph)
+		#expect(typed.scores == direct)
 	}
 
 	@Test("A custom value type can travel through the registry")
@@ -303,7 +305,7 @@ struct MetricRecordTests {
 			try MetricRegistry<String>.standard.record(
 				"eigenvector-centrality", on: karate,
 				context: Context(weighting: "x", minimumEdgeWeight: 0), now: stamp))
-		#expect(fresh.metricVersion == 4)
+		#expect(fresh.metricVersion == 5)
 		#expect(fresh.metricVersion != old.metricVersion)
 	}
 

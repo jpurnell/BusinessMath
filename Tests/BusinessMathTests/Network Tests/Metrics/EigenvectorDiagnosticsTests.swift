@@ -34,7 +34,7 @@ struct EigenvectorDiagnosticsTests {
 		  arguments: [UInt64(1), 2, 3, 4, 5, 6])
 	func wellMixedConverge(seed: UInt64) throws {
 		let graphs = [
-			try Synthetic.erdosRenyi(seed: seed, count: 300, edgeCount: 1_500),
+			try Synthetic.connectedPart(try Synthetic.erdosRenyi(seed: seed, count: 300, edgeCount: 1_500)),
 			try Synthetic.preferentialAttachment(seed: seed, count: 300, perNode: 3),
 		]
 		for graph in graphs {
@@ -112,13 +112,16 @@ struct EigenvectorDiagnosticsTests {
 	@Test("The scores are exactly Centrality.eigenvector's, at the default and at a raised ceiling",
 		  arguments: [UInt64(1), 2, 3])
 	func scoresUnchanged(seed: UInt64) throws {
-		let graph = try Synthetic.communities(seed: seed, count: 120, groups: 2, inside: 400, between: 2)
+		let graph = try Synthetic.connectedPart(
+			try Synthetic.communities(seed: seed, count: 120, groups: 2, inside: 400, between: 2))
 		for ceiling in [200, 5_000] {
 			let output = try EigenvectorMetric<String>(maxIterations: ceiling).compute(on: graph)
-			#expect(output.scores == Centrality.eigenvector(graph, maxIterations: ceiling))
+			let direct = try Centrality.eigenvector(graph, maxIterations: ceiling)
+			#expect(output.scores == direct)
 		}
 		let defaults = try EigenvectorMetric<String>().compute(on: graph)
-		#expect(defaults.scores == Centrality.eigenvector(graph))
+		let direct = try Centrality.eigenvector(graph)
+		#expect(defaults.scores == direct)
 	}
 
 	// MARK: through the envelope
@@ -126,11 +129,12 @@ struct EigenvectorDiagnosticsTests {
 	@Test("Round-trips through the registry, an envelope and JSON, seeded",
 		  arguments: [UInt64(1), 2, 3, 4])
 	func envelopeRoundTrip(seed: UInt64) throws {
-		let graph = try Synthetic.communities(seed: seed, count: 100, groups: 2, inside: 300, between: 1)
+		let graph = try Synthetic.connectedPart(
+			try Synthetic.communities(seed: seed, count: 100, groups: 2, inside: 300, between: 1))
 		let envelope = try #require(
 			try MetricRegistry<String>.standard.run("eigenvector-centrality", on: graph))
 		#expect(envelope.kind == "scores")
-		let expected = Centrality.eigenvectorConvergence(graph)
+		let expected = try Centrality.eigenvectorConvergence(graph)
 
 		let data = try JSONEncoder().encode(envelope)
 		let decoded = try JSONDecoder().decode(MetricEnvelope.self, from: data)
@@ -151,7 +155,8 @@ struct EigenvectorDiagnosticsTests {
 		let envelope = try #require(
 			try MetricRegistry<String>.standard.run("eigenvector-centrality", on: graph))
 		let plain = try #require(try envelope.value(as: NodeScores<String>.self))
-		#expect(plain == Centrality.eigenvector(graph))
+		let direct = try Centrality.eigenvector(graph)
+		#expect(plain == direct)
 	}
 
 	@Test("A stored version 3 envelope decodes, and its convergence reads as unknown")

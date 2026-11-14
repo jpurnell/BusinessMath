@@ -93,8 +93,8 @@ struct PublishedCentralityTests {
 	/// Node 34 (the administrator) outranks node 1 (the instructor) on
 	/// eigenvector centrality — a standard result for this graph.
 	@Test("Karate eigenvector ranks the administrator first")
-	func karateEigenvector() {
-		let scores = Centrality.eigenvector(karate)
+	func karateEigenvector() throws {
+		let scores = try Centrality.eigenvector(karate)
 		let ranked = scores.ranked
 		#expect(ranked[0].node == "34")
 		#expect(ranked[1].node == "1")
@@ -102,9 +102,9 @@ struct PublishedCentralityTests {
 	}
 
 	@Test("PageRank agrees with eigenvector on who leads the karate club")
-	func pageRankAgrees() {
+	func pageRankAgrees() throws {
 		// Two different methods; if they disagreed on the top two, one is wrong.
-		let ranked = Centrality.pageRank(karate).ranked
+		let ranked = try Centrality.pageRank(karate).ranked
 		#expect(Set(ranked.prefix(2).map(\.node)) == Set(["34", "1"]))
 	}
 
@@ -137,10 +137,10 @@ struct CommunityTests {
 	}
 
 	@Test("Louvain reaches the modularity the literature reports for this graph")
-	func modularityThreshold() {
+	func modularityThreshold() throws {
 		// Published Louvain modularity on the karate club is about 0.41–0.42.
 		let partition = Community.louvain(karate)
-		let score = Community.modularity(karate, partition: partition)
+		let score = try Community.modularity(karate, partition: partition)
 		#expect(score >= 0.38, "modularity \(score) is below what Louvain should reach")
 		#expect(score <= 0.45, "modularity \(score) is implausibly high")
 	}
@@ -193,17 +193,19 @@ struct CommunityTests {
 	}
 
 	@Test("Modularity of everything-in-one-community is zero")
-	func trivialPartition() {
+	func trivialPartition() throws {
 		let single = NodePartition<String>(Dictionary(
 			uniqueKeysWithValues: karate.nodes.map { ($0, 0) }))
-		#expect(abs(Community.modularity(karate, partition: single)) < 1e-9)
+		let score = try Community.modularity(karate, partition: single)
+		#expect(abs(score) < 1e-9)
 	}
 
 	@Test("Modularity of every-node-alone is negative")
-	func singletonPartition() {
+	func singletonPartition() throws {
 		let singletons = NodePartition<String>(Dictionary(
 			uniqueKeysWithValues: karate.nodes.enumerated().map { ($0.element, $0.offset) }))
-		#expect(Community.modularity(karate, partition: singletons) < 0)
+		let score = try Community.modularity(karate, partition: singletons)
+		#expect(score < 0)
 	}
 }
 

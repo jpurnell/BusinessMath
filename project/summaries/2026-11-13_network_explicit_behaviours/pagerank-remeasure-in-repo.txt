@@ -1,0 +1,12 @@
+MEASURE star n=1000 converged=true iterations=175 residual=9.264263618399826e-13 hubError=2.024491685403973e-13
+MEASURE star n=5000 converged=true iterations=175 residual=9.592891531042674e-13 hubError=2.410294186461215e-13
+MEASURE star n=9000 converged=true iterations=174 residual=9.94800142056166e-13 hubError=1.751931932858497e-13
+MEASURE star n=10000 converged=true iterations=175 residual=9.72330370515792e-13 hubError=1.6209256159527285e-13
+MEASURE star n=10500 converged=true iterations=174 residual=9.456146260987397e-13 hubError=3.0858648969456226e-13
+MEASURE star n=11000 converged=false iterations=200 residual=1.0371655113526265e-12 hubError=3.3795188869589765e-13
+MEASURE star n=12000 converged=false iterations=200 residual=1.0862678351221053e-12 hubError=2.703393064962256e-13
+MEASURE star n=17000 converged=false iterations=200 residual=1.3372325843212865e-12 hubError=2.1976864772454974e-13
+MEASURE star n=50000 converged=false iterations=200 residual=4.527311011026875e-12 hubError=1.3055112546567216e-12
+MEASURE path120 d=0.99 converged=false iterations=200 residual=0.0022328944955505876 L1err=0.0011313824950883863
+MEASURE path1000 d=0.9 converged=false iterations=200 residual=1.4110126912367238e-12
+MEASURE path1000 d=0.99 converged=false iterations=200 residual=0.0002679593497159629

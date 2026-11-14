@@ -17,28 +17,32 @@ struct StoppingRuleBoundaryTests {
 
 	private let graph = WeightedGraph(unweightedEdges: [("a", "b"), ("b", "c"), ("c", "d"), ("b", "d")], isolatedNodes: ["e"])
 
+	/// Eigenvector centrality refuses a disconnected graph (ADR-009), so it is exercised on the same
+	/// graph without the isolated node; PageRank keeps the isolate, which exercises dangling mass.
+	private let connected = WeightedGraph(unweightedEdges: [("a", "b"), ("b", "c"), ("c", "d"), ("b", "d")])
+
 	@Test("Eigenvector: with the tolerance set to the residual of a converged run, the run needs more passes")
-	func eigenvectorStopIsStrict() {
-		let first = Centrality.eigenvectorConvergence(graph, maxIterations: 200, tolerance: 1e-10)
+	func eigenvectorStopIsStrict() throws {
+		let first = try Centrality.eigenvectorConvergence(connected, maxIterations: 200, tolerance: 1e-10)
 		#expect(first.converged)
 		#expect(first.residual > 0)
-		let second = Centrality.eigenvectorConvergence(graph, maxIterations: 200, tolerance: first.residual)
+		let second = try Centrality.eigenvectorConvergence(connected, maxIterations: 200, tolerance: first.residual)
 		// The pass that produced `first.residual` is not strictly below it, so it cannot stop there.
 		#expect(second.iterations > first.iterations)
 		#expect(second.residual < first.residual)
 	}
 
 	@Test("PageRank: with the tolerance set to the change of pass k, the result is not the pass-k iterate")
-	func pageRankStopIsStrict() {
+	func pageRankStopIsStrict() throws {
 		let pass = 6
-		let previous = Centrality.pageRank(graph, maxIterations: pass - 1, tolerance: 0)
-		let atPass = Centrality.pageRank(graph, maxIterations: pass, tolerance: 0)
+		let previous = try Centrality.pageRank(graph, maxIterations: pass - 1, tolerance: 0)
+		let atPass = try Centrality.pageRank(graph, maxIterations: pass, tolerance: 0)
 		var delta = 0.0
 		for node in graph.nodes {
 			delta += abs((atPass.scores[node] ?? 0) - (previous.scores[node] ?? 0))
 		}
 		#expect(delta > 0)
-		let stopped = Centrality.pageRank(graph, maxIterations: 200, tolerance: delta)
+		let stopped = try Centrality.pageRank(graph, maxIterations: 200, tolerance: delta)
 		#expect(stopped != atPass)
 	}
 }

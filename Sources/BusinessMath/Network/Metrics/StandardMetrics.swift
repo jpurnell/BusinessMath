@@ -44,6 +44,13 @@ public struct DegreeMetric<Node: Hashable & Comparable & Sendable & Codable>: Gr
 /// is short for weakly bridged clusters, lattices and long paths). Print
 /// ``ConvergenceNote/sentence(_:)`` of it wherever the scores are shown.
 ///
+/// Version 5 refuses a graph that is not connected, by throwing ``GraphMeasureError/disconnectedGraph(components:)``
+/// from ``compute(on:)``. Versions 1 to 4 ran anyway and scored the component with the largest eigenvalue,
+/// leaving every other node near zero, which reads as "unimportant" rather than "not comparable". Scores
+/// and convergence reports on a connected graph are bit-identical to version 4; a stored version 4
+/// record of a graph that was not connected should be read with that in mind, and cannot be reproduced.
+/// Score the components separately (``Community/connectedComponents(_:)``) or use ``PageRankMetric``.
+///
 /// ```swift
 /// import BusinessMath
 ///
@@ -55,7 +62,7 @@ public struct EigenvectorMetric<Node: Hashable & Comparable & Sendable & Codable
 	/// What this metric answers, and how to read it.
 	public static var descriptor: MetricDescriptor {
 		MetricDescriptor(
-			identifier: "eigenvector-centrality", version: 4, title: "Eigenvector Centrality",
+			identifier: "eigenvector-centrality", version: 5, title: "Eigenvector Centrality",
 			interpretation: "Who is connected to well-connected classmates. "
 				+ "Prone to localising — check it against PageRank before acting.",
 			highMeans: "Well connected within whichever cluster this measure has "
@@ -79,7 +86,7 @@ public struct EigenvectorMetric<Node: Hashable & Comparable & Sendable & Codable
 	}
 	/// Computes it over the graph.
 	public func compute(on graph: WeightedGraph<Node>) throws -> DiagnosedScores<Node> {
-		let run = Centrality.eigenvectorConvergence(
+		let run = try Centrality.eigenvectorConvergence(
 			graph, maxIterations: maxIterations, tolerance: tolerance)
 		return DiagnosedScores(
 			scores: run.scores,
@@ -91,18 +98,29 @@ public struct EigenvectorMetric<Node: Hashable & Comparable & Sendable & Codable
 
 /// PageRank — a damped cross-check on eigenvector centrality.
 ///
+/// Version 3 supersedes version 2 and returns ``DiagnosedScores``: the same scores, bit for bit,
+/// plus a ``ConvergenceReport`` saying whether the iteration reached its tolerance before the
+/// ceiling. Version 2 returned the last iterate at the ceiling and said nothing. At the defaults
+/// (damping 0.85, 200 passes, tolerance 1e-12) the ceiling is enough on every graph tried, so the
+/// report matters when `damping` is raised (it takes 269 passes at 0.9 and 2,819 at 0.99) or the
+/// ceiling lowered. Print ``ConvergenceNote/sentence(_:)`` of it wherever the scores are shown.
+///
+/// The stored payload keeps kind `"scores"` with an optional `convergence` key, so a version 2
+/// record still decodes (as "not recorded") and a reader of plain ``NodeScores`` still works.
+///
 /// ```swift
 /// import BusinessMath
 ///
 /// let graph = WeightedGraph(unweightedEdges: [("a", "b"), ("b", "c")])
-/// let scores = try PageRankMetric<String>().compute(on: graph)
-/// print(scores.ranked.first?.node ?? "")   // b
+/// let result = try PageRankMetric<String>().compute(on: graph)
+/// print(result.scores.ranked.first?.node ?? "")   // b
+/// print(result.convergence?.converged ?? false)   // true
 /// ```
 public struct PageRankMetric<Node: Hashable & Comparable & Sendable & Codable>: GraphMetric {
 	/// What this metric answers, and how to read it.
 	public static var descriptor: MetricDescriptor {
 		MetricDescriptor(
-			identifier: "pagerank", version: 2, title: "PageRank",
+			identifier: "pagerank", version: 3, title: "PageRank",
 			interpretation: "Who is connected to well-connected classmates. "
 				+ "The measure to use for bringers.",
 			highMeans: "A bringer — activating this person reaches others through "
@@ -113,11 +131,28 @@ public struct PageRankMetric<Node: Hashable & Comparable & Sendable & Codable>: 
 				+ "before treating anyone as peripheral."
 		)
 	}
-	/// Creates the metric. Stateless.
-	public init() {}
+	/// The probability of following a tie rather than teleporting, in `[0, 1)`. Anything else
+	/// makes ``compute(on:)`` throw ``GraphMeasureError/invalidDamping(_:)``.
+	public let damping: Double
+	/// The iteration ceiling.
+	public let maxIterations: Int
+	/// The convergence threshold.
+	public let tolerance: Double
+	/// Creates the metric.
+	public init(damping: Double = 0.85, maxIterations: Int = 200, tolerance: Double = 1e-12) {
+		self.damping = damping
+		self.maxIterations = maxIterations
+		self.tolerance = tolerance
+	}
 	/// Computes it over the graph.
-	public func compute(on graph: WeightedGraph<Node>) throws -> NodeScores<Node> {
-		Centrality.pageRank(graph)
+	public func compute(on graph: WeightedGraph<Node>) throws -> DiagnosedScores<Node> {
+		let run = try Centrality.pageRankConvergence(
+			graph, damping: damping, maxIterations: maxIterations, tolerance: tolerance)
+		return DiagnosedScores(
+			scores: run.scores,
+			convergence: ConvergenceReport(
+				iterations: run.iterations, converged: run.converged, residual: run.residual,
+				tolerance: tolerance, maxIterations: max(1, maxIterations)))
 	}
 }
 

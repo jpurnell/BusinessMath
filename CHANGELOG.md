@@ -11,6 +11,80 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+**Silent behaviours made explicit (step 4 of the plan, ADR-006, ADR-007, ADR-009).** Five behaviours the weighted measures
+inherited from the ClassGraph package, listed in ADR-007 as "known, scheduled, closed on purpose", are closed here, each with
+its own test and its own ADR-009 entry, and a metric-version bump where stored output changes. Some of these are
+source-breaking and answer-changing; each says exactly what changes and for whom.
+
+#### Changed: PageRank reports whether it converged (`pagerank` version 2 to 3)
+
+- **New `Centrality.pageRankConvergence(_:damping:maxIterations:tolerance:)`** returns `(iterations, converged, residual, scores)`.
+  It is the loop; `Centrality.pageRank` now calls it and returns its `scores`, so the two cannot drift apart. `pageRank` returns the
+  same numbers as before, bit for bit (pinned against a frozen copy of the old loop and by the golden measure test).
+- **The registered `PageRankMetric` now returns `DiagnosedScores`** (was `NodeScores`) and takes `damping`, `maxIterations` and
+  `tolerance` (defaults 0.85, 200, 1e-12, as before). **Source break for direct callers of `PageRankMetric.compute`**: read `.scores`.
+  Records: the payload keeps kind `"scores"` and gains an optional `convergence` key; a version 2 record still decodes, as
+  "convergence not recorded", and a reader of plain `NodeScores` still works. For whom: anyone who stored `pagerank` version 2 records
+  (their scores are unchanged but carry no convergence figure and should be read as unknown) and anyone calling the metric directly.
+- **Why it matters, measured** (`project/summaries/2026-11-13_network_explicit_behaviours/pagerank-measurement.md`): at the default
+  damping the 200-pass ceiling is enough on every graph tried (the L1 error after k passes is at most 2 * damping^k, never
+  violated; 175 passes at worst), so the default call never returned an unconverged answer. At damping 0.9 five of eleven graph
+  families exceed the ceiling, and at 0.99 most do (a path of 1,000 nodes returned with L1 error 1.4e-4, a 50-leaf star with isolates 3.3e-3),
+  with no signal. That is now reported.
+- **A false "did not converge" exists, and is reported honestly rather than hidden.** On a star-like hub (one node summing very many
+  equal terms) rounding keeps the change between passes above 1e-12: measured in this repository, a star converges up to 10,500
+  nodes (175 passes) and from 11,000 nodes stops at the ceiling with a residual of 1.04e-12 and scores accurate to about 3e-13. The
+  report carries the `residual` for that reason. The earlier proposal's estimate that the floor is about n * 1e-16 for any graph was
+  wrong: on sparse random, grid, path, ring, preferential-attachment, community and dangling-heavy graphs the floor is about 1e-17 up to
+  200,000 nodes.
+- `ConvergenceNote.sentence` is unchanged and still says "far from the true eigenvector. Raise maxIterations to check" for a miss;
+  that advice is wrong for the star case above. Recorded as an open follow-up in ADR-009.
+
+#### Changed: eigenvector centrality refuses a graph that is not connected (`eigenvector-centrality` version 4 to 5)
+
+- **`Centrality.eigenvector` and `eigenvectorConvergence` now `throw`** `GraphMeasureError.disconnectedGraph(components:)` for a graph
+  with more than one connected component, and so does `EigenvectorMetric.compute` (through the registry, `run` and `record` too). Before:
+  the iteration ran and scored the component with the largest eigenvalue, leaving every other node (and every isolate) near zero, which
+  reads as "unimportant" rather than "not comparable"; an edgeless graph scored every node 1. The unweighted `Graph.eigenvectorCentrality`
+  already returned `nil`. The empty graph and a lone node are still answered.
+- **Connectivity is judged through ties of positive weight**: a zero-weight tie carries nothing through the iteration, so it does not
+  connect (`Community.connectedComponents` reads topology and does; recorded in ADR-009).
+- **Version 4 to 5.** Scores and convergence reports on a connected graph are bit-identical to version 4 (golden test). A stored version 4
+  record of a graph that was not connected is the old misleading answer and cannot be reproduced; it still decodes.
+- **Source break** (add `try`) and **a use case that now fails loudly**: anyone running eigenvector centrality over a graph that has
+  isolated nodes or several components, which includes any real graph with people who have no recorded tie. Score the components
+  separately (`Community.connectedComponents`) or use PageRank, which is defined on a disconnected graph. No lenient mode is offered.
+
+#### Changed: PageRank refuses an invalid damping (no version bump)
+
+- **`Centrality.pageRank` and `pageRankConvergence` now `throws`** and refuse a `damping` that is `NaN`, infinite, negative or at
+  least one with the new **`GraphMeasureError.invalidDamping(_:)`**. Before: `1.5` silently ran as `0.999`, `-1` as `0`, infinity as
+  `0.999`, and `NaN` returned `NaN` for every score with no error. Accepted: `[0, 1)`; a damping between `0.999` and `1` now runs
+  as given instead of as `0.999`.
+- **Source break** for every caller of `Centrality.pageRank` and `pageRankConvergence`: add `try`. No source-compatibility shim is
+  kept. `PageRankMetric(damping:).compute` throws the same error. For whom: anyone passing a damping of one or more (probably meaning
+  "no teleport") who was getting `0.999` results without knowing.
+- No version bump: the registered metric took no damping before version 3, so no stored record can carry one outside `[0, 1)`.
+
+#### Changed: modularity refuses a partition that does not match the graph (no version bump)
+
+- **`Community.modularity(_:partition:)` now `throws`** `GraphMeasureError.partitionDoesNotMatchGraph(missing:unknown:)` unless the
+  partition covers exactly the graph's nodes, naming the missing and the foreign nodes. Before: a node the partition left out was skipped
+  as if it were not in the graph, and a node the graph does not have was not noticed, so a partial partition was scored as a whole.
+  The unweighted `Graph.modularity(of:)` already returned `nil` for both; the two now agree. An edgeless graph with a matching partition
+  still scores zero.
+- **Source break**: add `try`. For whom: anyone scoring a hand-built or filtered partition; a partition from `Community.louvain` or
+  `connectedComponents` is always valid. No version bump: no registered metric computes modularity, so no stored record changes.
+
+#### Fixed: the unweighted `Graph.louvainCommunities` has the weighted Louvain's tie margin (no version bump)
+
+- A node now moves to another community only if it is better by more than `1e-12 / 2m` (the weighted `Community.louvain`'s `1e-12`
+  in the unweighted gain's units); before, a strictly-greater comparison let rounding decide ties that are exact on paper. **Answer
+  change** on graphs with such ties: of 400 seeded random connected graphs, five were split differently from the weighted Louvain
+  before and none is after (none of 5,000). The cross-check's pinned known issue (`random3`) is removed and now passes for real.
+  For whom: callers of `Graph.louvainCommunities` on graphs with exact gain ties. `Graph`'s Louvain is not a registered metric, so
+  no stored record changes.
+
 Additive: no existing API changes.
 
 **`WeightedGraph`: a validated undirected weighted graph beside `Graph`.** Step 1 of the plan to

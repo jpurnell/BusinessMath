@@ -1,0 +1,95 @@
+􁁛  Test "The fixture set covers the cases the plan names" passed
+􁁛  Test "The edges of the accepted range are accepted: 0, -0, 0.999, and the largest double below one" passed
+􁁛  Test "Closeness of a graph of at most one node is zero" passed
+􁁛  Test "Harmonic on a path of three" passed
+􁁛  Test "Closeness of a lone edge is one" passed
+􁁛  Test "Harmonic on a path of five weights distance 3 and 4 by their reciprocals" passed
+􁁛  Test "Closeness on a star" passed
+􁁛  Test "Harmonic counts the unreachable as zero but still divides by n - 1" passed
+􁁛  Test "Both are invariant under weight scaling, which they ignore" passed
+􁁛  Test "Closeness on a path of three" passed
+􀢄  Test "pageRankConvergence refuses the same dampings: it is the loop, so the two cannot disagree" with 10 test cases failed
+􁁛  Test "Closeness and harmonic agree with Floyd-Warshall distances on random graphs" passed
+􁁛  Test "Closeness discounts what cannot be reached, and an isolate scores zero" passed
+􀢄  Test "The refusal does not depend on the graph, the ceiling or the tolerance: an empty graph refuses too" failed
+􁁛  Test "Harmonic of a graph of at most one node is zero" passed
+􀢄  Test "Damping just above the old cap is run as given, not as 0.999" failed
+􁁛  Test "The empty graph has no scores; a single node holds all the rank" passed
+􁁛  Test "Star matches the closed form" passed
+􁁛  Test "The iteration ceiling is honoured and floored at one pass" passed
+􀢄  Test "The registered metric refuses an invalid damping when it runs, through the registry and as a record" failed
+􁁛  Test "The default tolerance reaches the converged answer to better than 1e-9" passed
+􀢄  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" with 19 test cases failed
+􁁛  Test "Nodes in symmetric positions score the same" passed
+􁁛  Test "An enormous tolerance stops
+􁁛  Test "Path of three matches the closed form" passed
+􀢄  Test "Damping zero is uniform; out-of-range damping is refused, not clamped (ADR-009)" failed
+􁁛  Test "A loose tolerance stops visibly short of the converged answer" passed
+􁁛  Test "A dangling node's mass is shared equally" passed
+􁁛  Test "Invariant under weight scaling and under relabelling" passed
+􁁛  Test "The defaults are 200 iterations and a tolerance of 1e-12" passed
+􁁛  Test "Scores are positive and sum to one" passed
+􁁛  Test "Agrees with a direct linear solve on random weighted graphs, isolates and light weights included" passed
+􁁛  Test "The default call converges on every family, with the ceiling's margin intact" passed
+􁁛  Test "Does not claim convergence when the ceiling is too small, and does when it is large" passed
+􁁛  Test "Accepted dampings give finite scores summing to one on every family: NaN can no longer come out" passed
+􁁛  Test "A looser tolerance never needs more passes, and an enormous one stops
+􁁛  Test "Damping 0.99 at the default ceiling does not converge, says so, and the scores really are off" passed
+􁁛  Test "Damping 0.9 stops short on a path within the default ceiling, which the bound also predicts" passed
+􁁛  Test "At the default damping and tolerance, convergence is reached within the pass count the bound predicts, on every family" passed
+􁁛  Test "A zero ceiling still runs one pass, as pageRank does" passed
+􁁛  Test "The residual is the final L1 change, and one pass fewer is not yet converged" passed
+􁁛  Test "Agrees with explicit triangle counting on random graphs; weights are ignored" passed
+􁁛  Test "A node of degree two whose neighbours are not linked scores zero" passed
+􁁛  Test "A complete graph is fully clustered and a star not at all" passed
+􁁛  Test "Isolates and edgeless graphs score zero; every node is present" passed
+􁁛  Test "Triangle with a pendant" passed
+􁁛  Test "Bow-tie centre" passed
+􁁛  Test "Degenerate graphs: an empty graph has nothing to iterate; one node and an edgeless graph settle at once" passed
+􁁛  Test "An edgeless graph scores every node exactly 1, the tied largest" passed
+􁁛  Test "One pass from the uniform start, by hand" passed
+􁁛  Test "An enormous tolerance stops
+􁁛  Test "Path of six matches sin(k pi / 7) whatever the size of the weights" passed
+􁁛  Test "Weighted path of three matches the closed form" passed
+􁁛  Test "Complete bipartite K(2,3): sides are 1 and sqrt(2/3)" passed
+􁁛  Test "Path of three: the middle node leads, the ends are 1/sqrt(2)" passed
+􁁛  Test "The defaults are 200 iterations and a tolerance of 1e-10" passed
+􁁛  Test "The component with the larger eigenvalue takes all the weight" passed
+􁁛  Test "Two nodes: a joined pair both score one, and two strangers both appear" passed
+􁁛  Test "Star: the hub is 1 and each leaf is one half" passed
+􁁛  Test "Path of four: the ends are 1/phi" passed
+􁁛  Test "Stops when the change per pass falls below the tolerance, exactly as documented" passed
+􁁛  Test "The iteration ceiling is honoured and never below one" passed
+􁁛  Test "Invariant under an arbitrary permutation of the labels" passed
+􁁛  Test "A node with no ties scores zero beside a connected component" passed
+􁁛  Test "The empty graph has no scores and a lone node scores 1" passed
+􁁛  Test "The result satisfies A v = lambda v on random graphs, trees included" passed
+􁁛  Test "Invariant under relabelling that keeps the sort order, and under weight scaling" passed
+􁁛  Test "Normalised betweenness lies in [0, 1]; it is invariant under any relabelling" passed
+􁁛  Test "Path of three: the middle node carries the only pair, so 1 normalised and 1 raw" passed
+􁁛  Test "Unreachable pairs contribute nothing" passed
+􁁛  Test "Brandes agrees with brute-force enumeration on random graphs, isolates included" passed
+􁁛  Test "Four-cycle splits a pair between two shortest paths" passed
+􁁛  Test "Path of four: inner nodes 2 raw, 2/3 normalised" passed
+􁁛  Test "Edge weights record strength, not distance: they do not change the result" passed
+􁁛  Test "Star hub: raw 6, normalised 1" passed
+􁁛  Test "Graphs of at most two nodes score zero for every node" passed
+􁁛  Test "The stored shape is kind 'scores' with an optional convergence key, so plain-scores readers still work" passed
+􁁛  Test "A damping that cannot converge in the ceiling is recorded as not converged, with the sentence that says so" passed
+􁁛  Test "It returns the same scores as Centrality.pageRank, bit for bit, plus the report of that run" passed
+􁁛  Test "The registered metric is pagerank at version 3 and its defaults are the loop's" passed
+􁁛  Test "A version 2 pagerank record, written before convergence was reported, still decodes, reads as unknown, and re-encodes to the stored bytes" passed
+􁁛  Test "Component labels are dense and ordered by smallest member" passed
+􁁛  Test "k-core of paths, stars and cycles" passed
+􁁛  Test "Agrees with literal peeling on random graphs, and is bounded by degree" passed
+􁁛  Test "Agrees with union-find on random graphs, and two nodes share a label iff connected" passed
+􁁛  Test "Every node is in a component; edgeless graph gives n components" passed
+􁁛  Test "Peeling a tail does not reduce the core beneath it" passed
+􁁛  Test "A chain is one component however it is reached" passed
+􁁛  Test "k-core of a clique with a pendant" passed
+􁁛  Test "Weights do not affect core numbers" passed
+􁁛  Test "A star of 5,000 at the defaults converges, to the closed form" passed
+􁁛  Test "The a-priori bound is the oracle:
+􁁛  Test "pageRank and pageRankConvergence are one loop: identical scores bit for bit, and identical to the loop as it was before this change" with 6 test cases passed
+􁁛  Test "A very large star cannot meet the tolerance and reports that, while its scores are still accurate" passed
+􀢄  Test run with 99 tests in 10 suites failed

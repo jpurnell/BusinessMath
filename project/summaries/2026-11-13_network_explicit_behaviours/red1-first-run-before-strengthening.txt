@@ -1,0 +1,102 @@
+􁁛  Suite "Golden measures: bit-for-bit against SwiftGraphMetrics" passed after 3.190 seconds.
+􁁛  Suite "MetricRecord provenance" passed after 3.190 seconds.
+􀢄  Suite "MetricRegistry" failed after 3.190 seconds with 1 issue.
+􀢄  Suite "PageRank convergence report" failed after 16.955 seconds with 19 issues.
+􀢄  Suite "PageRank metric, version 3" failed after 3.190 seconds with 5 issues.
+􁁛  Suite "Stored-record golden: every standard metric's record over every fixture" passed after 3.213 seconds.
+􀢄  Suite "Stored-record golden: records written by earlier versions still decode" failed after 3.190 seconds with 1 issue.
+􀢄  Suite "Stored-record golden: the registry listing" failed after 3.190 seconds with 4 issues.
+􁁛  Test "A custom value type can travel through the registry" passed after 2.964 seconds.
+􀢄  Test "A damping that cannot converge in the ceiling is recorded as not converged, with the sentence that says so" failed after 3.188 seconds with 1 issue.
+􀢄  Test "A damping that cannot converge in the ceiling is recorded as not converged, with the sentence that says so" recorded an issue at PageRankConvergenceTests.swift:324:20: Expectation failed: result.convergence
+􀢄  Test "A looser tolerance never needs more passes, and an enormous one stops after the first" failed after 3.188 seconds with 2 issues.
+􀢄  Test "A looser tolerance never needs more passes, and an enormous one stops after the first" recorded an issue at PageRankConvergenceTests.swift:169:3: Expectation failed: loose.iterations < strict.iterations
+􀢄  Test "A looser tolerance never needs more passes, and an enormous one stops after the first" recorded an issue at PageRankConvergenceTests.swift:171:3: Expectation failed: instant.iterations == 1
+􁁛  Test "A metric looked up by identifier carries the descriptor it was registered with" passed after 2.781 seconds.
+􁁛  Test "A metric that throws makes the registry throw, not return nil" passed after 2.967 seconds.
+􁁛  Test "A new metric can be added without touching existing code" passed after 2.991 seconds.
+􁁛  Test "A partition metric comes back as a partition envelope" passed after 2.979 seconds.
+􁁛  Test "A record for a metric this build does not know decodes and re-encodes unchanged" passed after 3.181 seconds.
+􁁛  Test "A record's output is what run returns for the same graph" passed after 3.181 seconds.
+􁁛  Test "A star of 5,000 at the defaults converges, to the closed form" passed after 3.189 seconds.
+􁁛  Test "A stored envelope decodes to the typed value of its kind" with 20 test cases passed after 3.188 seconds.
+􁁛  Test "A stored record decodes to the record the registry makes, and re-encodes to the same bytes" with 20 test cases passed after 3.193 seconds.
+􀢄  Test "A version 1 pagerank record decodes as 1, distinct from the version 3 the registry writes now" failed after 3.181 seconds with 1 issue.
+􀢄  Test "A version 1 pagerank record decodes as 1, distinct from the version 3 the registry writes now" recorded an issue at MetricRecordGoldenTests.swift:354:3: Expectation failed: fresh.metricVersion == 3
+􁁛  Test "A version 2 eigenvector record, with no convergence, decodes and reads as unknown" passed after 3.181 seconds.
+􁁛  Test "A version 2 pagerank record, written before convergence was reported, still decodes, reads as unknown, and re-encodes to the stored bytes" passed after 3.188 seconds.
+􁁛  Test "A version 3 eigenvector record decodes, reads as plain scores, and re-encodes to the stored bytes" passed after 3.181 seconds.
+􁁛  Test "A version 4 record with a report decodes and keeps the report" passed after 3.181 seconds.
+􀢄  Test "A very large star cannot meet the tolerance and reports that, while its scores are still accurate" failed after 16.954 seconds with 3 issues.
+􀢄  Test "A very large star cannot meet the tolerance and reports that, while its scores are still accurate" recorded an issue at PageRankConvergenceTests.swift:282:3: Expectation failed: run.converged == false
+􀢄  Test "A very large star cannot meet the tolerance and reports that, while its scores are still accurate" recorded an issue at PageRankConvergenceTests.swift:283:3: Expectation failed: run.iterations == 200
+􀢄  Test "A very large star cannot meet the tolerance and reports that, while its scores are still accurate" recorded an issue at PageRankConvergenceTests.swift:284:3: Expectation failed: run.residual > 1e-12
+􀢄  Test "A zero ceiling still runs one pass, as pageRank does" failed after 3.161 seconds with 2 issues.
+􀢄  Test "A zero ceiling still runs one pass, as pageRank does" recorded an issue at PageRankConvergenceTests.swift:145:3: Expectation failed: result.iterations == 1
+􀢄  Test "A zero ceiling still runs one pass, as pageRank does" recorded an issue at PageRankConvergenceTests.swift:146:3: Expectation failed: result.converged == false
+􁁛  Test "An eigenvector record stored under version 2 decodes as 2; a new one carries 4" passed after 3.181 seconds.
+􁁛  Test "An empty registry lists nothing and runs nothing" passed after 3.028 seconds.
+􁁛  Test "An unknown identifier records nothing" passed after 3.181 seconds.
+􁁛  Test "At the default damping and tolerance, convergence is reached within the pass count the bound predicts, on every family" passed after 3.188 seconds.
+􀢄  Test "Damping 0.9 stops short on a path within the default ceiling, which the bound also predicts" failed after 3.188 seconds with 2 issues.
+􀢄  Test "Damping 0.9 stops short on a path within the default ceiling, which the bound also predicts" recorded an issue at PageRankConvergenceTests.swift:252:3: Expectation failed: run.converged == false
+􀢄  Test "Damping 0.9 stops short on a path within the default ceiling, which the bound also predicts" recorded an issue at PageRankConvergenceTests.swift:253:3: Expectation failed: run.iterations == 200
+􀢄  Test "Damping 0.99 at the default ceiling does not converge, says so, and the scores really are off" failed after 3.188 seconds with 3 issues.
+􀢄  Test "Damping 0.99 at the default ceiling does not converge, says so, and the scores really are off" recorded an issue at PageRankConvergenceTests.swift:237:3: Expectation failed: run.converged == false
+􀢄  Test "Damping 0.99 at the default ceiling does not converge, says so, and the scores really are off" recorded an issue at PageRankConvergenceTests.swift:238:3: Expectation failed: run.iterations == 200
+􀢄  Test "Damping 0.99 at the default ceiling does not converge, says so, and the scores really are off" recorded an issue at PageRankConvergenceTests.swift:239:3: Expectation failed: run.residual > 1e-12
+􀢄  Test "Degenerate graphs: an empty graph has nothing to iterate; one node and an edgeless graph settle at once" failed after 3.108 seconds with 1 issue.
+􀢄  Test "Degenerate graphs: an empty graph has nothing to iterate; one node and an edgeless graph settle at once" recorded an issue at PageRankConvergenceTests.swift:185:3: Expectation failed: lone.iterations >= 1
+􀢄  Test "Does not claim convergence when the ceiling is too small, and does when it is large" failed after 3.172 seconds with 4 issues.
+􀢄  Test "Does not claim convergence when the ceiling is too small, and does when it is large" recorded an issue at PageRankConvergenceTests.swift:131:3: Expectation failed: tight.converged == false
+􀢄  Test "Does not claim convergence when the ceiling is too small, and does when it is large" recorded an issue at PageRankConvergenceTests.swift:132:3: Expectation failed: tight.iterations == 5
+􀢄  Test "Does not claim convergence when the ceiling is too small, and does when it is large" recorded an issue at PageRankConvergenceTests.swift:133:3: Expectation failed: tight.residual >= 1e-12
+􀢄  Test "Does not claim convergence when the ceiling is too small, and does when it is large" recorded an issue at PageRankConvergenceTests.swift:137:3: Expectation failed: roomy.iterations > 5
+􁁛  Test "Each fixture stores a record for every registered metric" with 20 test cases passed after 3.182 seconds.
+􁁛  Test "Eigenvector envelopes at non-default ceilings and tolerances match the stored text and bits" passed after 3.183 seconds.
+􁁛  Test "Every added measure is in the registry, and there are exactly eleven" passed after 2.991 seconds.
+􁁛  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" with 19 test cases passed after 3.188 seconds.
+􁁛  Test "Every metric states what a low score does and does not mean" passed after 2.867 seconds.
+􁁛  Test "Every score, convergence figure and community number matches bit for bit" with 20 test cases passed after 3.182 seconds.
+􁁛  Test "Every standard metric's envelope is the value its function returns, wrapped" passed after 3.172 seconds.
+􀢄  Test "Identifiers and versions are exactly the stored ones, with no metric added or dropped" failed after 3.188 seconds with 1 issue.
+􀢄  Test "Identifiers and versions are exactly the stored ones, with no metric added or dropped" recorded an issue at MetricRecordGoldenTests.swift:138:3: Expectation failed: found == stored
+􀢄  Test "It returns the same scores as Centrality.pageRank, bit for bit, plus the report of that run" failed after 3.188 seconds with 1 issue.
+􀢄  Test "It returns the same scores as Centrality.pageRank, bit for bit, plus the report of that run" recorded an issue at PageRankConvergenceTests.swift:311:20: Expectation failed: result.convergence
+􁁛  Test "Karate on integer nodes matches the stored values bit for bit, by every registered metric" passed after 3.182 seconds.
+􀢄  Test "Moved metrics keep the versions they had; eigenvector is at 4 and pagerank at 3" failed after 2.979 seconds with 1 issue.
+􀢄  Test "Moved metrics keep the versions they had; eigenvector is at 4 and pagerank at 3" recorded an issue at MetricRegistryTests.swift:151:3: Expectation failed: versions["pagerank"] == 3
+􁁛  Test "pageRank and pageRankConvergence are one loop: identical scores bit for bit, and identical to the loop as it was before this change" with 6 test cases passed after 5.415 seconds.
+􁁛  Test "Records the context and metric version alongside the numbers" passed after 3.181 seconds.
+􁁛  Test "Returns nil for an unknown identifier rather than throwing" passed after 2.849 seconds.
+􁁛  Test "Round-trips through Codable so a record survives to be compared later" passed after 3.181 seconds.
+􁁛  Test "Runs a metric by identifier" passed after 2.997 seconds.
+􁁛  Test "Ships the metrics the design calls for" passed after 2.777 seconds.
+􁁛  Test "The a-priori bound is the oracle: after k passes the L1 error is at most 2 * damping^k, on every family and damping" passed after 3.955 seconds.
+􁁛  Test "The bare envelope the registry returns is byte-for-byte the stored envelope" with 20 test cases passed after 3.182 seconds.
+􁁛  Test "The default call converges on every family, with the ceiling's margin intact" passed after 3.188 seconds.
+􀢄  Test "The descriptor listing encodes to exactly the stored text" failed after 3.188 seconds with 1 issue.
+􀢄  Test "The descriptor listing encodes to exactly the stored text" recorded an issue at MetricRecordGoldenTests.swift:123:3: Expectation failed: listing == GoldenRecordData.registryListing
+􁁛  Test "The fixture set covers the cases the plan names" passed after 3.182 seconds.
+􁁛  Test "The fixture set covers the cases the plan names" passed after 3.188 seconds.
+􁁛  Test "The long path misses the default ceiling and says so in the stored record" passed after 3.183 seconds.
+􁁛  Test "The record initialiser keeps every field it is given" passed after 3.181 seconds.
+􁁛  Test "The record the registry makes is byte-for-byte the stored record" with 20 test cases passed after 3.207 seconds.
+􀢄  Test "The registered metric is pagerank at version 3 and its defaults are the loop's" failed after 3.188 seconds with 1 issue.
+􀢄  Test "The registered metric is pagerank at version 3 and its defaults are the loop's" recorded an issue at PageRankConvergenceTests.swift:298:3: Expectation failed: PageRankMetric<String>.descriptor.version == 3
+􁁛  Test "The registry lists its metrics in identifier order, once each" passed after 2.778 seconds.
+􀢄  Test "The residual is the final L1 change, and one pass fewer is not yet converged" failed after 3.099 seconds with 2 issues.
+􀢄  Test "The residual is the final L1 change, and one pass fewer is not yet converged" recorded an issue at PageRankConvergenceTests.swift:158:3: Expectation failed: before.converged == false
+􀢄  Test "The residual is the final L1 change, and one pass fewer is not yet converged" recorded an issue at PageRankConvergenceTests.swift:159:3: Expectation failed: before.residual >= 1e-6
+􀢄  Test "The same listing comes from a registry of integer nodes" failed after 3.188 seconds with 1 issue.
+􀢄  Test "The same listing comes from a registry of integer nodes" recorded an issue at MetricRecordGoldenTests.swift:145:3: Expectation failed: listing == GoldenRecordData.registryListing
+􁁛  Test "The seed selector is deliberately not in the standard registry" passed after 2.910 seconds.
+􁁛  Test "The seed selector registers and round-trips as a selection envelope" passed after 3.161 seconds.
+􀢄  Test "The stored listing decodes to the descriptors the registry lists, in order" failed after 3.188 seconds with 1 issue.
+􀢄  Test "The stored listing decodes to the descriptors the registry lists, in order" recorded an issue at MetricRecordGoldenTests.swift:130:3: Expectation failed: stored == MetricRegistry<String>.standard.available
+􀢄  Test "The stored shape is kind 'scores' with an optional convergence key, so plain-scores readers still work" failed after 3.188 seconds with 2 issues.
+􀢄  Test "The stored shape is kind 'scores' with an optional convergence key, so plain-scores readers still work" recorded an issue at PageRankConvergenceTests.swift:338:3: Expectation failed: record.metricVersion == 3
+􀢄  Test "The stored shape is kind 'scores' with an optional convergence key, so plain-scores readers still work" recorded an issue at PageRankConvergenceTests.swift:340:3: Expectation failed: record.output.convergence?.converged == true
+􁁛  Test "Uses the clock it was given rather than reading the wall clock" passed after 3.181 seconds.
+􁁛  Test "When two metrics share an identifier the first wins, in the initialiser and in registering" passed after 2.910 seconds.
+􀢄  Test run with 63 tests in 8 suites failed after 16.955 seconds with 30 issues.

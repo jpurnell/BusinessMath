@@ -348,6 +348,7 @@ alternatives_rejected:
 affected_files:
   - Sources/BusinessMath/Network/Weighted/WeightedCentrality.swift
   - Sources/BusinessMath/Network/Weighted/WeightedCommunity.swift
+  - Sources/BusinessMath/Network/Community/Community.swift
   - Sources/BusinessMath/Network/Weighted/BurtConstraint.swift
   - Tests/BusinessMathTests/Network Tests/Weighted/
   - project/plans/upcoming/NetworkWeightedGraph.md
@@ -399,5 +400,133 @@ affected_files:
   - Tests/BusinessMathTests/Network Tests/Metrics/
 supersedes: null
 amends: null
+superseded_by: null
+```
+
+---
+
+```yaml
+id: ADR-009
+date: 2026-11-13
+status: accepted
+category: behaviour
+title: The weighted measures' silent behaviours are made explicit; each change names its version bump
+context: |
+  ADR-007 listed behaviours the weighted measures inherited from SwiftGraphMetrics that the
+  fail-silent principle would refuse, ported unchanged in step 2 so stored records would not
+  move, and scheduled their closure for step 4 of NetworkWeightedGraph.md, each with its own test
+  and, where stored output changes, a metric-version bump. Step 4 closes them. This record is
+  extended change by change; the changes are independent and each is its own commit.
+decision: |
+  1. PageRank reports convergence (pagerank version 2 to 3).
+     Centrality.pageRankConvergence(_:damping:maxIterations:tolerance:) is the loop and returns
+     (iterations, converged, residual, scores); Centrality.pageRank delegates to it and returns
+     identical numbers (pinned against a frozen copy of the old loop, bit for bit). The registered
+     PageRankMetric returns DiagnosedScores (payload kind "scores" with an optional "convergence"
+     key) and takes damping, maxIterations and tolerance with the defaults 0.85, 200, 1e-12.
+     ConvergenceReport, DiagnosedScores and ConvergenceNote are reused unchanged. The tolerance
+     stays 1e-12 and the stopping rule stays an absolute L1 change. The a-priori bound
+     (L1 error after k passes <= 2 * damping^k, so ceil(ln(tol/2)/ln d) passes guarantee
+     convergence: 175 at 0.85, 269 at 0.9, 553 at 0.95, 2,819 at 0.99) is a test oracle, not the
+     user-facing report. The version is bumped because a version 2 record carries no convergence
+     figure and a version 3 record always does; scores are bit-identical, so only the shape and the
+     meaning of "not recorded" differ. Records already stored as version 2 decode unchanged as
+     "unknown" (golden test).
+     Measured (pagerank-measurement.md, reproduced in this repository in pagerank-remeasure-in-repo.txt):
+     the default call never misses the ceiling; damping 0.9 misses it on slow-mixing shapes and 0.99 on
+     most; and a star-like hub makes the change between passes bottom out above 1e-12 from about
+     11,000 nodes at damping 0.85, so a very large star reports "not converged" although its scores
+     are accurate to about 1e-12. The earlier proposal's claim that the floor is about n * 1e-16
+     for any graph is wrong and is not carried forward. The report keeps the residual so a reader can
+     tell that floor from slow convergence; no rule that treats a stuck residual as converged is added,
+     because the measurement could not justify a threshold (the envelope 0.12 * n * eps / (1 - d) was
+     fitted to stars only).
+  2. PageRank damping is validated (no version bump).
+     Centrality.pageRank and pageRankConvergence refuse a damping that is NaN, infinite, negative or
+     at least one, by throwing the new GraphMeasureError.invalidDamping(_:), before anything else is
+     looked at (an empty graph refuses too). The accepted range is [0, 1); a damping between 0.999 and
+     1 runs as given and, being slow, reports non-convergence. The failure idiom is a throw because the
+     weighted module signals bad input by throwing (WeightedGraph.init throws GraphError) and a throw
+     can say which value was refused; the unweighted Graph returns nil, which cannot. The check is
+     written positively (isFinite, >= 0, < 1) so a NaN fails it and lands on the refusal.
+     This is a source break: both functions are now throwing, so every caller adds try. No shim is kept
+     (the plan does not ask for one, and a non-throwing overload would keep the silent behaviour
+     reachable). No version bump: the registered metric exposed no damping before version 3, so no
+     stored record can carry an out-of-range damping, and every record that can exist is unchanged.
+     The golden measure data keeps SwiftGraphMetrics's stored tokens for damping 1.5 and -1 and the
+     test now asserts that they were exactly the damping-0.999 and damping-0 runs (the old clamp) and
+     that the new outcome is a refusal.
+  3. Modularity validates its partition (no bump: no registered metric computes modularity).
+     Community.modularity(_:partition:) throws GraphMeasureError.partitionDoesNotMatchGraph(missing:unknown:)
+     unless the partition covers exactly the graph's nodes, naming the nodes left out and the foreign
+     nodes it mentions. It used to skip an unassigned node as if it were not in the graph and not notice
+     a foreign one, so a partial partition scored as a whole (the unweighted Graph.modularity(of:) has
+     always returned nil for both). The check runs before the edgeless shortcut. A throw, for the reason
+     in item 2, carrying the nodes because nil cannot. Source break: callers add try. Version: no metric in
+     MetricRegistry.standard computes modularity, Louvain and components never produce an invalid partition,
+     so no stored record can change and no version is bumped. The golden data keeps the stored token for
+     the partial partition and the test asserts the new outcome (refused) against it. UnweightedWeightedCrossCheckTests
+     now asserts agreement (both refuse) where it used to assert a difference; the edgeless difference
+     (nil unweighted, zero weighted) remains and is a documented, deliberate difference.
+  4. The unweighted Graph.louvainCommunities gets the weighted Louvain's tie margin (no version bump: Graph's
+     Louvain is not a registered metric). A candidate community must beat the best so far by more than
+     1e-12 / 2m, which is the weighted code's 1e-12 (in units of edge weight) expressed in the unweighted
+     gain's units (gain_unweighted = gain_weighted / 2m), so the two implementations call the same moves ties;
+     a raw 1e-12 in these units would be a 2m-times larger margin. Measured: over seeds 1 to 400 of random
+     connected graphs, five (39, 132, 270, 275, 297) were split differently before, none of 1 to 5,000 after.
+     The cross-check's known issue (random3) is removed and the test is a plain assertion. Louvain on a graph
+     where two moves differ by less than 1e-12/2m now resolves to the lower-numbered candidate or stays,
+     where before it moved by rounding: a result can change on such graphs, which is the point.
+  5. Eigenvector centrality refuses a graph that is not connected (eigenvector-centrality version 4 to 5).
+     Centrality.eigenvector and eigenvectorConvergence throw GraphMeasureError.disconnectedGraph(components:)
+     for a graph with more than one connected component; EigenvectorMetric.compute therefore throws, and so
+     do registry.run and registry.record. The empty graph and a lone node are still answered. Connectivity is
+     read through ties of positive weight, not topology: a zero-weight tie carries nothing through the
+     iteration, so a graph joined only by zero-weight ties is as disconnected for this measure as one with
+     no tie at all (Community.connectedComponents, which reads topology, would call it connected: ADR-007's
+     recorded inconsistency, and this measure sits on Burt's side of it). An edgeless graph of two or more
+     nodes is disconnected and is refused; it used to score every node 1, which ADR-007 listed "for review in
+     step 4": decided here, refuse, because it is the unweighted measure's answer (nil) and the same defect
+     (the absence of a ranking presented as a measurement). Version: bumped 4 to 5 because the stored output
+     for a disconnected graph changes (a record can no longer be produced, and a version 4 record of such a
+     graph is the lenient, misleading answer). Scores and convergence reports on connected graphs are
+     bit-identical across 4 and 5 (the golden record test compares them after undoing only the version number).
+     Plan section 6 says these behaviours are "closed in step 5" while the phasing table and ADR-007 say step 4
+     (step 5 is diffusion and siting); the phasing table and ADR-007 were followed, and the plan's wording is
+     corrected. No shim: a lenient mode would keep the misleading answer reachable. Consequence for a caller
+     such as ClassGraph, whose real graph is disconnected: the registered metric now throws on it, so a run
+     over every standard metric must handle that one, and score the components separately or use PageRank.
+     Flagged to the owner as the one change here that makes an existing use case impossible rather than loud.
+rationale: |
+  - Uniformity with eigenvector centrality, which has reported convergence since version 4: a reader
+    should not have to remember which iterative metrics say so.
+  - Reporting the residual instead of silently accepting a noise floor keeps the stored figure a
+    measurement and not a judgement.
+  Reviewed and not changed in step 4 (ADR-007's "recorded without a scheduled change"): Louvain does not
+  validate resolution (NaN or negative) and treats maxPasses below one as one; the contracted level's
+  adjacency comes from a Dictionary. None changes a stored record for a valid input and none was among the
+  five changes the plan scheduled; they remain open (open decisions, below). Also noticed and not changed:
+  with weights near 1e-300 the eigenvector products underflow and every node scores 1 (the guard in the loop).
+consequences: |
+  Positive: damping above about 0.88 or a lowered ceiling can no longer return an unconverged answer
+  silently. Negative: PageRankMetric.compute returns a different type (source-breaking for direct
+  callers); a very large star reports a false "did not converge"; ConvergenceNote's wording ("far from
+  the true eigenvector. Raise maxIterations to check") is wrong for that case and is not changed here
+  because the golden test pins the sentence (open follow-up).
+alternatives_rejected:
+  - "Document the bound and do nothing (option 1 of the proposal): leaves non-default damping and the lowered ceiling unreported."
+  - "Report an a-priori guarantee instead of a measured flag (option 3): a second concept beside eigenvector's, and it would hide the star floor from the record."
+  - "Make the stopping rule relative: the measurement shows delta / L1-norm is the same number as the absolute rule, and delta / n accepts errors growing to 8e-8."
+affected_files:
+  - Sources/BusinessMath/Network/Weighted/WeightedCentrality.swift
+  - Sources/BusinessMath/Network/Weighted/WeightedCommunity.swift
+  - Sources/BusinessMath/Network/Weighted/GraphMeasureError.swift
+  - Sources/BusinessMath/Network/Metrics/StandardMetrics.swift
+  - Tests/BusinessMathTests/Network Tests/Weighted/PageRankConvergenceTests.swift
+  - Tests/BusinessMathTests/Network Tests/Metrics/MetricRecordGoldenTests.swift
+  - Tests/BusinessMathTests/Network Tests/Metrics/GoldenRecordData.swift
+  - Tests/TestSupport/DensePageRank.swift
+supersedes: null
+amends: ADR-007
 superseded_by: null
 ```

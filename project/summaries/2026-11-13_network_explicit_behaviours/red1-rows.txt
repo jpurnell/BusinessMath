@@ -1,0 +1,64 @@
+􁁛  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" with 19 test cases passed
+􁁛  Test "A record for a metric this build does not know decodes and re-encodes unchanged" passed
+􁁛  Test "The fixture set covers the cases the plan names" passed
+􀢄  Test "The same listing comes from a registry of integer nodes" failed
+􁁛  Test "A version 3 eigenvector record decodes, reads as plain scores, and re-encodes to the stored bytes" passed
+􁁛  Test "A version 2 eigenvector record, with no convergence, decodes and reads as unknown" passed
+􁁛  Test "A version 4 record with a report decodes and keeps the report" passed
+􀢄  Test "The descriptor listing encodes to exactly the stored text" failed
+􀢄  Test "A version 1 pagerank record decodes as 1, distinct from the version 3 the registry writes now" failed
+􀢄  Test "The stored listing decodes to the descriptors the registry lists, in order" failed
+􁁛  Test "The fixture set covers the cases the plan names" passed
+􀢄  Test "Identifiers and versions are exactly the stored ones, with no metric added or dropped" failed
+􀢄  Test "A zero ceiling still runs one pass, as pageRank does" failed
+􁁛  Test "Every score, convergence figure and community number matches bit for bit" with 20 test cases passed
+􁁛  Test "A stored record decodes to the record the registry makes, and re-encodes to the same bytes" with 20 test cases passed
+􁁛  Test "A stored envelope decodes to the typed value of its kind" with 20 test cases passed
+􁁛  Test "The bare envelope the registry returns is byte-for-byte the stored envelope" with 20 test cases passed
+􀢄  Test "A looser tolerance never needs more passes, and an enormous one stops
+􀢄  Test "The default call converges on every family, with the ceiling's margin intact" failed
+􀢄  Test "At the default damping and tolerance, convergence is reached within the pass count the bound predicts, on every family" failed
+􀢄  Test "Damping 0.9 stops short on a path within the default ceiling, which the bound also predicts" failed
+􀢄  Test "Degenerate graphs: an empty graph has nothing to iterate; one node and an edgeless graph settle at once" failed
+􀢄  Test "Does not claim convergence when the ceiling is too small, and does when it is large" failed
+􀢄  Test "The residual is the final L1 change, and one pass fewer is not yet converged" failed
+􀢄  Test "Damping 0.99 at the default ceiling does not converge, says so, and the scores really are off" failed
+􁁛  Test "Eigenvector envelopes at non-default ceilings and tolerances match the stored text and bits" passed
+􁁛  Test "The record the registry makes is byte-for-byte the stored record" with 20 test cases passed
+􁁛  Test "The long path misses the default ceiling and says so in the stored record" passed
+􁁛  Test "Each fixture stores a record for every registered metric" with 20 test cases passed
+􁁛  Test "Karate on integer nodes matches the stored values bit for bit, by every registered metric" passed
+􁁛  Test "The record initialiser keeps every field it is given" passed
+􁁛  Test "An unknown identifier records nothing" passed
+􁁛  Test "Round-trips through Codable so a record survives to be compared later" passed
+􁁛  Test "Records the context and metric version alongside the numbers" passed
+􀢄  Test "The stored shape is kind 'scores' with an optional convergence key, so plain-scores readers still work" failed
+􁁛  Test "An eigenvector record stored under version 2 decodes as 2; a new one carries 4" passed
+􀢄  Test "A damping that cannot converge in the ceiling is recorded as not converged, with the sentence that says so" failed
+􁁛  Test "Uses the clock it was given rather than reading the wall clock" passed
+􀢄  Test "Moved metrics keep the versions they had; eigenvector is at 4 and pagerank at 3" failed
+􁁛  Test "A record's output is what run returns for the same graph" passed
+􀢄  Test "The registered metric is pagerank at version 3 and its defaults are the loop's" failed
+􁁛  Test "Returns nil for an unknown identifier rather than throwing" passed
+􁁛  Test "A version 2 pagerank record, written before convergence was reported, still decodes, reads as unknown, and re-encodes to the stored bytes" passed
+􁁛  Test "An empty registry lists nothing and runs nothing" passed
+􁁛  Test "When two metrics share an identifier the first wins, in the initialiser and in registering" passed
+􁁛  Test "A partition metric comes back as a partition envelope" passed
+􁁛  Test "The registry lists its metrics in identifier order, once each" passed
+􀢄  Test "It returns the same scores as Centrality.pageRank, bit for bit, plus the report of that run" failed
+􁁛  Test "A metric looked up by identifier carries the descriptor it was registered with" passed
+􁁛  Test "A metric that throws makes the registry throw, not return nil" passed
+􁁛  Test "A new metric can be added without touching existing code" passed
+􁁛  Test "Ships the metrics the design calls for" passed
+􁁛  Test "Every added measure is in the registry, and there are exactly eleven" passed
+􁁛  Test "Every metric states what a low score does and does not mean" passed
+􁁛  Test "Runs a metric by identifier" passed
+􁁛  Test "Every standard metric's envelope is the value its function returns, wrapped" passed
+􁁛  Test "The seed selector is deliberately not in the standard registry" passed
+􁁛  Test "A custom value type can travel through the registry" passed
+􁁛  Test "The seed selector registers and round-trips as a selection envelope" passed
+􀢄  Test "A star of 5,000 at the defaults converges, to the closed form" failed
+􁁛  Test "The a-priori bound is the oracle:
+􁁛  Test "pageRank and pageRankConvergence are one loop: identical scores bit for bit, and identical to the loop as it was before this change" with 6 test cases passed
+􀢄  Test "A very large star cannot meet the tolerance and reports that, while its scores are still accurate" failed
+􀢄  Test run with 63 tests in 8 suites failed

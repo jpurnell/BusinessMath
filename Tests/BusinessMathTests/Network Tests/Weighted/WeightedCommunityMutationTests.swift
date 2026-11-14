@@ -169,7 +169,7 @@ struct ModularityMutationTests {
 	@Test("Two triangles and a bridge, split at the bridge")
 	func twoTrianglesAndBridge() throws {
 		let g = graph([("a", "b"), ("b", "c"), ("a", "c"), ("x", "y"), ("y", "z"), ("x", "z"), ("c", "x")])
-		let q = Community.modularity(g, partition: partition([["a", "b", "c"], ["x", "y", "z"]]))
+		let q = try Community.modularity(g, partition: partition([["a", "b", "c"], ["x", "y", "z"]]))
 		#expect(close(q, 5.0 / 14.0))
 		#expect(close(modularityByDefinition(g, partition([["a", "b", "c"], ["x", "y", "z"]])), 5.0 / 14.0))
 	}
@@ -179,14 +179,14 @@ struct ModularityMutationTests {
 	@Test("Every node alone scores minus the sum of squared degree shares")
 	func singletons() throws {
 		let g = graph([("a", "b"), ("b", "c"), ("a", "c"), ("x", "y"), ("y", "z"), ("x", "z"), ("c", "x")])
-		let q = Community.modularity(g, partition: partition(g.nodes.map { [$0] }))
+		let q = try Community.modularity(g, partition: partition(g.nodes.map { [$0] }))
 		#expect(close(q, -34.0 / 196.0))
 	}
 
 	/// A single edge split in two: Q = 0 - 2 (1/2)^2 = -1/2, the lower bound.
 	@Test("A split edge reaches the lower bound of minus one half")
 	func lowerBound() throws {
-		let q = Community.modularity(graph([("a", "b")]), partition: partition([["a"], ["b"]]))
+		let q = try Community.modularity(graph([("a", "b")]), partition: partition([["a"], ["b"]]))
 		#expect(close(q, -0.5))
 	}
 
@@ -194,17 +194,17 @@ struct ModularityMutationTests {
 	/// edge but still pays for its degree. Q = (1/2 - (3/4)^2) + (0 - (1/4)^2) = -1/8.
 	@Test("A community with no internal edge still pays for its degree")
 	func communityWithoutInternalEdges() throws {
-		let q = Community.modularity(graph([("a", "b"), ("b", "c")]), partition: partition([["a", "b"], ["c"]]))
+		let q = try Community.modularity(graph([("a", "b"), ("b", "c")]), partition: partition([["a", "b"], ["c"]]))
 		#expect(close(q, -0.125))
 	}
 
 	/// The reverse placement, to catch a bookkeeping error that is symmetric in one direction only.
 	@Test("The same graph partitioned the other way")
 	func otherPlacement() throws {
-		let q = Community.modularity(graph([("a", "b"), ("b", "c")]), partition: partition([["a"], ["b", "c"]]))
+		let q = try Community.modularity(graph([("a", "b"), ("b", "c")]), partition: partition([["a"], ["b", "c"]]))
 		#expect(close(q, -0.125))
 		// All three together is zero, by definition.
-		#expect(close(Community.modularity(graph([("a", "b"), ("b", "c")]), partition: partition([["a", "b", "c"]])), 0))
+		#expect(close(try Community.modularity(graph([("a", "b"), ("b", "c")]), partition: partition([["a", "b", "c"]])), 0))
 	}
 
 	/// Weights: a-b weight 3, b-c weight 1 gives m = 4 and degrees 3, 4, 1 over 2m = 8.
@@ -212,7 +212,7 @@ struct ModularityMutationTests {
 	@Test("Weighted edges count by weight")
 	func weighted() throws {
 		let g = try WeightedGraph(edges: [("a", "b", 3.0), ("b", "c", 1.0)])
-		let q = Community.modularity(g, partition: partition([["a", "b"], ["c"]]))
+		let q = try Community.modularity(g, partition: partition([["a", "b"], ["c"]]))
 		let inside: Double = 3.0 / 4.0
 		let squareAB: Double = 49.0 / 64.0
 		let squareC: Double = 1.0 / 64.0
@@ -221,12 +221,15 @@ struct ModularityMutationTests {
 		#expect(close(q, -1.0 / 32.0))
 	}
 
-	@Test("A node with no community assignment is left out of the sums")
+	/// Before ADR-009 this scored -1/16, leaving c out of the sums as if it were not in the graph.
+	/// The textbook helper still computes that number for a partial partition, which is the point:
+	/// the old answer was a number for a different question.
+	@Test("A node with no community assignment is refused, not left out of the sums (ADR-009)")
 	func partialPartition() throws {
 		let g = graph([("a", "b"), ("b", "c")])
-		// Only a and b are assigned, together. By the definition: -1/16.
-		let q = Community.modularity(g, partition: NodePartition(["a": 0, "b": 0]))
-		#expect(close(q, -0.0625))
+		#expect(throws: GraphMeasureError.self) {
+			_ = try Community.modularity(g, partition: NodePartition(["a": 0, "b": 0]))
+		}
 		#expect(close(modularityByDefinition(g, NodePartition(["a": 0, "b": 0])), -0.0625))
 	}
 
@@ -236,9 +239,9 @@ struct ModularityMutationTests {
 	@Test("A graph of total weight below one still has a modularity")
 	func lightGraph() throws {
 		let g = try WeightedGraph(edges: [("a", "b", 0.25), ("b", "c", 0.25)])
-		#expect(close(Community.modularity(g, partition: partition([["a", "b"], ["c"]])), -0.125))
+		#expect(close(try Community.modularity(g, partition: partition([["a", "b"], ["c"]])), -0.125))
 		let tiny = try WeightedGraph(edges: [("a", "b", 0.001), ("b", "c", 0.001)])
-		#expect(close(Community.modularity(tiny, partition: partition([["a", "b"], ["c"]])), -0.125))
+		#expect(close(try Community.modularity(tiny, partition: partition([["a", "b"], ["c"]])), -0.125))
 	}
 
 	/// Terms are added in community order so the total is the same bit pattern
@@ -272,7 +275,7 @@ struct ModularityMutationTests {
 			for c in degrees.keys.sorted() where inside[c] == nil {
 				expected -= pow((degrees[c] ?? 0) / (2 * total), 2)
 			}
-			let actual = Community.modularity(g, partition: p)
+			let actual = try Community.modularity(g, partition: p)
 			#expect(close(actual, expected, tolerance: 1e-12))
 			if actual != expected { mismatches += 1 }
 		}
@@ -281,8 +284,8 @@ struct ModularityMutationTests {
 
 	@Test("A graph with no edges has modularity zero")
 	func edgeless() throws {
-		#expect(Community.modularity(graph([], isolated: ["a", "b"]), partition: partition([["a"], ["b"]])) == 0)
-		#expect(Community.modularity(try WeightedGraph<String>(edges: []), partition: NodePartition([:])) == 0)
+		#expect(try Community.modularity(graph([], isolated: ["a", "b"]), partition: partition([["a"], ["b"]])) == 0)
+		#expect(try Community.modularity(try WeightedGraph<String>(edges: []), partition: NodePartition([:])) == 0)
 	}
 
 	// MARK: Properties
@@ -296,11 +299,11 @@ struct ModularityMutationTests {
 			var rng = SplitMix64(seed: 3_000 + seed)
 			let parts = 1 + Int(seed % 4)
 			var map: [String: Int] = [:]
-			for node in g.nodes where Int.random(in: 0..<8, using: &rng) != 0 {   // some unassigned
+			for node in g.nodes {   // complete: a partial partition is refused since ADR-009
 				map[node] = Int.random(in: 0..<parts, using: &rng)
 			}
 			let p = NodePartition(map)
-			let q = Community.modularity(g, partition: p)
+			let q = try Community.modularity(g, partition: p)
 			#expect(close(q, modularityByDefinition(g, p), tolerance: 1e-9), "seed \(seed)")
 		}
 	}
@@ -312,7 +315,7 @@ struct ModularityMutationTests {
 			var rng = SplitMix64(seed: 5_000 + seed)
 			let p = NodePartition(Dictionary(uniqueKeysWithValues:
 				g.nodes.map { ($0, Int.random(in: 0..<(1 + Int(seed % 5)), using: &rng)) }))
-			let q = Community.modularity(g, partition: p)
+			let q = try Community.modularity(g, partition: p)
 			#expect(q >= -0.5 - 1e-12 && q < 1, "seed \(seed): \(q)")
 		}
 	}
@@ -324,13 +327,13 @@ struct ModularityMutationTests {
 			let g = try WeightedGraph(edges: edges, isolatedNodes: names(8))
 			var rng = SplitMix64(seed: 7_000 + seed)
 			let map = Dictionary(uniqueKeysWithValues: g.nodes.map { ($0, Int.random(in: 0..<3, using: &rng)) })
-			let base = Community.modularity(g, partition: NodePartition(map))
+			let base = try Community.modularity(g, partition: NodePartition(map))
 
-			let renumbered = Community.modularity(g, partition: NodePartition(map.mapValues { ($0 + 1) * 17 }))
-			let scaled = Community.modularity(
+			let renumbered = try Community.modularity(g, partition: NodePartition(map.mapValues { ($0 + 1) * 17 }))
+			let scaled = try Community.modularity(
 				try WeightedGraph(edges: edges.map { ($0.0, $0.1, $0.2 * 6) }, isolatedNodes: names(8)),
 				partition: NodePartition(map))
-			let renamed = Community.modularity(
+			let renamed = try Community.modularity(
 				try WeightedGraph(edges: edges.map { ("q" + $0.0, "q" + $0.1, $0.2) }, isolatedNodes: names(8).map { "q" + $0 }),
 				partition: NodePartition(Dictionary(uniqueKeysWithValues: map.map { ("q" + $0.key, $0.value) })))
 			#expect(close(renumbered, base, tolerance: 1e-12))
@@ -357,7 +360,7 @@ struct LouvainMutationTests {
 		#expect(p["b0"] == p["b1"] && p["b1"] == p["b2"] && p["b2"] == p["b3"])
 		#expect(p["a0"] != p["b0"])
 		// m = 13, each clique holds 6 edges and degree 13: Q = 2 (6/13 - 1/4).
-		#expect(close(Community.modularity(twoCliques, partition: p), 2 * (6.0 / 13.0 - 0.25)))
+		#expect(close(try Community.modularity(twoCliques, partition: p), 2 * (6.0 / 13.0 - 0.25)))
 	}
 
 	@Test("Three cliques in a ring are three communities")
@@ -387,9 +390,9 @@ struct LouvainMutationTests {
 		#expect(light["a"] == light["c"] && light["x"] == light["z"] && light["c"] != light["x"])
 		let heavy = Community.louvain(try build(link: 40))
 		#expect(heavy["c"] == heavy["x"])
-		#expect(close(Community.modularity(try build(link: 40), partition: heavy),
+		#expect(close(try Community.modularity(try build(link: 40), partition: heavy),
 					  modularityByDefinition(try build(link: 40), heavy)))
-		#expect(Community.modularity(try build(link: 40), partition: heavy) > 0.16)
+		#expect(try Community.modularity(try build(link: 40), partition: heavy) > 0.16)
 	}
 
 	@Test("Without edges each node is its own community, numbered in node order")
@@ -487,7 +490,9 @@ struct LouvainMutationTests {
 								  isolatedNodes: names(14))
 			let p = Community.louvain(g)
 			let singletons = NodePartition(Dictionary(uniqueKeysWithValues: g.nodes.enumerated().map { ($1, $0) }))
-			#expect(Community.modularity(g, partition: p) >= Community.modularity(g, partition: singletons) - 1e-12)
+			let louvainScore = try Community.modularity(g, partition: p)
+			let singletonScore = try Community.modularity(g, partition: singletons)
+			#expect(louvainScore >= singletonScore - 1e-12)
 			let components = Community.connectedComponents(g)
 			for u in g.nodes {
 				for v in g.nodes where p[u] == p[v] {
@@ -520,7 +525,9 @@ struct LouvainMutationTests {
 			let one = Community.louvain(g, maxPasses: 1)
 			let many = Community.louvain(g, maxPasses: 20)
 			#expect(Community.louvain(g, maxPasses: 0) == one)
-			#expect(Community.modularity(g, partition: many) >= Community.modularity(g, partition: one) - 1e-12)
+			let manyScore = try Community.modularity(g, partition: many)
+			let oneScore = try Community.modularity(g, partition: one)
+			#expect(manyScore >= oneScore - 1e-12)
 		}
 	}
 
@@ -549,7 +556,7 @@ struct LouvainMutationTests {
 				let q = modularityByDefinition(g, NodePartition(Dictionary(uniqueKeysWithValues: zip(g.nodes, labels))))
 				best = max(best, q)
 			}
-			let found = Community.modularity(g, partition: Community.louvain(g))
+			let found = try Community.modularity(g, partition: Community.louvain(g))
 			#expect(close(found, best, tolerance: 1e-9), "found \(found) best \(best)")
 		}
 	}

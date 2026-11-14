@@ -125,16 +125,12 @@ private let disconnectedFixtures: [CrossCheckFixture] = [
 
 private let allFixtures: [CrossCheckFixture] = connectedFixtures + disconnectedFixtures
 
-/// Fixtures on which the two Louvain implementations legitimately-but-undesirably differ; see
-/// `louvainTieRuleFinding`.
-private let louvainTieRuleDisagreements: Set<String> = ["random3"]
-
 private func louvainOutcome(_ fixture: CrossCheckFixture) throws -> (sameSets: Bool, modularityDifference: Double) {
 	let graph = fixture.weighted
 	let weighted = Community.louvain(graph)
 	let plain = try #require(fixture.plain.louvainCommunities())
 	let plainQ = try #require(fixture.plain.modularity(of: plain))
-	let weightedQ = Community.modularity(graph, partition: weighted)
+	let weightedQ = try Community.modularity(graph, partition: weighted)
 	return (Set(plain) == asSets(weighted), abs(plainQ - weightedQ))
 }
 
@@ -176,7 +172,7 @@ struct UnweightedWeightedCrossCheckTests {
 	@Test("PageRank agrees to 1e-10, including dangling nodes (isolates)", arguments: allFixtures)
 	func pageRankAgrees(_ fixture: CrossCheckFixture) throws {
 		let plain = try #require(fixture.plain.pageRank())
-		let weighted = Centrality.pageRank(fixture.weighted)
+		let weighted = try Centrality.pageRank(fixture.weighted)
 		let difference = try #require(maxDifference(plain, weighted))
 		#expect(difference < 1e-10)
 	}
@@ -205,7 +201,7 @@ struct UnweightedWeightedCrossCheckTests {
 		#expect(peak > 0)
 		var rescaled: [String: Double] = [:]
 		for (node, value) in plain { rescaled[node] = value / peak }
-		let report = Centrality.eigenvectorConvergence(fixture.weighted, maxIterations: 20_000, tolerance: 1e-12)
+		let report = try Centrality.eigenvectorConvergence(fixture.weighted, maxIterations: 20_000, tolerance: 1e-12)
 		#expect(report.converged)
 		let difference = try #require(maxDifference(rescaled, report.scores))
 		#expect(difference < 1e-6)
@@ -218,37 +214,32 @@ struct UnweightedWeightedCrossCheckTests {
 			let peak = try #require(plain.values.max())
 			var rescaled: [String: Double] = [:]
 			for (node, value) in plain { rescaled[node] = value / peak }
-			let weighted = Centrality.eigenvector(fixture.weighted)
+			let weighted = try Centrality.eigenvector(fixture.weighted)
 			let difference = try #require(maxDifference(rescaled, weighted))
 			#expect(difference < 1e-6)
 		}
 	}
 
-	@Test("Eigenvector, difference: the unweighted measure refuses a disconnected graph, the weighted one scores the dominant component and leaves the rest near zero (ADR-007)",
+	@Test("Eigenvector, agreement since ADR-009: both refuse a disconnected graph, nil unweighted and a thrown error weighted",
 		  arguments: [disconnectedFixtures[1], disconnectedFixtures[2], disconnectedFixtures[3]])
-	func eigenvectorDisconnectedDifference(_ fixture: CrossCheckFixture) {
+	func eigenvectorDisconnectedBothRefuse(_ fixture: CrossCheckFixture) {
 		#expect(fixture.plain.eigenvectorCentrality() == nil)
-		let weighted = Centrality.eigenvector(fixture.weighted)
-		#expect(weighted.scores.values.max() == 1)
-		// Not exactly zero: the other components decay with every pass (about 3.5e-12 after
-		// the default 200 on the path with isolates), so "near zero" is the honest description.
-		#expect(weighted.scores.values.contains { $0 < 1e-6 })
+		#expect(throws: GraphMeasureError.self) { _ = try Centrality.eigenvector(fixture.weighted) }
 	}
 
-	@Test("Eigenvector, difference: two components with the same leading eigenvalue both score one weighted, and the unweighted measure still refuses")
-	func eigenvectorTiedComponentsDifference() {
+	@Test("Eigenvector, agreement since ADR-009: two components with the same leading eigenvalue are refused by both too")
+	func eigenvectorTiedComponentsBothRefuse() {
 		let fixture = disconnectedFixtures[0]
 		#expect(fixture.plain.eigenvectorCentrality() == nil)
-		let weighted = Centrality.eigenvector(fixture.weighted)
-		for score in weighted.scores.values { #expect(abs(score - 1) < 1e-9) }
+		#expect(throws: GraphMeasureError.self) { _ = try Centrality.eigenvector(fixture.weighted) }
 	}
 
-	@Test("Eigenvector, difference: an edgeless graph is nil unweighted, all ones weighted")
-	func eigenvectorEdgelessDifference() {
+	@Test("Eigenvector, agreement since ADR-009: an edgeless graph is nil unweighted and refused weighted (it scored all ones before)")
+	func eigenvectorEdgelessBothRefuse() {
 		let plain = Graph<String>(adjacency: ["a": [], "b": [], "c": []])
 		#expect(plain.eigenvectorCentrality() == nil)
-		let weighted = Centrality.eigenvector(WeightedGraph(unweightedEdges: [], isolatedNodes: ["a", "b", "c"]))
-		#expect(weighted.scores == ["a": 1, "b": 1, "c": 1])
+		let weighted = WeightedGraph<String>(unweightedEdges: [], isolatedNodes: ["a", "b", "c"])
+		#expect(throws: GraphMeasureError.self) { _ = try Centrality.eigenvector(weighted) }
 	}
 
 	@Test("Modularity of the same partition agrees to 1e-12: the weighted Louvain result, the components, and singletons",
@@ -263,38 +254,30 @@ struct UnweightedWeightedCrossCheckTests {
 		for candidate in candidates {
 			let sets = candidate.groups.map { Set($0.members) }
 			let plain = try #require(fixture.plain.modularity(of: sets))
-			let weighted = Community.modularity(graph, partition: candidate)
+			let weighted = try Community.modularity(graph, partition: candidate)
 			#expect(abs(plain - weighted) < 1e-12)
 		}
 	}
 
 	@Test("Louvain: the partitions are the same sets of nodes and have the same modularity",
-		  arguments: allFixtures.filter { !louvainTieRuleDisagreements.contains($0.name) })
+		  arguments: allFixtures)
 	func louvainAgrees(_ fixture: CrossCheckFixture) throws {
 		let outcome = try louvainOutcome(fixture)
 		#expect(outcome.sameSets)
 		#expect(outcome.modularityDifference < 1e-12)
 	}
 
-	/// FINDING, not a tolerance to loosen. On `random3` the two implementations return different
-	/// partitions (modularity 0.3615 unweighted, 0.3569 weighted). The cause is the move rule:
-	/// the weighted Louvain moves a node only if the gain beats the best by more than 1e-12, the
-	/// unweighted one if it is strictly greater, so a tie that is exact on paper is decided by
-	/// floating-point rounding there and kept as a tie here. Run on the same graph with the same
-	/// 1e-12 margin added to the unweighted rule, the partitions are identical, and over 300 other
-	/// seeded random connected graphs of 10 to 39 nodes exactly one more disagreed, for the same
-	/// reason. Both partitions are valid local optima; neither is wrong, but the unweighted one
-	/// is not reproducible against the weighted one on tied moves. This test pins the current
-	/// difference and fails as soon as it disappears, which is the signal to move `random3` back
-	/// into `louvainAgrees`.
-	@Test("Louvain, finding: random3 is split differently because the unweighted move rule has no tie margin")
-	func louvainTieRuleFinding() throws {
+	/// `random3` used to be split differently by the two implementations (modularity 0.3615 unweighted,
+	/// 0.3569 weighted): the weighted Louvain moves a node only if the gain beats the best by more than
+	/// 1e-12, the unweighted one if it was strictly greater, so a tie that is exact on paper was
+	/// decided by rounding there and kept as a tie here. It was pinned as a known issue until step 4
+	/// (ADR-009) gave the unweighted rule the same margin; it is a plain assertion now.
+	@Test("Louvain: random3 is split the same way by both, now that the unweighted move rule has the tie margin")
+	func louvainTieRuleRandom3() throws {
 		let fixture = try #require(allFixtures.first { $0.name == "random3" })
 		let outcome = try louvainOutcome(fixture)
-		withKnownIssue("unweighted Louvain decides exact ties by rounding; weighted uses a 1e-12 margin") {
-			#expect(outcome.sameSets)
-			#expect(outcome.modularityDifference < 1e-12)
-		}
+		#expect(outcome.sameSets)
+		#expect(outcome.modularityDifference < 1e-12)
 	}
 
 	@Test("Louvain on the karate club finds the same four communities in both")
@@ -307,23 +290,35 @@ struct UnweightedWeightedCrossCheckTests {
 	}
 
 	@Test("Modularity, difference: an edgeless graph is nil unweighted and zero weighted")
-	func modularityEdgelessDifference() {
+	func modularityEdgelessDifference() throws {
 		let plain = Graph<String>(adjacency: ["a": [], "b": []])
 		#expect(plain.modularity(of: [["a"], ["b"]]) == nil)
 		let weighted = WeightedGraph<String>(unweightedEdges: [], isolatedNodes: ["a", "b"])
-		let value = Community.modularity(weighted, partition: partition([["a"], ["b"]]))
+		let value = try Community.modularity(weighted, partition: partition([["a"], ["b"]]))
 		#expect(value == 0)
 	}
 
-	@Test("Modularity, difference: a partition that omits a node is nil unweighted, silently scored weighted (a known fail-silent behaviour, ADR-007)")
-	func modularityPartialPartitionDifference() {
+	@Test("Modularity, agreement since ADR-009: a partition that omits a node is refused by both, nil unweighted and a thrown error weighted")
+	func modularityPartialPartitionBothRefuse() {
 		let fixture = connectedFixtures[0]
 		let omitted = fixture.edges[0].0
 		var sets = Community.connectedComponents(fixture.weighted).groups.map { Set($0.members) }
 		sets[0].remove(omitted)
 		#expect(fixture.plain.modularity(of: sets) == nil)
-		let value = Community.modularity(fixture.weighted, partition: partition(sets))
-		#expect(value.isFinite)
+		#expect(throws: GraphMeasureError.self) {
+			_ = try Community.modularity(fixture.weighted, partition: partition(sets))
+		}
+	}
+
+	@Test("Modularity, agreement since ADR-009: a partition that names a node the graph does not have is refused by both")
+	func modularityForeignNodeBothRefuse() {
+		let fixture = connectedFixtures[0]
+		var sets = Community.connectedComponents(fixture.weighted).groups.map { Set($0.members) }
+		sets[0].insert("not-a-node")
+		#expect(fixture.plain.modularity(of: sets) == nil)
+		#expect(throws: GraphMeasureError.self) {
+			_ = try Community.modularity(fixture.weighted, partition: partition(sets))
+		}
 	}
 
 	@Test("Louvain, difference: an edgeless graph is nil unweighted, every node alone weighted")

@@ -1,0 +1,267 @@
+􀟈  Test run started.
+􀄵  Testing Library Version: 2403
+􀄵  Target Platform: arm64e-apple-macos14.0
+􀟈  Suite "PageRank damping validation" started.
+􀟈  Suite "Mutation audit: clustering coefficient" started.
+􀟈  Suite "Mutation audit: closeness and harmonic centrality" started.
+􀟈  Suite "Mutation audit: components and k-core" started.
+􀟈  Suite "Mutation audit: eigenvector centrality" started.
+􀟈  Suite "PageRank metric, version 3" started.
+􀟈  Suite "Golden measures: bit-for-bit against SwiftGraphMetrics" started.
+􀟈  Suite "PageRank convergence report" started.
+􀟈  Suite "Mutation audit: PageRank" started.
+􀟈  Test "The registered metric refuses an invalid damping when it runs, through the registry and as a record" started.
+􀟈  Test "Zero damping is teleport only: every node scores 1/n" started.
+􀟈  Test "Damping just above the old cap is run as given, not as 0.999" started.
+􀟈  Test "The refusal does not depend on the graph, the ceiling or the tolerance: an empty graph refuses too" started.
+􀟈  Test "Component labels are dense and ordered by smallest member" started.
+􀟈  Test "Harmonic on a path of three" started.
+􀟈  Test "Closeness discounts what cannot be reached, and an isolate scores zero" started.
+􀟈  Suite "Mutation audit: betweenness" started.
+􀟈  Test "Triangle with a pendant" started.
+􀟈  Test "pageRankConvergence refuses the same dampings: it is the loop, so the two cannot disagree" started.
+􀟈  Test "A chain is one component however it is reached" started.
+􀟈  Test "The edges of the accepted range are accepted: 0, -0, 0.999, and the largest double below one" started.
+􀟈  Test "The default metric is unaffected: it still runs and still converges" started.
+􀟈  Test "Harmonic on a path of five weights distance 3 and 4 by their reciprocals" started.
+􀟈  Test "Both are invariant under weight scaling, which they ignore" started.
+􀟈  Test "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" started.
+􀟈  Test "Bow-tie centre" started.
+􀟈  Test "Harmonic counts the unreachable as zero but still divides by n - 1" started.
+􀟈  Test "k-core of paths, stars and cycles" started.
+􀟈  Test "The error compares equal to itself for NaN, and unequal across different values" started.
+􀟈  Test "Isolates and edgeless graphs score zero; every node is present" started.
+􀟈  Test "Closeness and harmonic agree with Floyd-Warshall distances on random graphs" started.
+􀟈  Test "Agrees with literal peeling on random graphs, and is bounded by degree" started.
+􀟈  Test "Closeness on a star" started.
+􀟈  Test "Weights do not affect core numbers" started.
+􀟈  Test "k-core of a clique with a pendant" started.
+􀟈  Test "Harmonic of a graph of at most one node is zero" started.
+􀟈  Test "A complete graph is fully clustered and a star not at all" started.
+􀟈  Test "Every node is in a component; edgeless graph gives n components" started.
+􀟈  Test "Old behaviour is gone: 1.5 no longer runs as 0.999, -1 no longer runs as 0, NaN no longer gives NaN scores" started.
+􀟈  Test "Accepted dampings give finite scores summing to one on every family: NaN can no longer come out" started.
+􀟈  Test "Closeness of a lone edge is one" started.
+􀟈  Test "Closeness on a path of three" started.
+􀟈  Test "A node of degree two whose neighbours are not linked scores zero" started.
+􀟈  Test "Peeling a tail does not reduce the core beneath it" started.
+􀟈  Test "Closeness of a graph of at most one node is zero" started.
+􀟈  Test "An edgeless graph scores every node exactly 1, the tied largest" started.
+􀟈  Test "One pass from the uniform start, by hand" started.
+􀟈  Test "Agrees with explicit triangle counting on random graphs; weights are ignored" started.
+􀟈  Test "The iteration ceiling is honoured and never below one" started.
+􀟈  Test "Star: the hub is 1 and each leaf is one half" started.
+􀟈  Test "The result satisfies A v = lambda v on random graphs, trees included" started.
+􀟈  Test "Agrees with union-find on random graphs, and two nodes share a label iff connected" started.
+􀟈  Test "It returns the same scores as Centrality.pageRank, bit for bit, plus the report of that run" started.
+􀟈  Test "Invariant under an arbitrary permutation of the labels" started.
+􀟈  Test "Path of three: the middle node leads, the ends are 1/sqrt(2)" started.
+􀟈  Test "The stored shape is kind 'scores' with an optional convergence key, so plain-scores readers still work" started.
+􀟈  Test "The registered metric is pagerank at version 3 and its defaults are the loop's" started.
+􀟈  Test "A damping that cannot converge in the ceiling is recorded as not converged, with the sentence that says so" started.
+􀟈  Test "Weighted path of three matches the closed form" started.
+􀟈  Test "Stops when the change per pass falls below the tolerance, exactly as documented" started.
+􀟈  Test "A version 2 pagerank record, written before convergence was reported, still decodes, reads as unknown, and re-encodes to the stored bytes" started.
+􀟈  Test "Path of four: the ends are 1/phi" started.
+􀟈  Test case passing 1 argument damping → inf to "pageRankConvergence refuses the same dampings: it is the loop, so the two cannot disagree" started.
+􀟈  Test case passing 1 argument damping → nan to "pageRankConvergence refuses the same dampings: it is the loop, so the two cannot disagree" started.
+􀟈  Test "Complete bipartite K(2,3): sides are 1 and sqrt(2/3)" started.
+􀟈  Test case passing 1 argument damping → -inf to "pageRankConvergence refuses the same dampings: it is the loop, so the two cannot disagree" started.
+􀟈  Test "A node with no ties scores zero beside a connected component" started.
+􀟈  Test case passing 1 argument damping → 1.0 to "pageRankConvergence refuses the same dampings: it is the loop, so the two cannot disagree" started.
+􀟈  Test "The defaults are 200 iterations and a tolerance of 1e-10" started.
+􀟈  Test "An enormous tolerance stops after one pass; a negative one runs to the ceiling" started.
+􀟈  Test case passing 1 argument damping → nan to "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" started.
+􀟈  Test case passing 1 argument damping → 2.5 to "pageRankConvergence refuses the same dampings: it is the loop, so the two cannot disagree" started.
+􀟈  Test case passing 1 argument damping → inf to "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" started.
+􀟈  Test case passing 1 argument damping → 1e+300 to "pageRankConvergence refuses the same dampings: it is the loop, so the two cannot disagree" started.
+􀟈  Test case passing 1 argument damping → -inf to "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" started.
+􀟈  Test "Two nodes: a joined pair both score one, and two strangers both appear" started.
+􀟈  Test case passing 1 argument damping → -0.3 to "pageRankConvergence refuses the same dampings: it is the loop, so the two cannot disagree" started.
+􀟈  Test case passing 1 argument damping → -1.0 to "pageRankConvergence refuses the same dampings: it is the loop, so the two cannot disagree" started.
+􀟈  Test "Path of six matches sin(k pi / 7) whatever the size of the weights" started.
+􀟈  Test case passing 1 argument damping → 1.0000001 to "pageRankConvergence refuses the same dampings: it is the loop, so the two cannot disagree" started.
+􀟈  Test case passing 1 argument damping → -5e-324 to "pageRankConvergence refuses the same dampings: it is the loop, so the two cannot disagree" started.
+􀟈  Test case passing 1 argument damping → 1.0000001 to "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" started.
+􀟈  Test case passing 1 argument damping → 2.5 to "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" started.
+􀟈  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀟈  Test case passing 1 argument damping → 1e+300 to "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" started.
+􀟈  Test "The empty graph has no scores and a lone node scores 1" started.
+􀟈  Test "The component with the larger eigenvalue takes all the weight" started.
+􀟈  Test case passing 1 argument damping → 1.0 to "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" started.
+􀟈  Test case passing 1 argument damping → -0.3 to "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" started.
+􀟈  Test case passing 1 argument damping → -1.0 to "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" started.
+􀟈  Test "The fixture set covers the cases the plan names" started.
+􀟈  Test case passing 1 argument damping → -5e-324 to "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" started.
+􀟈  Test "Invariant under relabelling that keeps the sort order, and under weight scaling" started.
+􀟈  Test "Degenerate graphs: an empty graph has nothing to iterate; one node and an edgeless graph settle at once" started.
+􀟈  Test "A star of 5,000 at the defaults converges, to the closed form" started.
+􀟈  Test "A looser tolerance never needs more passes, and an enormous one stops after the first" started.
+􀟈  Test "The default call converges on every family, with the ceiling's margin intact" started.
+􀟈  Test "The a-priori bound is the oracle: after k passes the L1 error is at most 2 * damping^k, on every family and damping" started.
+􀟈  Test "At the default damping and tolerance, convergence is reached within the pass count the bound predicts, on every family" started.
+􀟈  Test "The defaults are 200 iterations and a tolerance of 1e-12" started.
+􀟈  Test "Damping 0.9 stops short on a path within the default ceiling, which the bound also predicts" started.
+􀟈  Test "Invariant under weight scaling and under relabelling" started.
+􀟈  Test "Scores are positive and sum to one" started.
+􀟈  Test "The residual is the final L1 change, and one pass fewer is not yet converged" started.
+􀟈  Test "Does not claim convergence when the ceiling is too small, and does when it is large" started.
+􀟈  Test "Star matches the closed form" started.
+􀟈  Test "A very large star cannot meet the tolerance and reports that, while its scores are still accurate" started.
+􀟈  Test "The empty graph has no scores; a single node holds all the rank" started.
+􀟈  Test "A zero ceiling still runs one pass, as pageRank does" started.
+􀟈  Test "Damping 0.99 at the default ceiling does not converge, says so, and the scores really are off" started.
+􀟈  Test "The iteration ceiling is honoured and floored at one pass" started.
+􀟈  Test "A dangling node's mass is shared equally" started.
+􀟈  Test "Nodes in symmetric positions score the same" started.
+􀟈  Test "pageRank and pageRankConvergence are one loop: identical scores bit for bit, and identical to the loop as it was before this change" started.
+􀟈  Test "Agrees with a direct linear solve on random weighted graphs, isolates and light weights included" started.
+􀟈  Test "Path of three matches the closed form" started.
+􀟈  Test "A loose tolerance stops visibly short of the converged answer" started.
+􀟈  Test "Damping zero is uniform; out-of-range damping is refused, not clamped (ADR-009)" started.
+􀟈  Test "An enormous tolerance stops after one pass" started.
+􀟈  Test "The default tolerance reaches the converged answer to better than 1e-9" started.
+􀟈  Test "Star hub: raw 6, normalised 1" started.
+􀟈  Test "Four-cycle splits a pair between two shortest paths" started.
+􀟈  Test "Path of four: inner nodes 2 raw, 2/3 normalised" started.
+􀟈  Test "Edge weights record strength, not distance: they do not change the result" started.
+􀟈  Test "Graphs of at most two nodes score zero for every node" started.
+􀟈  Test "Normalised betweenness lies in [0, 1]; it is invariant under any relabelling" started.
+􀟈  Test "Path of three: the middle node carries the only pair, so 1 normalised and 1 raw" started.
+􀟈  Test "Brandes agrees with brute-force enumeration on random graphs, isolates included" started.
+􁁛  Test "Triangle with a pendant" passed after 0.007 seconds.
+􁁛  Test "Component labels are dense and ordered by smallest member" passed after 0.008 seconds.
+􁁛  Test "Closeness discounts what cannot be reached, and an isolate scores zero" passed after 0.008 seconds.
+􁁛  Test "Zero damping is teleport only: every node scores 1/n" passed after 0.008 seconds.
+􁁛  Test "pageRankConvergence refuses the same dampings: it is the loop, so the two cannot disagree" with 10 test cases passed after 0.008 seconds.
+􁁛  Test "A chain is one component however it is reached" passed after 0.008 seconds.
+􁁛  Test "The registered metric refuses an invalid damping when it runs, through the registry and as a record" passed after 0.009 seconds.
+􁁛  Test "Harmonic on a path of five weights distance 3 and 4 by their reciprocals" passed after 0.009 seconds.
+􁁛  Test "Harmonic on a path of three" passed after 0.009 seconds.
+􁁛  Test "A NaN, infinite, negative or at-least-one damping is refused by pageRank, and the error carries the value" with 10 test cases passed after 0.009 seconds.
+􁁛  Test "The default metric is unaffected: it still runs and still converges" passed after 0.009 seconds.
+􁁛  Test "Damping just above the old cap is run as given, not as 0.999" passed after 0.010 seconds.
+􁁛  Test "Harmonic counts the unreachable as zero but still divides by n - 1" passed after 0.009 seconds.
+􁁛  Test "The refusal does not depend on the graph, the ceiling or the tolerance: an empty graph refuses too" passed after 0.010 seconds.
+􀟈  Test case passing 1 argument name → "path7" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀟈  Test "Unreachable pairs contribute nothing" started.
+􀟈  Test case passing 1 argument name → "star7" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀟈  Test case passing 1 argument name → "triangle" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀟈  Test case passing 1 argument name → "evenCycle6" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀟈  Test case passing 1 argument name → "k23" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀟈  Test case passing 1 argument name → "kite" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􁁛  Test "Bow-tie centre" passed after 0.017 seconds.
+􀟈  Test case passing 1 argument name → "karate" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀟈  Test case passing 1 argument name → "weighted12" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀟈  Test case passing 1 argument name → "twoComponents" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀟈  Test case passing 1 argument name → "isolates" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􁁛  Test "The error compares equal to itself for NaN, and unequal across different values" passed after 0.029 seconds.
+􀟈  Test case passing 1 argument name → "edgeless4" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀟈  Test case passing 1 argument name → "single" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀟈  Test case passing 1 argument name → "empty" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀟈  Test case passing 1 argument name → "ringOfCliques" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀟈  Test case passing 1 argument name → "zeroWeights" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀟈  Test case passing 1 argument name → "random1" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀟈  Test case passing 1 argument name → "random2" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀟈  Test case passing 1 argument name → "random3" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􀟈  Test case passing 1 argument name → "random4" to "Every measure on every fixture reproduces SwiftGraphMetrics exactly" started.
+􁁛  Test "k-core of paths, stars and cycles" passed after 0.041 seconds.
+􁁛  Test "Closeness on a star" passed after 0.041 seconds.
+􁁛  Test "Harmonic of a graph of at most one node is zero" passed after 0.041 seconds.
+􁁛  Test "k-core of a clique with a pendant" passed after 0.041 seconds.
+􁁛  Test "Every node is in a component; edgeless graph gives n components" passed after 0.041 seconds.
+􁁛  Test "Weights do not affect core numbers" passed after 0.058 seconds.
+􁁛  Test "Closeness of a lone edge is one" passed after 0.099 seconds.
+􁁛  Test "A complete graph is fully clustered and a star not at all" passed after 0.115 seconds.
+􁁛  Test "Closeness on a path of three" passed after 0.127 seconds.
+􀟈  Test case passing 1 argument seed → 1 to "pageRank and pageRankConvergence are one loop: identical scores bit for bit, and identical to the loop as it was before this change" started.
+􀟈  Test case passing 1 argument seed → 2 to "pageRank and pageRankConvergence are one loop: identical scores bit for bit, and identical to the loop as it was before this change" started.
+􀟈  Test case passing 1 argument seed → 3 to "pageRank and pageRankConvergence are one loop: identical scores bit for bit, and identical to the loop as it was before this change" started.
+􀟈  Test case passing 1 argument seed → 4 to "pageRank and pageRankConvergence are one loop: identical scores bit for bit, and identical to the loop as it was before this change" started.
+􀟈  Test case passing 1 argument seed → 5 to "pageRank and pageRankConvergence are one loop: identical scores bit for bit, and identical to the loop as it was before this change" started.
+􀟈  Test case passing 1 argument seed → 6 to "pageRank and pageRankConvergence are one loop: identical scores bit for bit, and identical to the loop as it was before this change" started.
+􁁛  Test "A node of degree two whose neighbours are not linked scores zero" passed after 0.645 seconds.
+􁁛  Test "The edges of the accepted range are accepted: 0, -0, 0.999, and the largest double below one" passed after 0.645 seconds.
+􁁛  Test "Old behaviour is gone: 1.5 no longer runs as 0.999, -1 no longer runs as 0, NaN no longer gives NaN scores" passed after 0.645 seconds.
+􁁛  Test "Closeness of a graph of at most one node is zero" passed after 0.648 seconds.
+􁁛  Test "Peeling a tail does not reduce the core beneath it" passed after 0.648 seconds.
+􁁛  Test "Both are invariant under weight scaling, which they ignore" passed after 0.649 seconds.
+􁁛  Test "One pass from the uniform start, by hand" passed after 0.649 seconds.
+􁁛  Test "An edgeless graph scores every node exactly 1, the tied largest" passed after 0.649 seconds.
+􁁛  Test "Isolates and edgeless graphs score zero; every node is present" passed after 0.649 seconds.
+􁁛  Test "Star: the hub is 1 and each leaf is one half" passed after 0.649 seconds.
+􁁛  Test "Path of three: the middle node leads, the ends are 1/sqrt(2)" passed after 0.666 seconds.
+􁁛  Test "The iteration ceiling is honoured and never below one" passed after 0.666 seconds.
+􁁛  Test "Agrees with explicit triangle counting on random graphs; weights are ignored" passed after 0.666 seconds.
+􁁛  Test "The registered metric is pagerank at version 3 and its defaults are the loop's" passed after 0.666 seconds.
+􁁛  Test "Invariant under an arbitrary permutation of the labels" passed after 0.666 seconds.
+􁁛  Test "Weighted path of three matches the closed form" passed after 0.666 seconds.
+􁁛  Test "Agrees with literal peeling on random graphs, and is bounded by degree" passed after 0.666 seconds.
+􁁛  Test "A version 2 pagerank record, written before convergence was reported, still decodes, reads as unknown, and re-encodes to the stored bytes" passed after 0.665 seconds.
+􁁛  Test "Path of four: the ends are 1/phi" passed after 0.665 seconds.
+􁁛  Test "Complete bipartite K(2,3): sides are 1 and sqrt(2/3)" passed after 0.665 seconds.
+􁁛  Test "A node with no ties scores zero beside a connected component" passed after 0.665 seconds.
+􁁛  Test "The stored shape is kind 'scores' with an optional convergence key, so plain-scores readers still work" passed after 0.666 seconds.
+􁁛  Test "Closeness and harmonic agree with Floyd-Warshall distances on random graphs" passed after 0.666 seconds.
+􁁛  Test "Two nodes: a joined pair both score one, and two strangers both appear" passed after 0.665 seconds.
+􁁛  Test "An enormous tolerance stops after one pass; a negative one runs to the ceiling" passed after 0.665 seconds.
+􁁛  Test "Path of six matches sin(k pi / 7) whatever the size of the weights" passed after 0.665 seconds.
+􁁛  Test "Every measure on every fixture reproduces SwiftGraphMetrics exactly" with 19 test cases passed after 0.665 seconds.
+􁁛  Test "The empty graph has no scores and a lone node scores 1" passed after 0.665 seconds.
+􁁛  Test "The defaults are 200 iterations and a tolerance of 1e-10" passed after 0.666 seconds.
+􁁛  Test "The component with the larger eigenvalue takes all the weight" passed after 0.665 seconds.
+􁁛  Test "The result satisfies A v = lambda v on random graphs, trees included" passed after 0.666 seconds.
+􁁛  Test "Agrees with union-find on random graphs, and two nodes share a label iff connected" passed after 0.666 seconds.
+􁁛  Test "The fixture set covers the cases the plan names" passed after 0.665 seconds.
+􁁛  Test "Stops when the change per pass falls below the tolerance, exactly as documented" passed after 0.666 seconds.
+􁁛  Test "It returns the same scores as Centrality.pageRank, bit for bit, plus the report of that run" passed after 0.666 seconds.
+􁁛  Test "Degenerate graphs: an empty graph has nothing to iterate; one node and an edgeless graph settle at once" passed after 0.665 seconds.
+􁁛  Test "Invariant under relabelling that keeps the sort order, and under weight scaling" passed after 0.665 seconds.
+􁁛  Test "Accepted dampings give finite scores summing to one on every family: NaN can no longer come out" passed after 0.667 seconds.
+􁁛  Test "The defaults are 200 iterations and a tolerance of 1e-12" passed after 0.664 seconds.
+􁁛  Test "A looser tolerance never needs more passes, and an enormous one stops after the first" passed after 0.665 seconds.
+􁁛  Test "Scores are positive and sum to one" passed after 0.664 seconds.
+􁁛  Test "A damping that cannot converge in the ceiling is recorded as not converged, with the sentence that says so" passed after 0.666 seconds.
+􁁛  Test "Star matches the closed form" passed after 0.664 seconds.
+􁁛  Test "Invariant under weight scaling and under relabelling" passed after 0.664 seconds.
+􁁛  Test "The empty graph has no scores; a single node holds all the rank" passed after 0.664 seconds.
+􁁛  Test "A zero ceiling still runs one pass, as pageRank does" passed after 0.664 seconds.
+􁁛  Test "The default call converges on every family, with the ceiling's margin intact" passed after 0.665 seconds.
+􁁛  Test "The iteration ceiling is honoured and floored at one pass" passed after 0.664 seconds.
+􁁛  Test "A dangling node's mass is shared equally" passed after 0.664 seconds.
+􁁛  Test "Nodes in symmetric positions score the same" passed after 0.664 seconds.
+􁁛  Test "Does not claim convergence when the ceiling is too small, and does when it is large" passed after 0.664 seconds.
+􁁛  Test "The residual is the final L1 change, and one pass fewer is not yet converged" passed after 0.664 seconds.
+􁁛  Test "Damping 0.99 at the default ceiling does not converge, says so, and the scores really are off" passed after 0.664 seconds.
+􁁛  Test "Damping 0.9 stops short on a path within the default ceiling, which the bound also predicts" passed after 0.664 seconds.
+􁁛  Test "At the default damping and tolerance, convergence is reached within the pass count the bound predicts, on every family" passed after 0.664 seconds.
+􁁛  Test "Agrees with a direct linear solve on random weighted graphs, isolates and light weights included" passed after 0.664 seconds.
+􁁛  Test "Path of three matches the closed form" passed after 0.664 seconds.
+􁁛  Test "A loose tolerance stops visibly short of the converged answer" passed after 0.664 seconds.
+􁁛  Test "Damping zero is uniform; out-of-range damping is refused, not clamped (ADR-009)" passed after 0.664 seconds.
+􁁛  Test "An enormous tolerance stops after one pass" passed after 0.664 seconds.
+􁁛  Test "The default tolerance reaches the converged answer to better than 1e-9" passed after 0.664 seconds.
+􁁛  Test "Star hub: raw 6, normalised 1" passed after 0.664 seconds.
+􁁛  Test "Four-cycle splits a pair between two shortest paths" passed after 0.664 seconds.
+􁁛  Test "Path of four: inner nodes 2 raw, 2/3 normalised" passed after 0.664 seconds.
+􁁛  Test "Edge weights record strength, not distance: they do not change the result" passed after 0.664 seconds.
+􁁛  Test "Graphs of at most two nodes score zero for every node" passed after 0.663 seconds.
+􁁛  Test "Normalised betweenness lies in [0, 1]; it is invariant under any relabelling" passed after 0.663 seconds.
+􁁛  Test "Path of three: the middle node carries the only pair, so 1 normalised and 1 raw" passed after 0.663 seconds.
+􁁛  Test "Brandes agrees with brute-force enumeration on random graphs, isolates included" passed after 0.663 seconds.
+􁁛  Suite "Mutation audit: clustering coefficient" passed after 0.668 seconds.
+􁁛  Test "Unreachable pairs contribute nothing" passed after 0.657 seconds.
+􁁛  Suite "Mutation audit: eigenvector centrality" passed after 0.668 seconds.
+􁁛  Suite "PageRank metric, version 3" passed after 0.668 seconds.
+􁁛  Suite "Mutation audit: closeness and harmonic centrality" passed after 0.668 seconds.
+􁁛  Suite "Golden measures: bit-for-bit against SwiftGraphMetrics" passed after 0.668 seconds.
+􁁛  Suite "Mutation audit: components and k-core" passed after 0.668 seconds.
+􁁛  Suite "PageRank damping validation" passed after 0.668 seconds.
+􁁛  Suite "Mutation audit: PageRank" passed after 0.668 seconds.
+􁁛  Suite "Mutation audit: betweenness" passed after 0.668 seconds.
+􁁛  Test "A star of 5,000 at the defaults converges, to the closed form" passed after 1.529 seconds.
+􁁛  Test "The a-priori bound is the oracle: after k passes the L1 error is at most 2 * damping^k, on every family and damping" passed after 1.834 seconds.
+􁁛  Test "pageRank and pageRankConvergence are one loop: identical scores bit for bit, and identical to the loop as it was before this change" with 6 test cases passed after 2.275 seconds.
+􁁛  Test "A very large star cannot meet the tolerance and reports that, while its scores are still accurate" passed after 8.165 seconds.
+􁁛  Suite "PageRank convergence report" passed after 8.168 seconds.
+􁁛  Test run with 99 tests in 10 suites passed after 8.169 seconds.

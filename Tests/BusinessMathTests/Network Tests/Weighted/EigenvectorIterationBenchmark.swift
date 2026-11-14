@@ -126,14 +126,14 @@ struct EigenvectorIterationBenchmark {
 		for item in try Self.cases() {
 			let graph = item.graph
 			let started = Date()
-			let full = Centrality.eigenvectorConvergence(
+			let full = try Centrality.eigenvectorConvergence(
 				graph, maxIterations: Self.cap, tolerance: 1e-10)
 			let seconds = Date().timeIntervalSince(started)
-			let shipped = Centrality.eigenvectorConvergence(graph)
+			let shipped = try Centrality.eigenvectorConvergence(graph)
 
 			var reference: [Double]? = item.analytic
 			if reference == nil {
-				let tight = Centrality.eigenvectorConvergence(
+				let tight = try Centrality.eigenvectorConvergence(
 					graph, maxIterations: Self.cap, tolerance: 1e-13)
 				if tight.converged { reference = graph.nodes.map { tight.scores.scores[$0] ?? 0 } }
 			}
