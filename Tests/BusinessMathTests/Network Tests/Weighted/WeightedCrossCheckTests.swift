@@ -73,15 +73,17 @@ struct WeightedCrossCheckTests {
 
 	/// Louvain's own objective, scored by a function that shares none of its code.
 	@Test("Louvain's partition scores well under an independent modularity function")
-	func louvainScoresWell() {
+	func louvainScoresWell() throws {
 		let partition = Community.louvain(karate)
-		let score = Community.modularity(karate, partition: partition)
+		let score = try Community.modularity(karate, partition: partition)
 		// Any partition Louvain returns must beat both trivial partitions.
 		let single = NodePartition<String>(Dictionary(
 			uniqueKeysWithValues: karate.nodes.map { ($0, 0) }))
 		let singletons = NodePartition<String>(Dictionary(
 			uniqueKeysWithValues: karate.nodes.enumerated().map { ($0.element, $0.offset) }))
-		#expect(score > Community.modularity(karate, partition: single))
-		#expect(score > Community.modularity(karate, partition: singletons))
+		let singleScore = try Community.modularity(karate, partition: single)
+		let singletonScore = try Community.modularity(karate, partition: singletons)
+		#expect(score > singleScore)
+		#expect(score > singletonScore)
 	}
 }

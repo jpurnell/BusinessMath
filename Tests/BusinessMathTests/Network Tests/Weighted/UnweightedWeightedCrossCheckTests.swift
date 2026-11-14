@@ -134,7 +134,7 @@ private func louvainOutcome(_ fixture: CrossCheckFixture) throws -> (sameSets: B
 	let weighted = Community.louvain(graph)
 	let plain = try #require(fixture.plain.louvainCommunities())
 	let plainQ = try #require(fixture.plain.modularity(of: plain))
-	let weightedQ = Community.modularity(graph, partition: weighted)
+	let weightedQ = try Community.modularity(graph, partition: weighted)
 	return (Set(plain) == asSets(weighted), abs(plainQ - weightedQ))
 }
 
@@ -263,7 +263,7 @@ struct UnweightedWeightedCrossCheckTests {
 		for candidate in candidates {
 			let sets = candidate.groups.map { Set($0.members) }
 			let plain = try #require(fixture.plain.modularity(of: sets))
-			let weighted = Community.modularity(graph, partition: candidate)
+			let weighted = try Community.modularity(graph, partition: candidate)
 			#expect(abs(plain - weighted) < 1e-12)
 		}
 	}
@@ -307,23 +307,35 @@ struct UnweightedWeightedCrossCheckTests {
 	}
 
 	@Test("Modularity, difference: an edgeless graph is nil unweighted and zero weighted")
-	func modularityEdgelessDifference() {
+	func modularityEdgelessDifference() throws {
 		let plain = Graph<String>(adjacency: ["a": [], "b": []])
 		#expect(plain.modularity(of: [["a"], ["b"]]) == nil)
 		let weighted = WeightedGraph<String>(unweightedEdges: [], isolatedNodes: ["a", "b"])
-		let value = Community.modularity(weighted, partition: partition([["a"], ["b"]]))
+		let value = try Community.modularity(weighted, partition: partition([["a"], ["b"]]))
 		#expect(value == 0)
 	}
 
-	@Test("Modularity, difference: a partition that omits a node is nil unweighted, silently scored weighted (a known fail-silent behaviour, ADR-007)")
-	func modularityPartialPartitionDifference() {
+	@Test("Modularity, agreement since ADR-009: a partition that omits a node is refused by both, nil unweighted and a thrown error weighted")
+	func modularityPartialPartitionBothRefuse() {
 		let fixture = connectedFixtures[0]
 		let omitted = fixture.edges[0].0
 		var sets = Community.connectedComponents(fixture.weighted).groups.map { Set($0.members) }
 		sets[0].remove(omitted)
 		#expect(fixture.plain.modularity(of: sets) == nil)
-		let value = Community.modularity(fixture.weighted, partition: partition(sets))
-		#expect(value.isFinite)
+		#expect(throws: GraphMeasureError.self) {
+			_ = try Community.modularity(fixture.weighted, partition: partition(sets))
+		}
+	}
+
+	@Test("Modularity, agreement since ADR-009: a partition that names a node the graph does not have is refused by both")
+	func modularityForeignNodeBothRefuse() {
+		let fixture = connectedFixtures[0]
+		var sets = Community.connectedComponents(fixture.weighted).groups.map { Set($0.members) }
+		sets[0].insert("not-a-node")
+		#expect(fixture.plain.modularity(of: sets) == nil)
+		#expect(throws: GraphMeasureError.self) {
+			_ = try Community.modularity(fixture.weighted, partition: partition(sets))
+		}
 	}
 
 	@Test("Louvain, difference: an edgeless graph is nil unweighted, every node alone weighted")

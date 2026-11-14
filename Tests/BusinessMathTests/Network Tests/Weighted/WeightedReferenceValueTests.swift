@@ -137,10 +137,10 @@ struct CommunityTests {
 	}
 
 	@Test("Louvain reaches the modularity the literature reports for this graph")
-	func modularityThreshold() {
+	func modularityThreshold() throws {
 		// Published Louvain modularity on the karate club is about 0.41–0.42.
 		let partition = Community.louvain(karate)
-		let score = Community.modularity(karate, partition: partition)
+		let score = try Community.modularity(karate, partition: partition)
 		#expect(score >= 0.38, "modularity \(score) is below what Louvain should reach")
 		#expect(score <= 0.45, "modularity \(score) is implausibly high")
 	}
@@ -193,17 +193,19 @@ struct CommunityTests {
 	}
 
 	@Test("Modularity of everything-in-one-community is zero")
-	func trivialPartition() {
+	func trivialPartition() throws {
 		let single = NodePartition<String>(Dictionary(
 			uniqueKeysWithValues: karate.nodes.map { ($0, 0) }))
-		#expect(abs(Community.modularity(karate, partition: single)) < 1e-9)
+		let score = try Community.modularity(karate, partition: single)
+		#expect(abs(score) < 1e-9)
 	}
 
 	@Test("Modularity of every-node-alone is negative")
-	func singletonPartition() {
+	func singletonPartition() throws {
 		let singletons = NodePartition<String>(Dictionary(
 			uniqueKeysWithValues: karate.nodes.enumerated().map { ($0.element, $0.offset) }))
-		#expect(Community.modularity(karate, partition: singletons) < 0)
+		let score = try Community.modularity(karate, partition: singletons)
+		#expect(score < 0)
 	}
 }
 

@@ -455,6 +455,18 @@ decision: |
      The golden measure data keeps SwiftGraphMetrics's stored tokens for damping 1.5 and -1 and the
      test now asserts that they were exactly the damping-0.999 and damping-0 runs (the old clamp) and
      that the new outcome is a refusal.
+  3. Modularity validates its partition (no bump: no registered metric computes modularity).
+     Community.modularity(_:partition:) throws GraphMeasureError.partitionDoesNotMatchGraph(missing:unknown:)
+     unless the partition covers exactly the graph's nodes, naming the nodes left out and the foreign
+     nodes it mentions. It used to skip an unassigned node as if it were not in the graph and not notice
+     a foreign one, so a partial partition scored as a whole (the unweighted Graph.modularity(of:) has
+     always returned nil for both). The check runs before the edgeless shortcut. A throw, for the reason
+     in item 2, carrying the nodes because nil cannot. Source break: callers add try. Version: no metric in
+     MetricRegistry.standard computes modularity, Louvain and components never produce an invalid partition,
+     so no stored record can change and no version is bumped. The golden data keeps the stored token for
+     the partial partition and the test asserts the new outcome (refused) against it. UnweightedWeightedCrossCheckTests
+     now asserts agreement (both refuse) where it used to assert a difference; the edgeless difference
+     (nil unweighted, zero weighted) remains and is a documented, deliberate difference.
 rationale: |
   - Uniformity with eigenvector centrality, which has reported convergence since version 4: a reader
     should not have to remember which iterative metrics say so.
@@ -472,6 +484,7 @@ alternatives_rejected:
   - "Make the stopping rule relative: the measurement shows delta / L1-norm is the same number as the absolute rule, and delta / n accepts errors growing to 8e-8."
 affected_files:
   - Sources/BusinessMath/Network/Weighted/WeightedCentrality.swift
+  - Sources/BusinessMath/Network/Weighted/WeightedCommunity.swift
   - Sources/BusinessMath/Network/Weighted/GraphMeasureError.swift
   - Sources/BusinessMath/Network/Metrics/StandardMetrics.swift
   - Tests/BusinessMathTests/Network Tests/Weighted/PageRankConvergenceTests.swift

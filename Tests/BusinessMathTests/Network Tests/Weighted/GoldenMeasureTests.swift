@@ -27,7 +27,12 @@ struct GoldenMeasureTests {
 		#expect(actual.count == golden.expected.count)
 		for ((key, value), (expectedKey, expectedValue)) in zip(actual, golden.expected) {
 			#expect(key == expectedKey)
-			if let changed = Self.intentionallyChanged(key) {
+			if key == "modularity.partial" {
+				// ADR-009: every second node is left out, so the partition is partial unless the graph has
+				// at most one node. The stored token is what the old code returned for that partial partition.
+				let partial = graph.nodeCount > 1
+				#expect(value == (partial ? "refused" : expectedValue), "\(name) / \(key)")
+			} else if let changed = Self.intentionallyChanged(key) {
 				// ADR-009: the old output is kept in the data; the new outcome is asserted here.
 				#expect(value == "refused", "\(name) / \(key)")
 				#expect(expectedValue == changed(graph), "\(name) / \(key): the stored output was the clamped run")

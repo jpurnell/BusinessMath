@@ -33,6 +33,15 @@ func goldenTokensOrRefusal(_ graph: WeightedGraph<String>, _ body: () throws -> 
 	}
 }
 
+/// The bit pattern of a value that may now refuse its input, or `refused`.
+func goldenValueOrRefusal(_ body: () throws -> Double) -> String {
+	do {
+		return hex(try body())
+	} catch {
+		return "refused"
+	}
+}
+
 func goldenMeasures(_ graph: WeightedGraph<String>) -> [(String, String)] {
 	var out: [(String, String)] = []
 	func scores(_ key: String, _ value: NodeScores<String>) { out.append((key, goldenScoreTokens(value, graph))) }
@@ -77,11 +86,12 @@ func goldenMeasures(_ graph: WeightedGraph<String>) -> [(String, String)] {
 	parts("louvain.resolution0.5", Community.louvain(graph, resolution: 0.5))
 	parts("louvain.resolution2", Community.louvain(graph, resolution: 2.0))
 	parts("louvain.passes1", Community.louvain(graph, maxPasses: 1))
-	out.append(("modularity.louvain", hex(Community.modularity(graph, partition: louvain))))
-	out.append(("modularity.components", hex(Community.modularity(graph, partition: components))))
+	out.append(("modularity.louvain", goldenValueOrRefusal { try Community.modularity(graph, partition: louvain) }))
+	out.append(("modularity.components", goldenValueOrRefusal { try Community.modularity(graph, partition: components) }))
 	let singletons = NodePartition(Dictionary(uniqueKeysWithValues: graph.nodes.enumerated().map { ($0.element, $0.offset) }))
-	out.append(("modularity.singletons", hex(Community.modularity(graph, partition: singletons))))
+	out.append(("modularity.singletons", goldenValueOrRefusal { try Community.modularity(graph, partition: singletons) }))
 	let half = NodePartition(Dictionary(uniqueKeysWithValues: graph.nodes.enumerated().filter { $0.offset % 2 == 0 }.map { ($0.element, 0) }))
-	out.append(("modularity.partial", hex(Community.modularity(graph, partition: half))))
+	// Step 4 (ADR-009): a partition that leaves nodes out used to be scored; it is refused now.
+	out.append(("modularity.partial", goldenValueOrRefusal { try Community.modularity(graph, partition: half) }))
 	return out
 }

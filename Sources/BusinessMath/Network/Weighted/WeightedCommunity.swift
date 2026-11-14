@@ -20,23 +20,40 @@ public enum Community {
 	///   - partition: The community assignment to score.
 	/// - Returns: Modularity, conventionally between -0.5 and 1. Zero for a graph with no edge weight.
 	///
-	/// ## Current behaviour that a stricter measure would refuse
+	/// ## What it refuses
 	///
-	/// Recorded in ADR-007 and ported unchanged:
+	/// The partition must cover exactly the graph's nodes. A node the partition leaves out, or a
+	/// node it mentions that the graph does not have, throws
+	/// ``GraphMeasureError/partitionDoesNotMatchGraph(missing:unknown:)`` naming each. Before
+	/// ADR-009 a missing node was skipped as if it were not in the graph and a foreign one was not
+	/// noticed, so a partial partition scored as a whole; the unweighted `Graph.modularity(of:)`
+	/// returned `nil` for both. An edgeless graph with a matching partition still scores zero, and
+	/// the check comes first, so a wrong partition of one is refused too.
 	///
-	/// - **The partition is not validated.** A node that is absent from `partition` is skipped
-	///   silently, as if it were not in the graph, and a partition that mentions nodes the
-	///   graph does not have is not noticed. The unweighted `Graph.modularity(of:)` returns
-	///   `nil` for both.
+	/// - Throws: ``GraphMeasureError/partitionDoesNotMatchGraph(missing:unknown:)``.
 	///
 	/// ```swift
 	/// let graph = WeightedGraph(unweightedEdges: [("a", "b"), ("c", "d"), ("b", "c")])
 	/// let split = NodePartition(["a": 0, "b": 0, "c": 1, "d": 1])
-	/// print(Community.modularity(graph, partition: split))   // 0.1666...
+	/// print(try Community.modularity(graph, partition: split))   // 0.1666...
 	/// ```
 	public static func modularity<Node: Hashable & Comparable & Sendable>(
 		_ graph: WeightedGraph<Node>, partition: NodePartition<Node>
-	) -> Double {
+	) throws -> Double {
+		// Validate before anything else, so an edgeless graph with a wrong partition is refused too.
+		var missing: [String] = []
+		for node in graph.nodes where partition[node] == nil {
+			missing.append(String(describing: node))
+		}
+		var unknown: [Node] = []
+		for node in partition.communities.keys where graph.indexOf[node] == nil {
+			unknown.append(node)
+		}
+		guard missing.isEmpty, unknown.isEmpty else {
+			throw GraphMeasureError.partitionDoesNotMatchGraph(
+				missing: missing, unknown: unknown.sorted().map { String(describing: $0) })
+		}
+
 		let total = graph.totalWeight
 		// An edgeless graph has no structure to be better than chance about.
 		guard total > 0 else { return 0 }

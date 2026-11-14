@@ -51,6 +51,16 @@ source-breaking and answer-changing; each says exactly what changes and for whom
   "no teleport") who was getting `0.999` results without knowing.
 - No version bump: the registered metric took no damping before version 3, so no stored record can carry one outside `[0, 1)`.
 
+#### Changed: modularity refuses a partition that does not match the graph (no version bump)
+
+- **`Community.modularity(_:partition:)` now `throws`** `GraphMeasureError.partitionDoesNotMatchGraph(missing:unknown:)` unless the
+  partition covers exactly the graph's nodes, naming the missing and the foreign nodes. Before: a node the partition left out was skipped
+  as if it were not in the graph, and a node the graph does not have was not noticed, so a partial partition was scored as a whole.
+  The unweighted `Graph.modularity(of:)` already returned `nil` for both; the two now agree. An edgeless graph with a matching partition
+  still scores zero.
+- **Source break**: add `try`. For whom: anyone scoring a hand-built or filtered partition; a partition from `Community.louvain` or
+  `connectedComponents` is always valid. No version bump: no registered metric computes modularity, so no stored record changes.
+
 Additive: no existing API changes.
 
 **`WeightedGraph`: a validated undirected weighted graph beside `Graph`.** Step 1 of the plan to

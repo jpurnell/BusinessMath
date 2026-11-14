@@ -66,3 +66,22 @@ uniform, never-NaN for accepted dampings, error equality, default metric still r
 over-reject.
 
 **Green.** Validation added; same suites, 99 tests passed (`green2-run-full.txt`). Nothing edited between.
+
+## Change 3: modularity partition validation (no bump)
+
+**Stub.** `GraphMeasureError` gained `partitionDoesNotMatchGraph` and `disconnectedGraph` (the latter for change 5, unused
+until then); `modularity` made `throws` with no validation. Call sites gained `try`; four `try`-right-of-operator expressions hoisted.
+**Before the red run**: two old-behaviour assertions rewritten, `partialPartition` (was -1/16, now refused; the textbook helper still
+gives -1/16 for the partial partition, kept as the evidence that the old number answered a different question), and
+`agreesWithDefinition` (its random partitions left nodes out; now complete); the cross-check's "difference" test became two
+agreement tests (partial and foreign, both refuse); the golden runner/test treat `modularity.partial` as refused for any graph
+of two or more nodes and unchanged otherwise.
+
+**Red (stub): 94 tests in 11 suites, 728 issues** (the exhaustive test alone records many). The full output was 373 KB and is
+not kept; `red3-rows.txt` has one line per test. Failing: every refusal test (partial, foreign, both, empty partition, empty
+graph, edgeless-precedence, exhaustive 729 assignments, foreign over random graphs), the two cross-check agreement tests, the
+partial-partition pin. Passed against the stub, classified [S]: complete partition scores 1/6, arbitrary labels, error equality
+and the pre-existing community/cross-check suites (invariants; the stub changes no behaviour of a valid input).
+
+**Green.** Validation added; same suites, 94 tests passed with the 2 known issues that change 4 removes (`green3-run-full.txt`).
+Nothing edited between red and green.
