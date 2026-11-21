@@ -287,7 +287,15 @@ struct PenalisedLogisticRegressionTests {
 		let x: [[Double]] = [[1, 0, 2, 1, 0], [0, 1, 1, 0, 3], [2, 2, 0, 1, 1], [1, 3, 1, 2, 0]]
 		let y: [Bool] = [true, false, true, false]
 		let model = LogisticRegression(predictors: x, outcomes: y)
-		#expect(throws: LogisticRegressionError.self) { try model.fit() }
+		var unpenalisedReason = ""
+		do {
+			_ = try model.fit()
+		} catch LogisticRegressionError.malformedInput(let reason) {
+			unpenalisedReason = reason
+		} catch {
+			Issue.record("the unpenalised fit threw \(error), not malformedInput")
+		}
+		#expect(unpenalisedReason.contains("cannot identify"), "unpenalised reason: \(unpenalisedReason)")
 		let fit = try model.fit(penalty: LogisticPenalty(lambda: 1.0))
 		#expect(fit.coefficients.count == 6)
 		let residual = Self.largestGradient(x: x, y: y, coefficients: fit.coefficients, lambda: 1.0,
@@ -435,5 +443,47 @@ struct PenalisedLogisticRegressionTests {
 		#expect(Swift.abs(fit.coefficients[0] - (-7.1590107413)) < 1e-6)
 		#expect(Swift.abs(fit.coefficients[1] - 1.3016383086) < 1e-6)
 		#expect(fit.standardErrors.count == 2)
+	}
+
+	// MARK: - Numerical edges
+
+	@Test("Predictors large enough to overflow exp() are fitted, with a finite objective")
+	func largeLinearPredictor() throws {
+		let x: [[Double]] = [[-900], [-800], [-700], [-600], [600], [700], [800], [900]]
+		let y: [Bool] = [false, false, false, false, true, true, true, true]
+		let fit = try LogisticRegression(predictors: x, outcomes: y)
+			.fit(penalty: LogisticPenalty(lambda: 1.0, centre: [1.0]))
+		#expect(fit.penalisedObjective.isFinite, "objective \(fit.penalisedObjective)")
+		#expect(fit.logLikelihood.isFinite, "log-likelihood \(fit.logLikelihood)")
+		#expect(Swift.abs(fit.coefficients[1] - 1.0) < 1e-6, "slope \(fit.coefficients[1])")
+	}
+
+	@Test("A start where every fitted probability is saturated still reaches the optimum")
+	func saturatedStart() throws {
+		// At the centre the fitted probabilities are all 0 or 1, so the intercept's information
+		// (the sum of p(1-p)) is zero and the exact Newton system is singular.
+		let model = LogisticRegression(predictors: Self.overlapX, outcomes: Self.skewedY)
+		let fit = try model.fit(penalty: LogisticPenalty(lambda: 1e6, centre: [40.0]))
+		let residual = Self.largestGradient(x: Self.overlapX, y: Self.skewedY,
+											coefficients: fit.coefficients, lambda: 1e6,
+											centre: [40.0], intercept: true)
+		#expect(residual < 1e-3, "gradient \(residual)")
+		#expect(Swift.abs(fit.coefficients[1] - 40.0) < 1e-3, "slope \(fit.coefficients[1])")
+	}
+
+	@Test("A design whose information matrix overflows is reported, not returned")
+	func overflowingInformation() {
+		let x: [[Double]] = [[1e200], [2e200], [3e200], [4e200]]
+		let y: [Bool] = [false, true, false, true]
+		let model = LogisticRegression(predictors: x, outcomes: y)
+		var iterationsReported = -1
+		do {
+			_ = try model.fit(penalty: LogisticPenalty(lambda: 1.0))
+		} catch LogisticRegressionError.didNotConverge(let iterations, _) {
+			iterationsReported = iterations
+		} catch {
+			Issue.record("wrong error \(error)")
+		}
+		#expect(iterationsReported == 1, "reported after \(iterationsReported) iterations, wanted 1")
 	}
 }

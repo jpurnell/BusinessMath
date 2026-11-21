@@ -198,10 +198,9 @@ extension LogisticRegression {
 				information[column][column] += lambda
 			}
 
-			guard let delta = Self.solveSymmetric(information, score) else {
-				// Unreachable for lambda > 0: the information plus lambda on the slopes is
-				// positive definite. A singular result here is a numerical failure, reported as
-				// one rather than as a fit.
+			guard let delta = Self.dampedSolve(information, score) else {
+				// The system stayed unsolvable under heavy damping: the information overflowed or
+				// holds a NaN. That is a numerical failure and is reported as one, not as a fit.
 				throw LogisticRegressionError.didNotConverge(iterations: step, gradientNorm: Double.infinity)
 			}
 			var largest: T = T.zero
@@ -228,7 +227,8 @@ extension LogisticRegression {
 				for index in 0..<columns { next[index] = beta[index] + scale * delta[index] }
 				nextObjective = Self.penalisedObjective(design: design, outcomes: outcomes, beta: next,
 														lambda: lambda, centre: centre, offset: offset)
-				if nextObjective.isFinite, nextObjective >= objective - slack { break }
+				// A NaN or -infinity objective fails this comparison, so it needs no separate finiteness test.
+				if nextObjective >= objective - slack { break }
 				scale /= T(2)
 				halvings += 1
 			}
@@ -254,6 +254,32 @@ extension LogisticRegression {
 									iterations: taken,
 									hasIntercept: intercept,
 									penalty: LogisticPenalty(lambda: lambda, centre: centre))
+	}
+
+	/// Solves the Newton system, adding damping when it is singular.
+	///
+	/// The penalised information is positive definite on the slopes, but the *intercept*
+	/// entry is the sum of the fitted weights `p(1 − p)`, which is zero to working precision
+	/// when every fitted probability is saturated (a start far from the optimum, or very large
+	/// predictors). The exact system is then singular though the objective is not. Levenberg
+	/// damping, adding `μ` to the diagonal with `μ` growing by a factor of one hundred, gives a
+	/// step that still ascends; the caller's step-halving keeps it honest.
+	///
+	/// - Returns: The step, or `nil` if even a heavily damped system cannot be solved.
+	static func dampedSolve(_ matrix: [[T]], _ rhs: [T]) -> [T]? {
+		if let exact = solveSymmetric(matrix, rhs), exact.allSatisfy({ $0.isFinite }) { return exact }
+		var largestDiagonal: T = T(1)
+		for index in 0..<matrix.count where matrix[index][index].isFinite && matrix[index][index] > largestDiagonal {
+			largestDiagonal = matrix[index][index]
+		}
+		var damping: T = T(1) / T(100_000_000) * largestDiagonal
+		for _ in 0..<12 {
+			var damped = matrix
+			for index in 0..<matrix.count { damped[index][index] += damping }
+			if let step = solveSymmetric(damped, rhs), step.allSatisfy({ $0.isFinite }) { return step }
+			damping *= T(100)
+		}
+		return nil
 	}
 
 	/// `log L(β) − (λ/2)·Σ (β_k − c_k)²` over the slopes, written so a large linear
