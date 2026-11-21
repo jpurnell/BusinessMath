@@ -22,7 +22,7 @@ standard errors: they are not valid under a penalty; use a bootstrap). The coeff
 reference weights, so the relative-change form planned for the grouped models does not apply here. It is not Firth's penalty. Newton steps
 are halved until the penalised objective does not fall, and a singular system (every fitted probability saturated, so the intercept's
 information is zero) is solved with Levenberg damping. Tests were checked against an independent BFGS run and against the penalised score
-equations, and a mutation audit killed 22 of 27 mutants (the survivors are recorded in the build report).
+equations, and a mutation audit killed 22 of 25 applicable mutants; the three survivors (the start point, which does not change a strictly concave optimum, and two finiteness checks on the damped solve that no input reached) are recorded in the build report.
 
 ### [3.0.0-alpha.17] - 2026-11-14
 
