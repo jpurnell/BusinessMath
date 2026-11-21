@@ -105,7 +105,7 @@ public enum GroupRankingMetrics {
 		guard scores.count == data.rowCount else { return nil }
 		var pooledScores: [T] = []
 		var outcomes: [Bool] = []
-		for group in data.informativeGroups {
+		for group in data.comparableGroups {
 			for row in data.rows(ofGroup: group) {
 				pooledScores.append(scores[row])
 				outcomes.append(data.rowChosen[row])

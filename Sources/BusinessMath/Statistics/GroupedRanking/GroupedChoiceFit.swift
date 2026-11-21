@@ -172,7 +172,7 @@ extension GroupedChoiceModel {
 		guard !free.isEmpty else { return GroupedChoiceFit(multipliers: ones, scale: scale, iterations: 0, converged: true) }
 		var totalChosen: T = T.zero
 		for group in data.informativeGroups {
-			let weighted: T = groupWeights[group] * T(data.chosenCount(group: group))
+			let weighted: T = groupWeights[group] * T(data.stepCount(group: group))
 			totalChosen += weighted
 		}
 		guard totalChosen > T.zero else { throw GroupedChoiceError.noInformativeGroups }

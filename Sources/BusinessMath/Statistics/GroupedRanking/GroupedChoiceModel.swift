@@ -53,6 +53,7 @@ public struct GroupedChoiceModel<T: Real & Sendable & BinaryFloatingPoint>: Send
 	///   - likelihood: The likelihood to use.
 	public init?(data: GroupedChoiceData<T>, reference: [T], likelihood: ChoiceLikelihood) {
 		guard reference.count == data.featureCount else { return nil }
+		guard data.isRanked == (likelihood == .ranking) else { return nil }
 		guard reference.allSatisfy({ $0.isFinite && $0 >= T.zero }) else { return nil }
 		self.data = data
 		self.reference = reference
@@ -160,6 +161,8 @@ public struct GroupedChoiceModel<T: Real & Sendable & BinaryFloatingPoint>: Send
 		switch likelihood {
 		case .subset:
 			return subsetGroup(group: group, scores: scores, work: &work, wantInclusion: wantInclusion)
+		case .ranking:
+			return rankingGroup(group: group, scores: scores, work: &work)
 		}
 	}
 
@@ -200,6 +203,62 @@ public struct GroupedChoiceModel<T: Real & Sendable & BinaryFloatingPoint>: Send
 		let logTotal: T = T.log(total)
 		let logLikelihood: T = friendTotal - shift - logTotal
 		return (logLikelihood, friends)
+	}
+
+	/// One group's Plackett-Luce log-likelihood: the product, over the ranked choices in order, of the chosen candidate's
+	/// `exp(score)` over the sum of `exp(score)` across the candidates not yet taken.
+	///
+	/// The denominator of step *j* is the sum over the unranked candidates plus the ranked candidates from *j* on, built from
+	/// the back by additions only, so nothing is subtracted and no precision is lost when early choices dominate. The same
+	/// pass gives each candidate's expected count (its weight times the sum of the reciprocal denominators of the steps at
+	/// which it was still available), which is what the gradient needs.
+	private func rankingGroup(group: Int, scores: [T], work: inout Work) -> (logLikelihood: T, steps: Int)? {
+		let rows = data.rows(ofGroup: group)
+		let count = rows.count
+		let steps = data.stepCount(group: group)
+		guard steps > 0 else { return nil }
+		var maximum: T = -T.infinity
+		for row in rows { maximum = Swift.max(maximum, scores[row]) }
+		guard maximum.isFinite else { return nil }
+		let rankedCount = rows.reduce(0) { data.rowRank[$1] >= 0 ? $0 + 1 : $0 }
+		var order = [Int](repeating: -1, count: rankedCount)
+		for (position, row) in rows.enumerated() where data.rowRank[row] >= 0 { order[data.rowRank[row]] = position }
+		if work.terms.count < count {
+			work.terms = [T](repeating: T.zero, count: count)
+			work.inclusion = work.terms
+		}
+		var unranked: T = T.zero
+		for (position, row) in rows.enumerated() {
+			let weight: T = T.exp(scores[row] - maximum)
+			work.terms[position] = weight
+			if data.rowRank[row] < 0 { unranked += weight }
+		}
+		let ranked = order.count
+		var denominators = [T](repeating: T.zero, count: ranked)
+		var running: T = unranked
+		var step = ranked - 1
+		while step >= 0 {
+			running += work.terms[order[step]]
+			denominators[step] = running
+			step -= 1
+		}
+		var logLikelihood: T = T.zero
+		var reciprocalSums = [T](repeating: T.zero, count: steps + 1)
+		for step in 0..<steps {
+			let denominator: T = denominators[step]
+			guard denominator > T.zero, denominator.isFinite else { return nil }
+			let shifted: T = scores[rows.lowerBound + order[step]] - maximum
+			logLikelihood += shifted - T.log(denominator)
+			reciprocalSums[step + 1] = reciprocalSums[step] + T(1) / denominator
+		}
+		work.taken = [Bool](repeating: false, count: count)
+		for (position, row) in rows.enumerated() {
+			let rank = data.rowRank[row]
+			let available = rank < 0 ? steps : Swift.min(rank + 1, steps)
+			work.inclusion[position] = work.terms[position] * reciprocalSums[available]
+			work.taken[position] = rank >= 0 && rank < steps
+		}
+		return (logLikelihood, steps)
 	}
 
 	/// The sum, over every set of `friends` of the first `count` terms, of the product of the set's terms.

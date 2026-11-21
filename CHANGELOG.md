@@ -11,6 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+**Grouped-ranking toolkit (`Statistics/GroupedRanking`), phases B1 to B5 of `project/plans/proposals/BusinessMathGroupedRanking.md`.** All additive;
+no existing symbol changes. `GroupedChoiceData` (dense or sparse candidates grouped by chooser, with optional fixed per-candidate offsets, or ranked
+groups), `GroupedChoiceModel` (the exact conditional-logit likelihood for an unordered chosen set, and the Plackett-Luce likelihood for ordered
+top choices, with gradients), `fitScale` / `referenceFit` / `fit` (a penalty on the relative change of each multiplier toward a reference,
+non-negativity by projection, a restart-guarded accelerated search, and a thrown `didNotConverge` rather than an unsettled result),
+`GroupRankingMetrics` (per-group percentile, top-own and top-k, and the pooled `ClassifierEvaluation`), `GroupResampling` (an unbiased bounded draw,
+bootstrap weights over groups, balanced fold assignment), and `GroupedCrossValidation` (nested penalty choice, group-bootstrap intervals, and
+`HeldOutComparison`, which reports a fact about held-out groups and applies no adoption threshold). A softmax per chosen candidate is biased on the
+same data (a recovery test shows a true weight of 1 fitted at about 0.64); the conditional likelihood recovers it. Not yet built: the penalised
+`LogisticRegression.fit` (B6), the DocC article and ADR-011 (B7), and the MCP tools (phase D, in businessMathMCP).
+
 ### [3.0.0-alpha.17] - 2026-11-14
 
 **The Network module gains weighted graphs and the graph measures that lived in the ClassGraph package** (ADR-006 to ADR-010; plan
