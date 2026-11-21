@@ -38,6 +38,17 @@ suite depends on it.
 
 ## Current Status
 
+**Unreleased (2026-11-21) — `Statistics/GroupedRanking` and a penalised `LogisticRegression.fit`**, built and merged to `main`
+as phases B1 to B6 of `project/plans/proposals/BusinessMathGroupedRanking.md` (ADR-011), documented in B7 (the DocC article
+`2.8-GroupedRanking`). A generic toolkit for fitting what predicts a choice **within** each group: the conditional-logit
+(subset) and Plackett-Luce (ranking) likelihoods over `GroupedChoiceData` (dense or sparse, optional fixed offsets), a
+prior-centred penalty on each weight's relative change with non-negativity, per-group ranking metrics, a bootstrap over groups,
+grouped and nested k-fold, and `HeldOutComparison`; and `LogisticRegression.fit(penalty:)`, a ridge-type fit that returns a
+result where the unpenalised fit refuses separated data. Additive; no existing symbol changes. No release tag yet (the owner
+decides). Pending: the MCP tools (phase D, in businessMathMCP) and ClassGraph's migration onto this toolkit (phase C, in
+ClassGraph). This section's own older entries stop at alpha.11 and have not been reconciled with alpha.12 to alpha.17; that
+drift is recorded, not repaired here.
+
 **3.0.0-alpha.11 shipped 2026-10-04** — twenty-two divisions a wider `fp-division-unguarded`
 reads (a divisor followed back through `let d = Double(n)`, and a `Double` parameter as a divisor
 in its own right). Eighteen were already safe and now carry the bound where the division is.
@@ -817,7 +828,7 @@ The earlier table was about *scope*; this one is about *what is being measured*.
 
 ---
 
-**Last Updated:** 2026-11-14 — tagged v3.0.0-alpha.17: the CHANGELOG's `[Unreleased]` block (weighted graphs and the graph measures in the Network module, steps 0 to 4 of `project/plans/upcoming/NetworkWeightedGraph.md`, ADR-006 to ADR-010, plus the by-component eigenvector) became the release; the README notice and install line name it. Two existing functions change their answers (`Graph.eigenvectorCentrality`, `Graph.louvainCommunities`); the new API is additive. Network is now shipped, so the plan is complete apart from the follow-ups recorded in ADR-010.
+**Last Updated:** 2026-11-21 — reconciled the grouped-ranking toolkit and the penalised `LogisticRegression.fit` (phases B1 to B7, ADR-011) into Current Status; no release tag. Previous note: 2026-11-14, tagged v3.0.0-alpha.17 (weighted graphs and the graph measures in the Network module, ADR-006 to ADR-010).
 
 **Previously, 2026-11-13 — reconciled for step 4 of `project/plans/upcoming/NetworkWeightedGraph.md` (ADR-009): the weighted-graph plan's Status now reads steps 0 to 4 done, and its section 6 no longer says the silent behaviours close in step 5. Nothing in Current Status advanced (the weighted graph is on its feature branch, not released).
 

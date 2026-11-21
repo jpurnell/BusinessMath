@@ -66,6 +66,8 @@ struct GroupedChoiceFitTests {
 		let softmax = (low + high) / 2
 		#expect(abs(conditional - 1.0) < 0.1)
 		#expect(abs(softmax - 1.0) > 0.25)
+		// The direction: the softmax UNDERSTATES the weight (measured at about 0.64 for a true weight of 1), it does not overstate it.
+		#expect(softmax < 0.75)
 	}
 
 	@Test("With no signal the effective weights are close to zero")

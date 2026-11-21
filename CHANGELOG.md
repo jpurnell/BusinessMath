@@ -19,8 +19,10 @@ non-negativity by projection, a restart-guarded accelerated search, and a thrown
 `GroupRankingMetrics` (per-group percentile, top-own and top-k, and the pooled `ClassifierEvaluation`), `GroupResampling` (an unbiased bounded draw,
 bootstrap weights over groups, balanced fold assignment), and `GroupedCrossValidation` (nested penalty choice, group-bootstrap intervals, and
 `HeldOutComparison`, which reports a fact about held-out groups and applies no adoption threshold). A softmax per chosen candidate is biased on the
-same data (a recovery test shows a true weight of 1 fitted at about 0.64); the conditional likelihood recovers it. Not yet built: the penalised
-`LogisticRegression.fit` (B6), the DocC article and ADR-011 (B7), and the MCP tools (phase D, in businessMathMCP).
+same data (a recovery test shows a true weight of 1 fitted at about 0.64, so it understates the weight); the conditional likelihood recovers it. The
+penalised `LogisticRegression.fit` is the next entry (B6). Documentation (B7): the DocC article `2.8-GroupedRanking` (its examples are run by
+`GroupedRankingDocumentationTests`) and ADR-011, which records the deviations from the proposal. Not yet built: the MCP tools (phase D, in
+businessMathMCP).
 
 **Added: a penalised `LogisticRegression.fit(penalty:)` (phase B6 of `project/plans/proposals/BusinessMathGroupedRanking.md`).**
 Additive; the existing `fit(maxIterations:tolerance:)`, its errors and its tests are unchanged, and `validatedDesign` gains a defaulted
