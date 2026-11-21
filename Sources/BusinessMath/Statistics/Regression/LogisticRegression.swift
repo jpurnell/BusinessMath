@@ -90,7 +90,9 @@ public struct LogisticFit<T: Real & Sendable & Codable & BinaryFloatingPoint>: S
 /// unusually good model. This throws ``LogisticRegressionError/separation(variables:)``
 /// instead, naming the predictors responsible. The remedy is Firth's penalised
 /// likelihood, which has a finite estimate under separation; it is not implemented here,
-/// and saying so is better than returning the artifact.
+/// and saying so is better than returning the artifact. A ridge-type penalised fit, which
+/// also has a finite estimate under separation, is available as
+/// ``fit(penalty:maxIterations:tolerance:)``; it is a different estimator, not Firth's.
 ///
 /// The same reasoning applies to a **rank-deficient** design, where two collinear columns
 /// can trade effect between them without changing the fit at all.
@@ -240,9 +242,13 @@ extension LogisticRegression {
 
 	/// The design matrix, with an intercept column prepended when one is wanted.
 	///
+	/// - Parameter requireIdentifiable: Whether to insist on more observations than
+	///   predictors, which the unpenalised fit needs to identify its coefficients. The
+	///   penalised fit identifies them by the penalty and passes `false`. Defaults to `true`,
+	///   so the unpenalised path is exactly as it was.
 	/// - Returns: One row per observation.
 	/// - Throws: ``LogisticRegressionError/malformedInput(reason:)``.
-	func validatedDesign() throws -> [[T]] {
+	func validatedDesign(requireIdentifiable: Bool = true) throws -> [[T]] {
 		guard !predictors.isEmpty, !outcomes.isEmpty else {
 			throw LogisticRegressionError.malformedInput(reason: "no observations")
 		}
@@ -260,7 +266,7 @@ extension LogisticRegression {
 		guard predictors.allSatisfy({ $0.allSatisfy { $0.isFinite } }) else {
 			throw LogisticRegressionError.malformedInput(reason: "a predictor is not finite")
 		}
-		guard predictors.count > width else {
+		guard !requireIdentifiable || predictors.count > width else {
 			throw LogisticRegressionError.malformedInput(
 				reason: "\(predictors.count) observations cannot identify \(width) predictors")
 		}

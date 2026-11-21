@@ -22,6 +22,19 @@ bootstrap weights over groups, balanced fold assignment), and `GroupedCrossValid
 same data (a recovery test shows a true weight of 1 fitted at about 0.64); the conditional likelihood recovers it. Not yet built: the penalised
 `LogisticRegression.fit` (B6), the DocC article and ADR-011 (B7), and the MCP tools (phase D, in businessMathMCP).
 
+**Added: a penalised `LogisticRegression.fit(penalty:)` (phase B6 of `project/plans/proposals/BusinessMathGroupedRanking.md`).**
+Additive; the existing `fit(maxIterations:tolerance:)`, its errors and its tests are unchanged, and `validatedDesign` gains a defaulted
+parameter that leaves the unpenalised path as it was. A ridge-type penalty `(lambda / 2) * sum (beta_k - c_k)^2` over the slopes, centred on
+a supplied vector (zero by default), with the intercept unpenalised. With `lambda > 0` the objective is strictly concave, so data that the
+unpenalised fit refuses as separated or rank-deficient, and designs with more predictors than observations, are fitted. It still refuses a
+constant outcome when an intercept is fitted (the intercept is not penalised), a penalty that is not positive and finite, a centre of the
+wrong width, malformed data, and an exhausted iteration budget. New public types: `LogisticPenalty`, `PenalisedLogisticFit` (no classical
+standard errors: they are not valid under a penalty; use a bootstrap). The coefficient-space form is deliberate: `LogisticRegression` has no
+reference weights, so the relative-change form planned for the grouped models does not apply here. It is not Firth's penalty. Newton steps
+are halved until the penalised objective does not fall, and a singular system (every fitted probability saturated, so the intercept's
+information is zero) is solved with Levenberg damping. Tests were checked against an independent BFGS run and against the penalised score
+equations, and a mutation audit killed 22 of 25 applicable mutants; the three survivors (the start point, which does not change a strictly concave optimum, and two finiteness checks on the damped solve that no input reached) are recorded in the build report.
+
 ### [3.0.0-alpha.17] - 2026-11-14
 
 **The Network module gains weighted graphs and the graph measures that lived in the ClassGraph package** (ADR-006 to ADR-010; plan
