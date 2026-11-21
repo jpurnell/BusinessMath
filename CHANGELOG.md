@@ -11,6 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+### [3.0.0-alpha.18] - 2026-11-21
+
+Additive: no existing API changes. (`LogisticRegression.validatedDesign` gains a defaulted parameter that leaves the unpenalised path as it was.)
+
+**A grouped-ranking toolkit and a penalised `LogisticRegression.fit`.** New in `Statistics/GroupedRanking`: the conditional-logit (subset) and
+Plackett-Luce (ranking) likelihoods over grouped candidates, a prior-centred penalty with non-negativity, per-group ranking metrics, a bootstrap
+over groups, grouped and nested k-fold, and `HeldOutComparison`; and `LogisticRegression.fit(penalty:)`, which fits data the unpenalised fit refuses
+as separated. Source-compatible for everyone on alpha.17. Documented in the DocC article `2.8-GroupedRanking` and ADR-011. The entries below say
+exactly what each part does.
+
 **Grouped-ranking toolkit (`Statistics/GroupedRanking`), phases B1 to B5 of `project/plans/proposals/BusinessMathGroupedRanking.md`.** All additive;
 no existing symbol changes. `GroupedChoiceData` (dense or sparse candidates grouped by chooser, with optional fixed per-candidate offsets, or ranked
 groups), `GroupedChoiceModel` (the exact conditional-logit likelihood for an unordered chosen set, and the Plackett-Luce likelihood for ordered

@@ -81,7 +81,9 @@ struct GroupedRankingDocumentationTests {
 			(candidates: [[1, 1], [0, 0], [1, 0]], ranking: [0, 2]),
 			(candidates: [[0, 1], [1, 0], [0, 0]], ranking: [1]),
 		]))
-		#expect(GroupedChoiceModel(data: ranked, reference: [1, 1], likelihood: .ranking) != nil)
+		let rankingModel = try #require(GroupedChoiceModel(data: ranked, reference: [1, 1], likelihood: .ranking))
+		#expect(rankingModel.likelihood == .ranking)
+		#expect(rankingModel.reference == [1, 1])
 		#expect(GroupedChoiceModel(data: ranked, reference: [1, 1], likelihood: .subset) == nil)
 	}
 
