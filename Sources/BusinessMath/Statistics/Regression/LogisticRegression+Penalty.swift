@@ -208,9 +208,6 @@ extension LogisticRegression {
 				let size: T = delta[index] < T.zero ? -delta[index] : delta[index]
 				if size > largest { largest = size }
 			}
-			guard largest.isFinite else {
-				throw LogisticRegressionError.didNotConverge(iterations: step, gradientNorm: Double.infinity)
-			}
 
 			// Halve the step until the objective does not fall. A full Newton step is accepted
 			// whenever it improves, so the quadratic convergence near the optimum is kept.
