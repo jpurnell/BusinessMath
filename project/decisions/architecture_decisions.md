@@ -611,3 +611,101 @@ supersedes: null
 amends: ADR-009
 superseded_by: null
 ```
+
+---
+
+```yaml
+id: ADR-011
+date: 2026-11-21
+status: accepted
+category: api
+title: Grouped ranking is a Statistics toolkit (conditional logit, Plackett-Luce, prior-centred penalty, held-out comparison), and LogisticRegression gains a separate penalised fit
+context: |
+  ClassGraph's weight backtest (about 2,100 lines in ClassGraph Sources/ClassGraphCore/Backtest at main c81c833) holds generic
+  statistics written by hand: an exact conditional-logit fitter, per-group ranking metrics, a bootstrap over groups, nested
+  grouped k-fold, and a copy of SplitMix64. ClassGraph's rule is that generic machinery lives here (its ADR-014). The need is the
+  general one of fitting what predicts a choice within each chooser's own candidates, where a pooled regression credits any feature
+  that merely correlates with choosers who choose a lot. The existing LogisticRegression is unpenalised and refuses data a feature
+  separates, so it cannot fit the sparse features such a model meets. The owner approved upstreaming, with ClassGraph keeping its
+  own protocol (label definitions, the weight mapping, the candidate file, the rescale-to-density step, privacy, and the adoption
+  thresholds as policy) (2026-11-21). Design: project/plans/proposals/BusinessMathGroupedRanking.md. Built as phases B1 to B6;
+  this record and the DocC article 2.8-GroupedRanking are B7.
+decision: |
+  A domain-free toolkit in Statistics/GroupedRanking, generic over T: Real & Sendable & BinaryFloatingPoint, additive to the public API:
+  - GroupedChoiceData: candidates grouped by chooser, dense or sparse (only non-zero entries stored), optional fixed per-candidate
+    offsets, or ranked groups. GroupedChoiceModel pairs it with reference weights and a ChoiceLikelihood, .subset (the exact
+    conditional logit for an unordered chosen set) or .ranking (Plackett-Luce). Each model refuses the other's data (init? is nil):
+    with more than one chosen candidate the two are different likelihoods, and "first-choice conditional logit is a special case of
+    Plackett-Luce" holds only for one chosen candidate per group.
+  - fitScale / referenceFit / fit: the scale is fitted first, then the multipliers around the reference, with a penalty on each
+    multiplier's relative change (m - 1), non-negativity by projection, a restart-guarded accelerated search, and a thrown
+    GroupedChoiceError.didNotConverge rather than an unsettled result.
+  - GroupRankingMetrics (per-group percentile, top-own and top-k, a summary, and a pooled evaluation by ClassifierEvaluation, not
+    reimplemented), GroupResampling (an unbiased bounded draw, bootstrap weights over groups, balanced fold assignment), and
+    GroupedCrossValidation (nested penalty choice, group-bootstrap intervals, heldOutComparison).
+  - HeldOutComparison states a fact about held-out groups (the two mean percentiles, their paired difference, a bootstrap interval)
+    and applies no adoption threshold: how big a move counts and how many chosen candidates a feature needs stay a caller's policy.
+  - LogisticRegression.fit(penalty: LogisticPenalty) in LogisticRegression+Penalty.swift: a coefficient-space ridge, (lambda / 2) times the
+    sum of squared distances from a centre (zero by default), intercept unpenalised, returning PenalisedLogisticFit. The existing
+    fit(maxIterations:tolerance:), its errors and its tests are unchanged.
+  Deviations from the proposal, as built (each was a choice made during the build, not a decision the owner reserved):
+  1. Offsets. GroupedChoiceData takes an optional fixed per-candidate offset, so a caller can carry a deduction the model must not
+     fit (ClassGraph's orientation deduction). The proposal had none.
+  2. fit signature and failure. fit gains maxIterations and start, and throws didNotConverge. ClassGraph's private fitter accepted
+     unsettled fits, so the phase C parity run may expose cases where it never settled.
+  3. Seeds, not generators. heldOutComparison, choosePenalty and bootstrapIntervals take a UInt64 seed and use SplitMix64
+     internally (SwiftDeterminism is the ground truth); only GroupResampling takes a generator.
+  4. Optional metrics. GroupRankingMetrics.perGroup returns nil when the scores are not one per row or k is below 1, and an
+     element is nil for a group with nothing to compare; the summary's means are optional.
+  5. Two interval checks. HeldOutComparison has intervalExcludesZero (either side of zero) and refitBeatsReference (lower end above
+     zero); the proposal named one.
+  6. The bounded draw is unbiased and differs from ClassGraph's modulo draw, so ClassGraph's real-archive figures shift slightly when
+     it moves over (phase C records both runs).
+  7. The softmax bias runs the other way from ClassGraph's record. A softmax per chosen candidate UNDERSTATES a true weight: the
+     recovery test fits a true weight of 1 at about 0.64, a bias of about 36 percent (ClassGraph's ADR-022 says about 40 percent and
+     "overstates"; the size agrees and the direction there is wrong). The softmax is not shipped; the test keeps it as the deliberately
+     wrong comparison.
+  8. The penalised logistic fit returns PenalisedLogisticFit, not LogisticFit, because LogisticFit.standardErrors is non-optional and
+     classical errors are not valid under a penalty; use a bootstrap.
+  9. Constant outcome. With an intercept fitted the penalised fit still refuses a constant outcome, as separation(variables: []),
+     because the unpenalised intercept diverges. The proposal said the penalised path never throws separation. Without an intercept
+     it is fitted. A design with fewer rows than predictors is accepted (a defaulted requireIdentifiable parameter on validatedDesign).
+  10. Newton steps are halved until the penalised objective does not fall, and a singular system (every fitted probability saturated,
+     so the intercept's information is zero) is solved with Levenberg damping; the mutation tests exposed that failure.
+  The penalty form on LogisticRegression is coefficient-space ridge, and the grouped models' is on the relative change; the owner's
+  "relative change only, for now" applies to the grouped models, which have a reference scale, and LogisticRegression has none.
+  The MCP tools are phase D, pending, in businessMathMCP (a separate repository) under its own proposal. Nothing here exposes them.
+rationale: |
+  - The within-group comparison removes how much each chooser chooses; the toolkit's recovery and talkative-group tests pin it.
+  - Reference-centred shrinkage makes the data argue for any change from supplied weights; a large penalty returns the reference.
+  - Reporting a held-out fact and leaving the threshold to the caller keeps the policy where the stakes are known.
+  - Generic over T and seeded through SwiftDeterminism follow the repository's own conventions, and keep ClassGraph's migration a deletion.
+consequences: |
+  Every fit that did not settle is an error, not a result. The public API is generic with no @_specialize; its speed for Double callers
+  across the module boundary is unmeasured (ClassGraph's baseline for the backtest on a 532-person class was 229 seconds). Linux
+  (Swift 6.2.1) type-checking has not been run until CI does. Mutation audits killed 71 of 78 mutants for B1 to B5 (the survivors
+  equivalent, optimiser-path only, or in non-convergence handling a test could not reach) and 22 of 25 applicable for B6 (the start
+  point is equivalent, and two finiteness checks inside the damped solve were not reached). ClassGraph's ADR-022 states the softmax
+  bias in the wrong direction and needs the correction made in that repository. A release tag, and the exact version, are the owner's.
+alternatives_rejected:
+  - "Leave it in ClassGraph: the status quo; the next analysis of the same shape rewrites the likelihood, and the softmax mistake is made again."
+  - "A shared Statistics/Ranking folder holding this and Comparison Statistics: those functions test whether judges agree on rank matrices (WineTaster uses them), this models what predicts a choice from features; a shared parent would force moving existing code."
+  - "Group-indicator dummies in LogisticRegression: separation and rank deficiency with hundreds of groups."
+  - "A softmax per chosen candidate: biased, as measured."
+affected_files:
+  - Sources/BusinessMath/Statistics/GroupedRanking/GroupedChoiceData.swift
+  - Sources/BusinessMath/Statistics/GroupedRanking/GroupedChoiceModel.swift
+  - Sources/BusinessMath/Statistics/GroupedRanking/GroupedChoiceFit.swift
+  - Sources/BusinessMath/Statistics/GroupedRanking/GroupRankingMetrics.swift
+  - Sources/BusinessMath/Statistics/GroupedRanking/GroupResampling.swift
+  - Sources/BusinessMath/Statistics/GroupedRanking/GroupedCrossValidation.swift
+  - Sources/BusinessMath/Statistics/GroupedRanking/HeldOutComparison.swift
+  - Sources/BusinessMath/Statistics/Regression/LogisticRegression+Penalty.swift
+  - Sources/BusinessMath/Statistics/Regression/LogisticRegression.swift
+  - Sources/BusinessMath/BusinessMath.docc/2.8-GroupedRanking.md
+  - Tests/BusinessMathTests/Grouped Ranking Tests/
+  - Tests/BusinessMathTests/Regression Tests/PenalisedLogisticRegressionTests.swift
+supersedes: null
+amends: null
+superseded_by: null
+```

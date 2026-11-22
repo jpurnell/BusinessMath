@@ -38,6 +38,36 @@ suite depends on it.
 
 ## Current Status
 
+**3.0.0-alpha.18 (2026-11-21; tag pending the owner after the release PR merges) — `Statistics/GroupedRanking` and a penalised
+`LogisticRegression.fit`**, built as phases B1 to B7 of `project/plans/proposals/BusinessMathGroupedRanking.md` (ADR-011), documented in the DocC
+article `2.8-GroupedRanking`. A generic toolkit for fitting what predicts a choice **within** each group: the conditional-logit (subset) and
+Plackett-Luce (ranking) likelihoods over `GroupedChoiceData` (dense or sparse, optional fixed offsets), a prior-centred penalty on each
+weight's relative change with non-negativity, per-group ranking metrics, a bootstrap over groups, grouped and nested k-fold, and
+`HeldOutComparison`; and `LogisticRegression.fit(penalty:)`, a ridge-type fit that returns a result where the unpenalised fit refuses separated
+data. Additive; no existing symbol changes. Pending: the MCP tools (phase D, in businessMathMCP) and ClassGraph's migration onto this toolkit
+(phase C, in ClassGraph).
+
+**3.0.0-alpha.17 shipped 2026-11-14** — the Network module gains weighted graphs and the graph measures that lived in the ClassGraph package
+(`WeightedGraph`, weighted centrality, community and brokerage measures, diffusion, seed selection, p-median siting, a metric registry with a
+stored-record envelope; ADR-006 to ADR-010, plan `project/plans/upcoming/NetworkWeightedGraph.md`). Two existing functions change their answers:
+`Graph.eigenvectorCentrality` is correct on bipartite graphs and returns `nil` when not converged within `maxIterations`, and
+`Graph.louvainCommunities` contracts communities between passes. Signatures unchanged.
+
+**3.0.0-alpha.16 shipped 2026-11-13** — exact, tie-aware Spearman's rho: `spearmanDistribution`, `spearmanCriticalValues`, `spearmanTest`, checked
+against brute force, an independent exact programme, R, SciPy, Monte Carlo and Zar's table. Additive.
+
+**3.0.0-alpha.15 shipped 2026-11-12** — `wilsonInterval`, `medianAbsoluteDeviation` and `poissonSurvival` for the Diagnostics Hub's analysis
+slice, checked against R and SciPy, plus an assessment of the library's anomaly detectors against the hub's spike rule. Additive.
+
+**3.0.0-alpha.14 shipped 2026-11-12** — exact, tie-aware rank-sum distribution and critical values (`rankSumDistribution`,
+`rankSumCriticalValues`), checked against brute force, exact Python integers, NumPy, R and Monte Carlo. Additive.
+
+**3.0.0-alpha.13 shipped 2026-11-11** — tie-corrected concordance checked against SciPy and R, `ConcordanceResult.friedmanCorrected`; an all-tied
+panel now answers `nan`; SABR ATM and `SimulatedAnnealing` guards.
+
+**3.0.0-alpha.12 shipped 2026-10-10** — a security fix: `CapitalAllocationOptimizer.optimizeIntegerProjects` sized a table from caller-supplied
+numbers and could end the process; the validating form `optimizeIntegerProjects(validating:budget:)` bounds it (see the CHANGELOG entry).
+
 **3.0.0-alpha.11 shipped 2026-10-04** — twenty-two divisions a wider `fp-division-unguarded`
 reads (a divisor followed back through `let d = Double(n)`, and a `Double` parameter as a divisor
 in its own right). Eighteen were already safe and now carry the bound where the division is.
@@ -817,7 +847,7 @@ The earlier table was about *scope*; this one is about *what is being measured*.
 
 ---
 
-**Last Updated:** 2026-11-14 — tagged v3.0.0-alpha.17: the CHANGELOG's `[Unreleased]` block (weighted graphs and the graph measures in the Network module, steps 0 to 4 of `project/plans/upcoming/NetworkWeightedGraph.md`, ADR-006 to ADR-010, plus the by-component eigenvector) became the release; the README notice and install line name it. Two existing functions change their answers (`Graph.eigenvectorCentrality`, `Graph.louvainCommunities`); the new API is additive. Network is now shipped, so the plan is complete apart from the follow-ups recorded in ADR-010.
+**Last Updated:** 2026-11-21 — prepared release 3.0.0-alpha.18 (tag pending): the grouped-ranking toolkit and the penalised `LogisticRegression.fit` (phases B1 to B7, ADR-011) moved from Unreleased in the CHANGELOG; Current Status now carries alpha.12 to alpha.18, reconciled against the CHANGELOG headlines (they had stopped at alpha.11; that drift is repaired here); the Roadmap and Priorities tables list no item that these releases shipped, so none moved; README notice and install line name alpha.18. Previous note: 2026-11-14, tagged v3.0.0-alpha.17 (weighted graphs and the graph measures in the Network module, ADR-006 to ADR-010).
 
 **Previously, 2026-11-13 — reconciled for step 4 of `project/plans/upcoming/NetworkWeightedGraph.md` (ADR-009): the weighted-graph plan's Status now reads steps 0 to 4 done, and its section 6 no longer says the silent behaviours close in step 5. Nothing in Current Status advanced (the weighted graph is on its feature branch, not released).
 

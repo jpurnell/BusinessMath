@@ -11,6 +11,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+### [3.0.0-alpha.18] - 2026-11-21
+
+Additive: no existing API changes. (`LogisticRegression.validatedDesign` gains a defaulted parameter that leaves the unpenalised path as it was.)
+
+**A grouped-ranking toolkit and a penalised `LogisticRegression.fit`.** New in `Statistics/GroupedRanking`: the conditional-logit (subset) and
+Plackett-Luce (ranking) likelihoods over grouped candidates, a prior-centred penalty with non-negativity, per-group ranking metrics, a bootstrap
+over groups, grouped and nested k-fold, and `HeldOutComparison`; and `LogisticRegression.fit(penalty:)`, which fits data the unpenalised fit refuses
+as separated. Source-compatible for everyone on alpha.17. Documented in the DocC article `2.8-GroupedRanking` and ADR-011. The entries below say
+exactly what each part does.
+
+**Grouped-ranking toolkit (`Statistics/GroupedRanking`), phases B1 to B5 of `project/plans/proposals/BusinessMathGroupedRanking.md`.** All additive;
+no existing symbol changes. `GroupedChoiceData` (dense or sparse candidates grouped by chooser, with optional fixed per-candidate offsets, or ranked
+groups), `GroupedChoiceModel` (the exact conditional-logit likelihood for an unordered chosen set, and the Plackett-Luce likelihood for ordered
+top choices, with gradients), `fitScale` / `referenceFit` / `fit` (a penalty on the relative change of each multiplier toward a reference,
+non-negativity by projection, a restart-guarded accelerated search, and a thrown `didNotConverge` rather than an unsettled result),
+`GroupRankingMetrics` (per-group percentile, top-own and top-k, and the pooled `ClassifierEvaluation`), `GroupResampling` (an unbiased bounded draw,
+bootstrap weights over groups, balanced fold assignment), and `GroupedCrossValidation` (nested penalty choice, group-bootstrap intervals, and
+`HeldOutComparison`, which reports a fact about held-out groups and applies no adoption threshold). A softmax per chosen candidate is biased on the
+same data (a recovery test shows a true weight of 1 fitted at about 0.64, so it understates the weight); the conditional likelihood recovers it. The
+penalised `LogisticRegression.fit` is the next entry (B6). Documentation (B7): the DocC article `2.8-GroupedRanking` (its examples are run by
+`GroupedRankingDocumentationTests`) and ADR-011, which records the deviations from the proposal. Not yet built: the MCP tools (phase D, in
+businessMathMCP).
+
+**Added: a penalised `LogisticRegression.fit(penalty:)` (phase B6 of `project/plans/proposals/BusinessMathGroupedRanking.md`).**
+Additive; the existing `fit(maxIterations:tolerance:)`, its errors and its tests are unchanged, and `validatedDesign` gains a defaulted
+parameter that leaves the unpenalised path as it was. A ridge-type penalty `(lambda / 2) * sum (beta_k - c_k)^2` over the slopes, centred on
+a supplied vector (zero by default), with the intercept unpenalised. With `lambda > 0` the objective is strictly concave, so data that the
+unpenalised fit refuses as separated or rank-deficient, and designs with more predictors than observations, are fitted. It still refuses a
+constant outcome when an intercept is fitted (the intercept is not penalised), a penalty that is not positive and finite, a centre of the
+wrong width, malformed data, and an exhausted iteration budget. New public types: `LogisticPenalty`, `PenalisedLogisticFit` (no classical
+standard errors: they are not valid under a penalty; use a bootstrap). The coefficient-space form is deliberate: `LogisticRegression` has no
+reference weights, so the relative-change form planned for the grouped models does not apply here. It is not Firth's penalty. Newton steps
+are halved until the penalised objective does not fall, and a singular system (every fitted probability saturated, so the intercept's
+information is zero) is solved with Levenberg damping. Tests were checked against an independent BFGS run and against the penalised score
+equations, and a mutation audit killed 22 of 25 applicable mutants; the three survivors (the start point, which does not change a strictly concave optimum, and two finiteness checks on the damped solve that no input reached) are recorded in the build report.
+
 ### [3.0.0-alpha.17] - 2026-11-14
 
 **The Network module gains weighted graphs and the graph measures that lived in the ClassGraph package** (ADR-006 to ADR-010; plan
