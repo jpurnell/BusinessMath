@@ -721,6 +721,6 @@ get a compiled version and other `T` still use the generic code; internal helper
 (marking an internal function `exported` leaves an undefined symbol at link time). The attribute is underscored Swift, so it is a risk
 to carry: if a future compiler changes it, the performance guard in `GroupedRankingPerformanceTests` fails (it times each heavy entry
 point against a plain `Double` evaluation of the same likelihood on the same machine in the same run, and runs under `swift test -c release`). Rejected for now: concrete
-non-generic `Double` kernels behind a dispatch on `T == Double`, which would duplicate the algorithms; it stays available if the attribute proves fragile. The model initialiser, `featureCounts` and `summary` are
-not specialised: the attribute made no measurable difference to them. Every specialised entry point has a bound in the guard.
+non-generic `Double` kernels behind a dispatch on `T == Double`, which would duplicate the algorithms; it stays available if the attribute proves fragile. The model initialiser, `featureCounts`, `summary`, `referenceFit` and the
+`negativeLogLikelihood(_:groupWeights:)` wrapper are not specialised: they only call specialised entry points, and the attribute made no measurable difference to them. Every specialised entry point has a bound in the guard.
 

@@ -158,14 +158,15 @@ struct GroupedRankingPerformanceTests {
 	/// A bound sits about halfway, on a log scale, between what the entry point costs specialised and what it costs without the
 	/// attribute (measured on an Apple-silicon Mac, optimised build, specialised against unspecialised): the evaluation 1.0 and 26,
 	/// `fit` 103 and 3,428, `fitScale` and `referenceFit` 14 and 512, `choosePenalty` 1,907 and 62,972, `bootstrapIntervals` 670 and
-	/// 22,460, `heldOutComparison` 4,023 and 134,325, `GroupedChoiceData` construction 4.1 and 25, `scores(for:)` 0.11 and 5.6,
+	/// 22,460, `heldOutComparison` 4,023 and 134,325, `GroupedChoiceData` construction from sparse rows 4.1 and 25, from dense rows 8.6 and 165, from ranked groups 8.7 and 177, `scores(for:)` 0.11 and 5.6,
 	/// `perGroup` 3.8 and 48, `pooledEvaluation` 0.26 and 5.2. Noise has to move a ratio about two-fold (construction) to five-fold
-	/// (the rest) to cross a bound in either direction. The model initialiser, `featureCounts` and `summary` are not specialised: the
-	/// attribute made no measurable difference to them.
+	/// (the rest) to cross a bound in either direction. The model initialiser, `featureCounts`, `summary`, `referenceFit` and the `negativeLogLikelihood(_:groupWeights:)` wrapper are not
+	/// specialised: they only call specialised entry points, and the attribute made no measurable difference to them (the last two are still bounded).
 	private static let bounds: [(name: String, bound: Double)] = [
 		("negativeLogLikelihood", 8), ("fit", 600), ("fitScale", 85), ("referenceFit", 85), ("choosePenalty", 11_000),
 		("bootstrapIntervals", 4_000), ("heldOutComparison", 24_000), ("dataInit", 12), ("scores", 0.8), ("perGroup", 14),
 		("pooledEvaluation", 1.2),
+		("denseInit", 38), ("rankedInit", 40), ("fitNegativeLogLikelihood", 8),
 	]
 
 	private static func ratios(_ model: GroupedChoiceModel<Double>) throws -> [String: Double] {
@@ -194,6 +195,22 @@ struct GroupedRankingPerformanceTests {
 		result["dataInit"] = GroupedRankingPerformance.seconds(runs: 5) {
 			_ = GroupedChoiceData<Double>(sparseGroups: sparse.0, featureCount: GroupedRankingPerformance.reference.count, offsets: sparse.1)
 		} / unit
+		let width = GroupedRankingPerformance.reference.count
+		let dense: [[(features: [Double], chosen: Bool)]] = sparse.0.map { group in
+			group.map { candidate in
+				var row = [Double](repeating: 0, count: width)
+				for entry in candidate.features { row[entry.feature] = entry.value }
+				return (features: row, chosen: candidate.chosen)
+			}
+		}
+		result["denseInit"] = GroupedRankingPerformance.seconds(runs: 5) { _ = GroupedChoiceData<Double>(groups: dense, offsets: sparse.1) } / unit
+		let ranked: [(candidates: [[Double]], ranking: [Int])] = dense.map { group in
+			(candidates: group.map(\.features), ranking: group.indices.filter { group[$0].chosen })
+		}
+		result["rankedInit"] = GroupedRankingPerformance.seconds(runs: 5) { _ = GroupedChoiceData<Double>(rankedGroups: ranked, offsets: sparse.1) } / unit
+		result["fitNegativeLogLikelihood"] = GroupedRankingPerformance.seconds(runs: 9) {
+			for _ in 0..<20 { _ = model.negativeLogLikelihood(fitted, groupWeights: weights) }
+		} / 20 / unit
 		result["referenceFit"] = GroupedRankingPerformance.seconds(runs: 5) { _ = try? model.referenceFit(groupWeights: weights) } / unit
 		result["fitScale"] = GroupedRankingPerformance.seconds(runs: 5) { _ = try? model.fitScale(groupWeights: weights) } / unit
 		result["scores"] = GroupedRankingPerformance.seconds(runs: 9) { _ = model.scores(for: fitted) } / unit

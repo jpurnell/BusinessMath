@@ -37,7 +37,6 @@ extension GroupedChoiceFit: Codable where T: Codable {}
 extension GroupedChoiceModel {
 
 	/// The negative log-likelihood of the observed choices under `fit`; see ``negativeLogLikelihood(multipliers:scale:groupWeights:)``.
-	@_specialize(exported: true, where T == Double)
 	public func negativeLogLikelihood(_ fit: GroupedChoiceFit<T>, groupWeights: [T]) -> (total: T, chosen: T)? {
 		negativeLogLikelihood(multipliers: fit.multipliers, scale: fit.scale, groupWeights: groupWeights)
 	}
@@ -133,7 +132,6 @@ extension GroupedChoiceModel {
 	/// A fit that keeps every multiplier at `1` and fits only the scale: the reference weights, calibrated.
 	///
 	/// - Throws: As for ``fitScale(groupWeights:)``.
-	@_specialize(exported: true, where T == Double)
 	public func referenceFit(groupWeights: [T]) throws -> GroupedChoiceFit<T> {
 		let scale = try fitScale(groupWeights: groupWeights)
 		return GroupedChoiceFit(
