@@ -101,6 +101,7 @@ public struct GroupedChoiceModel<T: Real & Sendable & BinaryFloatingPoint>: Send
 	///   - groupWeights: How much each group counts: `0` leaves it out, `2` counts it twice (as in a resample).
 	/// - Returns: `nil` when `multipliers` or `groupWeights` have the wrong length, or a weight is negative or not finite.
 	///   Groups with nothing to compare contribute nothing.
+	@_specialize(exported: true, where T == Double)
 	public func negativeLogLikelihood(multipliers: [T], scale: T, groupWeights: [T]) -> (total: T, chosen: T)? {
 		guard let evaluation = evaluate(multipliers: multipliers, scale: scale, groupWeights: groupWeights, gradient: false) else {
 			return nil

@@ -76,6 +76,7 @@ public enum GroupRankingMetrics {
 	///   - data: The grouped candidates.
 	///   - k: The cut-off for ``GroupRanking/topK``; at least `1`.
 	/// - Returns: `nil` when `scores` is not one per row or `k` is below `1`.
+	@_specialize(exported: true, where T == Double)
 	public static func perGroup<T: Real & Sendable & BinaryFloatingPoint>(
 		scores: [T], data: GroupedChoiceData<T>, k: Int
 	) -> [GroupRanking<T>?]? {
@@ -84,6 +85,7 @@ public enum GroupRankingMetrics {
 	}
 
 	/// The mean of the per-group results that exist, each group counting once.
+	@_specialize(exported: true, where T == Double)
 	public static func summary<T: Real & Sendable & BinaryFloatingPoint>(_ rankings: [GroupRanking<T>?]) -> GroupRankingSummary<T> {
 		let present = rankings.compactMap { $0 }
 		guard !present.isEmpty else { return GroupRankingSummary(groups: 0, meanPercentile: nil, topOwnShare: nil, topKShare: nil) }
@@ -99,6 +101,7 @@ public enum GroupRankingMetrics {
 	/// Only groups with both a chosen and an unchosen candidate are pooled. The area is not reimplemented here.
 	///
 	/// - Returns: `nil` when `scores` is not one per row, no group is comparable, or a score is not finite.
+	@_specialize(exported: true, where T == Double)
 	public static func pooledEvaluation<T: Real & Sendable & BinaryFloatingPoint>(
 		scores: [T], data: GroupedChoiceData<T>
 	) -> ClassifierEvaluation<T>? {

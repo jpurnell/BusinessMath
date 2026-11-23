@@ -37,11 +37,13 @@ extension GroupedChoiceFit: Codable where T: Codable {}
 extension GroupedChoiceModel {
 
 	/// The negative log-likelihood of the observed choices under `fit`; see ``negativeLogLikelihood(multipliers:scale:groupWeights:)``.
+	@_specialize(exported: true, where T == Double)
 	public func negativeLogLikelihood(_ fit: GroupedChoiceFit<T>, groupWeights: [T]) -> (total: T, chosen: T)? {
 		negativeLogLikelihood(multipliers: fit.multipliers, scale: fit.scale, groupWeights: groupWeights)
 	}
 
 	/// Each candidate's score under `fit`, one per row of the data, for ranking.
+	@_specialize(exported: true, where T == Double)
 	public func scores(for fit: GroupedChoiceFit<T>) -> [T]? {
 		guard fit.multipliers.count == data.featureCount, fit.scale.isFinite, fit.multipliers.allSatisfy({ $0.isFinite }) else { return nil }
 		return rowScores(multipliers: fit.multipliers, scale: fit.scale)
@@ -56,6 +58,7 @@ extension GroupedChoiceModel {
 	/// - Parameter groupWeights: How much each group counts; see ``negativeLogLikelihood(multipliers:scale:groupWeights:)``.
 	/// - Throws: ``GroupedChoiceError/malformedInput(reason:)`` for weights of the wrong length or not finite and non-negative,
 	///   ``GroupedChoiceError/noInformativeGroups`` when no group with positive weight has anything to compare.
+	@_specialize(exported: true, where T == Double)
 	public func fitScale(groupWeights: [T]) throws -> T {
 		try validate(groupWeights: groupWeights)
 		let ones = [T](repeating: T(1), count: data.featureCount)
@@ -130,6 +133,7 @@ extension GroupedChoiceModel {
 	/// A fit that keeps every multiplier at `1` and fits only the scale: the reference weights, calibrated.
 	///
 	/// - Throws: As for ``fitScale(groupWeights:)``.
+	@_specialize(exported: true, where T == Double)
 	public func referenceFit(groupWeights: [T]) throws -> GroupedChoiceFit<T> {
 		let scale = try fitScale(groupWeights: groupWeights)
 		return GroupedChoiceFit(
@@ -155,6 +159,7 @@ extension GroupedChoiceModel {
 	/// - Throws: ``GroupedChoiceError/malformedInput(reason:)``, ``GroupedChoiceError/noInformativeGroups``, or
 	///   ``GroupedChoiceError/didNotConverge(iterations:gradientNorm:)`` when the steps run out or the line search fails
 	///   while the projected gradient is still large. A result that did not settle is never returned as if it had.
+	@_specialize(exported: true, where T == Double)
 	public func fit(
 		groupWeights: [T], penalty: T, frozen: Set<Int> = [], start: [T]? = nil, maxIterations: Int = 300
 	) throws -> GroupedChoiceFit<T> {
