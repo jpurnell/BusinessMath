@@ -85,7 +85,6 @@ public enum GroupRankingMetrics {
 	}
 
 	/// The mean of the per-group results that exist, each group counting once.
-	@_specialize(exported: true, where T == Double)
 	public static func summary<T: Real & Sendable & BinaryFloatingPoint>(_ rankings: [GroupRanking<T>?]) -> GroupRankingSummary<T> {
 		let present = rankings.compactMap { $0 }
 		guard !present.isEmpty else { return GroupRankingSummary(groups: 0, meanPercentile: nil, topOwnShare: nil, topKShare: nil) }

@@ -83,6 +83,7 @@ public struct GroupedChoiceData<T: Real & Sendable & BinaryFloatingPoint>: Senda
 	///     that the fit does not adjust (for example a deduction held at its reference value). Finite values only.
 	/// - Returns: `nil` for no candidates, rows of different widths, zero width, a non-finite value, or offsets of the
 	///   wrong shape.
+	@_specialize(exported: true, where T == Double)
 	public init?(groups: [[(features: [T], chosen: Bool)]], offsets: [[T]]? = nil) {
 		guard let width = groups.lazy.compactMap({ $0.first?.features.count }).first, width > 0 else { return nil }
 		var sparse: [[(features: [(feature: Int, value: T)], chosen: Bool)]] = []
@@ -112,6 +113,7 @@ public struct GroupedChoiceData<T: Real & Sendable & BinaryFloatingPoint>: Senda
 	///   - offsets: As for ``init(groups:offsets:)``.
 	/// - Returns: `nil` for no candidates, no features, an index out of range or repeated within a candidate, a
 	///   non-finite value, or offsets of the wrong shape.
+	@_specialize(exported: true, where T == Double)
 	public init?(
 		sparseGroups: [[(features: [(feature: Int, value: T)], chosen: Bool)]], featureCount: Int, offsets: [[T]]? = nil
 	) {
@@ -176,6 +178,7 @@ public struct GroupedChoiceData<T: Real & Sendable & BinaryFloatingPoint>: Senda
 	///   - offsets: As for ``init(groups:offsets:)``.
 	/// - Returns: `nil` for no candidates, rows of different widths or zero width, a non-finite value, a ranking index out of
 	///   range or repeated, or offsets of the wrong shape.
+	@_specialize(exported: true, where T == Double)
 	public init?(rankedGroups: [(candidates: [[T]], ranking: [Int])], offsets: [[T]]? = nil) {
 		guard let width = rankedGroups.lazy.compactMap({ $0.candidates.first?.count }).first, width > 0 else { return nil }
 		var sparse: [[(features: [(feature: Int, value: T)], chosen: Bool)]] = []

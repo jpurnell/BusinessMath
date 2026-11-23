@@ -17,7 +17,6 @@ public enum GroupedCrossValidation {
 	/// How many candidates carry each feature, and how many of those were chosen, over the informative groups with positive weight.
 	///
 	/// Offered so a caller can apply its own evidence rule (for example, "do not refit a feature too few chosen candidates carry").
-	@_specialize(exported: true, where T == Double)
 	public static func featureCounts<T: Real & Sendable & BinaryFloatingPoint>(
 		model: GroupedChoiceModel<T>, groupWeights: [T]
 	) -> (carrying: [Int], chosenCarrying: [Int])? {

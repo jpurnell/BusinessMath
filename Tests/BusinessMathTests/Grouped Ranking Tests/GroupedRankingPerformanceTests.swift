@@ -38,6 +38,13 @@ enum GroupedRankingPerformance {
 	/// A class of `people` people, each with `people - 1` candidates (everyone else), sparse features of about the density of a
 	/// real class, a few candidates chosen per person by a noisy draw from a known model, and a small fixed deduction.
 	static func model(people: Int, seed: UInt64) -> GroupedChoiceModel<Double>? {
+		let (groups, offsets) = sparseGroups(people: people, seed: seed)
+		guard let data = GroupedChoiceData<Double>(sparseGroups: groups, featureCount: reference.count, offsets: offsets) else { return nil }
+		return GroupedChoiceModel(data: data, reference: reference, likelihood: .subset)
+	}
+
+	/// The candidates `model(people:seed:)` is built from.
+	static func sparseGroups(people: Int, seed: UInt64) -> ([[(features: [(feature: Int, value: Double)], chosen: Bool)]], [[Double]]) {
 		var generator = SplitMix64(seed: seed)
 		func uniform() -> Double { Double.random(in: 0..<1, using: &generator) }
 		var groups: [[(features: [(feature: Int, value: Double)], chosen: Bool)]] = []
@@ -65,8 +72,7 @@ enum GroupedRankingPerformance {
 			groups.append(rows)
 			offsets.append(deductions)
 		}
-		guard let data = GroupedChoiceData<Double>(sparseGroups: groups, featureCount: reference.count, offsets: offsets) else { return nil }
-		return GroupedChoiceModel(data: data, reference: reference, likelihood: .subset)
+		return (groups, offsets)
 	}
 
 	/// The negative log-likelihood of the observed choices, written for `Double` with no generics: the reference the timings are
@@ -147,14 +153,19 @@ struct GroupedRankingPerformanceTests {
 		#expect(abs(toolkit.total - plain) < 1e-9 * Swift.max(1, abs(plain)))
 	}
 
-	/// How long each public entry point takes on a class of seventy, in units of one plain evaluation, and the most it may take.
+	/// The most each public entry point may take on a class of seventy, in units of one plain evaluation.
 	///
-	/// A bound sits about halfway, on a log scale, between what the entry point costs specialised and what it cost in 3.0.0-alpha.18
-	/// (measured on an Apple-silicon Mac, optimised build): the evaluation 1.1 against 26, `fit` 108 against 3,438, `choosePenalty`
-	/// 1,986 against 64,578, `bootstrapIntervals` 724 against 23,097, `heldOutComparison` 4,178 against 135,164. Noise has to move a
-	/// ratio more than five-fold to cross a bound in either direction.
+	/// A bound sits about halfway, on a log scale, between what the entry point costs specialised and what it costs without the
+	/// attribute (measured on an Apple-silicon Mac, optimised build, specialised against unspecialised): the evaluation 1.0 and 26,
+	/// `fit` 103 and 3,428, `fitScale` and `referenceFit` 14 and 512, `choosePenalty` 1,907 and 62,972, `bootstrapIntervals` 670 and
+	/// 22,460, `heldOutComparison` 4,023 and 134,325, `GroupedChoiceData` construction 4.1 and 25, `scores(for:)` 0.11 and 5.6,
+	/// `perGroup` 3.8 and 48, `pooledEvaluation` 0.26 and 5.2. Noise has to move a ratio about two-fold (construction) to five-fold
+	/// (the rest) to cross a bound in either direction. The model initialiser, `featureCounts` and `summary` are not specialised: the
+	/// attribute made no measurable difference to them.
 	private static let bounds: [(name: String, bound: Double)] = [
-		("negativeLogLikelihood", 8), ("fit", 600), ("choosePenalty", 11_000), ("bootstrapIntervals", 4_000), ("heldOutComparison", 24_000),
+		("negativeLogLikelihood", 8), ("fit", 600), ("fitScale", 85), ("referenceFit", 85), ("choosePenalty", 11_000),
+		("bootstrapIntervals", 4_000), ("heldOutComparison", 24_000), ("dataInit", 12), ("scores", 0.8), ("perGroup", 14),
+		("pooledEvaluation", 1.2),
 	]
 
 	private static func ratios(_ model: GroupedChoiceModel<Double>) throws -> [String: Double] {
@@ -179,6 +190,16 @@ struct GroupedRankingPerformanceTests {
 			_ = GroupedCrossValidation.heldOutComparison(
 				model: model, penalties: penalties, minimumChosen: 20, folds: 5, innerFolds: 3, resamples: 10, level: 0.9, seed: 3)
 		} / unit
+		let sparse = GroupedRankingPerformance.sparseGroups(people: Self.people, seed: 20_261_120)
+		result["dataInit"] = GroupedRankingPerformance.seconds(runs: 5) {
+			_ = GroupedChoiceData<Double>(sparseGroups: sparse.0, featureCount: GroupedRankingPerformance.reference.count, offsets: sparse.1)
+		} / unit
+		result["referenceFit"] = GroupedRankingPerformance.seconds(runs: 5) { _ = try? model.referenceFit(groupWeights: weights) } / unit
+		result["fitScale"] = GroupedRankingPerformance.seconds(runs: 5) { _ = try? model.fitScale(groupWeights: weights) } / unit
+		result["scores"] = GroupedRankingPerformance.seconds(runs: 9) { _ = model.scores(for: fitted) } / unit
+		let scores = try #require(model.scores(for: fitted))
+		result["perGroup"] = GroupedRankingPerformance.seconds(runs: 9) { _ = GroupRankingMetrics.perGroup(scores: scores, data: model.data, k: 25) } / unit
+		result["pooledEvaluation"] = GroupedRankingPerformance.seconds(runs: 9) { _ = GroupRankingMetrics.pooledEvaluation(scores: scores, data: model.data) } / unit
 		return result
 	}
 
