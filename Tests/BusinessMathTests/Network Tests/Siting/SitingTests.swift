@@ -155,7 +155,11 @@ struct SitingTests {
 		return total(chosen)
 	}
 
-	@Test("Exact branch equals brute force; heuristic is never worse than greedy", .timeLimit(.minutes(1)))
+	// A hang guard, so the limit has to sit above what the test costs, and a minute never did:
+	// measured 2026-11-24 on Linux with Swift 6.4.2, it takes 73 s alone on an idle 12-core
+	// machine and 184 to 214 s on the 4-core CI runner, where every test starts at once and the
+	// CPU-bound ones starve the rest. Swift 6.2.1 did not trip it at 214 s; 6.4.2 does.
+	@Test("Exact branch equals brute force; heuristic is never worse than greedy", .timeLimit(.minutes(10)))
 	func bruteForceAgreement() throws {
 		var rng = SplitMix64(seed: 2028)
 		var heuristicHits = 0
