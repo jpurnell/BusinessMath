@@ -29,7 +29,7 @@ jobs:
       - name: Setup Swift
         uses: SwiftyLab/setup-swift@d60245579ea3836a3f2fa65ebbe1e8891d577c76 # v1.14.2
         with:
-          swift-version: '6.4'
+          swift-version: '6.4.2'
 
       - name: Install Node (for Claude Code CLI)
         uses: actions/setup-node@v4
