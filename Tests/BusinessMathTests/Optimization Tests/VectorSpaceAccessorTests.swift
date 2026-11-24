@@ -84,14 +84,18 @@ struct VectorSpaceAccessorTests {
 
     /// All four quadrants, including the branch where `atan2` goes negative — a naive
     /// `atan(y/x)` agrees on the first quadrant and is wrong on the other three.
-    @Test("Angle_IsCorrectInEveryQuadrant", arguments: [
+    /// Typed on purpose: written inline in `arguments:`, the Swift Testing macro hands the whole
+    /// literal to the type-checker as one expression, and Swift 6.4.3 on Linux gives up on it.
+    private static let quadrantCases: [(Double, Double, Double)] = [
         (1.0, 0.0, 0.0),
         (0.0, 1.0, Double.pi / 2),
         (-1.0, 0.0, Double.pi),
         (1.0, 1.0, Double.pi / 4),
         (-1.0, -1.0, -3.0 * Double.pi / 4),
         (1.0, -1.0, -Double.pi / 4),
-    ])
+    ]
+
+    @Test("Angle_IsCorrectInEveryQuadrant", arguments: VectorSpaceAccessorTests.quadrantCases)
     func angleIsCorrectInEveryQuadrant(x: Double, y: Double, expected: Double) {
         #expect(abs(Vector2D(x: x, y: y).angle - expected) < Self.tolerance,
                 "angle(\(x), \(y))")
