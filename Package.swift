@@ -68,7 +68,7 @@ var dependencies: [Package.Dependency] = [
 dependencies.append(
 	.package(
 		url: "https://github.com/apple/swift-crypto.git",
-		from: "3.0.0"
+		from: "5.1.2"
 	)
 )
 
