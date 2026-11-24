@@ -533,7 +533,7 @@ struct Phase4StatementsAndSeriesTests {
 		calendar.timeZone = try #require(TimeZone(identifier: "UTC"))
 		let requested: Set<Calendar.Component> = [.year, .month, .day, .hour, .minute, .second, .nanosecond]
 
-		let pathological: [(String, Date)] = [
+		let everyDate: [(String, Date)] = [
 			("epoch", Date(timeIntervalSince1970: 0)),
 			("distantPast", Date.distantPast),
 			("distantFuture", Date.distantFuture),
@@ -542,6 +542,14 @@ struct Phase4StatementsAndSeriesTests {
 			("-infinity", Date(timeIntervalSince1970: -Double.infinity)),
 			("greatestFinite", Date(timeIntervalSince1970: Double.greatestFiniteMagnitude))
 		]
+		#if os(Linux)
+		// swift-foundation on Linux (Swift 6.4.2) traps with SIGILL when a NaN `Date` is asked for
+		// seconds or nanoseconds, which ends the whole test process. Found on a Linux machine, and
+		// pinned in its own exit test below, where the trap cannot take this one down.
+		let pathological = everyDate.filter { $0.0 != "nan" }
+		#else
+		let pathological = everyDate
+		#endif
 
 		for (name, date) in pathological {
 			let parts = calendar.dateComponents(requested, from: date)
@@ -566,6 +574,87 @@ struct Phase4StatementsAndSeriesTests {
 		#expect(partial.year == 1970, "and the requested one is still there")
 	}
 
+	// MARK: - Which pathological dates make Foundation trap
+
+	// An exit test spawns a child process, which iOS, tvOS and watchOS do not permit.
+	#if os(macOS) || os(Linux)
+
+	/// The dates the probe above uses, as bit patterns of seconds since 1970 so they survive being
+	/// handed to an exit test's child process (a NaN does not survive a JSON round trip).
+	private static let pathologicalSecondsSince1970: [(String, UInt64)] = [
+		("epoch", (0.0).bitPattern),
+		("distantPast", Date.distantPast.timeIntervalSince1970.bitPattern),
+		("distantFuture", Date.distantFuture.timeIntervalSince1970.bitPattern),
+		("nan", Double.nan.bitPattern),
+		("+infinity", Double.infinity.bitPattern),
+		("-infinity", (-Double.infinity).bitPattern),
+		("greatestFinite", Double.greatestFiniteMagnitude.bitPattern)
+	]
+
+	/// `Calendar.dateComponents(_:from:)` must answer for every date, not trap.
+	///
+	/// Swift 6.2.1's Foundation on Linux answers for all seven. Swift 6.4.2's traps (an illegal
+	/// instruction inside `_CalendarGregorian._dateComponents`) on at least one, which killed the
+	/// whole test process and hid every test scheduled after it. Each date runs in its own child
+	/// process so a trap fails one case and names it instead of ending the run.
+	@Test("Calendar.dateComponents(from:) answers rather than traps",
+		  .requiresUnsanitizedRuntime,
+		  arguments: Phase4StatementsAndSeriesTests.pathologicalSecondsSince1970)
+	func dateComponentsFromDateDoesNotTrap(name: String, bits: UInt64) async {
+		#if os(Linux)
+		if name == "nan" {
+			// Measured on Linux with Swift 6.4.2: a NaN `Date` makes swift-foundation trap (SIGILL).
+			// Swift 6.2.1 answered. Known, not accepted: when Foundation stops trapping this
+			// case passes, `withKnownIssue` reports it, and this branch is deleted.
+			await withKnownIssue("swift-foundation on Linux traps on a NaN Date (SIGILL)") {
+				await #expect(processExitsWith: .success, "nan") { [bits] in
+					var calendar = Calendar(identifier: .gregorian)
+					calendar.timeZone = .gmt
+					let date = Date(timeIntervalSince1970: Double(bitPattern: bits))
+					_ = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second, .nanosecond], from: date)
+				}
+			}
+			return
+		}
+		#endif
+		await #expect(processExitsWith: .success, "\(name)") { [bits] in
+			var calendar = Calendar(identifier: .gregorian)
+			calendar.timeZone = .gmt
+			let date = Date(timeIntervalSince1970: Double(bitPattern: bits))
+			_ = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second, .nanosecond], from: date)
+		}
+	}
+
+	/// The difference form, `dateComponents(_:from:to:)`, which `PeriodArithmetic` uses.
+	@Test("Calendar.dateComponents(from:to:) answers rather than traps",
+		  .requiresUnsanitizedRuntime,
+		  arguments: Phase4StatementsAndSeriesTests.pathologicalSecondsSince1970)
+	func dateComponentsFromToDoesNotTrap(name: String, bits: UInt64) async {
+		#if os(Linux)
+		if name == "nan" {
+			// Same trap in the difference form. See the note in the sibling test.
+			await withKnownIssue("swift-foundation on Linux traps on a NaN Date (SIGILL)") {
+				await #expect(processExitsWith: .success, "nan") { [bits] in
+					var calendar = Calendar(identifier: .gregorian)
+					calendar.timeZone = .gmt
+					let date = Date(timeIntervalSince1970: Double(bitPattern: bits))
+					_ = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second, .nanosecond],
+												from: Date(timeIntervalSince1970: 0), to: date)
+				}
+			}
+			return
+		}
+		#endif
+		await #expect(processExitsWith: .success, "\(name)") { [bits] in
+			var calendar = Calendar(identifier: .gregorian)
+			calendar.timeZone = .gmt
+			let date = Date(timeIntervalSince1970: Double(bitPattern: bits))
+			_ = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second, .nanosecond],
+										from: Date(timeIntervalSince1970: 0), to: date)
+		}
+	}
+	#endif
+
 	/// The finding the same probe produced that **is** live, recorded so it is not mistaken for
 	/// part of the class above. A non-finite `TimeInterval` does not fail to build a `Date`, it
 	/// clamps — so the wrong answer is manufactured at construction, where no `??` can see it,
@@ -577,7 +666,14 @@ struct Phase4StatementsAndSeriesTests {
 
 		let fromNaN = calendar.dateComponents([.year], from: Date(timeIntervalSince1970: Double.nan))
 		let nanYear: Int = try #require(fromNaN.year)
+		#if os(Linux)
+		// swift-foundation on Linux (Swift 6.4.2) no longer clamps: a NaN `Date` asked for the year
+		// alone answers `Int.max` (and traps if asked for seconds; see the exit tests above).
+		// Swift 6.2.1 on Linux, and Darwin, answer 4713.
+		#expect(nanYear == Int.max, "on Linux a nan interval reports Int.max, got \(nanYear)")
+		#else
 		#expect(nanYear == 4713, "a nan interval clamps to the Julian epoch, not to nil and not to 0")
+		#endif
 
 		let fromInfinity = calendar.dateComponents([.year], from: Date(timeIntervalSince1970: Double.infinity))
 		let infinityYear: Int = try #require(fromInfinity.year)

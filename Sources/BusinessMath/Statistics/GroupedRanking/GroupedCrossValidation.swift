@@ -61,6 +61,7 @@ public enum GroupedCrossValidation {
 	///   - seed: Seeds the fold assignment.
 	/// - Returns: The best candidate, or ``PenaltyChoice/reference`` when there are fewer than `2 × folds` groups to cross-validate
 	///   or no candidate could be scored.
+	@_specialize(exported: true, where T == Double)
 	public static func choosePenalty<T: Real & Sendable & BinaryFloatingPoint>(
 		model: GroupedChoiceModel<T>, groupWeights: [T], penalties: [PenaltyChoice<T>], frozen: Set<Int> = [], folds: Int, seed: UInt64
 	) -> PenaltyChoice<T> {
@@ -137,6 +138,7 @@ public enum GroupedCrossValidation {
 	///   - level: The share of resamples the interval covers, for example `0.9`.
 	///   - seed: Seeds the resampling.
 	/// - Returns: `nil` when no resample could be fitted.
+	@_specialize(exported: true, where T == Double)
 	public static func bootstrapIntervals<T: Real & Sendable & BinaryFloatingPoint>(
 		model: GroupedChoiceModel<T>, full: GroupedChoiceFit<T>, penalty: T, frozen: Set<Int> = [], groupWeights: [T],
 		resamples: Int, level: T, seed: UInt64
@@ -190,6 +192,7 @@ public enum GroupedCrossValidation {
 	///   - level: The share of resamples the interval covers.
 	///   - seed: Seeds everything that is random; the fold assignment, each inner assignment and the bootstrap use derived seeds.
 	/// - Returns: `nil` when there are fewer than `2 × folds` informative groups, or no held-out group could be compared.
+	@_specialize(exported: true, where T == Double)
 	public static func heldOutComparison<T: Real & Sendable & BinaryFloatingPoint>(
 		model: GroupedChoiceModel<T>, penalties: [PenaltyChoice<T>], minimumChosen: Int, folds: Int, innerFolds: Int,
 		resamples: Int, level: T, seed: UInt64
