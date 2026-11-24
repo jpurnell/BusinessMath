@@ -29,6 +29,14 @@ import Foundation
 // `+.infinity` reports year **506713**. The unwrap is irrelevant there because the component
 // is present; the wrong answer was manufactured when the `Date` was constructed. That belongs
 // to whoever screens `Date` construction, and it needs its own probe.
+//
+// Re-measured 2026-11-24 on Linux with Swift 6.4.2 (swift-foundation), which differs from the
+// Darwin measurement above for one input only: `Date(timeIntervalSince1970: .nan)`. Asked for
+// a request set that includes `.second` or `.nanosecond`, `Calendar.dateComponents` **traps**
+// (SIGILL) instead of answering, and asked for `.year` alone it answers `Int.max`, not 4713.
+// `±.infinity`, `±1e300`, `.greatestFiniteMagnitude` and the distant dates still answer. This
+// package never builds a non-finite `Date` itself, so the exposure is a caller that hands one
+// in. Swift 6.2.1 on Linux did not trap. Pinned by `Phase4StatementsAndSeriesTests`.
 
 
 // MARK: - Period Error
