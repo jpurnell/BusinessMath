@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+### [3.0.0-alpha.20] - 2026-11-25
+
+No API changes. A behaviour fix on Linux with Swift 6.4.x.
+
 **Fixed: a NaN `Date` no longer ends the process on Linux (Swift 6.4.x).** `Period.day(_:)` and `FiscalCalendar.fiscalYear/fiscalQuarter/fiscalHalf/fiscalMonth(for:)` now substitute the Julian epoch for a NaN `Date` before calling `Calendar`, which is exactly what Darwin's Foundation answers, so every platform returns the same value and none traps. On Linux 6.4.x `startOfDay` trapped (SIGILL) and a year-only request answered `Int.max`, which `fiscalYear` then overflowed on `+ 1`. Only NaN is replaced; infinities and finite dates are untouched, and Darwin behaviour is unchanged. `Period.custom` and decoding still reject a non-finite date, as before. Calling Foundation's `Calendar` directly with a NaN `Date` still traps on Linux 6.4.x (that is Foundation, pinned in `Phase4StatementsAndSeriesTests`). Tests: `NaNDateSafetyTests` (child-process exit tests, red on Linux before the fix).
 
 ### [3.0.0-alpha.19] - 2026-11-23
