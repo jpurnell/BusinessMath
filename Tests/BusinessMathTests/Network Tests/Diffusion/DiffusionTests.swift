@@ -21,6 +21,14 @@ private typealias F = DiffusionFixtures
 
 // MARK: - Independent cascade
 
+// Time limits (measured 2026-11-25 on Linux with Swift 6.4.2): Swift Testing counts a test's
+// time limit as wall clock from when it starts, and on the 4-core CI runner every test starts at
+// once and the CPU-bound ones starve the rest. The tests here cost milliseconds (the diffusion
+// file runs in 0.09 s on 12 cores and 0.11 s on 4), yet on the Ubuntu CI job a different group
+// of them exceeded one minute on each of two runs while the suite took 270 to 309 s. Their limit
+// is 10 minutes, about twice the longest suite seen, so it still catches a hang and no longer
+// fails a test that was only waiting for a core.
+
 @Suite("IndependentCascade")
 struct IndependentCascadeTests {
 
@@ -389,7 +397,7 @@ struct DiffusionEstimatorOracleTests {
 		}
 	}
 
-	@Test("A large graph finishes within a time limit", .timeLimit(.minutes(1)))
+	@Test("A large graph finishes within a time limit", .timeLimit(.minutes(10)))
 	func largeGraph() throws {
 		let g = try F.randomWeightedGraph(nodes: 3000, edgeProbability: 0.002, seed: 9, weighted: true)
 		let estimator = try SpreadEstimator(trials: 20, seed: 1)

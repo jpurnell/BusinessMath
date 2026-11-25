@@ -37,6 +37,9 @@ import Foundation
 // `±.infinity`, `±1e300`, `.greatestFiniteMagnitude` and the distant dates still answer. This
 // package never builds a non-finite `Date` itself, so the exposure is a caller that hands one
 // in. Swift 6.2.1 on Linux did not trap. Pinned by `Phase4StatementsAndSeriesTests`.
+//
+// Resolved 2026-11-24: `Period.day` and `FiscalCalendar` pass a NaN `Date` through
+// `calendarSafe(_:)` (below), which substitutes the Darwin answer, so neither traps.
 
 
 // MARK: - Calendar Cache
@@ -64,6 +67,24 @@ import Foundation
 /// `DayCountConvention.swift`, whose own note recorded that the rule "stayed in every
 /// other file that walks a schedule of dates". This is one of those files.
 private let cachedCalendar = gregorianUTC
+
+/// The date Foundation's `Calendar` answers for a NaN `Date` on Darwin: the Julian epoch.
+///
+/// Measured 2026-11-24 on Darwin and Swift 6.2.1 Linux: `Calendar.startOfDay(for:)` and
+/// `dateComponents` map a NaN-backed `Date` to `-211845110400` seconds from the reference date
+/// (year 4713 before the common era). On Linux with Swift 6.4.x swift-foundation traps instead
+/// (`startOfDay`, and any request for seconds), or answers a year of `Int.max` that arithmetic
+/// then overflows. A NaN `Date` is substituted by this value before it reaches `Calendar`, so
+/// every platform answers what Darwin always did and none traps.
+private let julianEpochDate = Date(timeIntervalSinceReferenceDate: -211_845_110_400)
+
+/// The date to hand to `Calendar`: `date`, or the Julian epoch when `date` is NaN.
+///
+/// Only NaN is replaced. Infinities and every finite date pass through unchanged, because
+/// Foundation answers for them on every platform (pinned in `Phase4StatementsAndSeriesTests`).
+internal func calendarSafe(_ date: Date) -> Date {
+	date.timeIntervalSinceReferenceDate.isNaN ? julianEpochDate : date
+}
 
 /// A type-safe representation of a time period in financial models.
 ///
@@ -304,7 +325,7 @@ public struct Period: Hashable, Comparable, Codable, Sendable {
 	/// print(today.label)  // "2025-01-15"
 	/// ```
 	public static func day(_ date: Date) -> Period {
-		let startOfDay = cachedCalendar.startOfDay(for: date)
+		let startOfDay = cachedCalendar.startOfDay(for: calendarSafe(date))
 		return Period(type: .daily, date: startOfDay)
 	}
 

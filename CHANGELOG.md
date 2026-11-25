@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+### [3.0.0-alpha.20] - 2026-11-25
+
+No API changes. A behaviour fix on Linux with Swift 6.4.x.
+
+**Fixed: a NaN `Date` no longer ends the process on Linux (Swift 6.4.x).** `Period.day(_:)` and `FiscalCalendar.fiscalYear/fiscalQuarter/fiscalHalf/fiscalMonth(for:)` now substitute the Julian epoch for a NaN `Date` before calling `Calendar`, which is exactly what Darwin's Foundation answers, so every platform returns the same value and none traps. On Linux 6.4.x `startOfDay` trapped (SIGILL) and a year-only request answered `Int.max`, which `fiscalYear` then overflowed on `+ 1`. Only NaN is replaced; infinities and finite dates are untouched, and Darwin behaviour is unchanged. `Period.custom` and decoding still reject a non-finite date, as before. Calling Foundation's `Calendar` directly with a NaN `Date` still traps on Linux 6.4.x (that is Foundation, pinned in `Phase4StatementsAndSeriesTests`). Tests: `NaNDateSafetyTests` (child-process exit tests, red on Linux before the fix).
+
+**Test change: the 1-minute time limits are now 10 minutes (17 tests in `DiffusionOracleTests`, `DiffusionTests`, `BurtConstraintTests`, `SitingTests`).** Swift Testing counts a limit as wall clock from when a test starts, and on the 4-core Ubuntu CI runner cheap tests wait for a core behind CPU-bound ones: across three runs of this release two failed on a different group of these tests (25 and 69 time-limit issues, none a wrong answer) and one passed, with the suite taking 270 to 309 s. The tests cost milliseconds (the diffusion file: 0.09 s on 12 cores, 0.11 s pinned to 4). The new limit is about twice the longest suite seen. `NaNDateSafetyTests` was ruled out as the cause: the 4-core suite takes 167.4 s with it and 169.5 s without.
+
 ### [3.0.0-alpha.19] - 2026-11-23
 
 No API changes. One dependency change: the minimum **swift-crypto** is now **5.1.2** (was 3.0.0), so a package that depends on BusinessMath and pins swift-crypto below 5 will fail to resolve until it moves. swift-crypto is linked only where CryptoKit is absent (Linux, Android); Apple builds use CryptoKit and are unaffected. Verified on Linux x86_64 with Swift 6.4.2 and swift-crypto 5.1.2: the library builds and the whole test suite passes (9,811 tests, 3 known issues). swift-crypto 5.1.2 does not compile on Swift 6.2.1 (`@nonexhaustive`); Swift 6.4.2 is the version verified on Linux, and 6.3 was not tried. CI installs Swift 6.4.2 through `SwiftyLab/setup-swift`. The only crypto call in the package is `SHA256.hash(data:)` in `TemplateRegistry`, which is unchanged across 3.x to 5.x. Resolution and a macOS build were checked at 5.1.2; a Linux build was not run locally.

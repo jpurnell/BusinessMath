@@ -19,10 +19,18 @@ import TestSupport
 
 private typealias F = DiffusionFixtures
 
+// Time limits (measured 2026-11-25 on Linux with Swift 6.4.2): Swift Testing counts a test's
+// time limit as wall clock from when it starts, and on the 4-core CI runner every test starts at
+// once and the CPU-bound ones starve the rest. The tests here cost milliseconds (the diffusion
+// file runs in 0.09 s on 12 cores and 0.11 s on 4), yet on the Ubuntu CI job a different group
+// of them exceeded one minute on each of two runs while the suite took 270 to 309 s. Their limit
+// is 10 minutes, about twice the longest suite seen, so it still catches a hang and no longer
+// fails a test that was only waiting for a core.
+
 @Suite("Diffusion: per-trial oracles")
 struct DiffusionOracleTests {
 
-	@Test("Independent cascade equals reachability over the fired edges, trial by trial", .timeLimit(.minutes(1)),
+	@Test("Independent cascade equals reachability over the fired edges, trial by trial", .timeLimit(.minutes(10)),
 		  arguments: F.oracleSeeds)
 	func cascadeMatchesReachability(seed: UInt64) throws {
 		let graph = try F.randomWeightedGraph(nodes: 14, edgeProbability: 0.2, seed: seed, weighted: seed % 2 == 0)
@@ -48,7 +56,7 @@ struct DiffusionOracleTests {
 		}
 	}
 
-	@Test("Linear threshold equals the threshold fixed point, trial by trial", .timeLimit(.minutes(1)),
+	@Test("Linear threshold equals the threshold fixed point, trial by trial", .timeLimit(.minutes(10)),
 		  arguments: F.oracleSeeds)
 	func thresholdMatchesFixedPoint(seed: UInt64) throws {
 		let graph = try F.randomWeightedGraph(nodes: 14, edgeProbability: 0.25, seed: seed, weighted: seed % 2 == 1)
@@ -68,7 +76,7 @@ struct DiffusionOracleTests {
 	/// A threshold that lands just above a share must be missed, so the tolerance in the
 	/// model must be far smaller than 1e-3: 40,000 thresholds on a share of 1/2 put roughly
 	/// 40 of them in (0.5, 0.501].
-	@Test("The threshold comparison tolerance is rounding-sized, not visible", .timeLimit(.minutes(1)))
+	@Test("The threshold comparison tolerance is rounding-sized, not visible", .timeLimit(.minutes(10)))
 	func thresholdToleranceIsTiny() {
 		let graph = WeightedGraph(unweightedEdges: [(0, 2), (1, 2)])
 		let flat = DiffusionGraph(graph)
@@ -82,7 +90,7 @@ struct DiffusionOracleTests {
 		#expect(matched == 40_000)
 	}
 
-	@Test("Spread is monotone in the seed set and in the probability, exactly, on common trials", .timeLimit(.minutes(1)),
+	@Test("Spread is monotone in the seed set and in the probability, exactly, on common trials", .timeLimit(.minutes(10)),
 		  arguments: F.oracleSeeds)
 	func monotonicity(seed: UInt64) throws {
 		let graph = try F.randomWeightedGraph(nodes: 16, edgeProbability: 0.15, seed: seed, weighted: true)
@@ -121,7 +129,7 @@ struct DiffusionClosedFormTests {
 	/// np(1-p), so the standard error of N trials is sqrt(np(1-p)/N). Four standard errors
 	/// from theory is a one-in-16,000 miss for any fixed (seed, N); seeds are fixed, so the
 	/// outcome is reproducible rather than merely unlikely to fail.
-	@Test("Star centre: mean is 1 + n p within 4 theoretical SE, and the reported SE matches theory", .timeLimit(.minutes(1)),
+	@Test("Star centre: mean is 1 + n p within 4 theoretical SE, and the reported SE matches theory", .timeLimit(.minutes(10)),
 		  arguments: [(8, 0.25), (12, 0.5), (20, 0.9)] as [(Int, Double)])
 	func starBinomial(leaves: Int, p: Double) throws {
 		let trials = 3000

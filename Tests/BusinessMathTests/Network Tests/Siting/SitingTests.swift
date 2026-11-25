@@ -48,6 +48,14 @@ private func denseMean(_ table: [[Double]], site: Int) -> Double {
 	return total / headcount.reduce(0, +)
 }
 
+// Time limits (measured 2026-11-25 on Linux with Swift 6.4.2): Swift Testing counts a test's
+// time limit as wall clock from when it starts, and on the 4-core CI runner every test starts at
+// once and the CPU-bound ones starve the rest. Most tests here cost milliseconds (the brute-force
+// enumeration below is the exception, measured separately), yet on the Ubuntu CI job 69 of them
+// exceeded one minute in one run while the suite took 270 s. Their limit
+// is 10 minutes, about twice the longest suite seen, so it still catches a hang and no longer
+// fails a test that was only waiting for a core.
+
 @Suite("Site selection")
 struct SitingTests {
 
@@ -394,7 +402,7 @@ struct SitingInvariantTests {
 		#expect(abs(instance.problem.totalWeight - totalWeight) < 1e-9)
 	}
 
-	@Test("Exact result: structure, and the lexicographically first optimum, even with ties", .timeLimit(.minutes(1)),
+	@Test("Exact result: structure, and the lexicographically first optimum, even with ties", .timeLimit(.minutes(10)),
 		  arguments: SitingInvariantTests.seeds)
 	func exactMatchesOracle(seed: UInt64) throws {
 		for integerValued in [true, false] {
@@ -413,7 +421,7 @@ struct SitingInvariantTests {
 		}
 	}
 
-	@Test("k = 1 is never worse than any single site, and equals the best one", .timeLimit(.minutes(1)),
+	@Test("k = 1 is never worse than any single site, and equals the best one", .timeLimit(.minutes(10)),
 		  arguments: SitingInvariantTests.seeds)
 	func singleSiteIsBest(seed: UInt64) throws {
 		let instance = try SiteInstance(seed: seed, sites: 7, demands: 9, integerValued: false)
@@ -428,7 +436,7 @@ struct SitingInvariantTests {
 		#expect(abs(result.totalWeightedCost - best) < 1e-9)
 	}
 
-	@Test("Optimum never rises as k grows, and k = number of sites costs the cheapest-of-all", .timeLimit(.minutes(1)),
+	@Test("Optimum never rises as k grows, and k = number of sites costs the cheapest-of-all", .timeLimit(.minutes(10)),
 		  arguments: SitingInvariantTests.seeds)
 	func monotoneInK(seed: UInt64) throws {
 		let instance = try SiteInstance(seed: seed, sites: 6, demands: 8, integerValued: true)
@@ -444,7 +452,7 @@ struct SitingInvariantTests {
 		#expect(abs(previous - floor) < 1e-9)
 	}
 
-	@Test("Heuristic branch: structure, no better than the optimum, no worse than greedy, swap-optimal", .timeLimit(.minutes(1)),
+	@Test("Heuristic branch: structure, no better than the optimum, no worse than greedy, swap-optimal", .timeLimit(.minutes(10)),
 		  arguments: SitingInvariantTests.seeds)
 	func heuristicInvariants(seed: UInt64) throws {
 		for integerValued in [true, false] {
@@ -481,7 +489,7 @@ struct SitingInvariantTests {
 		}
 	}
 
-	@Test("Input order of the candidate list never changes the answer", .timeLimit(.minutes(1)),
+	@Test("Input order of the candidate list never changes the answer", .timeLimit(.minutes(10)),
 		  arguments: SitingInvariantTests.seeds)
 	func siteOrderInvariant(seed: UInt64) throws {
 		let instance = try SiteInstance(seed: seed, sites: 7, demands: 7, integerValued: true)
@@ -498,7 +506,7 @@ struct SitingInvariantTests {
 		}
 	}
 
-	@Test("Scaling every weight, or every cost, by c scales the total by c and changes no choice", .timeLimit(.minutes(1)),
+	@Test("Scaling every weight, or every cost, by c scales the total by c and changes no choice", .timeLimit(.minutes(10)),
 		  arguments: [0.5, 3.0, 1000.0])
 	func scaling(factor: Double) throws {
 		let instance = try SiteInstance(seed: 77, sites: 6, demands: 8, integerValued: false)
@@ -717,7 +725,7 @@ extension SitingInvariantTests {
 	/// Scaling by 1e-20 puts every total far below the rounding step of a total that started
 	/// at 1.0, so any offset folded into the objective would erase every difference between
 	/// subsets and leave the first one winning.
-	@Test("Scale invariance holds at extreme magnitudes, where an offset would swallow every difference", .timeLimit(.minutes(1)),
+	@Test("Scale invariance holds at extreme magnitudes, where an offset would swallow every difference", .timeLimit(.minutes(10)),
 		  arguments: [1e-20, 1e-12, 1e12, 1e150])
 	func extremeScaling(factor: Double) throws {
 		var checkedDistinct = 0
@@ -801,7 +809,7 @@ extension SitingInvariantTests {
 	/// Documented: a heuristic result lists sites "in the order the search settled on (greedy
 	/// pick order, swaps replacing in place)", not sorted. When greedy's set is already
 	/// swap-optimal the search changes nothing, so the list must be greedy's pick order.
-	@Test("A heuristic result that needs no swaps lists the sites in greedy pick order, unsorted", .timeLimit(.minutes(1)))
+	@Test("A heuristic result that needs no swaps lists the sites in greedy pick order, unsorted", .timeLimit(.minutes(10)))
 	func heuristicKeepsPickOrder() throws {
 		var unsortedCases = 0
 		for seed in 1...40 as ClosedRange<UInt64> {
@@ -844,7 +852,7 @@ extension SitingInvariantTests {
 	/// heuristic at a size where enumeration would never finish, and the subset count must
 	/// saturate rather than overflow on the way to that decision.
 	@Test("A large heuristic problem finishes, is not exact, and is swap-optimal",
-		  .timeLimit(.minutes(1)))
+		  .timeLimit(.minutes(10)))
 	func largeHeuristic() throws {
 		let instance = try SiteInstance(seed: 99, sites: 120, demands: 60, integerValued: false)
 		let result = try PMedian().select(instance.problem, count: 8)
