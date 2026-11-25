@@ -57,6 +57,14 @@ private func denseConstraint(_ graph: WeightedGraph<String>) -> [String: Double]
 	return result
 }
 
+// Time limits (measured 2026-11-25 on Linux with Swift 6.4.2): Swift Testing counts a test's
+// time limit as wall clock from when it starts, and on the 4-core CI runner every test starts at
+// once and the CPU-bound ones starve the rest. The tests here cost milliseconds (the diffusion
+// file runs in 0.09 s on 12 cores and 0.11 s on 4), yet on the Ubuntu CI job a different group
+// of them exceeded one minute on each of two runs while the suite took 270 to 309 s. Their limit
+// is 10 minutes, about twice the longest suite seen, so it still catches a hang and no longer
+// fails a test that was only waiting for a core.
+
 @Suite("Burt constraint: hand-derived values")
 struct BurtConstraintHandDerivedTests {
 
@@ -236,7 +244,7 @@ private let burtSeeds: [UInt64] = Array(1...16)
 @Suite("Burt constraint: properties")
 struct BurtConstraintPropertyTests {
 
-	@Test("Agrees with the dense transcription on seeded random weighted graphs, at several densities", .timeLimit(.minutes(1)),
+	@Test("Agrees with the dense transcription on seeded random weighted graphs, at several densities", .timeLimit(.minutes(10)),
 		  arguments: burtSeeds)
 	func agreesWithDenseOnRandomGraphs(seed: UInt64) throws {
 		for density in [0.1, 0.3, 0.7] {
@@ -358,7 +366,7 @@ struct BurtConstraintPropertyTests {
 
 	/// The size the package was built for: about 1,100 nodes and 15,000 edges.
 	@Test("Constraint on a 1,100-node, 15,000-edge graph finishes quickly and every score is finite and positive",
-		  .timeLimit(.minutes(1)))
+		  .timeLimit(.minutes(10)))
 	func largeGraph() throws {
 		var rng = SplitMix64(seed: 11)
 		var edges: [(String, String, Double)] = []
