@@ -202,7 +202,7 @@ public struct FiscalCalendar: Codable, Equatable, Sendable {
 	/// ```
 	public func fiscalYear(for date: Date) -> Int {
 		let calendar = gregorianUTC
-		let components = calendar.dateComponents([.year, .month, .day], from: date)
+		let components = calendar.dateComponents([.year, .month, .day], from: calendarSafe(date))
 		let calendarYear = components.year ?? 0
 		let month = components.month ?? 0
 		let day = components.day ?? 0
@@ -284,7 +284,7 @@ public struct FiscalCalendar: Codable, Equatable, Sendable {
 	/// ```
 	public func fiscalMonth(for date: Date) -> Int {
 		let calendar = gregorianUTC
-		let components = calendar.dateComponents([.month], from: date)
+		let components = calendar.dateComponents([.month], from: calendarSafe(date))
 		let calendarMonth = components.month ?? 0
 
 		// Calculate fiscal month offset
